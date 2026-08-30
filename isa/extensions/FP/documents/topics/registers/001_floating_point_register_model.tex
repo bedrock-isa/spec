@@ -1,3 +1,7 @@
 \subsection{Floating-Point Register Model}\label{section:floating-point-register-model}
 The floating-point extension exposes F0 through F15 as 64-bit registers when the floating-point
 instruction group is implemented.
+
+H-valued conversion operands occupy bits 15..0, S values occupy bits 31..0, and D values occupy all 64 bits.
+Writing H or S writes zero to the unused upper bits. The presence of an H conversion value in Fn does not enable
+scalar H arithmetic.

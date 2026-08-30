@@ -1,0 +1,12 @@
+mnemonic: FCVTD
+name: Convert to Double Precision
+summary: Converts between D and signed B/W/L/Q integer or H/S floating-point representations.
+route: fpu
+sail_entries:
+- execute_FCVTD
+privileged: false
+repeat:
+  type: rep
+operands:
+  src: {role: source, access: read, value_type: floating}
+  dst: {role: destination, access: write, value_type: floating}

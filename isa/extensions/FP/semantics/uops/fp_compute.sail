@@ -52,12 +52,7 @@ function fp_uop_operand_read(
                 struct {
                     valid = true,
                     kind = kind,
-                    bits =
-                        if kind == FpBits32 then {
-                            0x00000000 @ value[31 .. 0]
-                        } else {
-                            value
-                        },
+                    bits = fp_operand_bits_for_kind(kind, value, operation_width(instruction)),
                 },
             )
         },
@@ -143,7 +138,9 @@ function fp_uop_result_commit(
                     ),
                 )
             } else {
-                let result = if candidate.result_kind == FpResultBits32 | candidate.result_kind == FpResultPair32 then {
+                let result = if candidate.result_kind == FpResultBits16 then {
+                        0x000000000000 @ candidate.primary[15 .. 0]
+                    } else if candidate.result_kind == FpResultBits32 | candidate.result_kind == FpResultPair32 then {
                         0x00000000 @ candidate.primary[31 .. 0]
                     } else {
                         candidate.primary

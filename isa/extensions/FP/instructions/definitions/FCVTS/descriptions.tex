@@ -1,0 +1,7 @@
+Converts between the S format in an Fn operand and the representation selected by the suffix. The
+\texttt{.B}, \texttt{.W}, \texttt{.L}, and \texttt{.Q} forms use signed 8-, 16-, 32-, and 64-bit integers;
+the \texttt{.H} and \texttt{.D} forms use binary16 and binary64.
+
+For Fn-to-Fn conversion, the source has the suffix format and the destination has S format. With one Fn and one
+Rn or memory operand, the Fn has S format and the other operand has the suffix representation. Operand order
+selects the conversion direction. Floating-format EA sources are memory-only.

@@ -1,0 +1,12 @@
+mnemonic: FCVTH
+name: Convert to Half Precision
+summary: Converts between H and signed B/W/L/Q integer or S/D floating-point representations.
+route: fpu
+sail_entries:
+- execute_FCVTH
+privileged: false
+repeat:
+  type: rep
+operands:
+  src: {role: source, access: read, value_type: floating}
+  dst: {role: destination, access: write, value_type: floating}

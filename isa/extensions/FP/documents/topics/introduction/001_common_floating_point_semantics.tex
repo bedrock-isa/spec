@@ -1,16 +1,19 @@
 \subsection{Common Floating-Point Semantics}
-The \texttt{S} and \texttt{D} suffixes select 32- and 64-bit floating-point scalar sizes. Conditional floating-point
-moves place the integer condition suffix in the mnemonic.
+The \texttt{S} and \texttt{D} suffixes select 32- and 64-bit floating-point scalar arithmetic sizes. H selects the
+16-bit scalar conversion and storage format only. Conditional floating-point moves place the integer condition
+suffix in the mnemonic.
 
 
-The S and D formats are IEEE-754 binary32 and binary64. S uses sign bit 31, exponent bits 30..23, and fraction bits
+The H, S, and D formats are IEEE-754 binary16, binary32, and binary64. H uses sign bit 15, exponent bits 14..10,
+and fraction bits 9..0. S uses sign bit 31, exponent bits 30..23, and fraction bits
 22..0. D uses sign bit 63, exponent bits 62..52, and fraction bits 51..0. An all-ones exponent and nonzero fraction
 is a NaN. The most significant fraction bit distinguishes a quiet NaN from a signaling NaN: zero is signaling and
-one is quiet. The architectural default quiet NaNs are \texttt{0x7fc00000} for S and
+one is quiet. The architectural default quiet NaNs are \texttt{0x7e00} for H, \texttt{0x7fc00000} for S, and
 \texttt{0x7ff8000000000000} for D. Figure~\ref{fig:floating-point-register-encodings} shows both encodings in their
 64-bit Fn register view.
 
-An S operation reads bits 31..0 of each Fn operand. Writing an S result to Fn writes the result to bits 31..0 and
+An H conversion reads bits 15..0 of an H-valued Fn operand and an H result write writes zero to bits 63..16. An S
+operation reads bits 31..0 of each Fn operand. Writing an S result to Fn writes the result to bits 31..0 and
 writes zero to bits 63..32. A D operation reads and writes all 64 bits. Operations use the selected format for their
 intermediate and final values. FMADD, FMSUB, FNMADD, and FNMSUB form the complete multiply-add expression with
 unbounded intermediate range and precision and round only the final result. Other arithmetic operations round once

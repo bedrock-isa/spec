@@ -29,6 +29,17 @@ function fp_destination_is_fn(instruction : Decoded_instruction) -> bool =
         None() => false,
     }
 
+function fp_float_kind_for_width(width : int) -> Fp_value_kind =
+    if width == 2 then FpBits16 else if width == 4 then FpBits32 else FpBits64
+
+function fp_operand_bits_for_kind(kind : Fp_value_kind, raw : bits(64), width : int)
+    -> bits(64) =
+    if kind == FpBits16 then 0x000000000000 @ raw[15 .. 0]
+    else if kind == FpBits32 then 0x00000000 @ raw[31 .. 0]
+    else if kind == FpSigned64 then sign_extend_width(raw, width)
+    else if kind == FpUnsigned64 then raw & width_mask(width)
+    else raw
+
 function fp_operand_kind_for(
     instruction : Decoded_instruction,
     operand : Decoded_operand,
@@ -40,33 +51,26 @@ function fp_operand_kind_for(
         Some(semantics) => semantics.conversion_unsigned,
         None() => None(),
     };
-    if operand.operand_type == OperandType_Fn then {
-        if conversion_unsigned != None() & fp_destination_is_fn(instruction) then {
-            if width == 4 then { FpBits64 } else { FpBits32 }
-        } else {
-            if width == 4 then { FpBits32 } else { FpBits64 }
-        }
+    if conversion_unsigned != None() then {
+        if operand.operand_type == OperandType_Fn then {
+            if fp_destination_is_fn(instruction) then fp_float_kind_for_width(width)
+            else fp_float_kind_for_width(fp_conversion_fn_width(instruction.form.operation))
+        } else if fp_destination_is_fn(instruction) then {
+            if fp_size_list_is_integer(instruction.form.sizes) then
+                if conversion_unsigned == Some(true) then FpUnsigned64 else FpSigned64
+            else fp_float_kind_for_width(width)
+        } else FpRaw64
+    } else if operand.operand_type == OperandType_Fn then {
+        fp_float_kind_for_width(width)
     } else {
-        if conversion_unsigned != None() & fp_destination_is_fn(instruction) then {
-            if conversion_unsigned == Some(true) then { FpUnsigned64 } else { FpSigned64 }
-        } else {
-            if operand.operand_type == OperandType_Rn then {
-                FpRaw64
-            } else {
-                if operand.operand_type == OperandType_FEA then {
-                    match operand.ea {
-                        Some(ea) => if ea.kind == EaKind_float_immediate then {
-                            if ea.payload_width == 32 then { FpBits32 } else { FpBits64 }
-                        } else {
-                            if width == 4 then { FpBits32 } else { FpBits64 }
-                        },
-                        None() => if width == 4 then { FpBits32 } else { FpBits64 },
-                    }
-                } else {
-                    if width == 4 then { FpBits32 } else { FpBits64 }
-                }
-            }
+        if operand.operand_type == OperandType_Rn then FpRaw64
+        else if operand.operand_type == OperandType_FEA then match operand.ea {
+            Some(ea) => if ea.kind == EaKind_float_immediate then {
+                if ea.payload_width == 32 then FpBits32 else FpBits64
+            } else fp_float_kind_for_width(width),
+            None() => fp_float_kind_for_width(width),
         }
+        else fp_float_kind_for_width(width)
     }
 }
 
@@ -108,7 +112,7 @@ function fp_decoded_operand_image(
                    None() => false,
                }),
         kind = kind,
-        bits = if kind == FpBits32 then 0x00000000 @ raw[31 .. 0] else raw,
+        bits = fp_operand_bits_for_kind(kind, raw, width),
     }
 }
 

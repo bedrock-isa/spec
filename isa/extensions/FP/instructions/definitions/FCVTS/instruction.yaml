@@ -1,9 +1,9 @@
-mnemonic: FCVTU
-name: Floating-Point Convert Unsigned
-summary: Converts unsigned 64-bit integers and S/D floating-point values between supported forms.
+mnemonic: FCVTS
+name: Convert to Single Precision
+summary: Converts between S and signed B/W/L/Q integer or H/D floating-point representations.
 route: fpu
 sail_entries:
-- execute_FCVTU
+- execute_FCVTS
 privileged: false
 repeat:
   type: rep

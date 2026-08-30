@@ -14,9 +14,8 @@ pub(crate) mod operation {
     include!(concat!(env!("OUT_DIR"), "/semantic_operations.rs"));
 }
 
-#[cfg(test)]
+const RESULT_BITS16: i32 = 9;
 const RESULT_BITS32: i32 = 1;
-#[cfg(test)]
 const RESULT_BITS64: i32 = 2;
 const RESULT_VALUE_FLAGS: i32 = 5;
 const RESULT_INTEGER: i32 = 4;
@@ -204,8 +203,8 @@ pub fn execute(
         operation::OP_FBNDII | operation::OP_FBNDIX | operation::OP_FBNDXI | operation::OP_FBNDXX
     ) {
         bounds(operation, request, &mut response);
-    } else if operation == operation::OP_FCVT || operation == operation::OP_FCVTU {
-        convert(operation, request, &mut response, round);
+    } else if let Some(conversion) = scalar_conversion(operation) {
+        convert_scalar(conversion, request, &mut response, round);
     } else if matches!(
         operation,
         operation::OP_FINT
@@ -799,8 +798,16 @@ fn finish_float(
     response: &mut SailCoreNumericResponse,
     computed: StatusAnd<u64>,
 ) {
+    finish_float_width(request, response, computed, request.element_width);
+}
+
+fn finish_float_width(
+    request: &SailCoreNumericRequest,
+    response: &mut SailCoreNumericResponse,
+    computed: StatusAnd<u64>,
+    width: i64,
+) {
     let source_nan = selected_nan(request);
-    let width = request.element_width;
     let computed_is_nan = is_nan(computed.value, width);
     response.primary = if computed_is_nan {
         source_nan
@@ -888,8 +895,42 @@ fn bounds(
     response.generated_causes = signaling_nan_cause(request);
 }
 
-fn convert(
-    operation: i32,
+#[derive(Clone, Copy)]
+struct ScalarConversion {
+    fn_width: usize,
+    unsigned: bool,
+}
+
+fn scalar_conversion(operation: i32) -> Option<ScalarConversion> {
+    let fn_width = if matches!(operation, operation::OP_FCVTH | operation::OP_FCVTUH) {
+        2
+    } else if matches!(operation, operation::OP_FCVTS | operation::OP_FCVTUS) {
+        4
+    } else if matches!(operation, operation::OP_FCVTD | operation::OP_FCVTUD) {
+        8
+    } else {
+        return None;
+    };
+    Some(ScalarConversion {
+        fn_width,
+        unsigned: matches!(
+            operation,
+            operation::OP_FCVTUH | operation::OP_FCVTUS | operation::OP_FCVTUD
+        ),
+    })
+}
+
+fn result_float_width(result_kind: i32) -> Option<usize> {
+    match result_kind {
+        RESULT_BITS16 => Some(2),
+        RESULT_BITS32 => Some(4),
+        RESULT_BITS64 => Some(8),
+        _ => None,
+    }
+}
+
+fn convert_scalar(
+    conversion: ScalarConversion,
     request: &SailCoreNumericRequest,
     response: &mut SailCoreNumericResponse,
     round: Round,
@@ -898,36 +939,47 @@ fn convert(
     match (source.kind, request.result_kind) {
         (VALUE_SIGNED64, _) => {
             let value = source.bits as i64 as i128;
-            let result = if request.element_width == 4 {
-                Single::from_i128_r(value, round).map(|value| value.to_bits() as u64)
-            } else {
-                Double::from_i128_r(value, round).map(|value| value.to_bits() as u64)
+            let result = match conversion.fn_width {
+                2 => Half::from_i128_r(value, round).map(|value| value.to_bits() as u64),
+                4 => Single::from_i128_r(value, round).map(|value| value.to_bits() as u64),
+                8 => Double::from_i128_r(value, round).map(|value| value.to_bits() as u64),
+                _ => unreachable!(),
             };
-            finish_float(request, response, result);
+            finish_float_width(request, response, result, conversion.fn_width as i64);
         }
         (VALUE_UNSIGNED64, _) => {
-            let result = if request.element_width == 4 {
-                Single::from_u128_r(source.bits as u128, round).map(|value| value.to_bits() as u64)
-            } else {
-                Double::from_u128_r(source.bits as u128, round).map(|value| value.to_bits() as u64)
+            let result = match conversion.fn_width {
+                2 => Half::from_u128_r(source.bits as u128, round)
+                    .map(|value| value.to_bits() as u64),
+                4 => Single::from_u128_r(source.bits as u128, round)
+                    .map(|value| value.to_bits() as u64),
+                8 => Double::from_u128_r(source.bits as u128, round)
+                    .map(|value| value.to_bits() as u64),
+                _ => unreachable!(),
             };
-            finish_float(request, response, result);
+            finish_float_width(request, response, result, conversion.fn_width as i64);
         }
-        (VALUE_BITS32 | VALUE_BITS64, RESULT_INTEGER) => {
+        (VALUE_BITS16 | VALUE_BITS32 | VALUE_BITS64, RESULT_INTEGER) => {
             let mut exact = true;
-            let unsigned = operation == operation::OP_FCVTU;
-            let result = match (source.kind, unsigned) {
+            let integer_bits = request.element_width as usize * 8;
+            let result = match (source.kind, conversion.unsigned) {
+                (VALUE_BITS16, false) => Half::from_bits(source.bits as u128)
+                    .to_i128_r(integer_bits, Round::TowardZero, &mut exact)
+                    .map(|value| value as u64),
                 (VALUE_BITS32, false) => Single::from_bits(source.bits as u128)
-                    .to_i128_r(64, Round::TowardZero, &mut exact)
+                    .to_i128_r(integer_bits, Round::TowardZero, &mut exact)
                     .map(|value| value as u64),
                 (VALUE_BITS64, false) => Double::from_bits(source.bits as u128)
-                    .to_i128_r(64, Round::TowardZero, &mut exact)
+                    .to_i128_r(integer_bits, Round::TowardZero, &mut exact)
+                    .map(|value| value as u64),
+                (VALUE_BITS16, true) => Half::from_bits(source.bits as u128)
+                    .to_u128_r(integer_bits, Round::TowardZero, &mut exact)
                     .map(|value| value as u64),
                 (VALUE_BITS32, true) => Single::from_bits(source.bits as u128)
-                    .to_u128_r(64, Round::TowardZero, &mut exact)
+                    .to_u128_r(integer_bits, Round::TowardZero, &mut exact)
                     .map(|value| value as u64),
                 (VALUE_BITS64, true) => Double::from_bits(source.bits as u128)
-                    .to_u128_r(64, Round::TowardZero, &mut exact)
+                    .to_u128_r(integer_bits, Round::TowardZero, &mut exact)
                     .map(|value| value as u64),
                 _ => unreachable!(),
             };
@@ -938,25 +990,19 @@ fn convert(
                 status_causes(result.status)
             };
         }
-        (VALUE_BITS32, _) => {
-            let mut loses_info = false;
-            let result: StatusAnd<Double> =
-                Single::from_bits(source.bits as u128).convert_r(round, &mut loses_info);
-            finish_float(
+        (VALUE_BITS16 | VALUE_BITS32 | VALUE_BITS64, _) => {
+            let source_width = operand_width(source.kind, request.element_width) as usize;
+            let destination_width = result_float_width(request.result_kind)
+                .expect("floating conversion must have a floating result kind");
+            let (value, causes) =
+                convert_float_width(source.bits, source_width, destination_width, round);
+            finish_float_width(
                 request,
                 response,
-                result.map(|value| value.to_bits() as u64),
+                Status::OK.and(value),
+                destination_width as i64,
             );
-        }
-        (VALUE_BITS64, _) => {
-            let mut loses_info = false;
-            let result: StatusAnd<Single> =
-                Double::from_bits(source.bits as u128).convert_r(round, &mut loses_info);
-            finish_float(
-                request,
-                response,
-                result.map(|value| value.to_bits() as u64),
-            );
+            response.generated_causes |= causes;
         }
         _ => unreachable!("invalid Sail FP conversion request {request:?}"),
     }
@@ -1037,7 +1083,10 @@ fn numeric_order(request: &SailCoreNumericRequest, lhs: u64, rhs: u64) -> Option
 fn selected_nan(request: &SailCoreNumericRequest) -> Option<(usize, u64, i64)> {
     for signaling in [true, false] {
         for (index, operand) in request.operands.iter().enumerate() {
-            if index >= request.operand_count as usize || !operand.valid {
+            if index >= request.operand_count as usize
+                || !operand.valid
+                || !is_fp_kind(operand.kind)
+            {
                 continue;
             }
             let width = operand_width(operand.kind, request.element_width);
@@ -1053,13 +1102,18 @@ fn signaling_nan_cause(request: &SailCoreNumericRequest) -> u8 {
     request.operands[..request.operand_count as usize]
         .iter()
         .any(|operand| {
-            is_signaling_nan(
-                operand.bits,
-                operand_width(operand.kind, request.element_width),
-            )
+            is_fp_kind(operand.kind)
+                && is_signaling_nan(
+                    operand.bits,
+                    operand_width(operand.kind, request.element_width),
+                )
         })
         .then_some(CAUSE_NV)
         .unwrap_or(0)
+}
+
+fn is_fp_kind(kind: i32) -> bool {
+    matches!(kind, VALUE_BITS16 | VALUE_BITS32 | VALUE_BITS64)
 }
 
 fn operand_width(kind: i32, fallback: i64) -> i64 {
@@ -1281,7 +1335,7 @@ mod tests {
             ],
             ..SailCoreNumericRequest::default()
         };
-        let response = execute(operation::OP_FCVT, &request).unwrap();
+        let response = execute(operation::OP_FCVTD, &request).unwrap();
         assert_eq!(response.primary, 0xfff8_0024_6000_0000);
         assert_eq!(response.primary_nan_origin, NAN_OPERAND0);
     }

@@ -1,0 +1,5 @@
+Converts between the H conversion format in an Fn operand and the representation selected by the suffix. The
+integer suffixes are signed B/W/L/Q; \texttt{.S} and \texttt{.D} select binary32 and binary64. For Fn-to-Fn
+conversion, the source has the suffix format and the destination has H format. With one Fn and one Rn or memory
+operand, the Fn has H format and the other operand has the suffix representation. Floating-format EA sources are
+memory-only. H is a conversion and storage format; this instruction does not add scalar H arithmetic.

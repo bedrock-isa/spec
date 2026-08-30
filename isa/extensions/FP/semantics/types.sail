@@ -1,7 +1,8 @@
-enum Fp_value_kind = { FpValueNone, FpBits32, FpBits64, FpRaw64, FpSigned64, FpUnsigned64 }
+enum Fp_value_kind = { FpValueNone, FpBits16, FpBits32, FpBits64, FpRaw64, FpSigned64, FpUnsigned64 }
 
 enum Fp_result_kind = {
     FpResultValueNone,
+    FpResultBits16,
     FpResultBits32,
     FpResultBits64,
     FpResultRaw64,

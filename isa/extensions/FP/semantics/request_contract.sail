@@ -7,6 +7,7 @@ function fp_operation_is_exact_local(operation : Semantic_operation) -> bool =
 function fp_operand_image_valid(operand : Fp_operand_image) -> bool =
   if operand.valid then match operand.kind {
     FpValueNone => false,
+    FpBits16 => operand.bits[63 .. 16] == 0x000000000000,
     FpBits32 => operand.bits[63 .. 32] == 0x00000000,
     _ => true,
   }
@@ -57,6 +58,7 @@ function fp_request_arity_valid(request : Fp_request_image) -> bool =
   & fp_operand_slot_valid(request.operand2, request.operand_count >= 3)
 
 function fp_result_kind_width(kind : Fp_result_kind) -> int = match kind {
+  FpResultBits16 => 2,
   FpResultBits32 => 4,
   FpResultPair32 => 4,
   FpResultBits64 => 8,
@@ -70,7 +72,7 @@ function fp_result_kind_is_pair(kind : Fp_result_kind) -> bool =
   kind == FpResultPair32 | kind == FpResultPair64 | kind == FpResultPairRaw64
 
 function fp_result_kind_is_float(kind : Fp_result_kind) -> bool =
-  kind == FpResultBits32 | kind == FpResultBits64
+  kind == FpResultBits16 | kind == FpResultBits32 | kind == FpResultBits64
   | kind == FpResultPair32 | kind == FpResultPair64
 
 function fp_fn_write_count(operands : list(Catalog_operand)) -> int = match operands {
@@ -87,6 +89,8 @@ function fp_policy_result_kind(policy : Fp_result_policy,
   if raw_result then Some(FpResultPairRaw64)
   else match policy {
     FpResultNone => Some(FpResultValueNone),
+    FpResultFn16 => Some(FpResultBits16),
+    FpResultMemory16 => Some(FpResultBits16),
     FpResultFn32 => Some(FpResultBits32),
     FpResultMemory32 => Some(FpResultBits32),
     FpResultFn64 => Some(FpResultBits64),
@@ -114,6 +118,7 @@ function fp_derive_destination_kind(form : Catalog_entry) -> Fp_destination_kind
          | semantics.result_policy == FpResultFnPair64
       then FpDestinationFnPair
       else if semantics.result_policy == FpResultMemory32
+              | semantics.result_policy == FpResultMemory16
               | semantics.result_policy == FpResultMemory64
               | fp_has_ea_write(form.operands)
       then FpDestinationMemory
@@ -132,15 +137,16 @@ function fp_request_width(request : Fp_request_image) -> int = {
 }
 
 function fp_operand_needs_format_conversion(operand : Fp_operand_image,
-                                            operation_width : int) -> bool =
-  operand.valid
-  & ((operand.kind == FpBits32 & operation_width == 8)
-     | (operand.kind == FpBits64 & operation_width == 4))
+                                            result_kind : Fp_result_kind) -> bool = {
+  let result_width = fp_result_kind_width(result_kind);
+  operand.valid & result_width != 0 & fp_operand_width(operand) != 0
+  & fp_operand_width(operand) != result_width
+}
 
 function fp_request_needs_format_conversion(request : Fp_request_image) -> bool =
-  fp_operand_needs_format_conversion(request.operand0, request.operation_width)
-  | fp_operand_needs_format_conversion(request.operand1, request.operation_width)
-  | fp_operand_needs_format_conversion(request.operand2, request.operation_width)
+  fp_operand_needs_format_conversion(request.operand0, request.result_kind)
+  | fp_operand_needs_format_conversion(request.operand1, request.result_kind)
+  | fp_operand_needs_format_conversion(request.operand2, request.result_kind)
 
 function fp_request_is_exact_local(request : Fp_request_image) -> bool =
   fp_operation_is_exact_local(request.operation)
@@ -156,6 +162,8 @@ function fp_result_policy_matches(kind : Fp_result_kind, policy : Fp_result_poli
   if raw_result then kind == FpResultPairRaw64
   else match policy {
     FpResultNone => kind == FpResultValueNone,
+    FpResultFn16 => kind == FpResultBits16,
+    FpResultMemory16 => kind == FpResultBits16,
     FpResultFn32 => kind == FpResultBits32,
     FpResultMemory32 => kind == FpResultBits32,
     FpResultFn64 => kind == FpResultBits64,
@@ -222,7 +230,8 @@ function fp_request_form_valid(request : Fp_request_image) -> bool =
 
 function fp_request_valid(request : Fp_request_image) -> bool =
   request.valid & request.form_id != Form_invalid
-  & (request.operation_width == 4 | request.operation_width == 8)
+  & (request.operation_width == 1 | request.operation_width == 2
+     | request.operation_width == 4 | request.operation_width == 8)
   & fp_request_arity_valid(request)
   & (match fp_semantics(request.operation) {
       None() => false,
@@ -238,10 +247,10 @@ function fp_request_valid(request : Fp_request_image) -> bool =
 
 function fp_prepare_request_operand(operation : Semantic_operation,
                                     operand : Fp_operand_image,
-                                    operation_width : int,
+                                    result_kind : Fp_result_kind,
                                     daz : bool) -> Fp_operand_image =
   if fp_operation_is_exact_local(operation)
-     & not_bool(fp_operand_needs_format_conversion(operand, operation_width))
+     & not_bool(fp_operand_needs_format_conversion(operand, result_kind))
   then operand
   else fp_apply_daz(operand, daz)
 
@@ -256,13 +265,13 @@ function fp_build_request(operation : Semantic_operation, form : Catalog_entry,
       let daz = fp_fstatus_daz(fstatus);
       let prepared : Fp_operand_slots = struct {
         operand0 = fp_prepare_request_operand(
-          operation, operands.operand0, operation_width, daz
+          operation, operands.operand0, result_kind, daz
         ),
         operand1 = fp_prepare_request_operand(
-          operation, operands.operand1, operation_width, daz
+          operation, operands.operand1, result_kind, daz
         ),
         operand2 = fp_prepare_request_operand(
-          operation, operands.operand2, operation_width, daz
+          operation, operands.operand2, result_kind, daz
         )
       };
       let base_request : Fp_request_image = struct {

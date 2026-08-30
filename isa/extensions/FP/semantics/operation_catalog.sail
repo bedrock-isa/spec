@@ -4,6 +4,7 @@ enum Fp_result_policy =
   FpResultNone
 | FpResultFnByFormat
 | FpResultByForm
+| FpResultFn16
 | FpResultFn32
 | FpResultFn64
 | FpResultRn64
@@ -12,6 +13,7 @@ enum Fp_result_policy =
 | FpResultFnPairByFormat
 | FpResultFnPair32
 | FpResultFnPair64
+| FpResultMemory16
 | FpResultMemory32
 | FpResultMemory64
 
@@ -36,6 +38,7 @@ struct Fp_semantics = {
   exact_operation : option(Fp_exact_operation),
   raw_result : bool,
   conversion_unsigned : option(bool),
+  conversion_fn_width : int,
 }
 
 let fflags_nv : bits(5) = 0b10000
@@ -60,7 +63,8 @@ function fp_info(path : Fp_path, source_count : int, result_policy : Fp_result_p
   contract_id = get_slice_int(16, contract_id, 0),
   exact_operation = None(),
   raw_result = false,
-  conversion_unsigned = None()
+  conversion_unsigned = None(),
+  conversion_fn_width = 0
 }
 
 function fp_exact_info(info : Fp_semantics, operation : Fp_exact_operation) -> Fp_semantics =
@@ -69,8 +73,9 @@ function fp_exact_info(info : Fp_semantics, operation : Fp_exact_operation) -> F
 function fp_raw_result_info(info : Fp_semantics) -> Fp_semantics =
   { info with raw_result = true }
 
-function fp_conversion_info(info : Fp_semantics, unsigned_conversion : bool) -> Fp_semantics =
-  { info with conversion_unsigned = Some(unsigned_conversion) }
+function fp_conversion_info(info : Fp_semantics, unsigned_conversion : bool,
+                            fn_width : int) -> Fp_semantics =
+  { info with conversion_unsigned = Some(unsigned_conversion), conversion_fn_width = fn_width }
 
 val fp_semantics : Semantic_operation -> option(Fp_semantics)
 
@@ -127,23 +132,52 @@ function fp_form_path(form : Catalog_entry) -> option(Fp_path) =
   }
 
 function fp_fn_result(width : int) -> Fp_result_policy =
-  if width == 4 then FpResultFn32 else FpResultFn64
+  if width == 2 then FpResultFn16
+  else if width == 4 then FpResultFn32 else FpResultFn64
 
 function fp_pair_result(width : int) -> Fp_result_policy =
   if width == 4 then FpResultFnPair32 else FpResultFnPair64
 
 function fp_memory_result(width : int) -> Fp_result_policy =
-  if width == 4 then FpResultMemory32 else FpResultMemory64
+  if width == 2 then FpResultMemory16
+  else if width == 4 then FpResultMemory32 else FpResultMemory64
+
+function fp_conversion_fn_width(operation : Semantic_operation) -> int =
+  match fp_semantics(operation) {
+    Some(semantics) => semantics.conversion_fn_width,
+    None() => 0,
+  }
+
+function fp_size_list_is_integer(items : list(Size_code)) -> bool = match items {
+  Size_B :: _ => true,
+  Size_W :: _ => true,
+  Size_L :: _ => true,
+  Size_Q :: _ => true,
+  _ => false,
+}
+
+function fp_conversion_form_result_policy(form : Catalog_entry, width : int)
+  -> option(Fp_result_policy) =
+  if fp_has_rn_write(form.operands) then Some(FpResultRn64)
+  else if fp_has_ea_write(form.operands) then
+    if fp_size_list_is_integer(form.sizes) then Some(FpResultRn64)
+    else Some(fp_memory_result(width))
+  else Some(fp_fn_result(fp_conversion_fn_width(form.operation)))
 
 function fp_form_result_policy(form : Catalog_entry, width : int) -> option(Fp_result_policy) =
   match fp_semantics(form.operation) {
     None() => None(),
     Some(semantics) =>
-      if width != 4 & width != 8 then None()
+      if semantics.conversion_unsigned != None() then
+        if width != 1 & width != 2 & width != 4 & width != 8 then None()
+        else fp_conversion_form_result_policy(form, width)
+      else if width != 4 & width != 8 then None()
       else if semantics.result_policy == FpResultFn32
+           | semantics.result_policy == FpResultFn16
            | semantics.result_policy == FpResultFn64
            | semantics.result_policy == FpResultFnPair32
            | semantics.result_policy == FpResultFnPair64
+           | semantics.result_policy == FpResultMemory16
            | semantics.result_policy == FpResultMemory32
            | semantics.result_policy == FpResultMemory64
         then Some(semantics.result_policy)

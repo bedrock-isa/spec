@@ -11,7 +11,9 @@ function fp_response_unused_valid(response : Fp_response_image) -> bool = {
 }
 
 function fp_response_upper_zero_valid(response : Fp_response_image) -> bool =
-  if response.result_kind == FpResultBits32 then
+  if response.result_kind == FpResultBits16 then
+    response.primary[63 .. 16] == 0x000000000000
+  else if response.result_kind == FpResultBits32 then
     response.primary[63 .. 32] == 0x00000000
   else if response.result_kind == FpResultPair32 then
     response.primary[63 .. 32] == 0x00000000
@@ -21,7 +23,8 @@ function fp_response_upper_zero_valid(response : Fp_response_image) -> bool =
 function fp_result_operand(kind : Fp_result_kind, bits : bits(64)) -> Fp_operand_image =
   struct {
     valid = true,
-    kind = if kind == FpResultBits32 | kind == FpResultPair32
+    kind = if kind == FpResultBits16 then FpBits16
+           else if kind == FpResultBits32 | kind == FpResultPair32
            then FpBits32 else FpBits64,
     bits = bits
   }

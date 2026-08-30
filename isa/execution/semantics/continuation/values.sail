@@ -120,7 +120,8 @@ function commit_response_destination(previous : Execution_result, value : bits(6
   let destination = previous.pending.destination;
   let initial_operand : Fp_operand_image = struct {
     valid = destination.kind == DestinationFn,
-    kind = if destination.width == 4 then FpBits32 else FpBits64,
+    kind = if destination.width == 2 then FpBits16
+           else if destination.width == 4 then FpBits32 else FpBits64,
     bits = value
   };
   let post = if fp_route & destination.kind == DestinationFn then fp_postprocess(
@@ -151,7 +152,9 @@ function commit_response_destination(previous : Execution_result, value : bits(6
   }
   else if destination.kind == DestinationFn then {
     let index = unsigned(destination.index);
-    updated.floating_registers[index] = if destination.width == 4
+    updated.floating_registers[index] = if destination.width == 2
+      then 0x000000000000 @ post.value.bits[15 .. 0]
+      else if destination.width == 4
       then 0x00000000 @ post.value.bits[31 .. 0] else post.value.bits
     ; updated.fp_component_modified = true
   }

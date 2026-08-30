@@ -182,6 +182,7 @@ function commit_destination_for(operands : list(Decoded_operand), width : int) -
 function size_code_bytes(code : Size_code) -> int = match code {
     Size_B => 1,
     Size_W => 2,
+    Size_H => 2,
     Size_S => 4,
     Size_L => 4,
     _ => 8,

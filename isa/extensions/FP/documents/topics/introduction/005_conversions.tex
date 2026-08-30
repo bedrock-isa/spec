@@ -1,24 +1,29 @@
 \subsubsection{Conversions}
 
-For Fn-to-Fn FCVT or FCVTU, the \texttt{.S} encoding converts D to S and the \texttt{.D} encoding converts S to D. The two
-mnemonics have identical behavior for this conversion family. Rn-to-Fn FCVT interprets all 64 source bits as a
-signed integer; FCVTU interprets them as an unsigned integer. Integer-to-floating conversion uses
-\texttt{FSTATUS.RM}.
+The final letter of (:ref:FP.instructions.FCVTH:), (:ref:FP.instructions.FCVTS:), and
+(:ref:FP.instructions.FCVTD:) names the H, S, or D format associated with
+the Fn side of a conversion. The suffix names the other representation. For Fn-to-Fn forms, the source has the
+suffix format and the destination has the mnemonic format; for example,
+(:ref:FP.instructions.FCVTS:)\texttt{.D} converts D to S and
+(:ref:FP.instructions.FCVTD:)\texttt{.H} converts H to D. For a form containing one Fn and one Rn or EA operand, Fn has the mnemonic
+format and Rn or EA has the suffix representation. Source-first operand order therefore permits both directions.
+The H/D, S/D, or H/S conversion is direct and does not pass through an intermediate floating format.
 
-Fn-to-Rn conversion truncates toward zero. FCVT produces a signed 64-bit result and FCVTU produces an unsigned
-64-bit result. A valid conversion that discards a fractional part generates NX. An invalid conversion generates NV
-without OF or NX. When NV is not enabled, the committed invalid result is:
+The \texttt{.B}, \texttt{.W}, \texttt{.L}, and \texttt{.Q} suffixes select 8-, 16-, 32-, and 64-bit integers.
+(:ref:FP.instructions.FCVTH:), (:ref:FP.instructions.FCVTS:), and (:ref:FP.instructions.FCVTD:) interpret those
+integers as signed; (:ref:FP.instructions.FCVTUH:), (:ref:FP.instructions.FCVTUS:), and
+(:ref:FP.instructions.FCVTUD:) interpret them as unsigned. An Rn integer source uses the
+selected number of low bits. A signed Rn result is sign-extended to 64 bits and an unsigned result is zero-extended.
+An EA access transfers exactly the selected number of bytes. Floating-format EA conversion operands are memory
+operands; floating immediates are not accepted by these forms.
 
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{2.20in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Instruction} & \textbf{Input} & \textbf{Result}\\
-\midrule
-(:ref:FP.instructions.FCVT:) & negative overflow or negative infinity & \texttt{0x8000000000000000}\\
-(:ref:FP.instructions.FCVT:) & positive overflow or positive infinity & \texttt{0x7fffffffffffffff}\\
-(:ref:FP.instructions.FCVT:) & NaN & \texttt{0x0000000000000000}\\
-(:ref:FP.instructions.FCVTU:) & negative value or negative infinity & \texttt{0x0000000000000000}\\
-(:ref:FP.instructions.FCVTU:) & positive overflow or positive infinity & \texttt{0xffffffffffffffff}\\
-(:ref:FP.instructions.FCVTU:) & NaN & \texttt{0x0000000000000000}\\
-\bottomrule
-\end{manualtabular}
+Integer-to-floating and floating-to-floating conversion uses \texttt{FSTATUS.RM}. Floating-to-integer conversion
+truncates toward zero. A valid conversion that discards a fractional part generates NX. An invalid conversion
+generates NV without OF or NX. When NV is not enabled, a signed negative overflow or negative infinity produces
+the least value of the selected signed width, a signed positive overflow or positive infinity produces the greatest
+value, and NaN produces zero. An unsigned negative value or negative infinity produces zero, positive overflow or
+positive infinity produces the greatest value of the selected unsigned width, and NaN produces zero.
+
+Conversions generate only NV, OF, UF, and NX; DZ is unchanged. An enabled generated cause raises
+FLOATING\_POINT\_EXCEPTION and suppresses the destination write and newly accrued FFLAGS effects. A memory fault
+likewise suppresses the destination and floating-point state changes.

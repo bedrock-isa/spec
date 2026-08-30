@@ -17,3 +17,23 @@ field_types:
     values:
       - {value: 0, code: S}
       - {value: 1, code: D}
+  SIZE_HD:
+    type: size_selector
+    bits: 1
+    values:
+      - {value: 0, code: H}
+      - {value: 1, code: D}
+  SIZE_HS:
+    type: size_selector
+    bits: 1
+    values:
+      - {value: 0, code: H}
+      - {value: 1, code: S}
+  SIZE_BWLQ:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 0, code: B}
+      - {value: 1, code: W}
+      - {value: 2, code: L}
+      - {value: 3, code: Q}

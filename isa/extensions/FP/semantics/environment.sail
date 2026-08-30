@@ -48,6 +48,7 @@ function fp_classify_raw(value : bits(64), width : int) -> option(Fp_class) =
   else None()
 
 function fp_operand_width(operand : Fp_operand_image) -> int = match operand.kind {
+  FpBits16 => 2,
   FpBits32 => 4,
   FpBits64 => 8,
   _ => 0,
@@ -168,8 +169,26 @@ function fp_nan_source(request : Fp_request_image) -> option(Fp_operand_image) =
 function fp_convert_nan_payload(value : bits(64), source_width : int,
                                 result_width : int) -> option(bits(64)) = {
   let quiet = fp_quiet_nan(value, source_width);
-  if source_width == result_width & (result_width == 4 | result_width == 8) then
+  if source_width == result_width & (result_width == 2 | result_width == 4 | result_width == 8) then
     Some(quiet)
+  else if source_width == 2 & result_width == 4 then {
+    let sign = sail_shiftleft(quiet & 0x0000000000008000, 16);
+    Some(sign | 0x000000007F800000
+         | sail_shiftleft(quiet & 0x00000000000003FF, 13))
+  }
+  else if source_width == 2 & result_width == 8 then {
+    let sign = sail_shiftleft(quiet & 0x0000000000008000, 48);
+    Some(sign | 0x7FF0000000000000
+         | sail_shiftleft(quiet & 0x00000000000003FF, 42))
+  }
+  else if source_width == 4 & result_width == 2 then
+    Some(sail_shiftright(quiet, 16) & 0x0000000000008000
+         | 0x0000000000007C00
+         | sail_shiftright(quiet, 13) & 0x00000000000003FF)
+  else if source_width == 8 & result_width == 2 then
+    Some(sail_shiftright(quiet, 48) & 0x0000000000008000
+         | 0x0000000000007C00
+         | sail_shiftright(quiet, 42) & 0x00000000000003FF)
   else if source_width == 4 & result_width == 8 then {
     let sign = if quiet[31] == bitone then 0x8000000000000000
                else 0x0000000000000000;
@@ -189,7 +208,7 @@ function fp_expected_pre_dn_nan(request : Fp_request_image,
   match fp_nan_source(request) {
     Some(source) => fp_convert_nan_payload(source.bits, fp_operand_width(source),
                                            result_width),
-    None() => if result_width == 4 | result_width == 8
+    None() => if result_width == 2 | result_width == 4 | result_width == 8
               then Some(fp_default_nan(result_width)) else None(),
   }
 

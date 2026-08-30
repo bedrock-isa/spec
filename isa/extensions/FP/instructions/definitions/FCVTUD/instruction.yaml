@@ -1,0 +1,10 @@
+mnemonic: FCVTUD
+name: Convert Unsigned and Double Precision
+summary: Converts between D and unsigned B/W/L/Q integers.
+route: fpu
+sail_entries: [execute_FCVTUD]
+privileged: false
+repeat: {type: rep}
+operands:
+  src: {role: source, access: read, value_type: floating}
+  dst: {role: destination, access: write, value_type: floating}

@@ -12,6 +12,7 @@ val bedrock_numeric_primitive = pure {c: "bedrock_numeric_primitive"} :
 
 function fp_primitive_value_kind_code(kind : Fp_value_kind) -> bits(8) = match kind {
   FpValueNone => 0x00,
+  FpBits16 => 0x06,
   FpBits32 => 0x01,
   FpBits64 => 0x02,
   FpRaw64 => 0x03,
@@ -21,6 +22,7 @@ function fp_primitive_value_kind_code(kind : Fp_value_kind) -> bits(8) = match k
 
 function fp_primitive_result_kind_code(kind : Fp_result_kind) -> bits(8) = match kind {
   FpResultValueNone => 0x00,
+  FpResultBits16 => 0x09,
   FpResultBits32 => 0x01,
   FpResultBits64 => 0x02,
   FpResultRaw64 => 0x03,
