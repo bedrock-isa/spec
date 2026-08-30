@@ -7,11 +7,3 @@ plus 8. Both destination registers and the SP update to old SP plus 16 commit to
 neither destination register nor SP.
 
 Multiple POPP instructions can be used in reverse canonical epilogue order to restore multiple pairs.
-
-POPP selects one canonical pair using the unsigned 3-bit pair index and reads the complete two-slot stack range
-through the old SS:SP context before either destination register or SP is changed. For a listed pair
-(\emph{first}, \emph{second}), the second register is read from old SP and the first register is read from old SP
-plus 8. Both destination registers and the SP update to old SP plus 16 commit together. A preceding fault changes
-neither destination register nor SP.
-
-Multiple POPP instructions can be used in reverse canonical epilogue order to restore multiple pairs.

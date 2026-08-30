@@ -1,6 +1,6 @@
 mnemonic: EXTSW
 name: Sign Extend To Word
-summary: Performs the sign extend to word operation.
+summary: Sign-extends a byte source to a word EA destination.
 route: integer_unary
 sail_entries:
 - execute_EXTSW

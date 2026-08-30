@@ -5,7 +5,7 @@ kind: floating-point-width-conversion
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 container_bits: 64
 source:
-  label: source D values
+  label: source Vn D values
   element_bits: 64
   containers:
   - cells:
@@ -13,7 +13,7 @@ source:
   - cells:
     - {value: d1, effect: copy, appearance: source, bits: 64}
 result:
-  label: new S fields
+  label: new Vd S fields
   element_bits: 32
   containers:
   - cells:

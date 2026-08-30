@@ -1,41 +1,18 @@
-Computes the paired sin(x) and cos(x) references in radians over finite x with abs(x) \textless{}= pi / 4 after DAZ and writes implementation-bounded S- or D-format approximations under the selected FPTRANSA accuracy contract.
+Computes the paired $\sin(x)$ and $\cos(x)$ references in radians over finite $x$ with $|x| \le \pi/4$ after DAZ and writes implementation-bounded S- or D-format approximations under the selected FPTRANSA accuracy contract.
 
 The required FPTRANSA\_ACCURACY contract is \texttt{0x0004}.
 
 \textbf{Special values}\par
 \begin{itemize}
 \item Matching destination registers: (:ref:base.events.EXCEPTION.INVALID_OPERAND_RELATION:) is raised before operands or floating-point state are read.
-\item Infinite source or source magnitude above pi / 4: NV is generated and both results are the architectural default quiet NaN.
+\item Infinite source or source magnitude above $\pi/4$: NV is generated and both results are the architectural default quiet NaN.
 \item Zero source: the sine result preserves the source zero and the cosine result is positive one.
 \end{itemize}
 
 \textbf{Exact anchors}\par
 \begin{itemize}
-\item sin(+0) = +0 and cos(+0) = +1
-\item sin(-0) = -0 and cos(-0) = +1
-\end{itemize}
-
-\textbf{Required properties}\par
-\begin{itemize}
-\item the ULP bound applies independently to both results
-\item separate FSINA and FCOSA executions may produce different results
-\end{itemize}
-
-For nontrapping execution, the sine and cosine destinations are written atomically.
-
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0004}.
-
-\textbf{Special values}\par
-\begin{itemize}
-\item Matching destination registers: (:ref:base.events.EXCEPTION.INVALID_OPERAND_RELATION:) is raised before operands or floating-point state are read.
-\item Infinite source or source magnitude above pi / 4: NV is generated and both results are the architectural default quiet NaN.
-\item Zero source: the sine result preserves the source zero and the cosine result is positive one.
-\end{itemize}
-
-\textbf{Exact anchors}\par
-\begin{itemize}
-\item sin(+0) = +0 and cos(+0) = +1
-\item sin(-0) = -0 and cos(-0) = +1
+\item $\sin(+0) = +0$ and $\cos(+0) = +1$
+\item $\sin(-0) = -0$ and $\cos(-0) = +1$
 \end{itemize}
 
 \textbf{Required properties}\par

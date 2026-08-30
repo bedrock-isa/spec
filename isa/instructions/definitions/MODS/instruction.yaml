@@ -1,6 +1,6 @@
 mnemonic: MODS
 name: Signed Modulo
-summary: Performs the signed modulo operation.
+summary: Writes the signed remainder of destination-by-source truncation-toward-zero division.
 route: integer_mul_div
 sail_entries:
 - execute_MODS

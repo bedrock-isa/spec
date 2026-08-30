@@ -1,6 +1,6 @@
 mnemonic: FATANA
 name: Approximate Floating-Point Arc Tangent
-summary: Performs the approximate floating-point arc tangent operation.
+summary: Approximates arctangent in radians for finite values and signed infinity.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FATANA

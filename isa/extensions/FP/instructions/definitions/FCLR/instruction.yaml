@@ -1,6 +1,6 @@
 mnemonic: FCLR
 name: Floating-Point Clear
-summary: Performs the floating-point clear operation.
+summary: Writes positive zero to the complete 64-bit floating-point destination.
 route: fpu
 sail_entries:
 - execute_FCLR

@@ -1,5 +1,3 @@
 PUSH stores one 64-bit (:term:base.terms.rn_register:) value, selected SREG image, or current CS image on the stack. The SREG encoding accepts DS, SS, and GS0-GS5. PUSH SS captures the old SS image and uses that same old SS as the stack context for the store.
 
 PUSH captures the source value and current SS:SP before changing (:term:base.terms.architectural_state:). After the destination stack slot has been validated, it commits the 64-bit store and decremented SP together. A fault before commit leaves memory and SP unchanged. For PUSH SS, both the captured value and the stack access use the old SS image.
-
-PUSH captures the source value and current SS:SP before changing (:term:base.terms.architectural_state:). After the destination stack slot has been validated, it commits the 64-bit store and decremented SP together. A fault before commit leaves memory and SP unchanged. For PUSH SS, both the captured value and the stack access use the old SS image.

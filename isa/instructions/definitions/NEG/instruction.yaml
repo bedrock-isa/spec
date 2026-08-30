@@ -1,6 +1,6 @@
 mnemonic: NEG
 name: Negate
-summary: Performs the negate operation.
+summary: Writes the selected-width two's-complement negation of the destination.
 route: integer_unary
 sail_entries:
 - execute_NEG

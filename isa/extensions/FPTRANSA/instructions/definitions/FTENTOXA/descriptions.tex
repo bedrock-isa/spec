@@ -1,4 +1,4 @@
-Computes the 10 ** x reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+Computes the $10^x$ reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 
 The required FPTRANSA\_ACCURACY contract is \texttt{0x0034}.
 
@@ -11,31 +11,9 @@ The required FPTRANSA\_ACCURACY contract is \texttt{0x0034}.
 
 \textbf{Exact anchors}\par
 \begin{itemize}
-\item 10 ** signed 0 = +1
-\item 10 ** +infinity = +infinity
-\item 10 ** -infinity = +0
-\end{itemize}
-
-\textbf{Required properties}\par
-\begin{itemize}
-\item strictly increasing for finite inputs
-\item result is nonnegative
-\end{itemize}
-
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0034}.
-
-\textbf{Special values}\par
-\begin{itemize}
-\item Positive infinity: the result is +infinity.
-\item Negative infinity: the result is positive zero.
-\item Zero source: the result is positive one.
-\end{itemize}
-
-\textbf{Exact anchors}\par
-\begin{itemize}
-\item 10 ** signed 0 = +1
-\item 10 ** +infinity = +infinity
-\item 10 ** -infinity = +0
+\item $10^{\mathord{\pm}0} = +1$
+\item $10^{+\infty} = +\infty$
+\item $10^{-\infty} = +0$
 \end{itemize}
 
 \textbf{Required properties}\par

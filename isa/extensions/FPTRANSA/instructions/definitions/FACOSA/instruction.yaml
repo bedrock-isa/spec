@@ -1,6 +1,6 @@
 mnemonic: FACOSA
 name: Approximate Floating-Point Arc Cosine
-summary: Performs the approximate floating-point arc cosine operation.
+summary: Approximates arccosine in radians for finite source magnitudes at most one.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FACOSA

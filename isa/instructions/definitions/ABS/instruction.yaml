@@ -1,6 +1,6 @@
 mnemonic: ABS
 name: Absolute Value
-summary: Performs the absolute value operation.
+summary: Replaces the destination with its selected-width two's-complement absolute value.
 route: integer_unary
 sail_entries:
 - execute_ABS

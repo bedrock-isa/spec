@@ -1,6 +1,6 @@
 mnemonic: DEC
 name: Decrement
-summary: Performs the decrement operation.
+summary: Decrements the selected-width destination modulo its width without changing FLAGS.
 route: integer_unary
 sail_entries:
 - execute_DEC

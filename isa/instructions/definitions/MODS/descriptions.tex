@@ -8,12 +8,3 @@ Let \(n\) be the selected operand width, \(d\) the signed two\textquotesingle{}s
 Thus a nonzero remainder has the sign of the dividend. The destination supplies the dividend and receives \(r\).
 
 A zero divisor raises (:ref:base.events.EXCEPTION.DIVIDE_BY_ZERO:); the most-negative value divided by \(-1\) raises (:ref:base.events.EXCEPTION.SIGNED_DIVIDE_OVERFLOW:). No destination is changed.
-
-Let \(n\) be the selected operand width, \(d\) the signed two\textquotesingle{}s-complement dividend, and \(s\) the signed two\textquotesingle{}s-complement divisor. The quotient and remainder are defined by
-\[
-  q = \operatorname{trunc}(d/s),
-  \qquad r = d - qs .
-\]
-Thus a nonzero remainder has the sign of the dividend. The destination supplies the dividend and receives \(r\).
-
-A zero divisor raises (:ref:base.events.EXCEPTION.DIVIDE_BY_ZERO:); the most-negative value divided by \(-1\) raises (:ref:base.events.EXCEPTION.SIGNED_DIVIDE_OVERFLOW:). No destination is changed.

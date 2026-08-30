@@ -1,6 +1,6 @@
 id: "upper-half-interleave"
-caption: "VZIPHI high-half interleave"
-alt_text: "A complete right-to-left 128-bit W-lane VZIPHI view: result pairs alternate matching lanes from the upper halves of old Vd and Vn, while inactive result lanes preserve old Vd."
+caption: "VZIPHI.W upper-half interleave"
+alt_text: "A right-to-left 128-bit W-lane example: result pairs alternate matching lanes from the upper halves of old Vd and source Vn, while inactive result lanes preserve old Vd."
 kind: vector-lane-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: false}
 rows:

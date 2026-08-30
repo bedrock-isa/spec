@@ -11,7 +11,7 @@ VSCATTER.T Pg, Ps, Vs, [address]
 \end{verbatim}
 
 \paragraph{Typed completion image.}
-For element width $E$ bytes, let $N=VLEN/E$.  Define $G=typed_E(Pg)$ by
+For element width $E$ bytes, let $N=VLEN/(8E)$.  Define $G=typed_E(Pg)$ by
 copying \texttt{Pg[iE]} to bit $iE$ for every $0\leq i<N$ and clearing every
 other predicate bit.  At each entry or re-entry, the instruction performs the
 architectural normalization

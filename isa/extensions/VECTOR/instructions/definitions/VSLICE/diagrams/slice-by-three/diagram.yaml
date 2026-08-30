@@ -1,6 +1,6 @@
 id: "slice-by-three"
-caption: "VSLICE by three lanes"
-alt_text: "An illustrative right-to-left W-lane VSLICE view with count 3: active result lanes select from the old destination followed by Vn, while inactive lanes preserve their old destination values."
+caption: "VSLICE.W slice by three lanes"
+alt_text: "At W width and count 3, active result lanes select from old Vd followed by source Vn; inactive lanes preserve their old destination values."
 kind: vector-lane-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 rows:
@@ -9,40 +9,40 @@ rows:
   role: destination-before
   element_bits: 16
   cells:
-  - {value: 'd0', effect: copy, appearance: old}
-  - {value: 'd1', effect: copy, appearance: old}
-  - {value: 'd2', effect: copy, appearance: old}
-  - {value: 'd3', effect: copy, appearance: old}
-  - {value: 'd4', effect: copy, appearance: old}
-  - {value: 'd5', effect: copy, appearance: old}
-  - {value: 'd6', effect: copy, appearance: old}
-  - {value: 'd7', effect: copy, appearance: old}
+  - {value: 'd[0]', effect: copy, appearance: old}
+  - {value: 'd[1]', effect: copy, appearance: old}
+  - {value: 'd[2]', effect: copy, appearance: old}
+  - {value: 'd[3]', effect: copy, appearance: old}
+  - {value: 'd[4]', effect: copy, appearance: old}
+  - {value: 'd[5]', effect: copy, appearance: old}
+  - {value: 'd[6]', effect: copy, appearance: old}
+  - {value: 'd[7]', effect: copy, appearance: old}
 - id: new-destination
   label: new Vd
   role: destination-after
   element_bits: 16
   cells:
-  - {value: 'd3', effect: copy, appearance: old}
-  - {value: 'd1', effect: preserve, appearance: old}
-  - {value: 'd5', effect: copy, appearance: old}
-  - {value: 'd3', effect: preserve, appearance: old}
-  - {value: 'd7', effect: copy, appearance: old}
-  - {value: 'd5', effect: preserve, appearance: old}
-  - {value: 'n1', effect: copy, appearance: source}
-  - {value: 'd7', effect: preserve, appearance: old}
+  - {value: 'd[3]', effect: copy, appearance: old}
+  - {value: 'd[1]', effect: preserve, appearance: old}
+  - {value: 'd[5]', effect: copy, appearance: old}
+  - {value: 'd[3]', effect: preserve, appearance: old}
+  - {value: 'd[7]', effect: copy, appearance: old}
+  - {value: 'd[5]', effect: preserve, appearance: old}
+  - {value: 'n[1]', effect: copy, appearance: source}
+  - {value: 'd[7]', effect: preserve, appearance: old}
 - id: source
-  label: Vn
+  label: source Vn
   role: source
   element_bits: 16
   cells:
-  - {value: 'n0', effect: copy, appearance: source}
-  - {value: 'n1', effect: copy, appearance: source}
-  - {value: 'n2', effect: copy, appearance: source}
-  - {value: 'n3', effect: copy, appearance: source}
-  - {value: 'n4', effect: copy, appearance: source}
-  - {value: 'n5', effect: copy, appearance: source}
-  - {value: 'n6', effect: copy, appearance: source}
-  - {value: 'n7', effect: copy, appearance: source}
+  - {value: 'n[0]', effect: copy, appearance: source}
+  - {value: 'n[1]', effect: copy, appearance: source}
+  - {value: 'n[2]', effect: copy, appearance: source}
+  - {value: 'n[3]', effect: copy, appearance: source}
+  - {value: 'n[4]', effect: copy, appearance: source}
+  - {value: 'n[5]', effect: copy, appearance: source}
+  - {value: 'n[6]', effect: copy, appearance: source}
+  - {value: 'n[7]', effect: copy, appearance: source}
 - id: predicate
   label: predicate Pp
   role: predicate

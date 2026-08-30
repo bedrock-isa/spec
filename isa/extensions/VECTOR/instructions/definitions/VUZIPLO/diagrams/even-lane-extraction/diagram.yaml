@@ -1,6 +1,6 @@
 id: "even-lane-extraction"
-caption: "VUZIPLO even-lane extraction"
-alt_text: "A complete right-to-left 128-bit W-lane VUZIPLO view: even old-Vd lanes fill the lower result half, even Vn lanes fill the upper half, and inactive result lanes preserve old Vd."
+caption: "VUZIPLO.W even-lane extraction"
+alt_text: "A right-to-left 128-bit W-lane example: even old-Vd lanes fill the lower result half, even source-Vn lanes fill the upper half, and inactive result lanes preserve old Vd."
 kind: vector-lane-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: false}
 rows:

@@ -1,6 +1,6 @@
 mnemonic: FTEST
 name: Floating-Point Test
-summary: Performs the floating-point test operation.
+summary: Compares a floating-point source with positive zero and writes integer condition flags.
 route: fpu
 sail_entries:
 - execute_FTEST

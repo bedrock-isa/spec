@@ -1,6 +1,6 @@
 mnemonic: FETCHSUB
 name: Atomic Fetch Subtract
-summary: Performs the atomic fetch subtract operation.
+summary: Atomically subtracts source from memory and returns the old memory value in the source register.
 route: atomics
 sail_entries:
 - execute_FETCHSUB

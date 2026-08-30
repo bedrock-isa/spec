@@ -1,6 +1,6 @@
 mnemonic: FCVT
 name: Floating-Point Convert Signed
-summary: Performs the floating-point convert signed operation.
+summary: Converts signed 64-bit integers and S/D floating-point values between supported forms.
 route: fpu
 sail_entries:
 - execute_FCVT

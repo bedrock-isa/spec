@@ -1,6 +1,6 @@
 mnemonic: INC
 name: Increment
-summary: Performs the increment operation.
+summary: Increments the selected-width destination modulo its width without changing FLAGS.
 route: integer_unary
 sail_entries:
 - execute_INC

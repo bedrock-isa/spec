@@ -1,6 +1,6 @@
 mnemonic: FSINHA
 name: Approximate Floating-Point Hyperbolic Sine
-summary: Performs the approximate floating-point hyperbolic sine operation.
+summary: Approximates hyperbolic sine for finite values and signed infinity.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FSINHA

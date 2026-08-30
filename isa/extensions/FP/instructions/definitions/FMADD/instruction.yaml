@@ -1,6 +1,6 @@
 mnemonic: FMADD
 name: Floating-Point Fused Multiply Add
-summary: Performs the floating-point fused multiply add operation.
+summary: Computes the source product plus the old destination as one fused operation and rounds once.
 route: fpu
 sail_entries:
 - execute_FMADD

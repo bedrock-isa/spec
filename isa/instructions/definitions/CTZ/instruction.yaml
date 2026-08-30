@@ -1,6 +1,6 @@
 mnemonic: CTZ
 name: Count Trailing Zeros
-summary: Performs the count trailing zeros operation.
+summary: Counts trailing zero bits in the selected-width source and writes the count.
 route: integer_bitfield
 sail_entries:
 - execute_CTZ

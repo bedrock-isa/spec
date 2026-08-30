@@ -1,6 +1,6 @@
 mnemonic: FATANHA
 name: Approximate Floating-Point Hyperbolic Arc Tangent
-summary: Performs the approximate floating-point hyperbolic arc tangent operation.
+summary: Approximates hyperbolic arctangent for finite source magnitudes at most one.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FATANHA

@@ -1,6 +1,6 @@
 mnemonic: DIVMODS
 name: Signed Divide With Remainder
-summary: Performs the signed divide with remainder operation.
+summary: Divides a signed quotient-register dividend by source and writes quotient and remainder registers.
 route: integer_mul_div
 sail_entries:
 - execute_DIVMODS

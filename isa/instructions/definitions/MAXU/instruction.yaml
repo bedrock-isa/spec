@@ -1,6 +1,6 @@
 mnemonic: MAXU
 name: Unsigned Maximum
-summary: Performs the unsigned maximum operation.
+summary: Writes the unsigned greater of source and destination to the destination.
 route: integer_alu
 sail_entries:
 - execute_MAXU

@@ -1,6 +1,6 @@
 mnemonic: FTANA
 name: Approximate Floating-Point Tangent
-summary: Performs the approximate floating-point tangent operation.
+summary: Approximates tangent in radians over the reduced interval from minus pi/4 to pi/4.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FTANA

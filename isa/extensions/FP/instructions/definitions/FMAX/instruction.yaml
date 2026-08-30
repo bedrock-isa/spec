@@ -1,6 +1,6 @@
 mnemonic: FMAX
 name: Floating-Point Maximum
-summary: Performs the floating-point maximum operation.
+summary: Selects the greater numeric source or destination value using IEEE NaN and zero rules.
 route: fpu
 sail_entries:
 - execute_FMAX

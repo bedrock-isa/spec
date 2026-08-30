@@ -1,6 +1,6 @@
 mnemonic: IJcc
 name: Increment And Jump Conditional
-summary: Performs the increment and jump conditional operation.
+summary: Increments the index and branches only when it differs from the bound and the condition is true.
 route: control_flow
 sail_entries:
 - execute_IJcc

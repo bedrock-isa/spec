@@ -15,19 +15,3 @@ if SAVED\_PC identifies a repeat prefix, that prefix is decoded and executed nor
 \item After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI\_P is set.
 \end{enumerate}
 \par}
-
-{\raggedright
-\begin{enumerate}
-\item Classify the return source before any stack access. A staged direct user entry requires supervisor mode, EA clear, EDEPTH zero, UO clear, and UCTL.V set. An outer user-event return requires EA set, EDEPTH one, UO set, and UCTL.V set. Other active supervisor returns use the memory frame.
-\item For a U-bank return, validate UCTL, UINFO, the user segments and pointers, and the executable UPC, then atomically restore user state, clear UCTL.V, EDEPTH, UO, EA, and current DFA, and perform no stack access.
-\item For a stacked return, read and decode \texttt{FRAME\_CONTROL} at SS:SP without changing SP. Accept only the
-defined BASIC, ERROR, PAGE, and AUXILIARY sizes, with all (:term:base.terms.reserved:) bits zero.
-\item Validate that saved STATUS.EDEPTH plus one equals the current depth and that saved and current UO preserve the outer-origin chain.
-\item Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing (:term:base.terms.architectural_state:).
-\item Ignore the value in the fixed-header (:term:base.terms.padding:) slot at offset +0x38.
-\item Atomically restore the validated (:term:base.terms.architectural_state:) and current DFA from
-\texttt{FRAME\_CONTROL.SAVED\_DFA}. Hidden repeat state remains clear;
-if SAVED\_PC identifies a repeat prefix, that prefix is decoded and executed normally after return.
-\item After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI\_P is set.
-\end{enumerate}
-\par}

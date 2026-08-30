@@ -1,6 +1,6 @@
 mnemonic: XCHG
 name: Exchange
-summary: Performs the exchange operation.
+summary: Exchanges selected-width operand values, committing both destinations together.
 route: data_movement
 sail_entries:
 - execute_XCHG

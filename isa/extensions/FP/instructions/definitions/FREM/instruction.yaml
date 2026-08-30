@@ -1,6 +1,6 @@
 mnemonic: FREM
 name: Floating-Point Remainder
-summary: Performs the floating-point remainder operation.
+summary: Computes the destination remainder using a nearest-even integral quotient.
 route: fpu
 sail_entries:
 - execute_FREM

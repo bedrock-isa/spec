@@ -1,6 +1,6 @@
 mnemonic: FABS
 name: Floating-Point Absolute Value
-summary: Performs the floating-point absolute value operation.
+summary: Clears the selected floating-point source sign and writes its magnitude.
 route: fpu
 sail_entries:
 - execute_FABS

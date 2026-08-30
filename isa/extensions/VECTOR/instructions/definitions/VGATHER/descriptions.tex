@@ -1,4 +1,4 @@
-Let $E$ be the selected element width in bytes, $N=VLEN/E$, and $G$ be
+Let $E$ be the selected element width in bytes, $N=VLEN/(8E)$, and $G$ be
 the typed governing-predicate image whose significant bits are
 \texttt{Pg[iE]} for $0\leq i<N$.  \texttt{Pg} and \texttt{Ps} shall name
 different (:term:VECTOR.terms.predicate_register|plural:).  Before attempting a lane, VGATHER replaces
@@ -7,8 +7,7 @@ cleared.  Thus completed lanes that are no longer governed are discarded.
 
 If \texttt{G AND NOT Ps} is empty, the instruction completes normally with
 \texttt{Ps == G}.  Otherwise it selects one pending lane $i$, calculates that
-lane's address as specified by the resumable gather/scatter rules in
-Section~\ref{section:vector-register-model}, and issues exactly one $E$-byte
+lane's (:term:base.terms.effective_address:) from the selected address form, and issues exactly one $E$-byte
 normal-memory load through the default data segment.  On success it replaces
 only destination lane $i$, sets \texttt{Ps[iE]}, and commits those effects at
 a lane-completion boundary.  If more lanes remain pending, the PC continues to

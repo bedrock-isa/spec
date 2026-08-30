@@ -1,6 +1,6 @@
 mnemonic: NOT
 name: Bitwise Not
-summary: Performs the bitwise not operation.
+summary: Writes the selected-width bitwise complement of the destination.
 route: integer_unary
 sail_entries:
 - execute_NOT

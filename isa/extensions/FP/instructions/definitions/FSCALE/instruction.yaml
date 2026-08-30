@@ -1,6 +1,6 @@
 mnemonic: FSCALE
 name: Floating-Point Scale
-summary: Performs the floating-point scale operation.
+summary: Scales the destination by a power of two derived from the rounded source.
 route: fpu
 sail_entries:
 - execute_FSCALE

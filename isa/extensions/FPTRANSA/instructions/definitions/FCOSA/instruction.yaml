@@ -1,6 +1,6 @@
 mnemonic: FCOSA
 name: Approximate Floating-Point Cosine
-summary: Performs the approximate floating-point cosine operation.
+summary: Approximates cosine in radians over the reduced interval from minus pi/4 to pi/4.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FCOSA

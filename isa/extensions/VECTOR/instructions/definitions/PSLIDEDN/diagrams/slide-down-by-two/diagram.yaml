@@ -1,5 +1,5 @@
 id: "slide-down-by-two"
-caption: "PSLIDEDN.W by two predicate lanes"
+caption: "PSLIDEDN.W slide down by two predicate lanes"
 alt_text: "In this fixed 16-byte example, typed predicate lanes move two positions toward lower indices and the two highest result positions become zero. A larger VLEN applies the same rule at its architectural high end."
 kind: predicate-lane-transfer
 view: {lane_order: right-to-left, scalable: false, visible_bytes: 16}

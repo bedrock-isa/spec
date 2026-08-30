@@ -1,6 +1,6 @@
 mnemonic: MOVcc
 name: Move Conditional
-summary: Performs the move conditional operation.
+summary: Copies source to destination only when the encoded condition is true.
 route: control_flow
 sail_entries:
 - execute_MOVcc

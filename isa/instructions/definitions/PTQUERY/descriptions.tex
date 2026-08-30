@@ -9,13 +9,3 @@ The requested level is the low three bits of the level operand. Values outside 1
 \item Return the requested raw PTE and set Z only when it is structurally valid under the table-pointer or leaf layout selected by T at that level. N, C, and V are zero.
 \end{enumerate}
 Failure before the requested entry is read returns zero and clears all four flags. The walk ignores PTCR.PE, does not set PTE A or D, does not modify a TLB, and does not raise an \texttt{ADDRESS\_TRANSLATION} family event for walk failure.
-
-The requested level is the low three bits of the level operand. Values outside 1 through 5 raise (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:); level 5 is reported as an (:term:base.terms.ordinary:) unsuccessful query in LA48 mode.
-
-\begin{enumerate}
-\item Compute the (:term:base.terms.linear_address:) without reading the source memory and reject a noncanonical address as an unsuccessful query.
-\item Starting at the PTCR root, read one 64-bit PTE per level. Every preceding entry must be a valid table pointer; a valid earlier leaf prevents traversal to a lower requested level.
-\item Stop after reading the requested level. A structurally malformed entry or valid leaf terminates the query at that level.
-\item Return the requested raw PTE and set Z only when it is structurally valid under the table-pointer or leaf layout selected by T at that level. N, C, and V are zero.
-\end{enumerate}
-Failure before the requested entry is read returns zero and clears all four flags. The walk ignores PTCR.PE, does not set PTE A or D, does not modify a TLB, and does not raise an \texttt{ADDRESS\_TRANSLATION} family event for walk failure.

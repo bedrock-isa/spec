@@ -1,6 +1,6 @@
 mnemonic: BTEST
 name: Bit Test
-summary: Performs the bit test operation.
+summary: Tests the indexed destination bit without writing it, sets Z when it is clear, and clears NCV.
 route: integer_bitfield
 sail_entries:
 - execute_BTEST

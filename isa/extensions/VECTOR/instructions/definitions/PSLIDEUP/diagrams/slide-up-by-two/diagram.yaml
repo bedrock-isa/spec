@@ -1,5 +1,5 @@
 id: "slide-up-by-two"
-caption: "PSLIDEUP.W by two predicate lanes"
+caption: "PSLIDEUP.W slide up by two predicate lanes"
 alt_text: "Typed predicate lanes move two positions toward higher indices. The two low word-significant result positions become zero, and the rule continues through higher lanes for larger VLEN."
 kind: predicate-lane-transfer
 view: {lane_order: right-to-left, scalable: true, visible_bytes: 16}

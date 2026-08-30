@@ -1,6 +1,6 @@
 mnemonic: ADC
 name: Add With Carry
-summary: Performs the add with carry operation.
+summary: Adds source and carry-in to the destination, writes the modular sum, and updates ZNCV.
 route: integer_alu
 sail_entries:
 - execute_ADC

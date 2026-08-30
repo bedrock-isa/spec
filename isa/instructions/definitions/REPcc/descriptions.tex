@@ -13,17 +13,3 @@ Body completion, observation, temporary-condition construction, architectural co
 alter the (:term:base.terms.continuation:) decision of an iteration that reached this step. Every completed body iteration decrements the
 counter by one, including the terminating condition-false iteration. Writes by the body to the selected counter
 register have no architectural effect while repeat state is active.
-
-The body instruction is fetched, decoded, and checked for repeatability before the zero-count rule is applied. If
-the counter is zero, the decoded body is annulled and has no architectural side effects.
-
-If the counter is nonzero, the first body iteration executes before any condition check. The repeat condition is
-tested against a temporary ZNCV image derived from the body instruction\textquotesingle{}s repeat-observed value: Z reports zero, N is
-the most significant bit at the observation width, and C and V are zero. REPcc never uses architectural FLAGS as the
-condition input and does not write architectural FLAGS beyond any (:term:base.terms.ordinary:) FLAGS effect of the body itself.
-
-Body completion, observation, temporary-condition construction, architectural commit, counter decrement, and
-(:term:base.terms.continuation:) PC selection are one precise atomic architectural commit step. An interrupt handler therefore cannot
-alter the (:term:base.terms.continuation:) decision of an iteration that reached this step. Every completed body iteration decrements the
-counter by one, including the terminating condition-false iteration. Writes by the body to the selected counter
-register have no architectural effect while repeat state is active.

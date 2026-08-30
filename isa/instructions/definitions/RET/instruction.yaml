@@ -1,6 +1,6 @@
 mnemonic: RET
 name: Return
-summary: Performs the return operation.
+summary: Pops and validates a return PC, then atomically advances SP and transfers control.
 route: control_flow
 sail_entries:
 - execute_RET

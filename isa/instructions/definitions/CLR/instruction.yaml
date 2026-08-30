@@ -1,6 +1,6 @@
 mnemonic: CLR
 name: Clear
-summary: Performs the clear operation.
+summary: Writes zero to the selected-width destination.
 route: integer_unary
 sail_entries:
 - execute_CLR

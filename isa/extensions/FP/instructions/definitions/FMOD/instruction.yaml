@@ -1,6 +1,6 @@
 mnemonic: FMOD
 name: Floating-Point Modulo
-summary: Performs the floating-point modulo operation.
+summary: Computes the destination modulo the source using a quotient truncated toward zero.
 route: fpu
 sail_entries:
 - execute_FMOD

@@ -7,11 +7,3 @@ old SP minus 8. Both stores and the SP update to old SP minus 16 commit together
 slot nor SP.
 
 Multiple PUSHP instructions can be used in canonical prologue order to save multiple pairs.
-
-PUSHP selects one canonical pair using the unsigned 3-bit pair index and captures both register values and the old
-SS:SP context. It validates the complete two-slot stack range before either slot or SP is changed. For a listed pair
-(\emph{first}, \emph{second}), the second register is stored at old SP minus 16 and the first register is stored at
-old SP minus 8. Both stores and the SP update to old SP minus 16 commit together. A preceding fault changes neither
-slot nor SP.
-
-Multiple PUSHP instructions can be used in canonical prologue order to save multiple pairs.

@@ -1,6 +1,6 @@
 mnemonic: CLZ
 name: Count Leading Zeros
-summary: Performs the count leading zeros operation.
+summary: Counts leading zero bits in the selected-width source and writes the count.
 route: integer_bitfield
 sail_entries:
 - execute_CLZ

@@ -1,6 +1,6 @@
 mnemonic: POPCNT
 name: Population Count
-summary: Performs the population count operation.
+summary: Counts set bits in the selected-width source and writes the count.
 route: integer_bitfield
 sail_entries:
 - execute_POPCNT

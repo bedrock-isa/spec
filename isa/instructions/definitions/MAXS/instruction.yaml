@@ -1,6 +1,6 @@
 mnemonic: MAXS
 name: Signed Maximum
-summary: Performs the signed maximum operation.
+summary: Writes the signed greater of source and destination to the destination.
 route: integer_alu
 sail_entries:
 - execute_MAXS

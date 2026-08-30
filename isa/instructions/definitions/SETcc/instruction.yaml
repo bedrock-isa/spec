@@ -1,6 +1,6 @@
 mnemonic: SETcc
 name: Set Conditional
-summary: Performs the set conditional operation.
+summary: Writes one or zero to the destination according to the encoded condition.
 route: control_flow
 sail_entries:
 - execute_SETcc

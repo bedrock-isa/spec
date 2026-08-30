@@ -1,6 +1,6 @@
 mnemonic: FSINA
 name: Approximate Floating-Point Sine
-summary: Performs the approximate floating-point sine operation.
+summary: Approximates sine in radians over the reduced interval from minus pi/4 to pi/4.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FSINA

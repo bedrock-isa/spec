@@ -1,6 +1,6 @@
 mnemonic: CLMUL
 name: Carryless Multiply
-summary: Performs the carryless multiply operation.
+summary: Writes the low selected-width half of the carryless source-by-destination product.
 route: integer_mul_div
 sail_entries:
 - execute_CLMUL

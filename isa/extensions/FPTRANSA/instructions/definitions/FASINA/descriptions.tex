@@ -1,41 +1,22 @@
-Computes the asin(x) reference in radians over finite x with abs(x) \textless{}= 1 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+Computes the $\operatorname{asin}(x)$ reference in radians over finite $x$ with $|x| \le 1$ after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 
 The required FPTRANSA\_ACCURACY contract is \texttt{0x0011}.
 
 \textbf{Special values}\par
 \begin{itemize}
 \item Zero source: the result is the source.
+\item A finite source with magnitude greater than one, or either infinity, generates NV and produces the architectural default quiet NaN.
 \end{itemize}
 
 \textbf{Exact anchors}\par
 \begin{itemize}
-\item asin(+0) = +0
-\item asin(-0) = -0
+\item $\operatorname{asin}(+0) = +0$
+\item $\operatorname{asin}(-0) = -0$
 \end{itemize}
 
 \textbf{Required properties}\par
 \begin{itemize}
 \item odd
-\item monotonically increasing on [-1, 1]
-\item result is in [-pi/2, pi/2]
-\end{itemize}
-
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0011}.
-
-\textbf{Special values}\par
-\begin{itemize}
-\item Zero source: the result is the source.
-\end{itemize}
-
-\textbf{Exact anchors}\par
-\begin{itemize}
-\item asin(+0) = +0
-\item asin(-0) = -0
-\end{itemize}
-
-\textbf{Required properties}\par
-\begin{itemize}
-\item odd
-\item monotonically increasing on [-1, 1]
-\item result is in [-pi/2, pi/2]
+\item monotonically increasing on $[-1, 1]$
+\item result is in $[-\pi/2, \pi/2]$
 \end{itemize}

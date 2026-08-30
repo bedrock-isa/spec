@@ -1,5 +1,5 @@
 id: "slice-by-three"
-caption: "PSLICE.W by three predicate lanes"
+caption: "PSLICE.W slice by three predicate lanes"
 alt_text: "In this fixed 16-byte example, new Pd is the eight-lane window beginning three typed lanes into old Pd followed by source Ps. Larger VLEN uses its complete typed predicate lane count before crossing into Ps."
 kind: predicate-lane-transfer
 view: {lane_order: right-to-left, scalable: false, visible_bytes: 16}

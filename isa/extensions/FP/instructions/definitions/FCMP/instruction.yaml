@@ -1,6 +1,6 @@
 mnemonic: FCMP
 name: Floating-Point Compare
-summary: Performs the floating-point compare operation.
+summary: Compares two floating-point operands and writes their relation to integer condition flags.
 route: fpu
 sail_entries:
 - execute_FCMP

@@ -1,4 +1,4 @@
-Computes the atan(x) reference in radians over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+Computes the $\operatorname{atan}(x)$ reference in radians over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 
 The required FPTRANSA\_ACCURACY contract is \texttt{0x0013}.
 
@@ -9,33 +9,13 @@ The required FPTRANSA\_ACCURACY contract is \texttt{0x0013}.
 
 \textbf{Exact anchors}\par
 \begin{itemize}
-\item atan(+0) = +0
-\item atan(-0) = -0
+\item $\operatorname{atan}(+0) = +0$
+\item $\operatorname{atan}(-0) = -0$
 \end{itemize}
 
 \textbf{Required properties}\par
 \begin{itemize}
 \item odd
 \item monotonically increasing
-\item finite results are in [-pi/2, pi/2]
-\end{itemize}
-
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0013}.
-
-\textbf{Special values}\par
-\begin{itemize}
-\item Zero source: the result is the source.
-\end{itemize}
-
-\textbf{Exact anchors}\par
-\begin{itemize}
-\item atan(+0) = +0
-\item atan(-0) = -0
-\end{itemize}
-
-\textbf{Required properties}\par
-\begin{itemize}
-\item odd
-\item monotonically increasing
-\item finite results are in [-pi/2, pi/2]
+\item finite results are in $[-\pi/2, \pi/2]$
 \end{itemize}

@@ -1,6 +1,6 @@
 mnemonic: FLOGNP1A
 name: Approximate Floating-Point Natural Log Plus One
-summary: Performs the approximate floating-point natural log plus one operation.
+summary: Approximates natural log of one plus the source, with minus one as the divide-by-zero boundary.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FLOGNP1A

@@ -1,6 +1,6 @@
 id: "indexed-lanes"
-caption: "Example W-lane indexed selection with alternating active lanes."
-alt_text: "An illustrative right-to-left W-lane view of VPERM: active lanes copy the old destination lane named by their index; inactive lanes preserve the old destination value."
+caption: "VPERM.W indexed lane selection"
+alt_text: "At W width, each active result lane selects the old Vd lane named by its index; inactive lanes preserve their old destination values."
 kind: vector-lane-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 rows:
@@ -9,14 +9,14 @@ rows:
   role: destination-before
   element_bits: 16
   cells:
-  - {value: d0, effect: copy}
-  - {value: d1, effect: copy}
-  - {value: d2, effect: copy}
-  - {value: d3, effect: copy}
-  - {value: d4, effect: copy}
-  - {value: d5, effect: copy}
-  - {value: d6, effect: copy}
-  - {value: d7, effect: copy}
+  - {value: 'd[0]', effect: copy}
+  - {value: 'd[1]', effect: copy}
+  - {value: 'd[2]', effect: copy}
+  - {value: 'd[3]', effect: copy}
+  - {value: 'd[4]', effect: copy}
+  - {value: 'd[5]', effect: copy}
+  - {value: 'd[6]', effect: copy}
+  - {value: 'd[7]', effect: copy}
 - id: indices
   label: indices Vn
   role: source
@@ -35,14 +35,14 @@ rows:
   role: destination-after
   element_bits: 16
   cells:
-  - {value: d3, effect: copy}
-  - {value: d1, effect: preserve}
-  - {value: d6, effect: copy}
-  - {value: d3, effect: preserve}
-  - {value: d7, effect: copy}
-  - {value: d5, effect: preserve}
-  - {value: d4, effect: copy}
-  - {value: d7, effect: preserve}
+  - {value: 'd[3]', effect: copy}
+  - {value: 'd[1]', effect: preserve}
+  - {value: 'd[6]', effect: copy}
+  - {value: 'd[3]', effect: preserve}
+  - {value: 'd[7]', effect: copy}
+  - {value: 'd[5]', effect: preserve}
+  - {value: 'd[4]', effect: copy}
+  - {value: 'd[7]', effect: preserve}
 edges:
 - {from_row: old-destination, from_cell: 3, to_row: new-destination, to_cell: 0, effect: copy}
 - {from_row: old-destination, from_cell: 1, to_row: new-destination, to_cell: 1, effect: preserve}

@@ -1,6 +1,6 @@
 mnemonic: FETOXA
 name: Approximate Floating-Point e To x
-summary: Performs the approximate floating-point e to x operation.
+summary: Approximates e raised to the source for finite values and signed infinity.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FETOXA

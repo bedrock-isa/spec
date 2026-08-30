@@ -1,38 +1,38 @@
 id: "signed-word-to-long"
-caption: "Example W-to-L signed extension in four visible containers."
-alt_text: "An illustrative W-to-L VEXTSL view: each active result copies its source word with sign bits filling the upper long field, while inactive containers preserve the old destination value."
+caption: "VEXTSL.W signed word-to-long extension"
+alt_text: "Each active longword container sign-extends its low source word, while inactive containers preserve the old destination value."
 kind: integer-width-conversion
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 container_bits: 32
 rows:
 - id: source
-  label: source W values
+  label: source Vn
   role: source
   containers:
   - cells:
     - {value: x0, effect: ignored, appearance: discarded, bits: 16}
-    - {value: '0x8000', effect: copy, appearance: source, bits: 16}
+    - {value: w0, effect: copy, appearance: source, bits: 16}
   - cells:
     - {value: x1, effect: ignored, appearance: discarded, bits: 16}
-    - {value: '0x0001', effect: copy, appearance: source, bits: 16}
+    - {value: w1, effect: copy, appearance: source, bits: 16}
   - cells:
     - {value: x2, effect: ignored, appearance: discarded, bits: 16}
-    - {value: '0x7fff', effect: copy, appearance: source, bits: 16}
+    - {value: w2, effect: copy, appearance: source, bits: 16}
   - cells:
     - {value: x3, effect: ignored, appearance: discarded, bits: 16}
-    - {value: '0xffff', effect: copy, appearance: source, bits: 16}
+    - {value: w3, effect: copy, appearance: source, bits: 16}
 - id: result
-  label: new L containers
+  label: Vd
   role: destination-after
   containers:
   - cells:
-    - {value: '0xffff8000', effect: sign-fill, appearance: source, bits: 32}
+    - {value: sext(w0), effect: sign-fill, appearance: source, bits: 32}
   - cells:
-    - {value: d1, effect: preserve, appearance: old, bits: 32}
+    - {value: 'dH1:dL1', effect: preserve, appearance: old, bits: 32}
   - cells:
-    - {value: '0x00007fff', effect: sign-fill, appearance: source, bits: 32}
+    - {value: sext(w2), effect: sign-fill, appearance: source, bits: 32}
   - cells:
-    - {value: d3, effect: preserve, appearance: old, bits: 32}
+    - {value: 'dH3:dL3', effect: preserve, appearance: old, bits: 32}
 - id: predicate
   label: predicate Pp
   role: predicate

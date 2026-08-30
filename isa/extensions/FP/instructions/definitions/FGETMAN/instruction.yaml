@@ -1,6 +1,6 @@
 mnemonic: FGETMAN
 name: Floating-Point Get Mantissa
-summary: Performs the floating-point get mantissa operation.
+summary: Produces the normalized significand view of a floating-point source.
 route: fpu
 sail_entries:
 - execute_FGETMAN

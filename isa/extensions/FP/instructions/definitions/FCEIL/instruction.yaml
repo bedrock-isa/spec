@@ -1,6 +1,6 @@
 mnemonic: FCEIL
 name: Floating-Point Ceiling
-summary: Performs the floating-point ceiling operation.
+summary: Rounds a floating-point source toward positive infinity in the selected format.
 route: fpu
 sail_entries:
 - execute_FCEIL

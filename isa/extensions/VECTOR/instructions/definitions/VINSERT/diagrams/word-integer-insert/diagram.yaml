@@ -1,6 +1,6 @@
 id: "word-integer-insert"
 caption: "VINSERT.W indexed lane replacement"
-alt_text: "The scalar value x replaces Vd lane i, and every other lane stays at its existing position without a movement arrow."
+alt_text: "The scalar value x replaces Vd lane i, and every other lane retains its old destination value."
 kind: scalar-vector-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 rows:

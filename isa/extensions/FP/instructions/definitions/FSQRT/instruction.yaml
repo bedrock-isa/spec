@@ -1,6 +1,6 @@
 mnemonic: FSQRT
 name: Floating-Point Square Root
-summary: Performs the floating-point square root operation.
+summary: Computes the selected-format square root of a floating-point source.
 route: fpu
 sail_entries:
 - execute_FSQRT

@@ -1,6 +1,6 @@
 mnemonic: FCVTU
 name: Floating-Point Convert Unsigned
-summary: Performs the floating-point convert unsigned operation.
+summary: Converts unsigned 64-bit integers and S/D floating-point values between supported forms.
 route: fpu
 sail_entries:
 - execute_FCVTU

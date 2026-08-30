@@ -1,6 +1,6 @@
 id: "lower-half-interleave"
-caption: "VZIPLO lower-half interleave"
-alt_text: "An illustrative right-to-left W-lane VZIPLO view: result pairs alternate matching lanes from the lower halves of old Vd and Vn, while inactive result lanes preserve old Vd."
+caption: "VZIPLO.W lower-half interleave"
+alt_text: "A right-to-left W-lane example: result pairs alternate matching lanes from the lower halves of old Vd and source Vn, while inactive result lanes preserve old Vd."
 kind: vector-lane-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 rows:

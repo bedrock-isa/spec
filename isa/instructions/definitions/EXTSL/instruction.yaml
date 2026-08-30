@@ -1,6 +1,6 @@
 mnemonic: EXTSL
 name: Sign Extend To Long
-summary: Performs the sign extend to long operation.
+summary: Sign-extends the selected source width to a longword EA destination.
 route: integer_unary
 sail_entries:
 - execute_EXTSL

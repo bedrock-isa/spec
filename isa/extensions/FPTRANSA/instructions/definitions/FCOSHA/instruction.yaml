@@ -1,6 +1,6 @@
 mnemonic: FCOSHA
 name: Approximate Floating-Point Hyperbolic Cosine
-summary: Performs the approximate floating-point hyperbolic cosine operation.
+summary: Approximates hyperbolic cosine for finite values and signed infinity.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FCOSHA

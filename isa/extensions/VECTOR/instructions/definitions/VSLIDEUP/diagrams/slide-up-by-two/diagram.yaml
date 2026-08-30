@@ -1,6 +1,6 @@
 id: "slide-up-by-two"
-caption: "VSLIDEUP by two lanes"
-alt_text: "An illustrative right-to-left W-lane VSLIDEUP view with count 2: active lanes copy the old destination lane at an index two lower or become zero when the result index is below the count, while inactive lanes preserve their old values."
+caption: "VSLIDEUP.W slide up by two lanes"
+alt_text: "At W width and count 2, each active result lane copies old Vd at an index two lower or becomes zero when its index is below the count; inactive lanes preserve their old destination values."
 kind: vector-lane-transfer
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 rows:
@@ -9,27 +9,27 @@ rows:
   role: destination-before
   element_bits: 16
   cells:
-  - {value: 'd0', effect: copy, appearance: old}
-  - {value: 'd1', effect: copy, appearance: old}
-  - {value: 'd2', effect: copy, appearance: old}
-  - {value: 'd3', effect: copy, appearance: old}
-  - {value: 'd4', effect: copy, appearance: old}
-  - {value: 'd5', effect: copy, appearance: old}
-  - {value: 'd6', effect: copy, appearance: old}
-  - {value: 'd7', effect: copy, appearance: old}
+  - {value: 'd[0]', effect: copy, appearance: old}
+  - {value: 'd[1]', effect: copy, appearance: old}
+  - {value: 'd[2]', effect: copy, appearance: old}
+  - {value: 'd[3]', effect: copy, appearance: old}
+  - {value: 'd[4]', effect: copy, appearance: old}
+  - {value: 'd[5]', effect: copy, appearance: old}
+  - {value: 'd[6]', effect: copy, appearance: old}
+  - {value: 'd[7]', effect: copy, appearance: old}
 - id: new-destination
   label: new Vd
   role: destination-after
   element_bits: 16
   cells:
   - {value: '0', effect: zero, appearance: zero}
-  - {value: 'd1', effect: preserve, appearance: old}
-  - {value: 'd0', effect: copy, appearance: old}
-  - {value: 'd3', effect: preserve, appearance: old}
-  - {value: 'd2', effect: copy, appearance: old}
-  - {value: 'd5', effect: preserve, appearance: old}
-  - {value: 'd4', effect: copy, appearance: old}
-  - {value: 'd7', effect: preserve, appearance: old}
+  - {value: 'd[1]', effect: preserve, appearance: old}
+  - {value: 'd[0]', effect: copy, appearance: old}
+  - {value: 'd[3]', effect: preserve, appearance: old}
+  - {value: 'd[2]', effect: copy, appearance: old}
+  - {value: 'd[5]', effect: preserve, appearance: old}
+  - {value: 'd[4]', effect: copy, appearance: old}
+  - {value: 'd[7]', effect: preserve, appearance: old}
 - id: predicate
   label: predicate Pp
   role: predicate

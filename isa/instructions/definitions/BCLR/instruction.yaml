@@ -1,6 +1,6 @@
 mnemonic: BCLR
 name: Bit Clear
-summary: Performs the bit clear operation.
+summary: Clears the indexed destination bit, sets Z when it was clear, and clears NCV.
 route: integer_bitfield
 sail_entries:
 - execute_BCLR

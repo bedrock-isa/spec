@@ -1,5 +1,5 @@
 id: "word-range"
-caption: "Example W-position fill beginning at count remainder 3."
+caption: "PHEAD.W predicate range from remainder 3"
 alt_text: "An illustrative right-to-left W-position PHEAD result with count remainder 3: positions zero through two are clear and positions three through the scalable endpoint are set."
 kind: predicate-range-generation
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}

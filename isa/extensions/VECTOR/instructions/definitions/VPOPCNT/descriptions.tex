@@ -1,9 +1,10 @@
-The register form replaces each active destination lane with the count from its
-old value. The memory-source form counts each active memory element and writes
-the result to the corresponding destination lane. An inactive destination lane
-retains its previous value.
+The register form replaces each active destination lane with the population
+count: the number of one bits in its old selected-width value. The memory-source
+form counts the set bits in each active memory element and writes the result to
+the corresponding destination lane. An inactive destination lane retains its
+previous value.
 
-The memory-destination form counts each active source-register lane and writes
-the result to the corresponding memory element. An inactive memory element
-remains unchanged. The count covers exactly the bits in the selected element
-width.
+The memory-destination form counts the set bits in each active source-register
+lane and writes the result to the corresponding memory element. An inactive
+memory element remains unchanged. The count covers exactly the bits in the
+selected element width.

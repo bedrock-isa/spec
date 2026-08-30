@@ -1,6 +1,6 @@
 mnemonic: FTANHA
 name: Approximate Floating-Point Hyperbolic Tangent
-summary: Performs the approximate floating-point hyperbolic tangent operation.
+summary: Approximates hyperbolic tangent for finite values and signed infinity.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FTANHA

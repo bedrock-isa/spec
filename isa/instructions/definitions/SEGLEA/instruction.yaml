@@ -1,6 +1,6 @@
 mnemonic: SEGLEA
 name: Segment Load Effective Address
-summary: Performs the segment load effective address operation.
+summary: Computes segment pre-translation of the effective-address point and reports bounds failure in FLAGS.
 route: ea_utility
 sail_entries:
 - execute_SEGLEA

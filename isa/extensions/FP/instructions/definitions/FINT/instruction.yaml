@@ -1,6 +1,6 @@
 mnemonic: FINT
 name: Floating-Point Integral Value
-summary: Performs the floating-point integral value operation.
+summary: Rounds a floating-point source to an integral value using FSTATUS.RM.
 route: fpu
 sail_entries:
 - execute_FINT

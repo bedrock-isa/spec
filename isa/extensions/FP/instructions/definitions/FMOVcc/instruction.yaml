@@ -1,6 +1,6 @@
 mnemonic: FMOVcc
 name: Floating-Point Conditional Move
-summary: Performs the floating-point conditional move operation.
+summary: Copies a floating-point source only when the encoded integer condition is true.
 route: fpu
 sail_entries:
 - execute_FMOVcc

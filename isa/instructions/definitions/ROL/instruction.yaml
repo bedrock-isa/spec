@@ -1,6 +1,6 @@
 mnemonic: ROL
 name: Rotate Left
-summary: Performs the rotate left operation.
+summary: Rotates the destination left by the count modulo the selected width without changing FLAGS.
 route: integer_bitfield
 sail_entries:
 - execute_ROL

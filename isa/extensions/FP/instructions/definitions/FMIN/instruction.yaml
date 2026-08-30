@@ -1,6 +1,6 @@
 mnemonic: FMIN
 name: Floating-Point Minimum
-summary: Performs the floating-point minimum operation.
+summary: Selects the lesser numeric source or destination value using IEEE NaN and zero rules.
 route: fpu
 sail_entries:
 - execute_FMIN

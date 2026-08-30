@@ -1,6 +1,6 @@
 mnemonic: FROUND
 name: Floating-Point Round
-summary: Performs the floating-point round operation.
+summary: Rounds a floating-point source to a nearest-even integral value independently of FSTATUS.RM.
 route: fpu
 sail_entries:
 - execute_FROUND

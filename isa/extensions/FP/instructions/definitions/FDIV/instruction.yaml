@@ -1,6 +1,6 @@
 mnemonic: FDIV
 name: Floating-Point Divide
-summary: Performs the floating-point divide operation.
+summary: Divides the destination value by the source under the floating-point environment.
 route: fpu
 sail_entries:
 - execute_FDIV

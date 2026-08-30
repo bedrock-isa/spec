@@ -11,15 +11,3 @@
 
 An invalid new CS image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:); target translation failure raises the applicable
 \texttt{ADDRESS\_TRANSLATION} family event.
-
-\begin{enumerate}
-\item Evaluate the target operand completely in the old architectural context.
-\item Validate the complete new CS image.
-\item Validate the target offset against the new CS and probe executable translation at the resulting (:term:base.terms.linear_address:).
-\item Commit new CS and new PC as one successful control-transfer operation.
-\end{enumerate}
-
-\textbf{Fault atomicity.} CS and PC remain unchanged when operand evaluation or target validation faults.
-
-An invalid new CS image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:); target translation failure raises the applicable
-\texttt{ADDRESS\_TRANSLATION} family event.

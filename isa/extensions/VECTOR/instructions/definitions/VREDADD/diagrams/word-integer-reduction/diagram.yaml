@@ -1,6 +1,6 @@
 id: "word-integer-reduction"
 caption: "VREDADD.W integer reduction"
-alt_text: "The active word values v0, v2, v5, and v7 are folded with the zero identity modulo 2 to the 16, then the sum is zero-extended into Rn."
+alt_text: "The active word values v0, v2, v5, and v7 are folded from the zero identity modulo 65,536 (2^16); the sum is zero-extended into Rn."
 kind: predicated-vector-reduction
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 element_bits: 16

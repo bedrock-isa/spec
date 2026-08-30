@@ -1,6 +1,6 @@
 mnemonic: FASINA
 name: Approximate Floating-Point Arc Sine
-summary: Performs the approximate floating-point arc sine operation.
+summary: Approximates arcsine in radians for finite source magnitudes at most one.
 route: fpu_transcendental_approx
 sail_entries:
 - execute_FASINA
