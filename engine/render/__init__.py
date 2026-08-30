@@ -26,6 +26,7 @@ from .sail_catalog import SailCatalogRenderer
 from .sail_project import SailProjectRenderer
 from .sail_registry import SailRegistryRenderer
 from .type_reference import EncodingTypeReferenceRenderer
+from .vector_diagram import VectorDiagramPlacementRenderer, VectorDiagramRenderer
 
 __all__ = [
     "DocumentFragmentContext",
@@ -46,6 +47,8 @@ __all__ = [
     "SailProjectRenderer",
     "SailRegistryRenderer",
     "TermGroupRenderer",
+    "VectorDiagramPlacementRenderer",
+    "VectorDiagramRenderer",
     "rewrite_direct_terms",
     "rewrite_direct_entity_codes",
 ]

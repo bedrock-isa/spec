@@ -1,0 +1,154 @@
+import unittest
+from copy import deepcopy
+from pathlib import Path
+
+import yaml
+from jsonschema import Draft202012Validator
+
+from engine.project import IsaProject
+from engine.reference import Reference
+from engine.render.latex_document import LatexDocumentRenderer
+from engine.render.vector_diagram import VectorDiagramPlacementRenderer
+
+
+def _reference_text(reference: Reference[object]) -> str:
+    return ".".join((reference.owner, *reference.path, reference.element))
+
+
+class VectorDiagramTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.root = Path(__file__).parents[1]
+        cls.project = IsaProject.load(cls.root)
+        cls.schema = yaml.safe_load(
+            (cls.root / "schemas/vector-diagram.yaml").read_text(encoding="utf-8")
+        )
+        Draft202012Validator.check_schema(cls.schema)
+        cls.validator = Draft202012Validator(cls.schema)
+
+    def _diagram_bundles(self):
+        return tuple(
+            bundle
+            for bundle in self.project.catalog.instructions.values()
+            if len(bundle.diagrams.diagrams)
+        )
+
+    def _placement_fixture(self):
+        bundle = self._diagram_bundles()[0]
+        reference = next(iter(bundle.diagrams.diagrams))
+        directive = f"(:diagram:{_reference_text(reference)}:)"
+        return bundle, reference, directive, VectorDiagramPlacementRenderer()
+
+    def test_predicate_range_schema_rejects_partial_hybrid_forms(self) -> None:
+        documents = [
+            yaml.safe_load(diagram.source.read_text(encoding="utf-8"))
+            for bundle in self._diagram_bundles()
+            for diagram in bundle.diagrams.diagrams.values()
+        ]
+        count_form = next(
+            document
+            for document in documents
+            if document["kind"] == "predicate-range-generation"
+            and "count" in document
+        )
+        state_form = next(
+            document
+            for document in documents
+            if document["kind"] == "predicate-range-generation"
+            and "states" in document
+        )
+        hybrids = []
+        for extra in ("states", "range"):
+            hybrid = deepcopy(count_form)
+            hybrid[extra] = deepcopy(state_form[extra])
+            hybrids.append((extra, hybrid))
+
+        for extra, hybrid in hybrids:
+            with self.subTest(extra=extra):
+                self.assertFalse(self.validator.is_valid(hybrid))
+
+    def test_description_projection_matches_its_declared_collection(self) -> None:
+        sources = LatexDocumentRenderer().sources
+        for bundle in self._diagram_bundles():
+            rendered = sources.render(
+                bundle.artifacts.description, self.project, bundle.reference
+            )
+            with self.subTest(instruction=bundle.instruction.mnemonic):
+                self.assertNotIn("(:diagram:", rendered)
+                self.assertEqual(
+                    rendered.count(r"\begin{BedrockVectorExample}"),
+                    len(bundle.diagrams.diagrams),
+                )
+
+    def test_rejects_inline_placement(self) -> None:
+        bundle, _reference, directive, placements = self._placement_fixture()
+        with self.assertRaisesRegex(ValueError, "must occupy a standalone line"):
+            placements.expand(
+                f"prose {directive}",
+                self.project,
+                bundle.artifacts.description,
+                bundle.reference,
+            )
+
+    def test_rejects_duplicate_placement(self) -> None:
+        bundle, _reference, directive, placements = self._placement_fixture()
+        with self.assertRaisesRegex(ValueError, "duplicate diagram placements"):
+            placements.expand(
+                f"{directive}\n{directive}",
+                self.project,
+                bundle.artifacts.description,
+                bundle.reference,
+            )
+
+    def test_rejects_unplaced_declared_diagram(self) -> None:
+        bundle, _reference, _directive, placements = self._placement_fixture()
+        with self.assertRaisesRegex(ValueError, "unplaced declared diagrams"):
+            placements.expand(
+                "No diagram here.",
+                self.project,
+                bundle.artifacts.description,
+                bundle.reference,
+            )
+
+    def test_rejects_unknown_diagram_reference(self) -> None:
+        bundle, reference, _directive, placements = self._placement_fixture()
+        unknown = Reference(reference.owner, reference.path, "unknown")
+        with self.assertRaisesRegex(ValueError, "invalid VECTOR diagram reference"):
+            placements.expand(
+                f"(:diagram:{_reference_text(unknown)}:)",
+                self.project,
+                bundle.artifacts.description,
+                bundle.reference,
+            )
+
+    def test_rejects_diagram_owned_by_another_instruction(self) -> None:
+        bundle, _reference, _directive, placements = self._placement_fixture()
+        other = next(item for item in self._diagram_bundles() if item is not bundle)
+        other_reference = next(iter(other.diagrams.diagrams))
+        with self.assertRaisesRegex(ValueError, "is not owned by this instruction"):
+            placements.expand(
+                f"(:diagram:{_reference_text(other_reference)}:)",
+                self.project,
+                bundle.artifacts.description,
+                bundle.reference,
+            )
+
+    def test_project_resolves_full_instruction_diagram_reference(self) -> None:
+        _bundle, reference, _directive, _placements = self._placement_fixture()
+        diagram = self.project.vector_diagram(_reference_text(reference))
+        self.assertIs(diagram, self.project.vector_diagram(reference))
+
+    def test_project_rejects_non_vector_diagram_reference_shapes(self) -> None:
+        _bundle, reference, _directive, _placements = self._placement_fixture()
+        invalid = (
+            f"VECTOR.diagrams.{reference.element}",
+            ".".join(("base", *reference.path, reference.element)),
+        )
+        for value in invalid:
+            with self.subTest(reference=value):
+                with self.assertRaisesRegex(ValueError, "must have the form"):
+                    self.project.vector_diagram(value)
+
+
+if __name__ == "__main__":
+    unittest.main()

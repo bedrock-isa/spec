@@ -1665,9 +1665,10 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
         f"    input descriptor_decode_t {_identifier(family.name).lower()}_decode,"
         for family in families
     )
+    family_enum_text = ",\n".join(family_enum)
 
     return f"""  typedef enum logic [{family_width - 1}:0] {{
-{",\n".join(family_enum)}
+{family_enum_text}
   }} ea_descriptor_family_e;
 
   typedef struct packed {{

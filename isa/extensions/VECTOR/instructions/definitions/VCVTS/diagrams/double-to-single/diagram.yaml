@@ -1,0 +1,45 @@
+id: "double-to-single"
+caption: "VCVTS.D double-to-single conversion containers"
+alt_text: "Each 64-bit operation container reads one double-precision source. The active container writes a single-precision result into its low field and retains the upper destination field; the inactive container remains unchanged."
+kind: floating-point-width-conversion
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+container_bits: 64
+source:
+  label: source D values
+  element_bits: 64
+  containers:
+  - cells:
+    - {value: d0, effect: copy, appearance: source, bits: 64}
+  - cells:
+    - {value: d1, effect: copy, appearance: source, bits: 64}
+result:
+  label: new S fields
+  element_bits: 32
+  containers:
+  - cells:
+    - {value: old0, effect: preserve, appearance: old, bits: 32}
+    - {value: 'S(d0)', effect: copy, appearance: source, bits: 32}
+  - cells:
+    - {value: old1, effect: preserve, appearance: old, bits: 64}
+predicate:
+  label: predicate Pp
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+connections:
+- {from_row: source, from_container: 0, from_cell: 0, to_row: result, to_container: 0, to_cell: 1, effect: copy, display: transfer}

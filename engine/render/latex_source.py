@@ -10,6 +10,7 @@ from ..dependency import DependencyGraph
 from ..entity import EntityKind
 from ..semantic_text import SemanticText, TextOrigin
 from .document_fragment import DocumentFragmentPipeline
+from .vector_diagram import VectorDiagramPlacementRenderer
 
 
 LOCAL_INPUT_RE = re.compile(r"\\input\{((?!/)(?![^}]*\.\.)[^}]+)\}")
@@ -93,10 +94,12 @@ class LatexSourcePreprocessor:
         fragments: DocumentFragmentPipeline,
         semantic,
         dependencies: DependencyGraph | None = None,
+        diagrams: VectorDiagramPlacementRenderer | None = None,
     ) -> None:
         self.fragments = fragments
         self.semantic = semantic
         self.dependencies = dependencies or DependencyGraph()
+        self.diagrams = diagrams or VectorDiagramPlacementRenderer()
 
     def render(self, source: str | Path, project, owner=None) -> str:
         repository = project.root.parent.resolve()
@@ -134,6 +137,7 @@ class LatexSourcePreprocessor:
                         "(:ref:...:) escapes"
                     )
             text = self.fragments.expand(text, project, path)
+            text = self.diagrams.expand(text, project, path, owner)
             semantic = SemanticText.parse(text, origin=TextOrigin(path))
             if owner is not None:
                 self.dependencies.record(owner, semantic)

@@ -1,0 +1,59 @@
+id: "signed-word-to-long"
+caption: "Example W-to-L signed extension in four visible containers."
+alt_text: "An illustrative W-to-L VEXTSL view: each active result copies its source word with sign bits filling the upper long field, while inactive containers preserve the old destination value."
+kind: integer-width-conversion
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+container_bits: 32
+rows:
+- id: source
+  label: source W values
+  role: source
+  containers:
+  - cells:
+    - {value: x0, effect: ignored, appearance: discarded, bits: 16}
+    - {value: '0x8000', effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x1, effect: ignored, appearance: discarded, bits: 16}
+    - {value: '0x0001', effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x2, effect: ignored, appearance: discarded, bits: 16}
+    - {value: '0x7fff', effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x3, effect: ignored, appearance: discarded, bits: 16}
+    - {value: '0xffff', effect: copy, appearance: source, bits: 16}
+- id: result
+  label: new L containers
+  role: destination-after
+  containers:
+  - cells:
+    - {value: '0xffff8000', effect: sign-fill, appearance: source, bits: 32}
+  - cells:
+    - {value: d1, effect: preserve, appearance: old, bits: 32}
+  - cells:
+    - {value: '0x00007fff', effect: sign-fill, appearance: source, bits: 32}
+  - cells:
+    - {value: d3, effect: preserve, appearance: old, bits: 32}
+- id: predicate
+  label: predicate Pp
+  role: predicate
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+edges:
+- {from_row: source, from_container: 0, from_cell: 1, to_row: result, to_container: 0, to_cell: 0, effect: sign-fill, display: expansion-guide}
+- {from_row: source, from_container: 2, from_cell: 1, to_row: result, to_container: 2, to_cell: 0, effect: sign-fill, display: expansion-guide}

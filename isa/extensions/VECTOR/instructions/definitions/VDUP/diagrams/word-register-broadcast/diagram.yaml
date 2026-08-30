@@ -1,0 +1,30 @@
+id: "word-register-broadcast"
+caption: "VDUP.W scalar broadcast"
+alt_text: "The scalar value x from Rn is copied to every word lane of the scalable destination vector."
+kind: scalar-vector-transfer
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+rows:
+- id: result
+  label: new Vd
+  role: destination-after
+  element_bits: 16
+  cells:
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+  - {value: x, effect: copy, appearance: source}
+scalars:
+- {id: scalar, label: source Rn, role: source, value: x}
+connections:
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 0, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 1, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 2, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 3, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 4, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 5, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 6, display: transfer}
+- {from_kind: scalar, from_id: scalar, to_kind: row, to_id: result, to_cell: 7, display: transfer}

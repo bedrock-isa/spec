@@ -1,0 +1,55 @@
+id: "longword-memory-load"
+caption: "VMOV.L memory load with merge"
+alt_text: "The base register forms contiguous longword addresses. Active predicate lanes read memory and replace the corresponding Vd lanes; the inactive lane issues no access and retains its old value."
+kind: predicated-vector-load
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+element_bits: 32
+base: {label: source base, value: Rb}
+address:
+  label: indirect address
+  cells:
+  - {value: '[Rb]', effect: copy, appearance: source}
+  - {value: '--', effect: ignored, appearance: no-access}
+  - {value: '[Rb + 8]', effect: copy, appearance: source}
+  - {value: '[Rb + 12]', effect: copy, appearance: source}
+memory:
+  label: memory read
+  cells:
+  - {value: m0, effect: copy, appearance: source}
+  - {value: '--', effect: ignored, appearance: no-access}
+  - {value: m2, effect: copy, appearance: source}
+  - {value: m3, effect: copy, appearance: source}
+result:
+  label: Vd
+  cells:
+  - {value: m0, effect: copy, appearance: source}
+  - {value: d1, effect: preserve, appearance: old}
+  - {value: m2, effect: copy, appearance: source}
+  - {value: m3, effect: copy, appearance: source}
+predicate:
+  label: predicate Pp
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+connections:
+- {from_row: address, from_cell: 0, to_row: memory, to_cell: 0, display: control}
+- {from_row: address, from_cell: 2, to_row: memory, to_cell: 2, display: control}
+- {from_row: address, from_cell: 3, to_row: memory, to_cell: 3, display: control}
+- {from_row: memory, from_cell: 0, to_row: result, to_cell: 0, display: transfer}
+- {from_row: memory, from_cell: 2, to_row: result, to_cell: 2, display: transfer}
+- {from_row: memory, from_cell: 3, to_row: result, to_cell: 3, display: transfer}

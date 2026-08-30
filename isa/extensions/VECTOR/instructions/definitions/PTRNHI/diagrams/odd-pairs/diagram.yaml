@@ -1,0 +1,57 @@
+id: "odd-pairs"
+caption: "PTRNHI.W odd predicate-lane transpose"
+alt_text: "New Pd interleaves odd-position typed predicate lanes from Pa and Pb. Each local pair follows the same mapping for any VLEN."
+kind: predicate-lane-transfer
+view: {lane_order: right-to-left, scalable: true, visible_bytes: 16}
+rows:
+- id: left
+  label: source Pa
+  role: source
+  storage: predicate
+  element_bits: 16
+  groups:
+  - {cells: [{value: 'a[0]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[1]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[2]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[3]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[4]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[5]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[6]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'a[7]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+- id: result
+  label: new Pd
+  role: destination-after
+  storage: predicate
+  element_bits: 16
+  groups:
+  - {cells: [{value: 'a[1]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'b[1]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'a[3]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'b[3]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'a[5]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'b[5]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'a[7]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+  - {cells: [{value: 'b[7]', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]}
+- id: right
+  label: source Pb
+  role: source
+  storage: predicate
+  element_bits: 16
+  groups:
+  - {cells: [{value: 'b[0]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[1]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[2]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[3]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[4]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[5]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[6]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+  - {cells: [{value: 'b[7]', effect: copy, appearance: source, bits: 8}, {value: 'x', effect: ignored, appearance: dont-care, bits: 8}]}
+edges:
+- {from_row: left, from_group: 1, from_cell: 0, to_row: result, to_group: 0, to_cell: 0, display: transfer}
+- {from_row: right, from_group: 1, from_cell: 0, to_row: result, to_group: 1, to_cell: 0, display: transfer}
+- {from_row: left, from_group: 3, from_cell: 0, to_row: result, to_group: 2, to_cell: 0, display: transfer}
+- {from_row: right, from_group: 3, from_cell: 0, to_row: result, to_group: 3, to_cell: 0, display: transfer}
+- {from_row: left, from_group: 5, from_cell: 0, to_row: result, to_group: 4, to_cell: 0, display: transfer}
+- {from_row: right, from_group: 5, from_cell: 0, to_row: result, to_group: 5, to_cell: 0, display: transfer}
+- {from_row: left, from_group: 7, from_cell: 0, to_row: result, to_group: 6, to_cell: 0, display: transfer}
+- {from_row: right, from_group: 7, from_cell: 0, to_row: result, to_group: 7, to_cell: 0, display: transfer}

@@ -1,0 +1,57 @@
+id: "zero-byte-to-word"
+caption: "VEXTZW.B unsigned byte-to-word extension"
+alt_text: "An illustrative B-to-W VEXTZW view: each active word container zero-extends its low source byte, while inactive containers preserve the old destination value."
+kind: integer-width-conversion
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+container_bits: 16
+rows:
+- id: source
+  label: source Vn
+  role: source
+  containers:
+  - {cells: [{value: x0, effect: ignored, appearance: discarded, bits: 8}, {value: b0, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x1, effect: ignored, appearance: discarded, bits: 8}, {value: b1, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x2, effect: ignored, appearance: discarded, bits: 8}, {value: b2, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x3, effect: ignored, appearance: discarded, bits: 8}, {value: b3, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x4, effect: ignored, appearance: discarded, bits: 8}, {value: b4, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x5, effect: ignored, appearance: discarded, bits: 8}, {value: b5, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x6, effect: ignored, appearance: discarded, bits: 8}, {value: b6, effect: copy, appearance: source, bits: 8}]}
+  - {cells: [{value: x7, effect: ignored, appearance: discarded, bits: 8}, {value: b7, effect: copy, appearance: source, bits: 8}]}
+- id: result
+  label: Vd
+  role: destination-after
+  containers:
+  - {cells: [{value: zext(b0), effect: zero, appearance: source, bits: 16}]}
+  - {cells: [{value: 'dH1:dL1', effect: preserve, appearance: old, bits: 16}]}
+  - {cells: [{value: zext(b2), effect: zero, appearance: source, bits: 16}]}
+  - {cells: [{value: 'dH3:dL3', effect: preserve, appearance: old, bits: 16}]}
+  - {cells: [{value: 'dH4:dL4', effect: preserve, appearance: old, bits: 16}]}
+  - {cells: [{value: zext(b5), effect: zero, appearance: source, bits: 16}]}
+  - {cells: [{value: 'dH6:dL6', effect: preserve, appearance: old, bits: 16}]}
+  - {cells: [{value: zext(b7), effect: zero, appearance: source, bits: 16}]}
+- id: predicate
+  label: predicate Pp
+  role: predicate
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+edges:
+- {from_row: source, from_container: 0, from_cell: 1, to_row: result, to_container: 0, to_cell: 0, effect: zero, display: expansion-guide}
+- {from_row: source, from_container: 2, from_cell: 1, to_row: result, to_container: 2, to_cell: 0, effect: zero, display: expansion-guide}
+- {from_row: source, from_container: 5, from_cell: 1, to_row: result, to_container: 5, to_cell: 0, effect: zero, display: expansion-guide}
+- {from_row: source, from_container: 7, from_cell: 1, to_row: result, to_container: 7, to_cell: 0, effect: zero, display: expansion-guide}

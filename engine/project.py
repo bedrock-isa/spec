@@ -21,6 +21,7 @@ try:
     from .reference import Reference, ReferenceIndex, UnknownReferenceError
     from .terminology import TermCatalog
     from .type_system import TypeNamespace, TypeSystem
+    from .vector_diagram import VectorDiagram, VectorDiagramCatalog
     from .yaml_document import YamlDocumentLoader
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from cpuid import CpuidCatalog, CpuidField
@@ -36,6 +37,7 @@ except ImportError:  # Support loading engine directly on PYTHONPATH.
     from reference import Reference, ReferenceIndex, UnknownReferenceError
     from terminology import TermCatalog
     from type_system import TypeNamespace, TypeSystem
+    from vector_diagram import VectorDiagram, VectorDiagramCatalog
     from yaml_document import YamlDocumentLoader
 
 
@@ -55,6 +57,7 @@ class InstructionBundle:
     owner: str
     instruction: Instruction
     encodings: EncodingCatalog
+    diagrams: VectorDiagramCatalog
     artifacts: ArtifactSet
     required_cpuid_flags: tuple[CpuidField, ...]
 
@@ -397,11 +400,19 @@ class SourceCatalog:
             encoding_catalog = EncodingCatalog.load(
                 directory / "encodings.yaml", types, isa_root
             )
+            diagram_catalog = VectorDiagramCatalog.load(
+                owner=owner,
+                mnemonic=mnemonic,
+                instruction=reference,
+                root=directory / "diagrams",
+                schema=isa_root / "schemas/vector-diagram.yaml",
+            )
             bundle = InstructionBundle(
                 reference=reference,
                 owner=owner,
                 instruction=instruction,
                 encodings=encoding_catalog,
+                diagrams=diagram_catalog,
                 artifacts=ArtifactSet(
                     semantics=directory / "semantics.sail",
                     description=directory / "descriptions.tex",
@@ -481,6 +492,33 @@ class IsaProject:
             return self.catalog.extensions[extension_id]
         except KeyError as error:
             raise ValueError(f"unknown extension {extension_id!r}") from error
+
+    def vector_diagram(
+        self, value: str | Reference[VectorDiagram]
+    ) -> VectorDiagram:
+        """Resolve one fully qualified instruction-owned VECTOR diagram."""
+
+        reference: Reference[VectorDiagram] = Reference.parse(value)
+        if (
+            reference.owner != "VECTOR"
+            or len(reference.path) != 3
+            or reference.path[0] != "instructions"
+            or reference.path[2] != "diagrams"
+        ):
+            raise ValueError(
+                "VECTOR diagram references must have the form "
+                "VECTOR.instructions.<mnemonic>.diagrams.<id>"
+            )
+        instruction_reference: Reference[InstructionBundle] = Reference(
+            reference.owner,
+            ("instructions",),
+            reference.path[1],
+        )
+        try:
+            bundle = self.catalog.instructions.resolve(instruction_reference)
+            return bundle.diagrams.resolve(reference)
+        except UnknownReferenceError as error:
+            raise ValueError("unknown VECTOR diagram reference") from error
 
     def select(
         self, targets: Iterable[str | Reference[InstructionBundle] | Path] = ()

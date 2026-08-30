@@ -1,0 +1,18 @@
+id: "word-range"
+caption: "Example W-position fill beginning at count remainder 3."
+alt_text: "An illustrative right-to-left W-position PHEAD result with count remainder 3: positions zero through two are clear and positions three through the scalable endpoint are set."
+kind: predicate-range-generation
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+count: {label: source Rn, value: 3}
+result:
+  label: new Pn W positions
+  element_bits: 16
+  cells:
+  - {value: '0', effect: clear}
+  - {value: '0', effect: clear}
+  - {value: '0', effect: clear}
+  - {value: '1', effect: set}
+  - {value: '1', effect: set}
+  - {value: '1', effect: set}
+  - {value: '1', effect: set}
+  - {value: '1', effect: set}

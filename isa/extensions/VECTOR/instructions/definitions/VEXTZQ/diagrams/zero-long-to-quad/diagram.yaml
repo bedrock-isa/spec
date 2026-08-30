@@ -1,0 +1,48 @@
+id: "zero-long-to-quad"
+caption: "VEXTZQ.L unsigned long-to-quad extension"
+alt_text: "An illustrative L-to-Q VEXTZQ view: each active quadword container zero-extends its low source longword, while inactive containers preserve the old destination value."
+kind: integer-width-conversion
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+container_bits: 64
+rows:
+- id: source
+  label: source Vn
+  role: source
+  containers:
+  - cells:
+    - {value: x0, effect: ignored, appearance: discarded, bits: 32}
+    - {value: l0, effect: copy, appearance: source, bits: 32}
+  - cells:
+    - {value: x1, effect: ignored, appearance: discarded, bits: 32}
+    - {value: l1, effect: copy, appearance: source, bits: 32}
+- id: result
+  label: Vd
+  role: destination-after
+  containers:
+  - cells:
+    - {value: zext(l0), effect: zero, appearance: source, bits: 64}
+  - cells:
+    - {value: 'dH1:dL1', effect: preserve, appearance: old, bits: 64}
+- id: predicate
+  label: predicate Pp
+  role: predicate
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+edges:
+- {from_row: source, from_container: 0, from_cell: 1, to_row: result, to_container: 0, to_cell: 0, effect: zero, display: expansion-guide}

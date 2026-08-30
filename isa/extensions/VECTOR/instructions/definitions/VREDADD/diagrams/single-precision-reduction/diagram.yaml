@@ -1,0 +1,39 @@
+id: "single-precision-reduction"
+caption: "VREDADD.S ordered floating-point reduction"
+alt_text: "The active single-precision values f0, f2, and f3 are added after positive zero in increasing logical-lane order, and the fold result is written to Fn."
+kind: predicated-vector-reduction
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+element_bits: 32
+predicate:
+  label: predicate Pp
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+source:
+  label: source Vn
+  cells:
+  - {value: f0, effect: copy, appearance: source}
+  - {value: f1, effect: ignored, appearance: discarded}
+  - {value: f2, effect: copy, appearance: source}
+  - {value: f3, effect: copy, appearance: source}
+selected: [0, 2, 3]
+fold:
+  label: ordered fold
+  terms: ['+0', f0, f2, f3]
+  continuation: true
+result: {label: new Fn, value: sum}
