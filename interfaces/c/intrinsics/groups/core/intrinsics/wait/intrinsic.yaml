@@ -6,5 +6,5 @@ signature:
   result: void
   parameters: []
 lowering:
-  operation: isa:base.instructions.WAIT
+  operation: isa:base.instructions.RELAX
   kind: direct

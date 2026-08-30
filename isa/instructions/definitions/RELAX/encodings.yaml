@@ -1,4 +1,4 @@
 encodings:
   plain:
     pattern: '0001000'
-    syntax: WAIT
+    syntax: RELAX

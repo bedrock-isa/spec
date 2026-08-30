@@ -127,7 +127,7 @@ instructions:
 - TESTJcc
 - TRACE
 - VTOP
-- WAIT
+- RELAX
 - WFENCE
 - WRBKDCACHE
 - WRCR
