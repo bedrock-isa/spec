@@ -1,18 +1,19 @@
 id: "word-range"
-caption: "PHEAD.W predicate range from remainder 3"
-alt_text: "An illustrative right-to-left W-position PHEAD result with count remainder 3: positions zero through two are clear and positions three through the scalable endpoint are set."
+caption: "PHEAD.W upper-range predicate fill"
+alt_text: "With count 3, PHEAD.W sets the significant predicate positions for logical lanes 3 through the scalable lane-count endpoint and clears all other bits."
 kind: predicate-range-generation
 view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
 count: {label: source Rn, value: 3}
+range: {start: count, end: lane-count}
 result:
-  label: new Pn W positions
+  label: new Pn
   element_bits: 16
-  cells:
-  - {value: '0', effect: clear}
-  - {value: '0', effect: clear}
-  - {value: '0', effect: clear}
-  - {value: '1', effect: set}
-  - {value: '1', effect: set}
-  - {value: '1', effect: set}
-  - {value: '1', effect: set}
-  - {value: '1', effect: set}
+  groups:
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]

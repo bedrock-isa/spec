@@ -8,7 +8,10 @@ from jsonschema import Draft202012Validator
 from engine.project import IsaProject
 from engine.reference import Reference
 from engine.render.latex_document import LatexDocumentRenderer
-from engine.render.vector_diagram import VectorDiagramPlacementRenderer
+from engine.render.vector_diagram import (
+    VectorDiagramPlacementRenderer,
+    VectorDiagramRenderer,
+)
 
 
 def _reference_text(reference: Reference[object]) -> str:
@@ -39,7 +42,7 @@ class VectorDiagramTest(unittest.TestCase):
         directive = f"(:diagram:{_reference_text(reference)}:)"
         return bundle, reference, directive, VectorDiagramPlacementRenderer()
 
-    def test_predicate_range_schema_rejects_partial_hybrid_forms(self) -> None:
+    def test_predicate_range_schema_accepts_closed_forms_and_rejects_hybrids(self) -> None:
         documents = [
             yaml.safe_load(diagram.source.read_text(encoding="utf-8"))
             for bundle in self._diagram_bundles()
@@ -57,15 +60,79 @@ class VectorDiagramTest(unittest.TestCase):
             if document["kind"] == "predicate-range-generation"
             and "states" in document
         )
-        hybrids = []
-        for extra in ("states", "range"):
-            hybrid = deepcopy(count_form)
-            hybrid[extra] = deepcopy(state_form[extra])
-            hybrids.append((extra, hybrid))
+        self.assertTrue(self.validator.is_valid(count_form))
+        self.assertTrue(self.validator.is_valid(state_form))
 
-        for extra, hybrid in hybrids:
-            with self.subTest(extra=extra):
-                self.assertFalse(self.validator.is_valid(hybrid))
+        count_with_states = deepcopy(count_form)
+        count_with_states["states"] = deepcopy(state_form["states"])
+        state_with_count = deepcopy(state_form)
+        state_with_count["count"] = deepcopy(count_form["count"])
+        flattened = deepcopy(count_form)
+        flattened["result"] = {
+            "label": "new Pn",
+            "element_bits": 16,
+            "cells": [{"value": "0", "effect": "clear"}] * 8,
+        }
+
+        for name, invalid in (
+            ("count-with-states", count_with_states),
+            ("state-with-count", state_with_count),
+            ("flattened-result", flattened),
+        ):
+            with self.subTest(name=name):
+                self.assertFalse(self.validator.is_valid(invalid))
+
+    def test_phead_restores_counted_physical_predicate_range(self) -> None:
+        bundle = next(
+            bundle
+            for bundle in self._diagram_bundles()
+            if bundle.instruction.mnemonic == "PHEAD"
+        )
+        diagram = next(iter(bundle.diagrams.diagrams.values()))
+        example = diagram.example
+
+        self.assertEqual(
+            example.data["count"], {"label": "source Rn", "value": "3"}
+        )
+        self.assertEqual(
+            (example.data["start"], example.data["end"]), (3, "lane-count")
+        )
+        groups = example.rows[0]["groups"]
+        self.assertEqual(len(groups), 8)
+        self.assertTrue(
+            all([cell["bits"] for cell in group] == [8, 8] for group in groups)
+        )
+        self.assertEqual(
+            [
+                (
+                    group[0]["value"],
+                    group[0]["effect"],
+                    group[0]["appearance"],
+                )
+                for group in groups
+            ],
+            [("0", "zero", "zero")] * 3
+            + [("1", "copy", "predicate-result")] * 5,
+        )
+        self.assertTrue(
+            all(
+                (group[1]["value"], group[1]["effect"], group[1]["appearance"])
+                == ("0", "zero", "zero")
+                for group in groups
+            )
+        )
+
+        rendered = VectorDiagramRenderer().render(diagram)
+        self.assertIn(
+            r"\node[vectorExampleIndex] (predicateRangeCount) at (5.00,1.95) {3};",
+            rendered,
+        )
+        self.assertIn("{source Rn};", rendered)
+        self.assertIn("vectorExampleControlArrow", rendered)
+        self.assertIn("vectorExampleRange", rendered)
+        self.assertIn("vectorExamplePredicateLaneContinuation", rendered)
+        self.assertEqual(rendered.count(r"\path[vectorExampleContainer]"), 8)
+        self.assertEqual(rendered.count(r"\path[vectorExamplePredicateResult]"), 5)
 
     def test_description_projection_matches_its_declared_collection(self) -> None:
         sources = LatexDocumentRenderer().sources

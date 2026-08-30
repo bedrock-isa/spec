@@ -316,18 +316,6 @@ $defs:
                       - {$ref: '#/$defs/nonnegative-integer'}
                       - {enum: [source-lanes, destination-lanes]}
 
-  predicate-range-result-cells:
-    type: object
-    required: [label, element_bits, cells]
-    additionalProperties: false
-    properties:
-      label: {$ref: '#/$defs/nonempty-string'}
-      element_bits: {const: 16}
-      cells:
-        type: array
-        minItems: 1
-        items: {$ref: '#/$defs/cell'}
-
   predicate-range-result-groups:
     type: object
     required: [label, element_bits, groups]
@@ -366,10 +354,7 @@ $defs:
             additionalProperties: false
             properties:
               label: {$ref: '#/$defs/nonempty-string'}
-              value:
-                oneOf:
-                  - {$ref: '#/$defs/nonnegative-integer'}
-                  - {$ref: '#/$defs/nonempty-string'}
+              value: {$ref: '#/$defs/nonnegative-integer'}
           states:
             type: array
             minItems: 1
@@ -397,16 +382,15 @@ $defs:
                 oneOf:
                   - {$ref: '#/$defs/nonnegative-integer'}
                   - {$ref: '#/$defs/nonempty-string'}
-          result:
-            oneOf:
-              - $ref: '#/$defs/predicate-range-result-cells'
-              - $ref: '#/$defs/predicate-range-result-groups'
+          result: {$ref: '#/$defs/predicate-range-result-groups'}
         oneOf:
-          - required: [count]
-            not:
-              anyOf:
-                - required: [states]
-                - required: [range]
+          - required: [count, range]
+            not: {required: [states]}
+            properties:
+              range:
+                properties:
+                  start: {const: count}
+                  end: {const: lane-count}
           - required: [states, range]
             not: {required: [count]}
 

@@ -26,7 +26,6 @@ VISIBLE_BYTES = 16
 LANE_ORDER = "right-to-left"
 CELL_EFFECTS = frozenset({"copy", "preserve", "zero", "set", "clear", "sign-fill", "ignored"})
 TRANSFER_EFFECTS = frozenset({"copy", "preserve", "sign-fill"})
-PREDICATE_EFFECTS = frozenset({"set", "clear"})
 CELL_APPEARANCES = frozenset(
     {
         "old",
@@ -549,10 +548,89 @@ def _decode_detailed_width_map(
     return VectorExample("integer-width-conversion", scalable, tuple(rows), edges)
 
 
+def _decode_predicate_range_bounds(
+    raw: dict[str, Any],
+    path: Path,
+    *,
+    start_symbols: dict[str, int] | None = None,
+) -> tuple[int, int | str]:
+    range_item = _mapping(raw["range"], path, "range")
+    _check_keys(range_item, path, "range", {"start", "end"})
+    start_value = range_item["start"]
+    if isinstance(start_value, str):
+        symbols = start_symbols or {}
+        if start_value not in symbols:
+            _fail(path, f"range.start symbol must be one of {sorted(symbols)}")
+        start = symbols[start_value]
+    else:
+        start = _integer(start_value, path, "range.start")
+    end_value = range_item["end"]
+    if isinstance(end_value, str):
+        if end_value != "lane-count":
+            _fail(path, "range.end string must be lane-count")
+        end: int | str = end_value
+    else:
+        end = _integer(end_value, path, "range.end")
+    if not 0 <= start <= 8:
+        _fail(path, "range.start must be within the eight visible W positions")
+    if isinstance(end, int) and not start <= end <= 8:
+        _fail(path, "range.end must follow start within the visible W positions")
+    return start, end
+
+
+def _decode_predicate_range_result(
+    raw: dict[str, Any], path: Path, start: int, end: int | str
+) -> dict[str, Any]:
+    result = _mapping(raw["result"], path, "result")
+    _check_keys(result, path, "result", {"label", "element_bits", "groups"})
+    if result["element_bits"] != 16:
+        _fail(path, "predicate-range-generation uses complete W predicate groups")
+    groups = tuple(
+        _decode_width_container(
+            group,
+            path,
+            f"result.groups[{index}]",
+            16,
+            additional_appearances=frozenset({"predicate-result"}),
+        )
+        for index, group in enumerate(_list(result["groups"], path, "result.groups"))
+    )
+    if len(groups) != 8:
+        _fail(path, "predicate-range-generation must cover all eight visible W groups")
+    for index, group in enumerate(groups):
+        if (
+            len(group) != 2
+            or group[0]["bits"] != 8
+            or group[1]["bits"] != 8
+            or group[1]["effect"] != "zero"
+            or group[1].get("appearance") != "zero"
+        ):
+            _fail(path, f"result.groups[{index}] must show one significant bit and one cleared bit")
+        active = index >= start and (end == "lane-count" or index < end)
+        significant = group[0]
+        expected = ("copy", "predicate-result", "1") if active else ("zero", "zero", "0")
+        actual = (significant["effect"], significant.get("appearance"), significant["value"])
+        if actual != expected:
+            _fail(path, f"result.groups[{index}] does not match the authored active range")
+    return {
+        "id": "result",
+        "label": _string(result["label"], path, "result.label"),
+        "role": "destination-after",
+        "storage": "predicate",
+        "element_bits": 16,
+        "groups": groups,
+    }
+
+
 def _decode_stateful_predicate_range(
     raw: dict[str, Any], path: Path, scalable: bool
 ) -> VectorExample:
-    _check_keys(raw, path, "predicate-range-generation root", {"kind", "view", "states", "range", "result"})
+    _check_keys(
+        raw,
+        path,
+        "predicate-range-generation root",
+        {"kind", "view", "states", "range", "result"},
+    )
     if not scalable:
         _fail(path, "stateful predicate-range-generation requires scalable continuation")
     states: list[dict[str, str]] = []
@@ -589,105 +667,59 @@ def _decode_stateful_predicate_range(
     if len(states) != 2 or {state["id"] for state in states} != {"remaining", "offset"}:
         _fail(path, "stateful predicate-range-generation requires remaining and offset states")
 
-    range_item = _mapping(raw["range"], path, "range")
-    _check_keys(range_item, path, "range", {"start", "end"})
-    start = _integer(range_item["start"], path, "range.start")
-    end_value = range_item["end"]
-    if isinstance(end_value, str):
-        if end_value != "lane-count":
-            _fail(path, "range.end string must be lane-count")
-        end: int | str = end_value
-    else:
-        end = _integer(end_value, path, "range.end")
-    if not 0 <= start <= 8:
-        _fail(path, "range.start must be within the eight visible W positions")
-    if isinstance(end, int) and not start <= end <= 8:
-        _fail(path, "range.end must follow start within the visible W positions")
-
-    result = _mapping(raw["result"], path, "result")
-    _check_keys(result, path, "result", {"label", "element_bits", "groups"})
-    if result["element_bits"] != 16:
-        _fail(path, "stateful predicate-range-generation uses complete W predicate groups")
-    groups = tuple(
-        _decode_width_container(
-            group,
-            path,
-            f"result.groups[{index}]",
-            16,
-            additional_appearances=frozenset({"predicate-result"}),
-        )
-        for index, group in enumerate(_list(result["groups"], path, "result.groups"))
-    )
-    if len(groups) != 8:
-        _fail(path, "stateful predicate-range-generation must cover all eight visible W groups")
-    for index, group in enumerate(groups):
-        if (
-            len(group) != 2
-            or group[0]["bits"] != 8
-            or group[1]["bits"] != 8
-            or group[1]["effect"] != "zero"
-            or group[1].get("appearance") != "zero"
-        ):
-            _fail(path, f"result.groups[{index}] must show one significant bit and one cleared bit")
-        active = index >= start and (end == "lane-count" or index < end)
-        significant = group[0]
-        expected = ("copy", "predicate-result", "1") if active else ("zero", "zero", "0")
-        actual = (significant["effect"], significant.get("appearance"), significant["value"])
-        if actual != expected:
-            _fail(path, f"result.groups[{index}] does not match the authored active range")
-    row = {
-        "id": "result",
-        "label": _string(result["label"], path, "result.label"),
-        "role": "destination-after",
-        "storage": "predicate",
-        "element_bits": 16,
-        "groups": groups,
-    }
+    start, end = _decode_predicate_range_bounds(raw, path)
+    row = _decode_predicate_range_result(raw, path, start, end)
     return VectorExample(
         "predicate-range-generation",
         True,
         (row,),
         (),
-        {"states": tuple(states), "start": start, "end": end, "stateful": True},
+        {"states": tuple(states), "start": start, "end": end},
+    )
+
+
+def _decode_counted_predicate_range(
+    raw: dict[str, Any], path: Path, scalable: bool
+) -> VectorExample:
+    _check_keys(
+        raw,
+        path,
+        "predicate-range-generation root",
+        {"kind", "view", "count", "range", "result"},
+    )
+    if not scalable:
+        _fail(path, "predicate-range-generation requires scalable continuation")
+    count = _mapping(raw["count"], path, "count")
+    _check_keys(count, path, "count", {"label", "value"})
+    count_value = _integer(count["value"], path, "count.value")
+    if not 0 <= count_value < 8:
+        _fail(path, "count.value must select a boundary inside the visible W positions")
+    start, end = _decode_predicate_range_bounds(
+        raw, path, start_symbols={"count": count_value}
+    )
+    if start != count_value or end != "lane-count":
+        _fail(path, "counted predicate-range-generation must span count through lane-count")
+    row = _decode_predicate_range_result(raw, path, start, end)
+    return VectorExample(
+        "predicate-range-generation",
+        True,
+        (row,),
+        (),
+        {
+            "count": {
+                "label": _string(count["label"], path, "count.label"),
+                "value": str(count_value),
+            },
+            "start": start,
+            "end": end,
+        },
     )
 
 
 def _decode_predicate_range(raw: dict[str, Any], path: Path, scalable: bool) -> VectorExample:
     if "states" in raw:
         return _decode_stateful_predicate_range(raw, path, scalable)
-    if not scalable:
-        _fail(path, "predicate-range-generation requires scalable continuation")
-    _check_keys(raw, path, "root", {"kind", "view", "count", "result"})
-    count = _mapping(raw["count"], path, "count")
-    _check_keys(count, path, "count", {"label", "value"})
-    count_value = _integer(count["value"], path, "count.value")
-    if count_value < 0:
-        _fail(path, "count.value must be a non-negative displayed integer")
-    result = _mapping(raw["result"], path, "result")
-    _check_keys(result, path, "result", {"label", "element_bits", "cells"})
-    if result["element_bits"] != 16:
-        _fail(path, "predicate-range-generation pilot uses explicit W positions")
-    cells = tuple(_cell(cell, path, f"result.cells[{index}]") for index, cell in enumerate(_list(result["cells"], path, "result.cells")))
-    if len(cells) != 8:
-        _fail(path, "predicate-range-generation result must cover all eight visible W positions")
-    if any(cell["effect"] not in PREDICATE_EFFECTS for cell in cells):
-        _fail(path, "predicate-range-generation cells must explicitly set or clear every position")
-    return VectorExample(
-        "predicate-range-generation",
-        scalable,
-        (
-            {
-                "id": "result",
-                "label": _string(result["label"], path, "result.label"),
-                "role": "destination-after",
-                "element_bits": 16,
-                "cells": cells,
-                "count_label": _string(count["label"], path, "count.label"),
-                "count_value": str(count_value),
-            },
-        ),
-        (),
-    )
+    return _decode_counted_predicate_range(raw, path, scalable)
 
 
 def _predicate_width_term(
@@ -1918,7 +1950,7 @@ def _render_predicate_lane_map_tikz(example: VectorExample) -> str:
     return "\n".join(lines)
 
 
-def _render_stateful_predicate_range_tikz(example: VectorExample) -> str:
+def _render_grouped_predicate_range_tikz(example: VectorExample) -> str:
     assert example.data is not None
     row = example.rows[0]
     start = example.data["start"]
@@ -1926,32 +1958,52 @@ def _render_stateful_predicate_range_tikz(example: VectorExample) -> str:
     start_x = 8 - start
     end_x = 0 if end == "lane-count" else 8 - end
     lines: list[str] = []
-    for state in example.data["states"]:
-        anchor_x = start_x if state["anchor"] == "start" else end_x
-        gap = 1.35 if len(state["after"]) > 1 else .85
-        after_x = anchor_x + gap if state["after_side"] == "right" else anchor_x - gap
-        before_name = "predicateRange" + state["id"].title() + "Before"
-        after_name = "predicateRange" + state["id"].title() + "After"
+    if "states" in example.data:
+        for state in example.data["states"]:
+            anchor_x = start_x if state["anchor"] == "start" else end_x
+            gap = 1.35 if len(state["after"]) > 1 else .85
+            after_x = (
+                anchor_x + gap
+                if state["after_side"] == "right"
+                else anchor_x - gap
+            )
+            before_name = "predicateRange" + state["id"].title() + "Before"
+            after_name = "predicateRange" + state["id"].title() + "After"
+            lines.append(
+                rf"\node[vectorExampleIndex] ({before_name}) at ({anchor_x:.2f},1.95) "
+                rf"{{{_tex(state['before'])}}};"
+            )
+            lines.append(
+                rf"\node[vectorExampleIndex] ({after_name}) at ({after_x:.2f},1.95) "
+                rf"{{{_tex(state['after'])}}};"
+            )
+            start_anchor = "east" if state["after_side"] == "right" else "west"
+            end_anchor = "west" if state["after_side"] == "right" else "east"
+            lines.append(
+                rf"\draw[vectorExampleLaneTransferArrow] ({before_name}.{start_anchor}) -- "
+                rf"({after_name}.{end_anchor});"
+            )
+            lines.append(
+                rf"\node[vectorExampleStateLabel] at ({(anchor_x + after_x) / 2:.2f},2.43) "
+                rf"{{{_tex(state['label'])}}};"
+            )
+            lines.append(
+                rf"\draw[vectorExampleControlArrow] ({before_name}.south) -- "
+                rf"({anchor_x:.2f},1.18);"
+            )
+    else:
+        count = example.data["count"]
         lines.append(
-            rf"\node[vectorExampleIndex] ({before_name}) at ({anchor_x:.2f},1.95) "
-            rf"{{{_tex(state['before'])}}};"
+            rf"\node[vectorExampleIndex] (predicateRangeCount) at ({start_x:.2f},1.95) "
+            rf"{{{_tex(count['value'])}}};"
         )
         lines.append(
-            rf"\node[vectorExampleIndex] ({after_name}) at ({after_x:.2f},1.95) "
-            rf"{{{_tex(state['after'])}}};"
-        )
-        start_anchor = "east" if state["after_side"] == "right" else "west"
-        end_anchor = "west" if state["after_side"] == "right" else "east"
-        lines.append(
-            rf"\draw[vectorExampleLaneTransferArrow] ({before_name}.{start_anchor}) -- "
-            rf"({after_name}.{end_anchor});"
+            rf"\node[vectorExampleLabel] at (8.22,1.95) "
+            rf"{{{_tex(count['label'])}}};"
         )
         lines.append(
-            rf"\node[vectorExampleStateLabel] at ({(anchor_x + after_x) / 2:.2f},2.43) "
-            rf"{{{_tex(state['label'])}}};"
-        )
-        lines.append(
-            rf"\draw[vectorExampleControlArrow] ({before_name}.south) -- ({anchor_x:.2f},1.18);"
+            rf"\draw[vectorExampleControlArrow] (predicateRangeCount.south) -- "
+            rf"({start_x:.2f},1.18);"
         )
     if end == "lane-count":
         lines.append(r"\draw[vectorExampleRange,densely dashed] (-2,1.12) -- (0,1.12);")
@@ -2229,18 +2281,7 @@ def render_tikz(example: VectorExample) -> str:
     if example.variant == "predicate-width-conversion":
         return _render_predicate_width_tikz(example)
     if example.variant == "predicate-range-generation":
-        if example.data is not None and example.data.get("stateful"):
-            return _render_stateful_predicate_range_tikz(example)
-        row = example.rows[0]
-        lines.append(rf"\node[vectorExampleLabel] at (8.8,1.15) {{{_tex(row['count_label'])} = {_tex(row['count_value'])}}};")
-        lines.append(rf"\node[vectorExampleLabel] at (8.8,0.45) {{{_tex(row['label'])}}};")
-        for index, cell in enumerate(row["cells"]):
-            x = 7 - index
-            lines.append(rf"\path[vectorExample{cell['effect'].title()}] ({x},0) rectangle ({x + 1},0.72);")
-            lines.append(rf"\node[vectorExampleCellText] at ({x + .5},.36) {{{_tex(cell['value'])}}};")
-        if example.scalable:
-            lines.append(r"\draw[vectorExampleContinuation] (-2,0) -- (0,0);\draw[vectorExampleContinuation] (-2,.72) -- (0,.72);\node[vectorExampleMuted] at (-1,.36) {$\cdots$};")
-        return "\n".join(lines)
+        return _render_grouped_predicate_range_tikz(example)
     if example.variant == "integer-width-conversion" and any(
         "containers" in row for row in example.rows
     ):

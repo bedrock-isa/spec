@@ -38,8 +38,13 @@ def _layout(example: VectorExample) -> tuple[str, str, str]:
         return needspace, ".76cm", ".70cm"
     if example.variant == "integer-width-conversion" and has_predicate_row:
         return "3.29in", ".76cm", ".70cm"
-    if example.variant == "predicate-range-generation" and example.data is not None:
-        return "3.45in", ".76cm", ".70cm"
+    if example.variant == "predicate-range-generation":
+        needspace = (
+            "3.45in"
+            if example.data is not None and "states" in example.data
+            else "3.25in"
+        )
+        return needspace, ".76cm", ".70cm"
     if example.variant == "scalar-vector-transfer":
         needspace = "3.25in" if len(example.data["scalars"]) > 1 else "2.50in"
         return needspace, ".76cm", ".70cm"
