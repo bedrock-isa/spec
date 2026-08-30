@@ -28,10 +28,10 @@ class Generator(AuthoredTexArtifactGenerator):
         output = Path(str(self.definition.data["output"]))
         content = source.read_text(encoding="utf-8")
         content = content.replace(
-            r"\bedrockgeneratedheaderfamilies{}", _render_header_families(project)
+            r"\BedrockGeneratedHeaderFamilies{}", _render_header_families(project)
         )
         content = content.replace(
-            r"\bedrockgeneratedinterfacetypes{}", _render_types(project)
+            r"\BedrockGeneratedInterfaceTypes{}", _render_types(project)
         )
 
         def replace_group(match: re.Match[str]) -> str:
@@ -40,7 +40,7 @@ class Generator(AuthoredTexArtifactGenerator):
             )
 
         content = re.sub(
-            r"\\bedrockgeneratedintrinsicgroup\{([a-z0-9_]+)\}",
+            r"\\BedrockGeneratedIntrinsicGroup\{([a-z0-9_]+)\}",
             replace_group,
             content,
         )
@@ -132,7 +132,7 @@ def _longtable(
     heading = " & ".join(f"\\textbf{{{item}}}" for item in headings)
     return "\n".join(
         (
-            f"\\manualtablecaption{{{caption}}}",
+            f"\\BedrockTableCaption{{{caption}}}",
             r"\begingroup\footnotesize",
             r"\setlength{\tabcolsep}{2pt}",
             f"\\begin{{longtable}}{{@{{}}{columns}@{{}}}}",

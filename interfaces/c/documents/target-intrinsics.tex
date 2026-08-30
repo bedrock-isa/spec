@@ -3,9 +3,7 @@
 \newcommand{\BedrockDocumentTitle}{Bedrock Target Intrinsics}
 \newcommand{\BedrockRunningTitle}{TARGET INTRINSICS}
 \newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
-\newcommand{\compilerbuiltin}[1]{\texttt{\detokenize{#1}}}
-\newcommand{\compilerctype}[1]{\texttt{\detokenize{#1}}}
-\input{artifacts/_shared/latex/bedrock-reference-common.tex}
+\usepackage{bedrock-reference}
 \begin{document}
 \BedrockMakeTitlePage{Bedrock Target Intrinsics}{C Compiler Builtins and Header Interfaces}{Draft}
 \BedrockDocumentHasFiguresfalse
@@ -24,8 +22,8 @@ Specification. The baseline calling convention is defined by the Bedrock C
 ABI. This document specifies how source programs reach target facilities; it
 does not duplicate their architectural or language semantics.
 
-\manualfield{Interface name:}{\texttt{bedrock-target-intrinsics}}
-\manualfield{Source language:}{ISO C with implementation-reserved target interfaces}
+\BedrockField{Interface name:}{\texttt{bedrock-target-intrinsics}}
+\BedrockField{Source language:}{ISO C with implementation-reserved target interfaces}
 
 \section{Compiler Interface Model}\label{page:compiler-interface-model}
 
@@ -49,7 +47,7 @@ integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the sy
 umbrella for system-register, cache, MMU, and processor-state facilities. Any
 family header may also be included directly.
 
-\bedrockgeneratedheaderfamilies{}
+\BedrockGeneratedHeaderFamilies{}
 
 \subsection{Common Compilation Rules}
 Family wrappers are static inline functions unless an encoded immediate or
@@ -66,7 +64,7 @@ hardware ordering are exactly those stated by the entry; one does not imply
 the other.
 
 The \textbf{C interface} column uses
-\compilerctype{result(arguments)} shorthand. Exact declarations are in the
+\texttt{\detokenize{result(arguments)}} shorthand. Exact declarations are in the
 named header; \texttt{u8}, \texttt{u16}, \texttt{u32}, and \texttt{u64}
 abbreviate the corresponding \texttt{uintN\_t} types, and \texttt{result}
 denotes \texttt{\_\_bedrock\_query\_result\_t}. A clobber means a compiler
@@ -76,20 +74,20 @@ the ISA.
 \section{Public Target Interface}\label{page:public-target-interface}
 
 \subsection{Core Builtins}
-\manualfield{Header:}{\texttt{<bedrockcoreintrin.h>}}
-\bedrockgeneratedintrinsicgroup{core}
+\BedrockField{Header:}{\texttt{<bedrockcoreintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{core}
 
 \subsection{Memory Builtins}
-\manualfield{Header:}{\texttt{<bedrockmemoryintrin.h>}}
-\bedrockgeneratedintrinsicgroup{memory}
+\BedrockField{Header:}{\texttt{<bedrockmemoryintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{memory}
 
 \subsection{Integer Builtins}
-\manualfield{Header:}{\texttt{<bedrockintegerintrin.h>}}
-\bedrockgeneratedintrinsicgroup{integer}
+\BedrockField{Header:}{\texttt{<bedrockintegerintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{integer}
 
 \subsection{Floating-Point Builtins}
-\manualfield{Header:}{\texttt{<bedrockfpuintrin.h>}}
-\bedrockgeneratedintrinsicgroup{fpu}
+\BedrockField{Header:}{\texttt{<bedrockfpuintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{fpu}
 
 \subsection{Approximate Transcendental Lowering Policy}
 A strict language-library operation shall not be lowered to an FPTRANSA
@@ -103,8 +101,8 @@ The compiler emits the requested architectural operation; runtime privilege and 
 remain active.
 
 \subsection{System-Register Builtins}
-\manualfield{Header:}{\texttt{<bedrocksysregintrin.h>}}
-\bedrockgeneratedintrinsicgroup{sysreg}
+\BedrockField{Header:}{\texttt{<bedrocksysregintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{sysreg}
 
 The system-register header defines \texttt{\_\_bedrock\_control\_register\_t} constants for every published
 control-register selector. The constants are names for the architectural selector values; they do not weaken the
@@ -133,7 +131,7 @@ bits. \texttt{\_\_BEDROCK\_SEGMENT\_DISABLED} is the canonical all-zero
 disabled image.
 
 \subsection{Cache-Management Builtins}
-\manualfield{Header:}{\texttt{<bedrockcacheintrin.h>}}
+\BedrockField{Header:}{\texttt{<bedrockcacheintrin.h>}}
 All cache range operations evaluate the address once and obtain the maintenance granule from CPUID
 \texttt{CACHE\_TOPOLOGY}. A zero length emits no cache-maintenance instruction. A nonzero, nonwrapping byte range
 selects every maintenance block that intersects the range and lowers to one block instruction per selected block.
@@ -147,16 +145,16 @@ architectural cache-maintenance sequence is required. An implementation may
 diagnose a provably wrapping constant range. A valid range end is calculated
 mathematically, not modulo $2^{64}$.
 
-\bedrockgeneratedintrinsicgroup{cache}
+\BedrockGeneratedIntrinsicGroup{cache}
 
 \subsection{MMU Builtins}
-\manualfield{Header:}{\texttt{<bedrockmmuintrin.h>}}
-\bedrockgeneratedintrinsicgroup{mmu}
+\BedrockField{Header:}{\texttt{<bedrockmmuintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{mmu}
 
 \Needspace{2.0in}
 \subsection{Processor-State Builtins}
-\manualfield{Header:}{\texttt{<bedrockstateintrin.h>}}
-\bedrockgeneratedintrinsicgroup{state}
+\BedrockField{Header:}{\texttt{<bedrockstateintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{state}
 
 Both operations are unprivileged, but restoration of \texttt{STATUS} remains
 privilege-restricted. The backend must model every restored register and the
@@ -164,6 +162,6 @@ full memory and addressing-context clobber explicitly. It must not treat
 restore as an opaque call or as only a memory effect.
 
 \section{Shared Header Types}\label{page:shared-header-types}
-\bedrockgeneratedinterfacetypes{}
+\BedrockGeneratedInterfaceTypes{}
 
 \end{document}

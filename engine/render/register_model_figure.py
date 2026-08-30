@@ -84,7 +84,7 @@ def _render_figure(namespace: RegisterNamespace) -> list[str]:
         (
             r"\end{tikzpicture}",
             "}",
-            rf"\manualfigurecaption{{{_tex(namespace.diagram.caption)}}}",
+            rf"\BedrockFigureCaption{{{_tex(namespace.diagram.caption)}}}",
             r"\end{minipage}",
             r"\end{center}",
         )

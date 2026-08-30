@@ -4,23 +4,23 @@ index-zero (:term:base.terms.header:). An implementation recognizing only the cl
 \texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports the highest
 such selector. The base-identity (:term:base.terms.payload:) is:
 
-\begin{manuallistedformatdiagram}{CPUID Base Identity Result Formats}
-\manualformatrowrange{index 1}{63}{0}{%
-\manualformatfield{VENDOR\_ID}{16}
-\manualformatfield{ARCHITECTURE\_ID}{16}
-\manualformatfield{IMPLEMENTATION\_ID}{32}
+\begin{BedrockListedFormatDiagram}{CPUID Base Identity Result Formats}
+\BedrockFormatRowRange{index 1}{63}{0}{%
+\BedrockFormatField{VENDOR\_ID}{16}
+\BedrockFormatField{ARCHITECTURE\_ID}{16}
+\BedrockFormatField{IMPLEMENTATION\_ID}{32}
 }
-\manualformatrowrange{index 2}{63}{0}{%
-\manualformatfield{zero}{32}
-\manualformatfield{IMPL\_REV}{16}
-\manualformatfield{ARCH\_REV}{16}
+\BedrockFormatRowRange{index 2}{63}{0}{%
+\BedrockFormatField{zero}{32}
+\BedrockFormatField{IMPL\_REV}{16}
+\BedrockFormatField{ARCH\_REV}{16}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 \BedrockTableCaption{Base Identity Indexes}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.95in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Index} & \textbf{Contents}\\
 \midrule
 1 & bits 31..0 \texttt{IMPLEMENTATION\_ID}; bits 47..32 \texttt{ARCHITECTURE\_ID}; bits 63..48 \texttt{VENDOR\_ID}\\

@@ -18,15 +18,15 @@
   \path[#1] (\BedrockStructFieldLeft,\BedrockStructYTop) rectangle (\BedrockStructFieldRight,\BedrockStructYBottom);%
   \node[align=center] at (\BedrockStructFieldMiddle,\BedrockStructYMiddle) {#3};%
   \advance\BedrockStructFieldX by \BedrockStructFieldSpan}
-\newcommand{\BedrockStructHeaderField}[2]{\BedrockStructFieldBody{manualLayoutHeader}{#1}{#2}}
-\newcommand{\BedrockStructSlotField}[2]{\BedrockStructFieldBody{manualLayoutSlot}{#1}{#2}}
-\newcommand{\BedrockStructOptionalField}[2]{\BedrockStructFieldBody{manualLayoutOptional}{#1}{#2}}
-\newcommand{\BedrockStructReservedField}[2]{\BedrockStructFieldBody{manualLayoutReserved}{#1}{#2}}
-\newcommand{\BedrockStructExtensionField}[2]{\BedrockStructFieldBody{manualLayoutExtension}{#1}{#2}}
+\newcommand{\BedrockStructHeaderField}[2]{\BedrockStructFieldBody{bedrockLayoutHeader}{#1}{#2}}
+\newcommand{\BedrockStructSlotField}[2]{\BedrockStructFieldBody{bedrockLayoutSlot}{#1}{#2}}
+\newcommand{\BedrockStructOptionalField}[2]{\BedrockStructFieldBody{bedrockLayoutOptional}{#1}{#2}}
+\newcommand{\BedrockStructReservedField}[2]{\BedrockStructFieldBody{bedrockLayoutReserved}{#1}{#2}}
+\newcommand{\BedrockStructExtensionField}[2]{\BedrockStructFieldBody{bedrockLayoutExtension}{#1}{#2}}
 \newcommand{\BedrockStructAnnotationField}[2]{%
   \BedrockStructFieldSpan=#1\relax
   \pgfmathsetmacro{\BedrockStructAnnotationX}{(\the\BedrockStructFieldX+0.18)*\BedrockStructSlotWidth}%
-  \node[anchor=west,align=left,text=ManualMuted] at (\BedrockStructAnnotationX,\BedrockStructYMiddle) {#2};%
+  \node[anchor=west,align=left,text=BedrockMuted] at (\BedrockStructAnnotationX,\BedrockStructYMiddle) {#2};%
   \advance\BedrockStructFieldX by \BedrockStructFieldSpan}
 \newcommand{\BedrockStructSeriesBody}[4]{%
   \BedrockStructSeriesIndex=#3\relax
@@ -54,7 +54,7 @@
     \BedrockStructFieldX=0
     #3%
     \ifnum\BedrockStructFieldX=\BedrockStructTotalUnits\else
-      \PackageError{bedrock-reference-common}{StructLayout row #1 spans \the\BedrockStructFieldX\space units; expected \the\BedrockStructTotalUnits}{Adjust the field spans in this StructLayout row.}%
+      \PackageError{bedrock-reference/struct-layout}{StructLayout row #1 spans \the\BedrockStructFieldX\space units; expected \the\BedrockStructTotalUnits}{Adjust the field spans in this StructLayout row.}%
     \fi
     \advance\BedrockStructRowTopUnits by #2\relax
   \fi}
@@ -63,8 +63,8 @@
 \newcommand{\BedrockStructFooter}[2]{%
   \ifBedrockStructMeasuring\else
     \pgfmathsetmacro{\BedrockStructFooterY}{-\the\BedrockStructRowTopUnits/100-0.31}%
-    \node[anchor=west,text=ManualMuted] at (0,\BedrockStructFooterY) {#1};%
-    \node[anchor=east,text=ManualMuted] at (\BedrockStructWidth,\BedrockStructFooterY) {#2};%
+    \node[anchor=west,text=BedrockMuted] at (0,\BedrockStructFooterY) {#1};%
+    \node[anchor=east,text=BedrockMuted] at (\BedrockStructWidth,\BedrockStructFooterY) {#2};%
   \fi}
 \newcommand{\BedrockRenderStructLayout}[6]{%
   \begingroup
@@ -78,7 +78,7 @@
   \begin{tikzpicture}[x=1in,y=0.40in,every node/.style={font=\scriptsize}]%
   \pgfmathsetmacro{\BedrockStructSlotWidth}{\BedrockStructWidth/\the\BedrockStructTotalUnits}%
   \node[anchor=west,font=\scriptsize\bfseries] at (0,0.34) {#3};%
-  \node[anchor=east,text=ManualMuted] at (\BedrockStructWidth,0.34) {#4};%
+  \node[anchor=east,text=BedrockMuted] at (\BedrockStructWidth,0.34) {#4};%
   \BedrockStructRowTopUnits=0
   #5%
   \end{tikzpicture}%

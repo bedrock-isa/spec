@@ -305,7 +305,7 @@ class _EAFlowLayout:
                     f"{target_left - source_right:.3f} is smaller than "
                     f"{self.OP_GAP:.3f}"
                 )
-        self.edges.append(f"  \\draw[manualFlowArrow] ({source}) -- ({target});%")
+        self.edges.append(f"  \\draw[bedrockFlowArrow] ({source}) -- ({target});%")
 
     def connect_feedback(self, register_id: str, operation_id: str) -> None:
         register = self.nodes[register_id]
@@ -332,8 +332,8 @@ class _EAFlowLayout:
                 f"  \\coordinate ({in_id}) at ({number(operation_x + offset)},{number(register_y)});%",
                 f"  \\coordinate ({op_in_id}) at ({number(operation_x - offset)},{number(operation_port_y)});%",
                 f"  \\coordinate ({op_out_id}) at ({number(operation_x + offset)},{number(operation_port_y)});%",
-                f"  \\draw[manualFlowArrow] ({out_id}) -- ({op_in_id});%",
-                f"  \\draw[manualFlowArrow] ({op_out_id}) -- ({in_id});%",
+                f"  \\draw[bedrockFlowArrow] ({out_id}) -- ({op_in_id});%",
+                f"  \\draw[bedrockFlowArrow] ({op_out_id}) -- ({in_id});%",
             ]
         )
 

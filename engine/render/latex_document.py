@@ -189,7 +189,7 @@ class InstructionEntryRenderer:
         mnemonic = instruction.mnemonic
         parts = [
             r"\clearpage",
-            rf"\begin{{manualinstruction}}{{{tex_escape(mnemonic)}}}"
+            rf"\begin{{BedrockInstruction}}{{{tex_escape(mnemonic)}}}"
             rf"{{{tex_escape(instruction.name)}}}{{{instruction_label(mnemonic)}}}",
             self._field("Operation", tex_escape(instruction.summary)),
             self._field(
@@ -222,41 +222,41 @@ class InstructionEntryRenderer:
             ).strip()
         parts.extend(
             [
-                r"\manualinstructiondescriptionheading{Detailed Semantics}",
+                r"\BedrockInstructionDescriptionHeading{Detailed Semantics}",
                 description,
                 self._forms(bundle, types),
-                r"\end{manualinstruction}",
+                r"\end{BedrockInstruction}",
             ]
         )
         return "\n".join(part for part in parts if part)
 
     @staticmethod
     def _field(label: str, value: str) -> str:
-        return rf"\manualoperationfield{{{tex_escape(label)}}}{{{value}}}"
+        return rf"\BedrockOperationField{{{tex_escape(label)}}}{{{value}}}"
 
     @staticmethod
     def _ragged(lines) -> str:
         rendered = "".join(rf"\noindent {line}\par " for line in lines)
-        return rf"\begin{{manualraggedblock}}{rendered}\end{{manualraggedblock}}"
+        return rf"\begin{{BedrockRaggedBlock}}{rendered}\end{{BedrockRaggedBlock}}"
 
     def _forms(self, bundle: InstructionBundle, types: "TypeSystem") -> str:
-        blocks = [r"\begin{manualinstructionforms}"]
+        blocks = [r"\begin{BedrockInstructionForms}"]
         for index, form in enumerate(bundle.encodings.forms):
             blocks.extend(
                 [
-                    r"\begin{manualformblock}{2.75in}",
-                    *([r"\manualinstructionformsheading"] if index == 0 else []),
+                    r"\begin{BedrockFormBlock}{2.75in}",
+                    *([r"\BedrockInstructionFormsHeading"] if index == 0 else []),
                     rf"\textbf{{{tex_code(form.syntax.code)}}}\par",
-                    r"\manualinstructionformatheading",
+                    r"\BedrockInstructionFormatHeading",
                     self._instruction_diagram(form),
                 ]
             )
             descriptions = self._field_descriptions(bundle, form, types)
             if descriptions:
-                blocks.append(r"\manualinstructionfieldsheading")
+                blocks.append(r"\BedrockInstructionFieldsHeading")
                 blocks.extend(descriptions)
-            blocks.append(r"\end{manualformblock}")
-        blocks.append(r"\end{manualinstructionforms}")
+            blocks.append(r"\end{BedrockFormBlock}")
+        blocks.append(r"\end{BedrockInstructionForms}")
         return "\n".join(blocks)
 
     def _field_descriptions(
@@ -268,7 +268,7 @@ class InstructionEntryRenderer:
         descriptions: list[str] = []
         if form.pattern.bit_width >= 18:
             descriptions.append(
-                r"\manualinstructionfielddescription{Length field \texttt{L}}"
+                r"\BedrockInstructionFieldDescription{Length field \texttt{L}}"
                 r"{Encodes the encoded instruction length as $3+L$ bytes. "
                 r"The encoded length must cover the required instruction length; "
                 r"trailing bytes are uninterpreted padding.}"
@@ -279,7 +279,7 @@ class InstructionEntryRenderer:
             label = self._field_label(field, field_type)
             description = self._field_description(bundle, form, field, field_type)
             descriptions.append(
-                rf"\manualinstructionfielddescription{{{label}}}{{{description}}}"
+                rf"\BedrockInstructionFieldDescription{{{label}}}{{{description}}}"
             )
 
         for overlap in form.overlaps:
@@ -300,7 +300,7 @@ class InstructionEntryRenderer:
                     "architectural effects."
                 )
             descriptions.append(
-                r"\manualinstructionfielddescription{Operand overlap}"
+                r"\BedrockInstructionFieldDescription{Operand overlap}"
                 rf"{{{tex_escape(meaning)}}}"
             )
         return descriptions
@@ -450,23 +450,23 @@ class InstructionEntryRenderer:
         fields: list[str] = []
         for byte_index, segments in enumerate(byte_segments):
             if byte_index:
-                fields.append(r"\manualbitgap{1}")
+                fields.append(r"\BedrockBitGap{1}")
             for label, width in segments:
                 macro = (
-                    "manualbitfixed"
+                    "BedrockBitFixed"
                     if set(label) <= {"0", "1"}
-                    else "manualbitvariable"
+                    else "BedrockBitVariable"
                 )
                 fields.append(rf"\{macro}{{{tex_escape(label)}}}{{{width}}}")
         return "\n".join(
             [
-                rf"\begin{{manualbitdiagram}}{{Format: Instruction format for "
+                rf"\begin{{BedrockBitDiagram}}{{Format: Instruction format for "
                 rf"{tex_escape(form.syntax.code)}}}",
-                rf"\manualbitfieldrow{{}}{{\manualbyterowlabels{{0}}"
+                rf"\BedrockBitFieldRow{{}}{{\BedrockByteRowLabels{{0}}"
                 rf"{{{len(byte_segments)}}}}}{{%",
                 *fields,
                 "}",
-                r"\end{manualbitdiagram}",
+                r"\end{BedrockBitDiagram}",
             ]
         )
 

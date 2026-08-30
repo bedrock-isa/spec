@@ -16,15 +16,15 @@ hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
 \texttt{0x0040..0x004F} for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and
 actual contracts in each family begin at low nibble one.
 
-\begin{manuallistedformatdiagram}{FPTRANSA Accuracy Result Format}
-\manualformatrowrange{result[63:0]}{63}{0}{%
-\manualformatfield{P}{1}
-\manualformatreserved{(:term:base.terms.reserved:)}{23}
-\manualformatfield{REV}{8}
-\manualformatfield{D ULP}{16}
-\manualformatfield{S ULP}{16}
+\begin{BedrockListedFormatDiagram}{FPTRANSA Accuracy Result Format}
+\BedrockFormatRowRange{result[63:0]}{63}{0}{%
+\BedrockFormatField{P}{1}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{23}
+\BedrockFormatField{REV}{8}
+\BedrockFormatField{D ULP}{16}
+\BedrockFormatField{S ULP}{16}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 \texttt{P} is \texttt{PRESENT}; \texttt{REV} is \texttt{CONTRACT\_REVISION}; the D and S ULP
 (:term:base.terms.field|plural:) use unsigned Q8.8.
@@ -33,7 +33,7 @@ actual contracts in each family begin at low nibble one.
 \BedrockTableCaption{FPTRANSA Accuracy Result}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \texttt{0..15} & \texttt{S\_MAX\_ULP\_Q8\_8} & certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8\\

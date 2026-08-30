@@ -93,12 +93,12 @@
     \advance\BedrockFormatFieldHigh by -\BedrockFormatFieldBits
   \fi}
 \newcommand{\BedrockFormatField}[2]{%
-  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualVariableFill,line width=0.35pt}}
+  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=BedrockVariableFill,line width=0.35pt}}
 \newcommand{\BedrockFormatFieldCode}[2]{\BedrockFormatField{#1}{#2}}
 \newcommand{\BedrockFormatFixed}[2]{%
-  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualFixedFill,line width=0.60pt}}
+  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=BedrockFixedFill,line width=0.60pt}}
 \newcommand{\BedrockFormatReserved}[2]{%
-  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt}}
+  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=BedrockReservedFill,densely dashed,line width=0.35pt}}
 \newcommand{\BedrockFormatAnnotationBelow}[2]{%
   \ifBedrockFormatRowMeasuring\else
     \node[anchor=north,font=\BedrockFormatPositionFont] at (#1,{\BedrockFormatRowY - 0.16}) {#2};

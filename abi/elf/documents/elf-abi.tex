@@ -3,7 +3,7 @@
 \newcommand{\BedrockDocumentTitle}{Bedrock ELF ABI}
 \newcommand{\BedrockRunningTitle}{ELF ABI}
 \newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
-\input{artifacts/_shared/latex/bedrock-reference-common.tex}
+\usepackage{bedrock-reference}
 \begin{document}
 \BedrockMakeTitlePage{Bedrock ELF ABI}{ELF Object, Linking, and Loading ABI}{Draft}
 \BedrockDocumentHasFiguresfalse
@@ -21,7 +21,7 @@ contracts.
 \BedrockContractDiagram{binary}
 
 \subsection{Profile}
-\manualfield{Profile:}{\texttt{bedrock-elf}}
+\BedrockField{Profile:}{\texttt{bedrock-elf}}
 
 \clearpage
 \section{Terminology}\label{page:terminology}
@@ -50,7 +50,7 @@ tables use \texttt{.symtab} and \texttt{.strtab}. The baseline value of
 rejects every unknown nonzero value.
 
 \subsection{ELF Identification Bytes}
-\manualtablecaption{ELF e\_ident Values}
+\BedrockTableCaption{ELF e\_ident Values}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.55in}p{3.95in}@{}}
@@ -68,7 +68,7 @@ rejects every unknown nonzero value.
 \end{longtable}
 \endgroup
 \subsection{ELF Header Sizes}
-\manualtablecaption{ELF Header Size Values}
+\BedrockTableCaption{ELF Header Size Values}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.55in}p{3.95in}@{}}
@@ -83,7 +83,7 @@ rejects every unknown nonzero value.
 \end{longtable}
 \endgroup
 \subsection{Entry Point Semantics}
-\manualtablecaption{ELF Entry Point Rules}
+\BedrockTableCaption{ELF Entry Point Rules}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.75in}p{3.75in}@{}}
@@ -144,7 +144,7 @@ select one Normal leaf AM as shown below. The loader rejects
 \texttt{PF\_R|PF\_W|PF\_X} because the available leaf AMs separate writable
 and executable mappings.
 
-\manualtablecaption{ELF Segment Permission Mapping}
+\BedrockTableCaption{ELF Segment Permission Mapping}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.2in}p{1.45in}p{2.85in}@{}}
@@ -193,7 +193,7 @@ the entry-stack payload and the interpretation of initial arguments. This
 language-independent state permits an ELF entry point to establish the
 run-time convention selected by its implementation language.
 
-\BedrockGeneratedElfEntryStateTable
+\BedrockGeneratedELFEntryStateTable
 
 \clearpage
 \section{Sections and Symbols}\label{page:sections-and-symbols}
@@ -240,7 +240,7 @@ $\texttt{addend}=A_{\mathrm{src}}+\delta$ for
 offset through the addend. The PLT addend described in Section~7.3 is one instance of this
 general rule.
 \subsection{Relocation Metasyntax Vocabulary}
-\manualtablecaption{Relocation Metasyntax Vocabulary}
+\BedrockTableCaption{Relocation Metasyntax Vocabulary}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.45in}p{4.05in}@{}}
@@ -276,8 +276,7 @@ ordinary PLT slot is resolved before application entry or constructors execute.
 GOT and PLT function addresses stay inside the ABI-visible near-call linkage
 domain.
 \subsection{Relocations}
-\BedrockGeneratedElfRelocationRows
-\manualtablecaption{Bedrock ELF Relocation Types}
+\BedrockTableCaption{Bedrock ELF Relocation Types}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{0.45in}p{2.15in}p{0.85in}p{2.05in}@{}}
@@ -285,7 +284,7 @@ domain.
 \textbf{Type} & \textbf{Name} & \textbf{Size} & \textbf{Calculation}\\
 \midrule
 \endhead
-\bedrockelfrelocationrows
+\BedrockGeneratedELFRelocationRows
 \bottomrule
 \end{longtable}
 \endgroup
@@ -312,7 +311,7 @@ the ABI-visible linkage domain. The GOT base symbol is
 
 Every ordinary PLT entry occupies 32 bytes and has 16-byte alignment.
 \subsection{GOT Reserved Entries}
-\manualtablecaption{Global Offset Table Reserved Entries}
+\BedrockTableCaption{Global Offset Table Reserved Entries}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{0.55in}p{1.55in}p{3.4in}@{}}
@@ -327,7 +326,7 @@ Every ordinary PLT entry occupies 32 bytes and has 16-byte alignment.
 \end{longtable}
 \endgroup
 \subsection{PLT Layout}
-\manualtablecaption{Procedure Linkage Table Layout}
+\BedrockTableCaption{Procedure Linkage Table Layout}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{0.75in}p{1.55in}p{3.20in}@{}}
@@ -379,7 +378,7 @@ originating thread terminates or the defining shared object is unloaded.
 \end{itemize}
 \Needspace{1.8in}
 \subsection{TLSDESC Entry}
-\manualtablecaption{TLSDESC Entry Layout}
+\BedrockTableCaption{TLSDESC Entry Layout}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{0.8in}p{1.7in}p{0.65in}p{2.35in}@{}}
@@ -489,7 +488,7 @@ is allocated exactly when an unrelaxed reference remains.
 \clearpage
 \section{Code Models}\label{page:code-models}
 Code models define placement and locality assumptions that assemblers, linkers, and compilers may use when selecting address materialization, displacement, GOT, PLT, and relocation forms. Bedrock 32-bit displacement and direct control-transfer forms are signed, so direct 32-bit relative references cover a -2 GiB to +2 GiB - 1 window.
-\manualtablecaption{Bedrock Code Models}
+\BedrockTableCaption{Bedrock Code Models}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{0.65in}p{2.25in}p{2.60in}@{}}
@@ -570,7 +569,7 @@ relaxing any full-width form to a shorter encoding.
 The ELF ABI owns the architecture-wide DWARF register-number assignment used
 by every source language and unwind producer.
 
-\BedrockGeneratedElfDebugRegisterTable
+\BedrockGeneratedELFDebugRegisterTable
 
 An unwind description that saves a vector or predicate register describes its
 complete VLEN-dependent image. Predicate register locations contain the
@@ -578,7 +577,7 @@ packed image with its exact architectural byte count.
 
 \clearpage
 \section{Assembler Contract}\label{page:assembler-contract}
-\manualfield{Default ABI:}{bedrock-elf}
+\BedrockField{Default ABI:}{bedrock-elf}
 \subsection{Strict Mode}
 \begin{itemize}
 \item Pure ISA syntax is accepted.

@@ -1,17 +1,17 @@
-\begin{manuallistedformatdiagram}{Segment Register Format}
-\manualformatrow{segment[63:0]}{%
-\manualformatfield{base\_page}{52}
-\manualformatfield{e}{5}
-\manualformatfield{m}{6}
-\manualformatfield{b}{1}
+\begin{BedrockListedFormatDiagram}{Segment Register Format}
+\BedrockFormatRow{segment[63:0]}{%
+\BedrockFormatField{base\_page}{52}
+\BedrockFormatField{e}{5}
+\BedrockFormatField{m}{6}
+\BedrockFormatField{b}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 \Needspace{2.3in}
 \BedrockTableCaption{Segment Register Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.05in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{base\_page} & \texttt{63..12} & unsigned 4-KiB page number from which \(\mathit{base}\) is derived\\

@@ -3,54 +3,54 @@
 The following (:term:base.terms.opcode_space:) byte layouts show framing, encoded length, fixed (:term:base.terms.opcode:) bits, and
 operand-selector (:term:base.terms.field|plural:) in instruction-stream order. Each row is read from bit 7 to bit 0.
 
-\begin{manuallistedbitdiagram}{Short Encoding for MOV.X(z:L/Q) Rn(s), Rn(d)}
-\manualbitfieldrow{byte 0}{\manualbyterowlabels{0}{1}}{%
-\manualbitfixed{10}{2}
-\manualbitfixed{00000}{5}
-\manualbitfieldtext{z}{1}
+\begin{BedrockListedBitDiagram}{Short Encoding for MOV.X(z:L/Q) Rn(s), Rn(d)}
+\BedrockBitFieldRow{byte 0}{\BedrockByteRowLabels{0}{1}}{%
+\BedrockBitFixed{10}{2}
+\BedrockBitFixed{00000}{5}
+\BedrockBitFieldText{z}{1}
 }
-\manualbitfieldrow{byte 1}{\manualbyterowlabels{1}{1}}{%
-\manualbitfieldtext{s}{4}
-\manualbitfieldtext{d}{4}
+\BedrockBitFieldRow{byte 1}{\BedrockByteRowLabels{1}{1}}{%
+\BedrockBitFieldText{s}{4}
+\BedrockBitFieldText{d}{4}
 }
-\end{manuallistedbitdiagram}
+\end{BedrockListedBitDiagram}
 
-\begin{manuallistedbitdiagram}{Medium Encoding for MOV.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
-\manualbitfieldrow{byte 0}{\manualbyterowlabels{0}{1}}{%
-\manualbitfixed{11}{2}
-\manualbitfixed{0000}{4}
-\manualbitfixed{00}{2}
+\begin{BedrockListedBitDiagram}{Medium Encoding for MOV.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
+\BedrockBitFieldRow{byte 0}{\BedrockByteRowLabels{0}{1}}{%
+\BedrockBitFixed{11}{2}
+\BedrockBitFixed{0000}{4}
+\BedrockBitFixed{00}{2}
 }
-\manualbitfieldrow{byte 1}{\manualbyterowlabels{1}{1}}{%
-\manualbitfixed{000}{3}
-\manualbitfieldtext{z}{2}
-\manualbitfieldtext{s}{3}
+\BedrockBitFieldRow{byte 1}{\BedrockByteRowLabels{1}{1}}{%
+\BedrockBitFixed{000}{3}
+\BedrockBitFieldText{z}{2}
+\BedrockBitFieldText{s}{3}
 }
-\manualbitfieldrow{byte 2}{\manualbyterowlabels{2}{1}}{%
-\manualbitfieldtext{s}{1}
-\manualbitfieldtext{e}{7}
+\BedrockBitFieldRow{byte 2}{\BedrockByteRowLabels{2}{1}}{%
+\BedrockBitFieldText{s}{1}
+\BedrockBitFieldText{e}{7}
 }
-\end{manuallistedbitdiagram}
+\end{BedrockListedBitDiagram}
 
-\begin{manuallistedbitdiagram}{Long Encoding for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
-\manualbitfieldrow{byte 0}{\manualbyterowlabels{0}{1}}{%
-\manualbitfixed{11}{2}
-\manualbitfixed{0001}{4}
-\manualbitfixed{11}{2}
+\begin{BedrockListedBitDiagram}{Long Encoding for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
+\BedrockBitFieldRow{byte 0}{\BedrockByteRowLabels{0}{1}}{%
+\BedrockBitFixed{11}{2}
+\BedrockBitFixed{0001}{4}
+\BedrockBitFixed{11}{2}
 }
-\manualbitfieldrow{byte 1}{\manualbyterowlabels{1}{1}}{%
-\manualbitfixed{11001100}{8}
+\BedrockBitFieldRow{byte 1}{\BedrockByteRowLabels{1}{1}}{%
+\BedrockBitFixed{11001100}{8}
 }
-\manualbitfieldrow{byte 2}{\manualbyterowlabels{2}{1}}{%
-\manualbitfieldtext{z}{2}
-\manualbitfixed{100}{3}
-\manualbitfieldtext{s}{3}
+\BedrockBitFieldRow{byte 2}{\BedrockByteRowLabels{2}{1}}{%
+\BedrockBitFieldText{z}{2}
+\BedrockBitFixed{100}{3}
+\BedrockBitFieldText{s}{3}
 }
-\manualbitfieldrow{byte 3}{\manualbyterowlabels{3}{1}}{%
-\manualbitfieldtext{s}{1}
-\manualbitfieldtext{e}{7}
+\BedrockBitFieldRow{byte 3}{\BedrockByteRowLabels{3}{1}}{%
+\BedrockBitFieldText{s}{1}
+\BedrockBitFieldText{e}{7}
 }
-\end{manuallistedbitdiagram}
+\end{BedrockListedBitDiagram}
 
 In these examples, \texttt{z} selects the operation size, \texttt{s} and \texttt{d} select integer registers,
 and \texttt{e} selects an effective-address form. A (:term:base.terms.field:) may cross a byte boundary, as \texttt{s} does in the

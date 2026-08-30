@@ -7,16 +7,16 @@ stack, and user-return registers are per-logical-processor (:term:base.terms.arc
 
 \input{isa/registers/documents/fragments/control_write_rules.tex}
 
-\begin{manualformatdiagram}{PTCR Format}
-\manualformatrow{PTCR[63:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{8}
-\manualformatfield{root\_page}{44}
-\manualformatreserved{res.}{4}
-\manualformatfield{L}{1}
-\manualformatreserved{(:term:base.terms.reserved:)}{6}
-\manualformatfield{P}{1}
+\begin{BedrockFormatDiagram}{PTCR Format}
+\BedrockFormatRow{PTCR[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{8}
+\BedrockFormatField{root\_page}{44}
+\BedrockFormatReserved{res.}{4}
+\BedrockFormatField{L}{1}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{6}
+\BedrockFormatField{P}{1}
 }
-\end{manualformatdiagram}
+\end{BedrockFormatDiagram}
 {\small
 In the diagram, \texttt{L} and \texttt{P} abbreviate
 \texttt{LA57} and \texttt{PE}.
@@ -25,7 +25,7 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \BedrockTableCaption{PTCR Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..56} & (:term:base.terms.must_be_zero:) in this page-table format\\
@@ -37,17 +37,17 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \bottomrule
 \end{BedrockTabular}
 
-\begin{manualformatdiagram}{UINFO Format}
-\manualformatrow{UINFO[63:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{32}
-\manualformatfield{EVENT\_CODE}{32}
+\begin{BedrockFormatDiagram}{UINFO Format}
+\BedrockFormatRow{UINFO[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{32}
+\BedrockFormatField{EVENT\_CODE}{32}
 }
-\end{manualformatdiagram}
+\end{BedrockFormatDiagram}
 
 \BedrockTableCaption{UINFO Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..32} & (:term:base.terms.must_be_zero:)\\
@@ -55,20 +55,20 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \bottomrule
 \end{BedrockTabular}
 
-\begin{manualformatdiagram}{ASCR Format}
-\manualformatrow{ASCR[63:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{32}
-\manualformatfield{ASID}{16}
-\manualformatreserved{(:term:base.terms.reserved:)}{15}
-\manualformatfield{A}{1}
+\begin{BedrockFormatDiagram}{ASCR Format}
+\BedrockFormatRow{ASCR[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{32}
+\BedrockFormatField{ASID}{16}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{15}
+\BedrockFormatField{A}{1}
 }
-\end{manualformatdiagram}
+\end{BedrockFormatDiagram}
 {\small\texttt{A} abbreviates \texttt{AE} in the diagram.\par}
 
 \BedrockTableCaption{ASCR Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..32} & (:term:base.terms.must_be_zero:)\\
@@ -78,20 +78,20 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \bottomrule
 \end{BedrockTabular}
 
-\begin{manualformatdiagram}{ECR Format}
-\manualformatrow{ECR[63:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{52}
-\manualformatfield{MAX}{4}
-\manualformatfield{P}{1}
-\manualformatreserved{(:term:base.terms.reserved:)}{6}
-\manualformatfield{V}{1}
+\begin{BedrockFormatDiagram}{ECR Format}
+\BedrockFormatRow{ECR[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{52}
+\BedrockFormatField{MAX}{4}
+\BedrockFormatField{P}{1}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{6}
+\BedrockFormatField{V}{1}
 }
-\end{manualformatdiagram}
+\end{BedrockFormatDiagram}
 
 \BedrockTableCaption{ECR Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..12} & (:term:base.terms.must_be_zero:)\\
@@ -102,19 +102,19 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \bottomrule
 \end{BedrockTabular}
 
-\begin{manualformatdiagram}{UCTL Format}
-\manualformatrow{UCTL[63:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{31}
-\manualformatfield{V}{1}
-\manualformatfield{STATUS}{16}
-\manualformatfield{FLAGS}{16}
+\begin{BedrockFormatDiagram}{UCTL Format}
+\BedrockFormatRow{UCTL[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{31}
+\BedrockFormatField{V}{1}
+\BedrockFormatField{STATUS}{16}
+\BedrockFormatField{FLAGS}{16}
 }
-\end{manualformatdiagram}
+\end{BedrockFormatDiagram}
 
 \BedrockTableCaption{UCTL Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..33} & (:term:base.terms.must_be_zero:)\\
@@ -124,18 +124,18 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \bottomrule
 \end{BedrockTabular}
 
-\begin{manualformatdiagram}{PMC Format}
-\manualformatrow{PMC[63:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{63}
-\manualformatfield{E}{1}
+\begin{BedrockFormatDiagram}{PMC Format}
+\BedrockFormatRow{PMC[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{63}
+\BedrockFormatField{E}{1}
 }
-\end{manualformatdiagram}
+\end{BedrockFormatDiagram}
 {\small\texttt{E} abbreviates \texttt{EN} in the diagram.\par}
 
 \BedrockTableCaption{PMC Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..1} & (:term:base.terms.must_be_zero:)\\

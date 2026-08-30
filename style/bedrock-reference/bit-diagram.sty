@@ -43,12 +43,12 @@
     \advance\BedrockBitFieldX by \BedrockBitFieldWidth
   \fi}
 \newcommand{\BedrockBitField}[2]{%
-  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualVariableFill,line width=0.35pt}}
+  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=BedrockVariableFill,line width=0.35pt}}
 \newcommand{\BedrockBitFixed}[2]{%
-  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualFixedFill,line width=0.60pt}}
+  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=BedrockFixedFill,line width=0.60pt}}
 \newcommand{\BedrockBitVariable}[2]{\BedrockBitField{#1}{#2}}
 \newcommand{\BedrockBitReserved}[2]{%
-  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt}}
+  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=BedrockReservedFill,densely dashed,line width=0.35pt}}
 \newcommand{\BedrockBitGap}[1]{%
   \BedrockBitFieldWidth=#1\relax
   \ifnum\BedrockBitFieldWidth<1

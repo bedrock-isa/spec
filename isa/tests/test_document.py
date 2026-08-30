@@ -124,10 +124,10 @@ class DocumentTest(unittest.TestCase):
             1 + len(self.project.catalog.extensions),
         )
         self.assertEqual(
-            artifact.content.count(r"\begin{manualinstruction}"), len(bundles)
+            artifact.content.count(r"\begin{BedrockInstruction}"), len(bundles)
         )
         self.assertEqual(
-            artifact.content.count(r"\begin{manualformblock}"), form_count
+            artifact.content.count(r"\begin{BedrockFormBlock}"), form_count
         )
         self.assertEqual(artifact.content.count(r"\begin{document}"), 1)
         self.assertEqual(artifact.content.count(r"\end{document}"), 1)
@@ -143,8 +143,6 @@ class DocumentTest(unittest.TestCase):
         self.assertIn(r"\emph{effective address (EA)}", artifact.content)
         self.assertIn(r"\subsection{Architectural State}", artifact.content)
         self.assertIn(r"\subsection{Compatibility}", artifact.content)
-        self.assertNotIn(r"\manualeaadditivememoryflow", artifact.content)
-        self.assertNotIn(r"\manualeaindexedmemoryflow", artifact.content)
         self.assertNotIn("Compact Effective-Address Field", artifact.content)
         self.assertNotIn("EXT2 Explicit Segment Base Auto-Update", artifact.content)
         self.assertNotIn("EXT2 SP/PC Indexed", artifact.content)
@@ -160,10 +158,7 @@ class DocumentTest(unittest.TestCase):
             artifact.content,
         )
         self.assertNotIn(r"\input{isa/", artifact.content)
-        self.assertIn(
-            "% begin input: artifacts/_shared/latex/bedrock-reference-common.tex",
-            artifact.content,
-        )
+        self.assertIn(r"\usepackage{bedrock-reference}", artifact.content)
         self.assertIn(
             r"\label{entity:base-architecture-overview-section}",
             artifact.content,
@@ -203,45 +198,45 @@ class DocumentTest(unittest.TestCase):
             artifact.content, "ADD.Q 8, SP"
         )
         self.assertIn(
-            r"\manualbitfieldrow{}{\manualbyterowlabels{0}{1}}{%", extrashort
+            r"\BedrockBitFieldRow{}{\BedrockByteRowLabels{0}{1}}{%", extrashort
         )
-        self.assertIn(r"\manualbitfixed{0}{1}", extrashort)
-        self.assertIn(r"\manualbitfixed{0001110}{7}", extrashort)
+        self.assertIn(r"\BedrockBitFixed{0}{1}", extrashort)
+        self.assertIn(r"\BedrockBitFixed{0001110}{7}", extrashort)
 
         short = self._instruction_format(
             artifact.content, r"ADD.\{L\textbar{}Q\}(z) Rn(s), Rn(d)"
         )
         self.assertIn(
-            r"\manualbitfieldrow{}{\manualbyterowlabels{0}{2}}{%", short
+            r"\BedrockBitFieldRow{}{\BedrockByteRowLabels{0}{2}}{%", short
         )
-        self.assertIn(r"\manualbitfixed{10}{2}", short)
-        self.assertIn(r"\manualbitfixed{00001}{5}", short)
-        self.assertIn(r"\manualbitvariable{z}{1}", short)
-        self.assertIn(r"\manualbitgap{1}", short)
-        self.assertIn(r"\manualbitvariable{s}{4}", short)
-        self.assertIn(r"\manualbitvariable{d}{4}", short)
+        self.assertIn(r"\BedrockBitFixed{10}{2}", short)
+        self.assertIn(r"\BedrockBitFixed{00001}{5}", short)
+        self.assertIn(r"\BedrockBitVariable{z}{1}", short)
+        self.assertIn(r"\BedrockBitGap{1}", short)
+        self.assertIn(r"\BedrockBitVariable{s}{4}", short)
+        self.assertIn(r"\BedrockBitVariable{d}{4}", short)
 
         extended = self._instruction_format(
             artifact.content, r"ADD.Q \textless{}imm16s\textgreater{}, SP"
         )
         self.assertIn(
-            r"\manualbitfieldrow{}{\manualbyterowlabels{0}{3}}{%", extended
+            r"\BedrockBitFieldRow{}{\BedrockByteRowLabels{0}{3}}{%", extended
         )
-        self.assertIn(r"\manualbitfixed{11}{2}", extended)
-        self.assertIn(r"\manualbitvariable{L}{4}", extended)
-        self.assertIn(r"\manualbitfixed{10111100}{8}", extended)
-        self.assertIn(r"\manualbitfixed{00000000}{8}", extended)
-        self.assertEqual(extended.count(r"\manualbitgap{1}"), 2)
+        self.assertIn(r"\BedrockBitFixed{11}{2}", extended)
+        self.assertIn(r"\BedrockBitVariable{L}{4}", extended)
+        self.assertIn(r"\BedrockBitFixed{10111100}{8}", extended)
+        self.assertIn(r"\BedrockBitFixed{00000000}{8}", extended)
+        self.assertEqual(extended.count(r"\BedrockBitGap{1}"), 2)
 
     @staticmethod
     def _instruction_format(tex: str, syntax: str) -> str:
         begin = (
-            r"\begin{manualbitdiagram}{Format: Instruction format for "
+            r"\begin{BedrockBitDiagram}{Format: Instruction format for "
             + syntax
             + "}"
         )
         start = tex.index(begin)
-        end = tex.index(r"\end{manualbitdiagram}", start)
+        end = tex.index(r"\end{BedrockBitDiagram}", start)
         return tex[start:end]
 
     def test_source_preprocessor_expands_inputs_and_term_escapes(self) -> None:
@@ -503,9 +498,9 @@ class DocumentTest(unittest.TestCase):
     def test_tex_validation_accepts_current_model_structure(self) -> None:
         tex = """\\begin{document}
 % topic: base.events
-\\section{Events}\\label{event:new}\\begin{manualinstruction}{ADD}{Add}{instr:add}
-\\begin{manualformblock}{2.75in}
-\\end{manualformblock}
+\\section{Events}\\label{event:new}\\begin{BedrockInstruction}{ADD}{Add}{instr:add}
+\\begin{BedrockFormBlock}{2.75in}
+\\end{BedrockFormBlock}
 \\end{document}
 """
         report = TexValidator().validate(tex, expected_topics=1, expected_forms=1)
@@ -548,12 +543,12 @@ class DocumentTest(unittest.TestCase):
         )
 
         self.assertNotIn(placeholder, rendered)
-        self.assertIn(r"\manualfigurecaption{Base Register Model}", rendered)
+        self.assertIn(r"\BedrockFigureCaption{Base Register Model}", rendered)
         self.assertIn(
-            r"\manualfigurecaption{Floating-Point Register Model}", rendered
+            r"\BedrockFigureCaption{Floating-Point Register Model}", rendered
         )
         self.assertIn(
-            r"\manualfigurecaption{Vector and Predicate Register Model}", rendered
+            r"\BedrockFigureCaption{Vector and Predicate Register Model}", rendered
         )
         self.assertEqual(rendered.count(r"\begin{tikzpicture}"), 3)
         self.assertIn("{R15}", rendered)

@@ -15,4 +15,4 @@ Each domain declares closed inventories in YAML and stores every member in a
 matching child directory. Typed projects validate references and provide the
 objects consumed by generators. Authored TeX supplies normative prose, while
 generated tables project catalog data. All Bedrock reference documents share
-`../artifacts/_shared/latex/bedrock-reference-common.tex` for presentation.
+the `bedrock-reference` package under `../style/` for presentation.

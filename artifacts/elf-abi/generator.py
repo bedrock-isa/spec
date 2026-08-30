@@ -8,9 +8,9 @@ from engine.generation import (
 )
 
 
-_ROWS_INPUT = r"\BedrockGeneratedElfRelocationRows"
-_DEBUG_REGISTER_TABLE_INPUT = r"\BedrockGeneratedElfDebugRegisterTable"
-_ENTRY_STATE_TABLE_INPUT = r"\BedrockGeneratedElfEntryStateTable"
+_ROWS_INPUT = r"\BedrockGeneratedELFRelocationRows"
+_DEBUG_REGISTER_TABLE_INPUT = r"\BedrockGeneratedELFDebugRegisterTable"
+_ENTRY_STATE_TABLE_INPUT = r"\BedrockGeneratedELFEntryStateTable"
 
 
 class Generator(AuthoredTexArtifactGenerator):
@@ -37,7 +37,7 @@ class Generator(AuthoredTexArtifactGenerator):
             )
             for artifact in generated.artifacts
         )
-        if any("BedrockGeneratedElf" in item.content for item in artifacts):
+        if any("BedrockGeneratedELF" in item.content for item in artifacts):
             raise AssertionError("ELF ABI table projection remained unresolved")
         return GeneratedArtifactSet(artifacts, generated.artifact_id)
 
@@ -59,7 +59,7 @@ def _relocation_rows(project: ElfAbiProject) -> str:
             f"{relocation.value} & {_code(relocation.id)} & {_code(size)} & "
             f"{_code(relocation.calculation.code)}\\\\"
         )
-    return "\\newcommand{\\bedrockelfrelocationrows}{%\n" + "\n".join(rows) + "\n}"
+    return "\n".join(rows)
 
 
 def _code(value: str) -> str:
@@ -90,22 +90,22 @@ def _debug_register_table(project: ElfAbiProject, workspace) -> str:
         rows.append(f"{number} & {_code(registers) if registers != '---' else registers} & {status}\\\\")
     return "\n".join(
         (
-            r"\manualtablecaption{Bedrock DWARF Register Numbers}",
-            r"\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.75in}>{\raggedright\arraybackslash}p{2.55in}@{}}",
+            r"\BedrockTableCaption{Bedrock DWARF Register Numbers}",
+            r"\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.75in}>{\raggedright\arraybackslash}p{2.55in}@{}}",
             r"\toprule",
-            r"\rowcolor{ManualHeaderFill}",
+            r"\rowcolor{BedrockHeaderFill}",
             r"\textbf{Numbers} & \textbf{Registers} & \textbf{Status}\\",
             r"\midrule",
             r"\endfirsthead",
-            r"\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\",
+            r"\multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
             r"\toprule",
-            r"\rowcolor{ManualHeaderFill}",
+            r"\rowcolor{BedrockHeaderFill}",
             r"\textbf{Numbers} & \textbf{Registers} & \textbf{Status}\\",
             r"\midrule",
             r"\endhead",
             *rows,
             r"\bottomrule",
-            r"\end{manuallongtable}",
+            r"\end{BedrockLongTable}",
         )
     )
 
@@ -142,15 +142,15 @@ def _entry_state_table(project: ElfAbiProject, workspace) -> str:
     )
     return "\n".join(
         (
-            r"\manualtablecaption{Language-Independent ELF Program Entry State}",
-            r"\begin{manuallongtable}{@{}p{1.55in}p{3.85in}@{}}",
+            r"\BedrockTableCaption{Language-Independent ELF Program Entry State}",
+            r"\begin{BedrockLongTable}{@{}p{1.55in}p{3.85in}@{}}",
             r"\toprule",
             r"\textbf{Property} & \textbf{Contract}\\",
             r"\midrule",
             r"\endhead",
             *rows,
             r"\bottomrule",
-            r"\end{manuallongtable}",
+            r"\end{BedrockLongTable}",
         )
     )
 

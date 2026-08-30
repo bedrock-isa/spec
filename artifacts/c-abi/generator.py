@@ -13,7 +13,7 @@ _RETURN_TABLE_INPUT = (
 )
 _MEMORY_ORDER_TABLE_INPUT = r"\BedrockGeneratedCMemoryOrderTable"
 _ATOMIC_PRIMITIVE_TABLE_INPUT = r"\BedrockGeneratedCAtomicPrimitiveTable"
-_FETCH_RMW_TABLE_INPUT = r"\BedrockGeneratedCFetchRmwTable"
+_FETCH_RMW_TABLE_INPUT = r"\BedrockGeneratedCFetchRMWTable"
 
 
 class Generator(AuthoredTexArtifactGenerator):
@@ -80,7 +80,7 @@ def _return_register_table(project: CAbiProject, workspace) -> str:
         rows.append(f"{_code(kinds)} & {_code(rule)}\\\\")
     return "\n".join(
         (
-            r"\manualtablecaption{C Return Register Quick Reference}",
+            r"\BedrockTableCaption{C Return Register Quick Reference}",
             r"\begingroup\footnotesize",
             r"\setlength{\tabcolsep}{2pt}",
             r"\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}",
@@ -115,7 +115,7 @@ def _memory_order_table(project: CAbiProject, workspace) -> str:
         )
     return "\n".join(
         (
-            r"\manualtablecaption{C Atomic Memory Order Mapping}",
+            r"\BedrockTableCaption{C Atomic Memory Order Mapping}",
             r"\begingroup\scriptsize",
             r"\setlength{\tabcolsep}{2pt}",
             r"\begin{longtable}{@{}p{0.7in}p{0.75in}p{1.35in}p{1.35in}p{1.0in}@{}}",
@@ -171,14 +171,14 @@ def _atomic_lowering_table(project: CAbiProject, workspace, *, fetch: bool) -> s
     caption = "C Fetch RMW Lowering" if fetch else "Native Atomic Primitive Quick Reference"
     return "\n".join(
         (
-            rf"\manualtablecaption{{{caption}}}",
-            r"\begin{manuallongtable}{@{}p{2.15in}p{3.25in}@{}}",
+            rf"\BedrockTableCaption{{{caption}}}",
+            r"\begin{BedrockLongTable}{@{}p{2.15in}p{3.25in}@{}}",
             r"\toprule",
             r"\textbf{C operation} & \textbf{Bedrock lowering}\\",
             r"\midrule",
             r"\endhead",
             *rows,
             r"\bottomrule",
-            r"\end{manuallongtable}",
+            r"\end{BedrockLongTable}",
         )
     )

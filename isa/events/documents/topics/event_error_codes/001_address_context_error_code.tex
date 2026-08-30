@@ -2,22 +2,22 @@
 Events in the \texttt{ADDRESS\_TRANSLATION} and \texttt{PHYSICAL\_ACCESS} families use the PAGE frame. The leaf
 event code identifies the failure; ERROR\_CODE carries only the access context common to those events.
 
-\begin{manuallistedformatdiagram}{PAGE Event ERROR\_CODE Format}
-\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{34}
-\manualformatfield{SZ}{3}
-\manualformatreserved{0}{1}
-\manualformatfield{L}{1}
-\manualformatfield{E}{1}
-\manualformatfield{OP}{8}
-\manualformatreserved{0}{1}
-\manualformatfield{LVL}{3}
-\manualformatfield{A}{1}
-\manualformatfield{U}{1}
-\manualformatfield{AC}{2}
-\manualformatreserved{(:term:base.terms.reserved:)}{8}
+\begin{BedrockListedFormatDiagram}{PAGE Event ERROR\_CODE Format}
+\BedrockFormatRowRange{ERROR\_CODE[63:0]}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{34}
+\BedrockFormatField{SZ}{3}
+\BedrockFormatReserved{0}{1}
+\BedrockFormatField{L}{1}
+\BedrockFormatField{E}{1}
+\BedrockFormatField{OP}{8}
+\BedrockFormatReserved{0}{1}
+\BedrockFormatField{LVL}{3}
+\BedrockFormatField{A}{1}
+\BedrockFormatField{U}{1}
+\BedrockFormatField{AC}{2}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{8}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 \texttt{SZ}, \texttt{L}, \texttt{E}, \texttt{OP}, \texttt{LVL}, and \texttt{AC} denote
 \texttt{ACCESS\_SIZE}, \texttt{FAULT\_LINEAR\_VALID}, \texttt{FAULT\_EA\_VALID},
@@ -28,13 +28,13 @@ event code identifies the failure; ERROR\_CODE carries only the access context c
 \BedrockTableCaption{PAGE Event ERROR\_CODE Fields}
 \begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{3.35in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endfirsthead
 \multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endhead

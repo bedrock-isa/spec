@@ -6,19 +6,19 @@ unassigned bit is zero, and an auxiliary or address value not produced is zero w
 Delivery-failure stages are independently allocated leaf events. Their EVENT\_CODE identifies the failed stage; the
 auxiliary (:term:base.terms.payload:) records the event whose delivery failed.
 
-\begin{manuallistedformatdiagram}{Delivery-Failure Auxiliary Format}
-\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{37}
-\manualformatfield{E}{1}
-\manualformatfield{L}{1}
-\manualformatfield{F}{1}
-\manualformatreserved{(:term:base.terms.reserved:)}{24}
+\begin{BedrockListedFormatDiagram}{Delivery-Failure Auxiliary Format}
+\BedrockFormatRowRange{ERROR\_CODE[63:0]}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{37}
+\BedrockFormatField{E}{1}
+\BedrockFormatField{L}{1}
+\BedrockFormatField{F}{1}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{24}
 }
-\manualformatrowrange{EVENT\_AUX[63:0]}{63}{0}{%
-\manualformatfield{zero}{32}
-\manualformatfield{failed event code}{32}
+\BedrockFormatRowRange{EVENT\_AUX[63:0]}{63}{0}{%
+\BedrockFormatField{zero}{32}
+\BedrockFormatField{failed event code}{32}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 \texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
 \texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID}.
@@ -30,19 +30,19 @@ when those values were produced.
 
 For (:ref:base.events.EXCEPTION.MACHINE_CHECK:), the error code has this layout:
 
-\begin{manuallistedformatdiagram}{MACHINE\_CHECK ERROR\_CODE Format}
-\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{37}
-\manualformatfield{E}{1}
-\manualformatfield{L}{1}
-\manualformatfield{F}{1}
-\manualformatreserved{(:term:base.terms.reserved:)}{12}
-\manualformatfield{R}{1}
-\manualformatfield{P}{1}
-\manualformatfield{SV}{2}
-\manualformatfield{SRC}{8}
+\begin{BedrockListedFormatDiagram}{MACHINE\_CHECK ERROR\_CODE Format}
+\BedrockFormatRowRange{ERROR\_CODE[63:0]}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{37}
+\BedrockFormatField{E}{1}
+\BedrockFormatField{L}{1}
+\BedrockFormatField{F}{1}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{12}
+\BedrockFormatField{R}{1}
+\BedrockFormatField{P}{1}
+\BedrockFormatField{SV}{2}
+\BedrockFormatField{SRC}{8}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 \texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
 \texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID};
@@ -53,7 +53,7 @@ For (:ref:base.events.EXCEPTION.MACHINE_CHECK:), the error code has this layout:
 \BedrockTableCaption{MACHINE\_CHECK ERROR\_CODE Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 7..0 & \texttt{SOURCE} & 0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect\\
@@ -76,13 +76,13 @@ addresses are supplied when available.
 \BedrockTableCaption{MACHINE\_CHECK Valid Continuation Combinations}
 \begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.25in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and (:term:base.terms.continuation:) meaning}\\
 \midrule
 \endfirsthead
 \multicolumn{4}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and (:term:base.terms.continuation:) meaning}\\
 \midrule
 \endhead
@@ -102,23 +102,23 @@ diagnostic state is precise.
 
 For an event in the \texttt{BUS\_FAILURE} family, the error code has this layout:
 
-\begin{manuallistedformatdiagram}{BUS\_FAILURE ERROR\_CODE Format}
-\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{33}
-\manualformatfield{R}{1}
-\manualformatfield{SZ}{3}
-\manualformatfield{E}{1}
-\manualformatfield{L}{1}
-\manualformatfield{F}{1}
-\manualformatfield{OP}{8}
-\manualformatreserved{0}{1}
-\manualformatfield{LVL}{3}
-\manualformatfield{A}{1}
-\manualformatfield{U}{1}
-\manualformatfield{AC}{2}
-\manualformatreserved{(:term:base.terms.reserved:)}{8}
+\begin{BedrockListedFormatDiagram}{BUS\_FAILURE ERROR\_CODE Format}
+\BedrockFormatRowRange{ERROR\_CODE[63:0]}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{33}
+\BedrockFormatField{R}{1}
+\BedrockFormatField{SZ}{3}
+\BedrockFormatField{E}{1}
+\BedrockFormatField{L}{1}
+\BedrockFormatField{F}{1}
+\BedrockFormatField{OP}{8}
+\BedrockFormatReserved{0}{1}
+\BedrockFormatField{LVL}{3}
+\BedrockFormatField{A}{1}
+\BedrockFormatField{U}{1}
+\BedrockFormatField{AC}{2}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{8}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 \texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
 \texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID};
@@ -130,13 +130,13 @@ For an event in the \texttt{BUS\_FAILURE} family, the error code has this layout
 \BedrockTableCaption{BUS\_FAILURE ERROR\_CODE Fields}
 \begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endfirsthead
 \multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endhead

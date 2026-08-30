@@ -56,7 +56,13 @@ class Generator(ArtifactGenerator):
             registry.generator("isa-reference").definition.source, project
         )
         environment = dict(os.environ)
-        environment["TEXINPUTS"] = os.pathsep.join((str(context.workspace.root), ""))
+        environment["TEXINPUTS"] = os.pathsep.join(
+            (
+                str(context.workspace.root),
+                str(context.workspace.root / "style"),
+                "",
+            )
+        )
 
         with tempfile.TemporaryDirectory(prefix="bedrock-reference-site-") as raw:
             stage = Path(raw)

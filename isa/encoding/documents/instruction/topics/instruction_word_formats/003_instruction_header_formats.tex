@@ -17,25 +17,25 @@ assembler emits that required length. It fills requested trailing (:term:base.te
 \texttt{LEN n,} when the (:term:base.terms.encoded_instruction_length:) exceeds the (:term:base.terms.required_instruction_length:) so reassembly preserves
 the length; (:term:base.terms.padding:) byte values are not (:term:base.terms.preserved:). Extrashort and short encodings retain their fixed lengths.
 
-\begin{manuallistedbitdiagram}{Instruction Start Byte Formats}[fig:instruction-header-byte-formats]
-\manualbitrow{extrashort byte}{%
-\manualbitfixed{0}{1}
-\manualbitfieldtext{enc.}{7}
+\begin{BedrockListedBitDiagram}{Instruction Start Byte Formats}[fig:instruction-header-byte-formats]
+\BedrockBitRow{extrashort byte}{%
+\BedrockBitFixed{0}{1}
+\BedrockBitFieldText{enc.}{7}
 }
-\manualbitfieldrow{short bytes}{\manualbyterowlabels{0}{2}}{%
-\manualbitfixed{10}{2}
-\manualbitfieldtext{enc.}{6}
-\manualbitgap{1}
-\manualbitfieldtext{enc.}{8}
+\BedrockBitFieldRow{short bytes}{\BedrockByteRowLabels{0}{2}}{%
+\BedrockBitFixed{10}{2}
+\BedrockBitFieldText{enc.}{6}
+\BedrockBitGap{1}
+\BedrockBitFieldText{enc.}{8}
 }
-\manualbitfieldrow{extended start bytes}{\manualbyterowlabels{0}{2}}{%
-\manualbitfixed{11}{2}
-\manualbitfieldtext{L}{4}
-\manualbitfieldtext{}{2}
-\manualbitgap{1}
-\manualbitfieldtext{enc.}{8}
+\BedrockBitFieldRow{extended start bytes}{\BedrockByteRowLabels{0}{2}}{%
+\BedrockBitFixed{11}{2}
+\BedrockBitFieldText{L}{4}
+\BedrockBitFieldText{}{2}
+\BedrockBitGap{1}
+\BedrockBitFieldText{enc.}{8}
 }
-\end{manuallistedbitdiagram}
+\end{BedrockListedBitDiagram}
 
 Figure~\ref{fig:instruction-header-byte-formats} is read from high to low bit. \texttt{enc.} denotes
 instruction-specific bits within the (:term:base.terms.opcode_space:): fixed (:term:base.terms.opcode:) bits and operand-selector (:term:base.terms.field|plural:). In byte 0, bit 7
@@ -51,13 +51,13 @@ byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extral
 \BedrockTableCaption{Encoded Instruction Length Truth Table}
 \begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
 \midrule
 \endfirsthead
 \multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
 \midrule
 \endhead
@@ -85,7 +85,7 @@ byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extral
 \BedrockTableCaption{Opcode-Space Class Summary}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.15in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Class} & \textbf{Opcode-Space Bytes} & \textbf{Header Selector} & \textbf{Minimum Bytes} & \textbf{Validity}\\
 \midrule
 \texttt{extrashort} & byte 0 & \texttt{0xxxxxxx} & 1 & exactly 1 byte\\

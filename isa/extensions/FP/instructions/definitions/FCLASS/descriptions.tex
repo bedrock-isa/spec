@@ -2,16 +2,16 @@ Examines the selected floating-point encoding without generating a (:term:FP.ter
 
 The destination is a one-hot bitmap selected directly from the sign, exponent, fraction, and NaN quiet bit of the S or D source encoding.
 
-\begin{manualbitdiagram}{FCLASS Result Bitmap}
-\manualbitrow{result[63:0]}{%
-\manualbitfixed{zero}{54}
-\manualbitfieldtext{class[9:0]}{10}
+\begin{BedrockBitDiagram}{FCLASS Result Bitmap}
+\BedrockBitRow{result[63:0]}{%
+\BedrockBitFixed{zero}{54}
+\BedrockBitFieldText{class[9:0]}{10}
 }
-\end{manualbitdiagram}
+\end{BedrockBitDiagram}
 
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.8in}>{\raggedright\arraybackslash}p{3.6in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bit} & \textbf{Class}\\
 \midrule
 0 & negative infinity\\

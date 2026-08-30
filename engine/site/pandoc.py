@@ -32,20 +32,15 @@ INLINE_CODE_RE = re.compile(r"(`+)(?:[^`]|`(?!\1))*\1")
 DESCRIPTION_BEGIN_RE = re.compile(r"\\begin\{description\}")
 DESCRIPTION_END = r"\end{description}"
 DESCRIPTION_ITEM_RE = re.compile(r"\\item\s*\[")
-MANUAL_TERM_RE = re.compile(r"\\manualtermentry\s*\{")
-ABI_CASE_RE = re.compile(r"\\manualabicase\s*\{[^{}]+\}")
-INSTRUCTION_BEGIN_RE = re.compile(r"\\begin\{manualinstruction\}\s*\{")
+INSTRUCTION_BEGIN_RE = re.compile(r"\\begin\{BedrockInstruction\}\s*\{")
 LONGTABLE_CONTINUATION_RE = re.compile(
     r"\\endfirsthead.*?\\endhead", flags=re.DOTALL
 )
 SUPPORTED_TABLE_ENVIRONMENTS = (
     "BedrockDenseLongTable",
+    "BedrockFlagEffects",
     "BedrockLongTable",
     "BedrockTabular",
-    "manualdenselongtable",
-    "manualflageffects",
-    "manuallongtable",
-    "manualtabular",
     "longtable",
     "tabularx",
     "tabular",
@@ -59,7 +54,7 @@ TABLE_ENVIRONMENT_RE = re.compile(
     r".*?\\end\{(?P=environment)\}",
     flags=re.DOTALL,
 )
-TABLE_COMMAND_RE = re.compile(r"\\manualfield\s*\{")
+TABLE_COMMAND_RE = re.compile(r"\\BedrockField\s*\{")
 LEADING_TABLE_NUMBER_RE = re.compile(
     r"(?P<prefix>(?:^|&|\\\\)\s*)"
     r"(?P<number>[0-9]+(?:\.\.[0-9]+|--[0-9]+)?)"
@@ -70,9 +65,6 @@ SITE_TABLE_ENVIRONMENT = {
     "BedrockDenseLongTable": "longtable",
     "BedrockLongTable": "longtable",
     "BedrockTabular": "tabular",
-    "manualdenselongtable": "longtable",
-    "manuallongtable": "longtable",
-    "manualtabular": "tabular",
 }
 
 
@@ -124,29 +116,6 @@ def _balanced_value(
                 return text[open_index + 1 : index], index + 1
         index += 1
     raise SiteMarkdownError(f"{where}: unterminated {opening!r} value")
-
-
-def _replace_manual_terms(text: str) -> str:
-    replacements: list[tuple[int, int, str]] = []
-    for match in MANUAL_TERM_RE.finditer(text):
-        term, cursor = _balanced_value(
-            text, match.end() - 1, "{", "}", "manual term"
-        )
-        while cursor < len(text) and text[cursor].isspace():
-            cursor += 1
-        definition, end = _balanced_value(
-            text, cursor, "{", "}", f"manual term {term!r} definition"
-        )
-        replacements.append(
-            (
-                match.start(),
-                end,
-                rf"\par\textbf{{{term}}}\par " + definition + r"\par ",
-            )
-        )
-    for start, end, replacement in reversed(replacements):
-        text = text[:start] + replacement + text[end:]
-    return text
 
 
 def _replace_command(
@@ -201,19 +170,19 @@ def _replace_instruction_environments(text: str) -> str:
                 argument_cursor,
                 "{",
                 "}",
-                f"manualinstruction {name}",
+                f"BedrockInstruction {name}",
             )
             arguments.append(value)
         output.append(rf"\phantomsection\label{{{arguments[2]}}}\par ")
         cursor = argument_cursor
-    return "".join(output).replace(r"\end{manualinstruction}", r"\par ")
+    return "".join(output).replace(r"\end{BedrockInstruction}", r"\par ")
 
 
 def _normalize_reader_macros(text: str) -> str:
     text = _replace_instruction_environments(text)
     text = _replace_command(
         text,
-        "manualfield",
+        "BedrockField",
         2,
         lambda label, value: (
             rf"\begin{{tabular}}{{ll}}\textbf{{{label}}} & {value}"
@@ -222,25 +191,25 @@ def _normalize_reader_macros(text: str) -> str:
     )
     text = _replace_command(
         text,
-        "manualinstructionfield",
+        "BedrockInstructionField",
         2,
         lambda label, value: rf"\subsection*{{{label}}}\par {value}\par ",
     )
     text = _replace_command(
         text,
-        "manualoperationfield",
+        "BedrockOperationField",
         2,
         lambda label, value: rf"\subsection*{{{label}}}\par {value}\par ",
     )
     text = _replace_command(
         text,
-        "manualinstructionstatus",
+        "BedrockInstructionStatus",
         2,
         lambda label, value: rf"\subsection*{{{label}}}\par {value}\par ",
     )
     text = _replace_command(
         text,
-        "manualinstructionmetadata",
+        "BedrockInstructionMetadata",
         4,
         lambda kind, family, privilege, length: (
             rf"\par\textit{{Class: {kind}; family: {family}; privilege: {privilege}; "
@@ -249,7 +218,7 @@ def _normalize_reader_macros(text: str) -> str:
     )
     text = _replace_command(
         text,
-        "manualinstructionfielddescription",
+        "BedrockInstructionFieldDescription",
         2,
         lambda label, value: rf"\par\textbf{{{label}}} --- {value}\par ",
     )
@@ -261,18 +230,12 @@ def _normalize_reader_macros(text: str) -> str:
     )
     text = _replace_command(
         text,
-        "manualtablecaption",
-        1,
-        lambda title: rf"\par\textbf{{{title}}}\par ",
-    )
-    text = _replace_command(
-        text,
-        "manualfigurecaption",
+        "BedrockFigureCaption",
         1,
         lambda title: rf"\par\textbf{{{title}}}\par ",
     )
     text = re.sub(
-        r"(?<!\\newcommand\{)\\manualinstructionformsheading\b",
+        r"(?<!\\newcommand\{)\\BedrockInstructionFormsHeading\b",
         r"\\subsection*{Encodings}",
         text,
     )
@@ -294,21 +257,15 @@ def _normalize_reader_macros(text: str) -> str:
 
 def normalize_latex_for_site(text: str) -> str:
     """Normalize semantic TeX constructs that Pandoc would otherwise discard."""
-    # ABI case IDs are compiler-validation metadata, not reader-visible content.
-    # validate_abi_docs.py remains their owning consumer and quality gate.
-    text = ABI_CASE_RE.sub("", text)
     # Pandoc drops \textbar{} inside \texttt{}, which changes the authored
     # public metasyntax.  This is a reader-boundary spelling normalization.
     text = text.replace(r"\textbar{}", "|")
     text = _normalize_reader_macros(text)
-    # The current artifact projection expands the style implementation into
-    # the preamble.  The site reader intentionally discards that executable
-    # preamble, so preserve the semantic table contract by lowering the three
-    # style wrappers to the standard environments Pandoc understands.
+    # The PDF projection keeps the semantic table wrappers.  Lower them to the
+    # standard environments understood by the site reader.
     for source, target in SITE_TABLE_ENVIRONMENT.items():
         text = text.replace(rf"\begin{{{source}}}", rf"\begin{{{target}}}")
         text = text.replace(rf"\end{{{source}}}", rf"\end{{{target}}}")
-    text = _replace_manual_terms(text)
     cursor = 0
     output: list[str] = []
     while True:

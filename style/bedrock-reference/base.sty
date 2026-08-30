@@ -36,21 +36,21 @@
 \makeatother
 \definecolor{RuleGray}{gray}{0.18}
 \definecolor{LightRule}{gray}{0.80}
-\definecolor{ManualMuted}{gray}{0.38}
-\definecolor{ManualHeaderFill}{gray}{0.93}
-\definecolor{ManualFixedFill}{gray}{0.86}
-\definecolor{ManualVariableFill}{gray}{0.97}
-\definecolor{ManualReservedFill}{gray}{0.94}
+\definecolor{BedrockMuted}{gray}{0.38}
+\definecolor{BedrockHeaderFill}{gray}{0.93}
+\definecolor{BedrockFixedFill}{gray}{0.86}
+\definecolor{BedrockVariableFill}{gray}{0.97}
+\definecolor{BedrockReservedFill}{gray}{0.94}
 \tikzset{
-  manualFlowNode/.style={draw=RuleGray,fill=ManualVariableFill,line width=0.35pt},
-  manualFlowOperation/.style={draw=RuleGray,fill=ManualFixedFill,line width=0.60pt},
-  manualFlowMemory/.style={draw=RuleGray,fill=ManualHeaderFill,line width=0.35pt},
-  manualFlowArrow/.style={-{Latex[length=2.0mm,width=1.5mm]},draw=RuleGray,line width=0.35pt},
-  manualLayoutHeader/.style={draw=RuleGray,fill=ManualFixedFill,line width=0.45pt},
-  manualLayoutSlot/.style={draw=RuleGray,fill=ManualVariableFill,line width=0.35pt},
-  manualLayoutOptional/.style={draw=RuleGray,fill=ManualHeaderFill,line width=0.35pt},
-  manualLayoutReserved/.style={draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt},
-  manualLayoutExtension/.style={draw=RuleGray,fill=ManualVariableFill,dashed,line width=0.45pt}
+  bedrockFlowNode/.style={draw=RuleGray,fill=BedrockVariableFill,line width=0.35pt},
+  bedrockFlowOperation/.style={draw=RuleGray,fill=BedrockFixedFill,line width=0.60pt},
+  bedrockFlowMemory/.style={draw=RuleGray,fill=BedrockHeaderFill,line width=0.35pt},
+  bedrockFlowArrow/.style={-{Latex[length=2.0mm,width=1.5mm]},draw=RuleGray,line width=0.35pt},
+  bedrockLayoutHeader/.style={draw=RuleGray,fill=BedrockFixedFill,line width=0.45pt},
+  bedrockLayoutSlot/.style={draw=RuleGray,fill=BedrockVariableFill,line width=0.35pt},
+  bedrockLayoutOptional/.style={draw=RuleGray,fill=BedrockHeaderFill,line width=0.35pt},
+  bedrockLayoutReserved/.style={draw=RuleGray,fill=BedrockReservedFill,densely dashed,line width=0.35pt},
+  bedrockLayoutExtension/.style={draw=RuleGray,fill=BedrockVariableFill,dashed,line width=0.45pt}
 }
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
@@ -76,7 +76,7 @@
   \parbox{\textwidth}{%
     \color{RuleGray}\bfseries\fontsize{22}{26}\selectfont
     \MakeUppercase{\partname}\ \thepart
-    \hfill\color{ManualMuted}\normalfont\small
+    \hfill\color{BedrockMuted}\normalfont\small
     \MakeUppercase{\BedrockArchitectureName}\ ARCHITECTURE\par}}
 \titleformat{\part}[display]
   {\raggedright\normalfont}

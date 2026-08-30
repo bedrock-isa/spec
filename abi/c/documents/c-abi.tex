@@ -3,7 +3,7 @@
 \newcommand{\BedrockDocumentTitle}{Bedrock C ABI}
 \newcommand{\BedrockRunningTitle}{C ABI}
 \newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
-\input{artifacts/_shared/latex/bedrock-reference-common.tex}
+\usepackage{bedrock-reference}
 \begin{document}
 \BedrockMakeTitlePage{Bedrock C ABI}{C Language Binding and Calling Convention}{Draft}
 \BedrockFrontMatter
@@ -20,7 +20,7 @@ their source syntax and semantics.
 \BedrockContractDiagram{language}
 
 \subsection{Profile}
-\manualfield{Profile:}{\texttt{bedrock-c}}
+\BedrockField{Profile:}{\texttt{bedrock-c}}
 
 \clearpage
 \section{Terminology}\label{page:terminology}
@@ -40,14 +40,14 @@ defines their binary interface.
 
 \clearpage
 \section{Data Model}\label{page:data-model}
-\manualfield{Model:}{LP64}
-\manualfield{Byte Order:}{little endian}
-\manualfield{Internal SP:}{8-byte aligned}
-\manualfield{Function Entry:}{2-byte aligned}
-\manualfield{Before CALL:}{SP mod 16 = 8}
-\manualfield{Aggregate Maximum Alignment:}{16 bytes}
+\BedrockField{Model:}{LP64}
+\BedrockField{Byte Order:}{little endian}
+\BedrockField{Internal SP:}{8-byte aligned}
+\BedrockField{Function Entry:}{2-byte aligned}
+\BedrockField{Before CALL:}{SP mod 16 = 8}
+\BedrockField{Aggregate Maximum Alignment:}{16 bytes}
 \subsection{Scalar Types}
-\manualtablecaption{Reference C Data Model}
+\BedrockTableCaption{Reference C Data Model}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{2.1in}p{1.0in}p{1.0in}@{}}
@@ -200,8 +200,8 @@ call. A callee that modifies a nonvolatile register shall restore its exact
 incoming value before returning. Volatile registers carry explicitly assigned
 call results and caller-managed live values across the call.
 
-\manualtablecaption{C Call Preservation Sets}
-\begin{manuallongtable}{@{}p{1.35in}p{2.0in}p{2.05in}@{}}
+\BedrockTableCaption{C Call Preservation Sets}
+\begin{BedrockLongTable}{@{}p{1.35in}p{2.0in}p{2.05in}@{}}
 \toprule
 \textbf{State} & \textbf{Volatile across a call} & \textbf{Preserved by the callee}\\
 \midrule
@@ -213,7 +213,7 @@ Predicate registers & \texttt{P0}--\texttt{P7} & \texttt{P8}--\texttt{P15}\\
 Condition state & \texttt{FLAGS} & none\\
 Segment state & \texttt{GS1}--\texttt{GS5} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 A callee may preserve floating-point registers with \texttt{FPUSHP} and
 \texttt{FPOPP} or with any sequence having the same observable effect. Each
@@ -317,11 +317,11 @@ bytes at \texttt{[SP+8]} are alignment padding. Argument values begin at
 \texttt{[SP+16]}.
 Each subsequent stack argument occupies the next 16-byte slot.
 
-\begin{manuallistedstackframediagram}{Near-call stack frame at callee entry}
-\manualstackframespslot{+0}{saved return \texttt{PC}}
-\manualstackframeslot{+8}{8-byte alignment padding}
-\manualstackframepayload{+16}{first stack argument, if present}
-\end{manuallistedstackframediagram}
+\begin{BedrockListedStackFrameDiagram}{Near-call stack frame at callee entry}
+\BedrockStackFrameSPSlot{+0}{saved return \texttt{PC}}
+\BedrockStackFrameSlot{+8}{8-byte alignment padding}
+\BedrockStackFramePayload{+16}{first stack argument, if present}
+\end{BedrockListedStackFrameDiagram}
 
 \subsection{Frame Pointer}
 A function that maintains a frame pointer uses callee-saved \texttt{R15}.
@@ -506,7 +506,7 @@ In the signature column, \texttt{i128} means \texttt{\_\_int128},
 classification; a shift count has type \texttt{int}.
 
 \Needspace{2.7in}
-\manualtablecaption{\texttt{\_\_int128} Arithmetic and Shift Helpers}
+\BedrockTableCaption{\texttt{\_\_int128} Arithmetic and Shift Helpers}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
@@ -526,7 +526,7 @@ Logical shift right & \texttt{\_\allowbreak{}\_\allowbreak{}lshrti3} & \texttt{u
 \end{longtable}
 \endgroup
 
-\manualtablecaption{\texttt{\_\_int128} and Floating-Point Conversion Helpers}
+\BedrockTableCaption{\texttt{\_\_int128} and Floating-Point Conversion Helpers}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
@@ -546,7 +546,7 @@ Binary64 to unsigned & \texttt{\_\allowbreak{}\_\allowbreak{}fixunsdfti} & \text
 \end{longtable}
 \endgroup
 
-\manualtablecaption{Complex Arithmetic Helpers}
+\BedrockTableCaption{Complex Arithmetic Helpers}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
@@ -647,7 +647,7 @@ patched instructions.
 
 \Needspace{2.0in}
 \subsection{C Fetch RMW Lowering}
-\BedrockGeneratedCFetchRmwTable
+\BedrockGeneratedCFetchRMWTable
 
 \clearpage
 \section{Calling Convention Examples}\label{page:calling-convention-examples}
@@ -743,7 +743,7 @@ On entry, \texttt{p} is in \texttt{R0} and the sign-extended value of
 registers, preserves the entry \texttt{SP}, and returns the integer sum in
 \texttt{R0}.
 
-\begin{manualformblock}{2.45in}
+\begin{BedrockFormBlock}{2.45in}
 \begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
 sum:\tabularnewline
@@ -754,8 +754,8 @@ sum:\tabularnewline
 \hspace{1.2em}ret\tabularnewline
 \end{tabularx}
 \endgroup
-\manualfigurecaption{Scalar leaf function}
-\end{manualformblock}
+\BedrockFigureCaption{Scalar leaf function}
+\end{BedrockFormBlock}
 
 % ABI-ASM-EXAMPLE: nonleaf-preservation
 \subsection{Non-Leaf Preservation and Call Alignment}
@@ -802,7 +802,7 @@ mf\_pipeline:\tabularnewline
 \hspace{1.2em}jmp\hspace{1.15em}mf\_bias\_sum\tabularnewline
 \end{tabularx}
 \endgroup
-\manualfigurecaption{Non-leaf function with a tail transfer}
+\BedrockFigureCaption{Non-leaf function with a tail transfer}
 
 Each \texttt{PUSHP} saves 16 bytes, so the pair saves leave the entry alignment
 unchanged. The additional 8-byte subtraction establishes \texttt{SP mod 16 =

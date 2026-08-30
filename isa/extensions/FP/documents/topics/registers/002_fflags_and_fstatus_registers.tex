@@ -2,31 +2,31 @@
 FFLAGS holds accrued IEEE-754 (:term:FP.terms.floating_point_exception_flag|plural:). FSTATUS holds the matching exception-condition enables, rounding mode, and optional
 non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.
 
-\begin{manuallistedformatdiagram}{FFLAGS Register Format}
-\manualformatrow{FFLAGS[15:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{11}
-\manualformatfield{I}{1}
-\manualformatfield{Z}{1}
-\manualformatfield{O}{1}
-\manualformatfield{U}{1}
-\manualformatfield{X}{1}
+\begin{BedrockListedFormatDiagram}{FFLAGS Register Format}
+\BedrockFormatRow{FFLAGS[15:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{11}
+\BedrockFormatField{I}{1}
+\BedrockFormatField{Z}{1}
+\BedrockFormatField{O}{1}
+\BedrockFormatField{U}{1}
+\BedrockFormatField{X}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
-\begin{manuallistedformatdiagram}{FSTATUS Register Format}
-\manualformatrow{FSTATUS[15:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{6}
-\manualformatfield{D}{1}
-\manualformatfield{A}{1}
-\manualformatfield{F}{1}
-\manualformatfield{R}{2}
-\manualformatfield{I}{1}
-\manualformatfield{Z}{1}
-\manualformatfield{O}{1}
-\manualformatfield{U}{1}
-\manualformatfield{X}{1}
+\begin{BedrockListedFormatDiagram}{FSTATUS Register Format}
+\BedrockFormatRow{FSTATUS[15:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{6}
+\BedrockFormatField{D}{1}
+\BedrockFormatField{A}{1}
+\BedrockFormatField{F}{1}
+\BedrockFormatField{R}{2}
+\BedrockFormatField{I}{1}
+\BedrockFormatField{Z}{1}
+\BedrockFormatField{O}{1}
+\BedrockFormatField{U}{1}
+\BedrockFormatField{X}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 In the diagrams, \texttt{I}, \texttt{Z}, \texttt{O}, \texttt{U}, and \texttt{X} denote the
 \texttt{NV}, \texttt{DZ}, \texttt{OF}, \texttt{UF}, and \texttt{NX} flag or enable bits.
@@ -37,7 +37,7 @@ In FSTATUS, \texttt{D}, \texttt{A}, \texttt{F}, and \texttt{R} denote
 \BedrockTableCaption{Floating-Point State Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{3.95in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{NV..NX} & \texttt{4..0} & accrued invalid, divide-by-zero, overflow, underflow, and inexact flags\\

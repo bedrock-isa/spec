@@ -20,14 +20,14 @@ SETF interprets its 4-bit bitmap range 0..15 as a complete FLAGS
 image: bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V. Each one writes the corresponding flag to
 one, and each zero writes it to zero.
 
-\begin{manuallistedformatdiagram}{SETF Flag Bitmap}
-\manualformatrowrange{flag bitmap[3:0]}{3}{0}{%
-\manualformatfield{Z}{1}
-\manualformatfield{N}{1}
-\manualformatfield{C}{1}
-\manualformatfield{V}{1}
+\begin{BedrockListedFormatDiagram}{SETF Flag Bitmap}
+\BedrockFormatRowRange{flag bitmap[3:0]}{3}{0}{%
+\BedrockFormatField{Z}{1}
+\BedrockFormatField{N}{1}
+\BedrockFormatField{C}{1}
+\BedrockFormatField{V}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 A 6-bit \texttt{imm6} value in 0..63 is zero-extended to the selected operation size before use when
 that size is wider than 6 bits. EXTRACT uses the 7-bit \texttt{imm7} range 0..127 as the

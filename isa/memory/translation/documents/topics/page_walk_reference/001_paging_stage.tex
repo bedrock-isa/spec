@@ -27,24 +27,24 @@ permission, accessed, and dirty rules are specified under Page-Table Entry Forma
 priority is not-present first, structural validity second, and effective permission third; the walker resolves
 those results before consuming a lower level.
 
-\begin{manuallistedformatdiagram}{Linear-Address Paging Fields}
-\manualformatrowrange{LA48 linear[63:0]}{63}{0}{%
-\manualformatfield{sign extension}{16}
-\manualformatfield{L4}{9}
-\manualformatfield{L3}{9}
-\manualformatfield{L2}{9}
-\manualformatfield{L1}{9}
-\manualformatfield{offset}{12}
+\begin{BedrockListedFormatDiagram}{Linear-Address Paging Fields}
+\BedrockFormatRowRange{LA48 linear[63:0]}{63}{0}{%
+\BedrockFormatField{sign extension}{16}
+\BedrockFormatField{L4}{9}
+\BedrockFormatField{L3}{9}
+\BedrockFormatField{L2}{9}
+\BedrockFormatField{L1}{9}
+\BedrockFormatField{offset}{12}
 }
-\manualformatrowrange{LA57 linear[63:0]}{63}{0}{%
-\manualformatfield{SEXT}{7}
-\manualformatfield{L5}{9}
-\manualformatfield{L4}{9}
-\manualformatfield{L3}{9}
-\manualformatfield{L2}{9}
-\manualformatfield{L1}{9}
-\manualformatfield{offset}{12}
+\BedrockFormatRowRange{LA57 linear[63:0]}{63}{0}{%
+\BedrockFormatField{SEXT}{7}
+\BedrockFormatField{L5}{9}
+\BedrockFormatField{L4}{9}
+\BedrockFormatField{L3}{9}
+\BedrockFormatField{L2}{9}
+\BedrockFormatField{L1}{9}
+\BedrockFormatField{offset}{12}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 \clearpage

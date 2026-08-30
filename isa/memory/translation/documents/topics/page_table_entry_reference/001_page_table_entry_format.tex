@@ -17,7 +17,7 @@ descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 \BedrockTableCaption{Leaf Descriptor Fields (P=1, T=0)}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\rowcolor{BedrockHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{P} & \texttt{0} & present, one\\
 \texttt{T} & \texttt{1} & leaf selector, zero\\
@@ -37,7 +37,7 @@ descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 \BedrockTableCaption{Leaf AM Encodings}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.35in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}\textbf{AM} & \textbf{Permission} & \textbf{Class} & \textbf{Name}\\
+\rowcolor{BedrockHeaderFill}\textbf{AM} & \textbf{Permission} & \textbf{Class} & \textbf{Name}\\
 \midrule
 \texttt{000} & read & Normal & \texttt{R}\\
 \texttt{001} & write & Normal & \texttt{W}\\
@@ -58,7 +58,7 @@ physical page may have different permissions, AM classes, or CP values.
 \BedrockTableCaption{Table-Pointer Descriptor Fields (P=1, T=1)}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\rowcolor{BedrockHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{P} & \texttt{0} & present, one\\
 \texttt{T} & \texttt{1} & table-pointer selector, one\\

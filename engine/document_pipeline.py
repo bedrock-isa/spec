@@ -65,7 +65,9 @@ class LatexCompiler:
         pdf_root = output_root / "pdf"
         pdf_root.mkdir(parents=True, exist_ok=True)
         environment = dict(os.environ)
-        environment["TEXINPUTS"] = os.pathsep.join((str(repository), ""))
+        environment["TEXINPUTS"] = os.pathsep.join(
+            (str(repository), str(repository / "style"), "")
+        )
         result = subprocess.run(
             [
                 executable,

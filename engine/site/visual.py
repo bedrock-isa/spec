@@ -16,35 +16,26 @@ from .structure import LatexStructure
 DOCUMENT_BEGIN = r"\begin{document}"
 DOCUMENT_END = r"\end{document}"
 VISUAL_ENVIRONMENTS = {
-    "manualtikzdiagram": (4, False),
-    "manuallistedtikzdiagram": (4, False),
+    "BedrockTikzDiagram": (4, False),
+    "BedrockListedTikzDiagram": (4, False),
     "BedrockVectorExample": (5, False),
-    "manualbitdiagram": (1, False),
-    "manuallistedbitdiagram": (1, True),
-    "manualformatdiagram": (1, False),
-    "manuallistedformatdiagram": (1, True),
-    "manualbyteorderdiagram": (6, False),
-    "manuallistedbyteorderdiagram": (6, False),
-    "manualstructlayout": (4, False),
-    "manuallistedstructlayout": (4, False),
-    "manualstackframediagram": (1, False),
-    "manuallistedstackframediagram": (1, False),
-}
-FLOW_COMMANDS = {
-    "manualeadirectflow": 4,
-    "manualeaimmediateflow": 3,
-    "manualeasimplememoryflow": 4,
-    "manualeaadditivememoryflow": 5,
-    "manualeaindexedmemoryflow": 6,
+    "BedrockBitDiagram": (1, False),
+    "BedrockListedBitDiagram": (1, True),
+    "BedrockFormatDiagram": (1, False),
+    "BedrockListedFormatDiagram": (1, True),
+    "BedrockByteOrderDiagram": (6, False),
+    "BedrockListedByteOrderDiagram": (6, False),
+    "BedrockStructLayout": (4, False),
+    "BedrockListedStructLayout": (4, False),
+    "BedrockStackFrameDiagram": (1, False),
+    "BedrockListedStackFrameDiagram": (1, False),
 }
 VISUAL_BEGIN_RE = re.compile(
     r"\\begin\{(?P<environment>"
     + "|".join((*VISUAL_ENVIRONMENTS, "center", "tikzpicture"))
-    + r")\}|\\(?P<command>"
-    + "|".join(FLOW_COMMANDS)
-    + r")\b"
+    + r")\}"
 )
-FIGURE_CAPTION_RE = re.compile(r"\\manualfigurecaption\s*\{")
+FIGURE_CAPTION_RE = re.compile(r"\\BedrockFigureCaption\s*\{")
 LABEL_RE = re.compile(r"\\label\s*\{")
 PDFINFO_PAGES_RE = re.compile(r"^Pages:\s+(\d+)\s*$", flags=re.MULTILINE)
 
@@ -238,27 +229,8 @@ def _environment_visual(
         # The PDF caption and the image's nonvisual equivalent are separately
         # authored.  Existing generic consumers continue to receive title=alt.
         return end, arguments[4], snippet, label or _label_in_snippet(snippet), arguments[3]
-    title = arguments[3] if environment.endswith("tikzdiagram") else arguments[0]
+    title = arguments[3] if environment.endswith("TikzDiagram") else arguments[0]
     return end, title, snippet, label or _label_in_snippet(snippet), title
-
-
-def _command_visual(
-    text: str,
-    match: re.Match[str],
-) -> tuple[int, str, str, str | None, str]:
-    command = match.group("command")
-    if command is None:
-        raise AssertionError("visual command match has no command")
-    cursor = match.end()
-    arguments: list[str] = []
-    for index in range(FLOW_COMMANDS[command]):
-        value, cursor = _next_argument(
-            text,
-            cursor,
-            f"{command} argument {index + 1}",
-        )
-        arguments.append(value)
-    return cursor, arguments[0], text[match.start() : cursor], None, arguments[0]
 
 
 def _replacement(visual: VisualSpec, title_tex: str) -> str:
@@ -301,11 +273,7 @@ def extract_visuals(
         match = VISUAL_BEGIN_RE.search(text, cursor, body_end)
         if match is None:
             break
-        parsed = (
-            _command_visual(text, match)
-            if match.group("command") is not None
-            else _environment_visual(text, match)
-        )
+        parsed = _environment_visual(text, match)
         if parsed is None:
             cursor = _environment_end(text, match.group("environment") or "", match.start())
             continue
@@ -383,11 +351,10 @@ def _visual_document(expanded: str, visuals: Iterable[VisualSpec]) -> str:
         DOCUMENT_BEGIN,
         r"\pagestyle{empty}",
         r"\setlength\PreviewBorder{6pt}",
-        r"\renewcommand{\manualcaption}[1]{}",
-        r"\renewcommand{\manualschemacaption}[1]{}",
-        r"\renewcommand{\manualfigurecaption}[1]{}",
-        r"\renewcommand{\manualfigurecaptionandlabel}[2]{}",
-        r"\renewcommand{\manualtablecaption}[1]{}",
+        r"\renewcommand{\BedrockCaption}[1]{}",
+        r"\renewcommand{\BedrockSchemaCaption}[1]{}",
+        r"\renewcommand{\BedrockFigureCaption}[1]{}",
+        r"\renewcommand{\BedrockFigureCaptionAndLabel}[2]{}",
         r"\renewcommand{\BedrockTableCaption}[1]{}",
         ]
     )

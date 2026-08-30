@@ -11,7 +11,7 @@ modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls w
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{ID} & \textbf{Name} & \textbf{Increment event}\\
 \midrule
 \texttt{1} & \texttt{CYCLE} & each implementation cycle while PMC.EN is set\\
@@ -28,7 +28,7 @@ detected before a walk begins. ID zero is unavailable because index zero of the 
 common discovery (:term:base.terms.header:). Other IDs beyond the standard set are implementation-defined and are discovered through that
 leaf.
 
-\begin{manualraggedblock}
+\begin{BedrockRaggedBlock}
 Every privilege level may read every implemented counter. Clearing PMC.EN freezes the current counter values
 without clearing them.
-\end{manualraggedblock}
+\end{BedrockRaggedBlock}

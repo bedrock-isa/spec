@@ -22,7 +22,7 @@
 \newcommand{\BedrockInstructionLead}[1]{\par\Needspace{0.42in}{\large #1\par}\vspace{3pt}}
 \newcommand{\BedrockInstructionDescription}[1]{\par #1\par}
 \newcommand{\BedrockInstructionMetadata}[4]{%
-  \par\small\textcolor{ManualMuted}{#1\enspace\textperiodcentered\enspace#2\enspace\textperiodcentered\enspace#3\enspace\textperiodcentered\enspace#4}\normalsize\par\vspace{3pt}}
+  \par\small\textcolor{BedrockMuted}{#1\enspace\textperiodcentered\enspace#2\enspace\textperiodcentered\enspace#3\enspace\textperiodcentered\enspace#4}\normalsize\par\vspace{3pt}}
 \newenvironment{BedrockOperation}{\par\Needspace{0.72in}\textbf{Operation}\par\begin{BedrockCode}}{\end{BedrockCode}\par}
 \newenvironment{BedrockSyntax}{\par\Needspace{0.60in}\textbf{Assembler Syntax}\par\begin{BedrockCode}}{\end{BedrockCode}\par}
 \newenvironment{BedrockStatusStrip}{\par\Needspace{0.50in}\begingroup\small\noindent}{\par\endgroup\vspace{2pt}}
@@ -31,7 +31,7 @@
   \par\Needspace{0.95in}\textbf{#1 Effects}\par
   \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{4.68in}@{}}
   \toprule
-  \rowcolor{ManualHeaderFill}\textbf{Flag} & \textbf{Effect}\\
+  \rowcolor{BedrockHeaderFill}\textbf{Flag} & \textbf{Effect}\\
   \midrule
 }{%
   \bottomrule

@@ -89,13 +89,13 @@ class WebReferenceTest(unittest.TestCase):
         normalized = normalize_latex_for_site(
             r"""\begin{document}
 \begin{BedrockLongTable}{ll}A & B\\\end{BedrockLongTable}
-\manualfield{Profile:}{bedrock-elf}
+\BedrockField{Profile:}{bedrock-elf}
 \end{document}
 """
         )
 
         self.assertNotIn("BedrockLongTable", normalized)
-        self.assertNotIn(r"\manualfield", normalized)
+        self.assertNotIn(r"\BedrockField", normalized)
         self.assertEqual(normalized.count(r"\begin{longtable}"), 1)
         self.assertEqual(normalized.count(r"\begin{tabular}"), 1)
 

@@ -23,7 +23,7 @@ def _index_range(value) -> str:
 class CpuidEntityReferenceRenderer(DocumentFragmentProvider):
     """Render the reader-facing exact-ID index for CPUID queries."""
 
-    PLACEHOLDER = r"\BedrockGeneratedCpuidEntityRegistry"
+    PLACEHOLDER = r"\BedrockGeneratedCPUIDEntityRegistry"
 
     @property
     def placeholders(self) -> frozenset[str]:
@@ -62,13 +62,13 @@ class CpuidEntityReferenceRenderer(DocumentFragmentProvider):
                 r"\BedrockTableCaption{CPUID Query Registry}",
                 r"\begin{BedrockDenseLongTable}{@{}>{\raggedright\arraybackslash}p{0.58in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.55in}@{}}",
                 r"\toprule",
-                r"\rowcolor{ManualHeaderFill}",
+                r"\rowcolor{BedrockHeaderFill}",
                 r"\textbf{Owner} & \textbf{Class.Leaf} & \textbf{Query} & \textbf{Index} & \textbf{Fields}\\",
                 r"\midrule",
                 r"\endfirsthead",
                 r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
                 r"\toprule",
-                r"\rowcolor{ManualHeaderFill}",
+                r"\rowcolor{BedrockHeaderFill}",
                 r"\textbf{Owner} & \textbf{Class.Leaf} & \textbf{Query} & \textbf{Index} & \textbf{Fields}\\",
                 r"\midrule",
                 r"\endhead",

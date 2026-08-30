@@ -4,16 +4,16 @@ The (:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:) event uses an ERROR fra
 floating-point conditions together. ERROR\_CODE[4:0] is a bitmap: bits 4 through 0 are \texttt{NV}, \texttt{DZ},
 \texttt{OF}, \texttt{UF}, and \texttt{NX}; bits 63 through 5 are zero.
 
-\begin{manuallistedformatdiagram}{FLOATING\_POINT\_EXCEPTION ERROR\_CODE Format}
-\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{59}
-\manualformatfield{I}{1}
-\manualformatfield{Z}{1}
-\manualformatfield{O}{1}
-\manualformatfield{U}{1}
-\manualformatfield{X}{1}
+\begin{BedrockListedFormatDiagram}{FLOATING\_POINT\_EXCEPTION ERROR\_CODE Format}
+\BedrockFormatRowRange{ERROR\_CODE[63:0]}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{59}
+\BedrockFormatField{I}{1}
+\BedrockFormatField{Z}{1}
+\BedrockFormatField{O}{1}
+\BedrockFormatField{U}{1}
+\BedrockFormatField{X}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 \texttt{I}, \texttt{Z}, \texttt{O}, \texttt{U}, and \texttt{X} abbreviate \texttt{NV}, \texttt{DZ},
 \texttt{OF}, \texttt{UF}, and \texttt{NX}.

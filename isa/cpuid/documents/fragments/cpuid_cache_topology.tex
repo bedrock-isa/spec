@@ -1,9 +1,9 @@
-\begin{manuallistedformatdiagram}{Cache-Maintenance Properties Result}
-\manualformatrowrange{index 1 result[63:0]}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{48}
-\manualformatfield{GRANULE}{16}
+\begin{BedrockListedFormatDiagram}{Cache-Maintenance Properties Result}
+\BedrockFormatRowRange{index 1 result[63:0]}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{48}
+\BedrockFormatField{GRANULE}{16}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small\texttt{GRANULE} is \texttt{MAINTENANCE\_GRANULE\_BYTES}.\par}
 
 \Needspace{1.25in}
@@ -15,7 +15,7 @@
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Index} & \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 1 & \texttt{15..0} & \texttt{MAINTENANCE\_GRANULE\_BYTES} & one-block cache-maintenance granule in bytes\\
@@ -26,16 +26,16 @@
 \endgroup
 
 
-\begin{manuallistedformatdiagram}{Cache-Topology Descriptor Format}
-\manualformatrowrange{descriptor[63:0]}{63}{0}{%
-\manualformatfield{SID}{32}
-\manualformatfield{LP-1}{16}
-\manualformatfield{SL}{4}
-\manualformatfield{LL2}{6}
-\manualformatfield{LV}{4}
-\manualformatfield{T}{2}
+\begin{BedrockListedFormatDiagram}{Cache-Topology Descriptor Format}
+\BedrockFormatRowRange{descriptor[63:0]}{63}{0}{%
+\BedrockFormatField{SID}{32}
+\BedrockFormatField{LP-1}{16}
+\BedrockFormatField{SL}{4}
+\BedrockFormatField{LL2}{6}
+\BedrockFormatField{LV}{4}
+\BedrockFormatField{T}{2}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small\texttt{SID}, \texttt{LP-1}, \texttt{SL}, \texttt{LL2}, \texttt{LV}, and \texttt{T} denote \texttt{SHARING\_ID}, \texttt{SHARING\_LP\_COUNT\_MINUS1}, \texttt{SHARING\_LEVEL}, \texttt{LINE\_LOG2}, \texttt{LEVEL}, and \texttt{TYPE}.\par}
 
 \Needspace{1.25in}
@@ -47,7 +47,7 @@
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.10in}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \texttt{1..0} & \texttt{TYPE} & 1 data; 2 instruction; 3 unified\\

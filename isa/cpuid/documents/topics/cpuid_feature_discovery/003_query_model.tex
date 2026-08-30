@@ -7,18 +7,18 @@ that (:term:base.terms.logical_processor:) is reset. A discovery result applies 
 Software associates cached discovery state with that (:term:base.terms.logical_processor:) and uses results obtained on each logical
 processor before selecting its optional architectural behavior.
 
-\begin{manuallistedformatdiagram}{CPUID Query Selector Format}
-\manualformatrowrange{selector[63:0]}{63}{0}{%
-\manualformatfield{class}{32}
-\manualformatfield{leaf}{16}
-\manualformatfield{index}{16}
+\begin{BedrockListedFormatDiagram}{CPUID Query Selector Format}
+\BedrockFormatRowRange{selector[63:0]}{63}{0}{%
+\BedrockFormatField{class}{32}
+\BedrockFormatField{leaf}{16}
+\BedrockFormatField{index}{16}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 \BedrockTableCaption{CPUID Query Selector}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \texttt{0..15} & \texttt{index} & result index within the selected leaf\\
@@ -30,27 +30,27 @@ processor before selecting its optional architectural behavior.
 Index zero of every defined leaf is a common discovery (:term:base.terms.header:). Leaf-specific (:term:base.terms.payload:) begins at index one. An unknown
 class, leaf, or index returns zero.
 
-\begin{manuallistedformatdiagram}{CPUID Common Leaf Header Formats}
-\manualformatrowrange{class 0, leaf 0}{63}{0}{%
-\manualformatfield{MAX\_CLASS}{32}
-\manualformatfield{MAX\_LEAF}{16}
-\manualformatfield{MAX\_INDEX}{16}
+\begin{BedrockListedFormatDiagram}{CPUID Common Leaf Header Formats}
+\BedrockFormatRowRange{class 0, leaf 0}{63}{0}{%
+\BedrockFormatField{MAX\_CLASS}{32}
+\BedrockFormatField{MAX\_LEAF}{16}
+\BedrockFormatField{MAX\_INDEX}{16}
 }
-\manualformatrowrange{other class, leaf 0}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{32}
-\manualformatfield{MAX\_LEAF}{16}
-\manualformatfield{MAX\_INDEX}{16}
+\BedrockFormatRowRange{other class, leaf 0}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{32}
+\BedrockFormatField{MAX\_LEAF}{16}
+\BedrockFormatField{MAX\_INDEX}{16}
 }
-\manualformatrowrange{leaf 1 or greater}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{48}
-\manualformatfield{MAX\_INDEX}{16}
+\BedrockFormatRowRange{leaf 1 or greater}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{48}
+\BedrockFormatField{MAX\_INDEX}{16}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 \BedrockTableCaption{CPUID Common Leaf Header}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.05in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Query} & \textbf{Bits 63..32} & \textbf{Bits 31..16} & \textbf{Bits 15..0}\\
 \midrule
 class 0, leaf 0, index 0 & \texttt{MAX\_CLASS} & \texttt{MAX\_LEAF} & \texttt{MAX\_INDEX}\\
@@ -74,4 +74,4 @@ privilege, operand, and compatibility checks still apply.
 Numeric (:term:base.terms.field|plural:) use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
 \texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.
 
-\BedrockGeneratedCpuidEntityRegistry
+\BedrockGeneratedCPUIDEntityRegistry

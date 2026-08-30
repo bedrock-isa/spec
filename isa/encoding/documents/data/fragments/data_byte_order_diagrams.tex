@@ -1,17 +1,17 @@
-\begin{manuallistedbyteorderdiagram}{Little-Endian Byte Order for a 64-Bit Value}{byte}{address}{increasing addresses}{least significant byte first}{most significant byte last}
-\manualbytecell{$V[7..0]$}{A+0}
-\manualbytecell{$V[15..8]$}{A+1}
-\manualbytecell{$V[23..16]$}{A+2}
-\manualbytecell{$V[31..24]$}{A+3}
-\manualbytecell{$V[39..32]$}{A+4}
-\manualbytecell{$V[47..40]$}{A+5}
-\manualbytecell{$V[55..48]$}{A+6}
-\manualbytecell{$V[63..56]$}{A+7}
-\end{manuallistedbyteorderdiagram}
+\begin{BedrockListedByteOrderDiagram}{Little-Endian Byte Order for a 64-Bit Value}{byte}{address}{increasing addresses}{least significant byte first}{most significant byte last}
+\BedrockByteCell{$V[7..0]$}{A+0}
+\BedrockByteCell{$V[15..8]$}{A+1}
+\BedrockByteCell{$V[23..16]$}{A+2}
+\BedrockByteCell{$V[31..24]$}{A+3}
+\BedrockByteCell{$V[39..32]$}{A+4}
+\BedrockByteCell{$V[47..40]$}{A+5}
+\BedrockByteCell{$V[55..48]$}{A+6}
+\BedrockByteCell{$V[63..56]$}{A+7}
+\end{BedrockListedByteOrderDiagram}
 
-\begin{manuallistedbyteorderdiagram}{Instruction Start Bytes}{instruction byte}{}{instruction stream byte order}{}{}
-\manualbytecell{\shortstack{\scriptsize H0: framing / L\\\scriptsize enc.}}{PC+0}
-\manualbytecell{\shortstack{\scriptsize H1 (med+)\\\scriptsize enc.}}{PC+1}
-\end{manuallistedbyteorderdiagram}
+\begin{BedrockListedByteOrderDiagram}{Instruction Start Bytes}{instruction byte}{}{instruction stream byte order}{}{}
+\BedrockByteCell{\shortstack{\scriptsize H0: framing / L\\\scriptsize enc.}}{PC+0}
+\BedrockByteCell{\shortstack{\scriptsize H1 (med+)\\\scriptsize enc.}}{PC+1}
+\end{BedrockListedByteOrderDiagram}
 
 H0 and H1 denote (:term:base.terms.header:) bytes 0 and 1; H1 belongs to the (:term:base.terms.header:) only for medium and longer instructions.

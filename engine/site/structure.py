@@ -12,7 +12,7 @@ from .navigation import ANCHOR_RE, SiteError
 DIVISION_RE = re.compile(r"\\(?P<kind>part|section)(?P<star>\*)?\s*\{")
 LABEL_RE = re.compile(r"\\label\s*\{")
 TITLE_PAGE_RE = re.compile(r"\\BedrockMakeTitlePage\s*\{")
-INSTRUCTION_RE = re.compile(r"\\begin\{manualinstruction\}\s*\{")
+INSTRUCTION_RE = re.compile(r"\\begin\{BedrockInstruction\}\s*\{")
 
 
 @dataclass(frozen=True)
@@ -307,4 +307,3 @@ def parse_latex_structure(text: str) -> LatexStructure:
         tuple(labels),
         tuple(instructions),
     )
-

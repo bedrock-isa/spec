@@ -1,20 +1,20 @@
 \subsection{FLAGS and STATUS Registers}\label{section:state-register-formats}
 FLAGS and STATUS are accessed through dedicated read/write instructions.
 
-\begin{manuallistedformatdiagram}{FLAGS Register Format}
-\manualformatrow{FLAGS[15:0]}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{12}
-\manualformatfield{Z}{1}
-\manualformatfield{N}{1}
-\manualformatfield{C}{1}
-\manualformatfield{V}{1}
+\begin{BedrockListedFormatDiagram}{FLAGS Register Format}
+\BedrockFormatRow{FLAGS[15:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{12}
+\BedrockFormatField{Z}{1}
+\BedrockFormatField{N}{1}
+\BedrockFormatField{C}{1}
+\BedrockFormatField{V}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 
 \BedrockTableCaption{FLAGS Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.20in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{15..4} & reads as zero and (:term:base.terms.must_be_zero:) when written\\
@@ -30,19 +30,19 @@ FLAGS and STATUS are accessed through dedicated read/write instructions.
 (:term:base.terms.reserved:) bit to be zero. Instruction-specific flag production and conditional use are defined in
 \hyperref[page:flags-and-condition-codes]{Flags and Condition Codes}.
 
-\begin{manuallistedformatdiagram}{STATUS Register Format}
-\manualformatrow{STATUS[15:0]}{%
-\manualformatreserved{res.}{5}
-\manualformatfield{U}{1}
-\manualformatfield{DEPTH}{4}
-\manualformatfield{I}{1}
-\manualformatfield{P}{1}
-\manualformatfield{R}{1}
-\manualformatfield{T}{1}
-\manualformatfield{N}{1}
-\manualformatfield{E}{1}
+\begin{BedrockListedFormatDiagram}{STATUS Register Format}
+\BedrockFormatRow{STATUS[15:0]}{%
+\BedrockFormatReserved{res.}{5}
+\BedrockFormatField{U}{1}
+\BedrockFormatField{DEPTH}{4}
+\BedrockFormatField{I}{1}
+\BedrockFormatField{P}{1}
+\BedrockFormatField{R}{1}
+\BedrockFormatField{T}{1}
+\BedrockFormatField{N}{1}
+\BedrockFormatField{E}{1}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small
 In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, \texttt{T}, \texttt{N}, and
 \texttt{E} abbreviate \texttt{UO}, \texttt{EDEPTH}, \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF},
@@ -52,7 +52,7 @@ In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, 
 \BedrockTableCaption{STATUS Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.20in}@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{15..11} & reads as zero and (:term:base.terms.must_be_zero:) when written\\

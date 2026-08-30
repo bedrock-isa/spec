@@ -7,7 +7,7 @@
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.80in}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Index} & \textbf{Contents}\\
 \midrule
 0 & common CPUID leaf (:term:base.terms.header:)\\
@@ -20,27 +20,27 @@
 \end{center}
 \endgroup
 
-\begin{manuallistedformatdiagram}{SAVE-Area Layout CPUID Result Formats}
-\manualformatrowrange{index 2}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{12}
-\manualformatfield{FMT}{4}
-\manualformatfield{BITMAP}{16}
-\manualformatfield{COUNT}{16}
-\manualformatfield{FIXED\_SIZE}{16}
+\begin{BedrockListedFormatDiagram}{SAVE-Area Layout CPUID Result Formats}
+\BedrockFormatRowRange{index 2}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{12}
+\BedrockFormatField{FMT}{4}
+\BedrockFormatField{BITMAP}{16}
+\BedrockFormatField{COUNT}{16}
+\BedrockFormatField{FIXED\_SIZE}{16}
 }
-\manualformatrowrange{descriptor A}{63}{0}{%
-\manualformatfield{OFFSET}{32}
-\manualformatreserved{(:term:base.terms.reserved:)}{10}
-\manualformatfield{BIT}{6}
-\manualformatfield{ID}{16}
+\BedrockFormatRowRange{descriptor A}{63}{0}{%
+\BedrockFormatField{OFFSET}{32}
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{10}
+\BedrockFormatField{BIT}{6}
+\BedrockFormatField{ID}{16}
 }
-\manualformatrowrange{descriptor B}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{8}
-\manualformatfield{INIT}{8}
-\manualformatfield{ALIGN}{16}
-\manualformatfield{MAX\_SIZE}{32}
+\BedrockFormatRowRange{descriptor B}{63}{0}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{8}
+\BedrockFormatField{INIT}{8}
+\BedrockFormatField{ALIGN}{16}
+\BedrockFormatField{MAX\_SIZE}{32}
 }
-\end{manuallistedformatdiagram}
+\end{BedrockListedFormatDiagram}
 {\small Diagram labels abbreviate the (:term:base.terms.field:) names in the descriptor tables below; \texttt{BITMAP}, \texttt{COUNT}, and \texttt{FIXED\_SIZE} are \texttt{BITMAP\_WORDS}, \texttt{COMPONENT\_COUNT}, and \texttt{FIXED\_SIZE\_BYTES}.\par}
 
 \Needspace{2.5in}
@@ -53,7 +53,7 @@
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.70in}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \texttt{15..0} & \texttt{COMPONENT\_ID} & stable component identifier\\
@@ -75,7 +75,7 @@
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.70in}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\rowcolor{ManualHeaderFill}
+\rowcolor{BedrockHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \texttt{31..0} & \texttt{MAX\_SIZE\_BYTES} & allocated component size\\

@@ -14,14 +14,14 @@
     \pgfmathsetmacro{\BedrockStackFrameMidY}{\BedrockStackFrameY - \BedrockStackFrameRowHeight/2}%
     \ifnum#4>0
       \node[anchor=east] at (-0.44,\BedrockStackFrameMidY) {SP};%
-      \draw[manualFlowArrow] (-0.40,\BedrockStackFrameMidY) -- (-0.02,\BedrockStackFrameMidY);%
+      \draw[bedrockFlowArrow] (-0.40,\BedrockStackFrameMidY) -- (-0.02,\BedrockStackFrameMidY);%
     \else
       \node[anchor=east] at (-0.08,\BedrockStackFrameMidY) {\texttt{#1}};%
     \fi
     \ifnum#3>0
-      \path[draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt] (0,{\BedrockStackFrameY - \BedrockStackFrameRowHeight}) -- (0,\BedrockStackFrameY) -- (\BedrockStackFrameWidth,\BedrockStackFrameY) -- (\BedrockStackFrameWidth,{\BedrockStackFrameY - \BedrockStackFrameRowHeight});%
+      \path[draw=RuleGray,fill=BedrockReservedFill,densely dashed,line width=0.35pt] (0,{\BedrockStackFrameY - \BedrockStackFrameRowHeight}) -- (0,\BedrockStackFrameY) -- (\BedrockStackFrameWidth,\BedrockStackFrameY) -- (\BedrockStackFrameWidth,{\BedrockStackFrameY - \BedrockStackFrameRowHeight});%
     \else
-      \path[draw=RuleGray,fill=ManualVariableFill,line width=0.35pt] (0,\BedrockStackFrameY) rectangle (\BedrockStackFrameWidth,{\BedrockStackFrameY - \BedrockStackFrameRowHeight});%
+      \path[draw=RuleGray,fill=BedrockVariableFill,line width=0.35pt] (0,\BedrockStackFrameY) rectangle (\BedrockStackFrameWidth,{\BedrockStackFrameY - \BedrockStackFrameRowHeight});%
     \fi
     \node at ({\BedrockStackFrameWidth/2},\BedrockStackFrameMidY) {#2};%
     \advance\BedrockStackFrameRowIndex by 1
@@ -39,12 +39,12 @@
   \begin{tikzpicture}[x=1in,y=0.30in,every node/.style={font=\scriptsize}]%
   \node[anchor=south] at (0.00,0.26) {63};%
   \node[anchor=south] at (\BedrockStackFrameWidth,0.26) {0};%
-  \node[anchor=south west,text=ManualMuted] at (0,0.68) {higher addresses};%
-  \node[anchor=north west,text=ManualMuted] at (0,{0.06-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows}) {lower addresses};%
-  \draw[manualFlowArrow] ({\BedrockStackFrameWidth+0.42},0.36) --
+  \node[anchor=south west,text=BedrockMuted] at (0,0.68) {higher addresses};%
+  \node[anchor=north west,text=BedrockMuted] at (0,{0.06-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows}) {lower addresses};%
+  \draw[bedrockFlowArrow] ({\BedrockStackFrameWidth+0.42},0.36) --
     node[right,align=left] {stack grows\\toward lower addresses}
     ({\BedrockStackFrameWidth+0.42},{0.06-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows});%
-  \node[anchor=north west,text=ManualMuted] at
+  \node[anchor=north west,text=BedrockMuted] at
     (0,{-0.24-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows})
     {8-byte slots; payload: 16-byte aligned};%
   \BedrockStackFrameRowIndex=0
