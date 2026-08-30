@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
+from typing import TypeAlias
 
 from engine.generation import (
     ArtifactGenerationContext,
@@ -11,7 +12,8 @@ from engine.generation import (
     GeneratedArtifact,
     GeneratedArtifactSet,
 )
-from interfaces.c.model import CInterfaceProject
+from engine.reference import QualifiedReference
+from interfaces.c.model import CInterfaceProject, InterfaceIntrinsic, InterfaceType
 from interfaces.c.model.naming import (
     clang_builtin_spelling,
     intrinsic_collection_header,
@@ -38,6 +40,8 @@ _C_TYPES = {
     "f32_pointer": "float *",
     "f64_pointer": "double *",
 }
+
+CType: TypeAlias = str | QualifiedReference[InterfaceType]
 
 
 class Generator(ArtifactGenerator):
@@ -97,9 +101,9 @@ def _render_group(
     for utility in utilities:
         sections.extend((_render_utility(utility.data), ""))
     for interface_type in types:
-        sections.extend((_render_type(interface_type.data, context), ""))
+        sections.extend((_render_type(interface_type, context, project), ""))
     for intrinsic in intrinsics:
-        sections.extend((_render_intrinsic(intrinsic.data), ""))
+        sections.extend((_render_intrinsic(intrinsic, project), ""))
     sections.extend((f"#endif /* {guard} */", ""))
     return "\n".join(sections)
 
@@ -120,14 +124,20 @@ def _render_utility(data: Mapping[str, object]) -> str:
     return f"#define {name}{suffix} {data['body']}"
 
 
-def _render_type(data: Mapping[str, object], context: ArtifactGenerationContext) -> str:
+def _render_type(
+    interface_type: InterfaceType,
+    context: ArtifactGenerationContext,
+    project: CInterfaceProject,
+) -> str:
+    data = interface_type.data
     type_id = str(data["id"])
     spelling = f"__bedrock_{type_id}_t"
     tag = f"__bedrock_{type_id}"
     if data["kind"] == "enum":
         values = data["values"]
-        source = context.workspace.resolve(str(values["source"]))
-        source = getattr(source, "value", source)
+        if interface_type.enum_source is None:
+            raise ValueError(f"{interface_type.source}: enum type lacks a source")
+        source = context.workspace.resolve(interface_type.enum_source)
         prefix = str(values["member-prefix"])
         entries = [
             (name, item.encoding)
@@ -137,18 +147,28 @@ def _render_type(data: Mapping[str, object], context: ArtifactGenerationContext)
         body = ",\n".join(f"  {prefix}{name} = {value:#x}" for name, value in entries)
         return f"typedef enum {tag} {{\n{body}\n}} {spelling};"
     if data["kind"] == "struct":
+        raw_fields = data["fields"]
+        if not isinstance(raw_fields, list):
+            raise ValueError(f"{interface_type.source}: struct fields must be a list")
         fields = []
-        for field in data["fields"]:
+        for field, field_type in zip(raw_fields, interface_type.field_types):
+            if not isinstance(field, Mapping):
+                raise ValueError(
+                    f"{interface_type.source}: struct field must be a mapping"
+                )
             name = str(field["id"])
             if field.get("role") == "reserved":
                 name = "__" + name
             count = f"[{field['count']}]" if "count" in field else ""
-            fields.append(f"  {_c_type(str(field['type']))} {name}{count};")
+            fields.append(f"  {_c_type(field_type, project)} {name}{count};")
         return f"typedef struct {tag} {{\n" + "\n".join(fields) + f"\n}} {spelling};"
     raise ValueError(f"unsupported generated C type kind {data['kind']!r}")
 
 
-def _render_intrinsic(data: Mapping[str, object]) -> str:
+def _render_intrinsic(
+    intrinsic: InterfaceIntrinsic, project: CInterfaceProject
+) -> str:
+    data = intrinsic.data
     intrinsic_id = str(data["id"])
     public = intrinsic_spelling(intrinsic_id)
     builtin = clang_builtin_spelling(intrinsic_id)
@@ -161,10 +181,18 @@ def _render_intrinsic(data: Mapping[str, object]) -> str:
         return f"#define {public}({', '.join(names)}) \\\n  {builtin}({', '.join(names)})"
     if wrapper_kind in {"aggregate-result", "aggregate-result-macro"}:
         return _render_aggregate_wrapper(
-            public, builtin, signature, wrapper_kind == "aggregate-result-macro"
+            public,
+            builtin,
+            signature,
+            intrinsic.result_type,
+            intrinsic.parameter_types,
+            wrapper_kind == "aggregate-result-macro",
+            project,
         )
-    result = _c_type(str(signature["result"]))
-    declaration = _parameter_declaration(parameters)
+    result = _c_type(intrinsic.result_type, project)
+    declaration = _parameter_declaration(
+        parameters, intrinsic.parameter_types, project
+    )
     call = f"{builtin}({', '.join(names)})"
     statement = f"return {call};" if result != "void" else f"{call};"
     return f"static __inline__ {result}\n{public}({declaration})\n{{\n  {statement}\n}}"
@@ -174,11 +202,14 @@ def _render_aggregate_wrapper(
     public: str,
     builtin: str,
     signature: Mapping[str, object],
+    result_type: CType,
+    parameter_types: tuple[CType, ...],
     macro: bool,
+    project: CInterfaceProject,
 ) -> str:
     parameters = signature["parameters"]
     names = [str(parameter["id"]) for parameter in parameters]
-    result = _c_type(str(signature["result"]))
+    result = _c_type(result_type, project)
     call_arguments = (*names, "&result.value", "&result.flags")
     if macro:
         args = ", ".join(names)
@@ -191,7 +222,7 @@ def _render_aggregate_wrapper(
             "    __result; \\\n"
             "  })"
         )
-    declaration = _parameter_declaration(parameters)
+    declaration = _parameter_declaration(parameters, parameter_types, project)
     return (
         f"static __inline__ {result}\n{public}({declaration})\n{{\n"
         f"  {result} result = {{0}};\n"
@@ -200,18 +231,26 @@ def _render_aggregate_wrapper(
     )
 
 
-def _parameter_declaration(parameters: list[Mapping[str, object]]) -> str:
+def _parameter_declaration(
+    parameters: list[Mapping[str, object]],
+    parameter_types: tuple[CType, ...],
+    project: CInterfaceProject,
+) -> str:
     if not parameters:
         return "void"
     return ", ".join(
-        f"{_c_type(str(parameter['type']))} {parameter['id']}"
-        for parameter in parameters
+        f"{_c_type(parameter_type, project)} {parameter['id']}"
+        for parameter, parameter_type in zip(parameters, parameter_types, strict=True)
     )
 
 
-def _c_type(type_id: str) -> str:
-    if type_id in _C_TYPES:
+def _c_type(type_id: CType, project: CInterfaceProject) -> str:
+    if isinstance(type_id, QualifiedReference):
+        interface_type = project.resolve(type_id.local)
+        if not isinstance(interface_type, InterfaceType):
+            raise ValueError("C interface type reference has a non-type target")
+        return f"__bedrock_{interface_type.id}_t"
+    try:
         return _C_TYPES[type_id]
-    if ".types." in type_id:
-        return f"__bedrock_{type_id.rsplit('.', 1)[-1]}_t"
-    raise ValueError(f"unknown C interface type {type_id!r}")
+    except KeyError as error:
+        raise ValueError(f"unknown C interface type {type_id!r}") from error

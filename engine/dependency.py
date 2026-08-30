@@ -5,15 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+from typing import cast
 
 from .reference import Reference
 from .semantic_text import EntityReferenceText, SemanticText, TermReferenceText
+from .entity import Entity
 
 
 @dataclass(frozen=True, slots=True)
 class DependencyEdge:
-    source: Reference
-    target: Reference
+    source: Reference[object]
+    target: Reference[object]
     kind: str
     source_path: Path
     offset: int
@@ -30,7 +32,7 @@ class DependencyGraph:
     def clear(self) -> None:
         self._edges.clear()
 
-    def record(self, source: Reference, text: SemanticText) -> None:
+    def record(self, source: Reference[object], text: SemanticText) -> None:
         for part in text.parts:
             if isinstance(part, EntityReferenceText):
                 self._edges.append(
@@ -42,21 +44,31 @@ class DependencyGraph:
                 )
 
     def render_json(self, entities, root: Path) -> str:
-        grouped: dict[tuple[Reference, Reference, str], list[DependencyEdge]] = {}
+        grouped: dict[
+            tuple[Reference[object], Reference[object], str], list[DependencyEdge]
+        ] = {}
         for edge in self._edges:
             grouped.setdefault((edge.source, edge.target, edge.kind), []).append(edge)
-        incoming: dict[Reference, int] = {}
-        outgoing: dict[Reference, int] = {}
+        incoming: dict[Reference[object], int] = {}
+        outgoing: dict[Reference[object], int] = {}
+        referenced = {edge.source for edge in self._edges} | {
+            edge.target for edge in self._edges
+        }
+        ordered_references = sorted(referenced)
+        node_ids = {
+            reference: f"node-{index}"
+            for index, reference in enumerate(ordered_references)
+        }
         edges = []
         for (source, target, kind), occurrences in sorted(
-            grouped.items(), key=lambda item: tuple(map(str, item[0]))
+            grouped.items(), key=lambda item: item[0]
         ):
             incoming[target] = incoming.get(target, 0) + len(occurrences)
             outgoing[source] = outgoing.get(source, 0) + len(occurrences)
             edges.append(
                 {
-                    "source": str(source),
-                    "target": str(target),
+                    "source": node_ids[source],
+                    "target": node_ids[target],
                     "kind": kind,
                     "occurrences": len(occurrences),
                     "locations": [
@@ -68,15 +80,12 @@ class DependencyGraph:
                     ],
                 }
             )
-        referenced = {edge.source for edge in self._edges} | {
-            edge.target for edge in self._edges
-        }
         nodes = []
-        for reference in sorted(referenced, key=str):
-            entity = entities.resolve(reference)
+        for reference in ordered_references:
+            entity = entities.resolve(cast(Reference[Entity], reference))
             nodes.append(
                 {
-                    "reference": str(reference),
+                    "id": node_ids[reference],
                     "kind": entity.kind.value,
                     "display": entity.display,
                     "incoming": incoming.get(reference, 0),

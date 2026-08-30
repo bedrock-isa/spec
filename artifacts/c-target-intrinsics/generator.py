@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+from typing import TypeAlias
 
 from engine.generation import (
     AuthoredTexArtifactGenerator,
@@ -9,7 +10,10 @@ from engine.generation import (
     GeneratedArtifact,
     GeneratedArtifactSet,
 )
+from engine.workspace import SpecWorkspace
 from interfaces.c.model import CInterfaceProject
+from engine.reference import QualifiedReference
+from interfaces.c.model import InterfaceType
 from interfaces.c.model.naming import intrinsic_group_header
 
 
@@ -31,7 +35,9 @@ class Generator(AuthoredTexArtifactGenerator):
         )
 
         def replace_group(match: re.Match[str]) -> str:
-            return _render_intrinsic_group(project, match.group(1))
+            return _render_intrinsic_group(
+                project, context.workspace, match.group(1)
+            )
 
         content = re.sub(
             r"\\bedrockgeneratedintrinsicgroup\{([a-z0-9_]+)\}",
@@ -66,7 +72,9 @@ def _render_header_families(project: CInterfaceProject) -> str:
     )
 
 
-def _render_intrinsic_group(project: CInterfaceProject, group_id: str) -> str:
+def _render_intrinsic_group(
+    project: CInterfaceProject, workspace: SpecWorkspace, group_id: str
+) -> str:
     group = next(
         item for item in project.intrinsic_groups.values() if item.id == group_id
     )
@@ -74,13 +82,12 @@ def _render_intrinsic_group(project: CInterfaceProject, group_id: str) -> str:
     for intrinsic in project.intrinsics.values():
         if intrinsic.group != group_id:
             continue
-        signature = intrinsic.data["signature"]
-        result = _document_type(str(signature["result"]))
+        result = _document_type(intrinsic.result_type, project)
         parameters = ",".join(
-            _document_type(str(parameter["type"]))
-            for parameter in signature["parameters"]
+            _document_type(parameter_type, project)
+            for parameter_type in intrinsic.parameter_types
         ) or "void"
-        operation = intrinsic.operation.local.element
+        operation = workspace.resolve(intrinsic.operation).instruction.mnemonic
         operands = intrinsic.data["lowering"].get("operands", {})
         if "size" in operands:
             operation += f".{operands['size']}"
@@ -141,7 +148,12 @@ def _longtable(
     )
 
 
-def _document_type(type_id: str) -> str:
+DocumentType: TypeAlias = str | QualifiedReference[InterfaceType]
+
+
+def _document_type(type_id: DocumentType, project: CInterfaceProject) -> str:
+    if isinstance(type_id, QualifiedReference):
+        return project.resolve(type_id.local).id
     names = {
         "u8": "u8",
         "u16": "u16",
@@ -158,8 +170,6 @@ def _document_type(type_id: str) -> str:
         return names[type_id]
     if type_id.endswith("_pointer"):
         return names[type_id.removesuffix("_pointer")] + " *"
-    if ".types." in type_id:
-        return type_id.rsplit(".", 1)[-1]
     return type_id
 
 

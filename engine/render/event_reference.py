@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ..event import ArchitecturalEvent, ResolvedEvent
-from ..entity import entity_label
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 from .latex_document import tex_escape
 
@@ -43,11 +42,19 @@ class EventReferenceRenderer(DocumentFragmentProvider):
 
     def expand(self, text: str, context: DocumentFragmentContext) -> str:
         for placeholder, method_name in self.PLACEHOLDERS.items():
-            replacement = getattr(self, method_name)(context.project.events)
+            replacement = getattr(self, method_name)(context.project)
             text = text.replace(placeholder, replacement)
         return text
 
-    def render_code_reference(self, catalog) -> str:
+    @staticmethod
+    def _label(project, reference) -> str:
+        label = project.entities.resolve(reference).latex_label
+        if label is None:
+            raise ValueError("entity has no target in this LaTeX artifact")
+        return label
+
+    def render_code_reference(self, project) -> str:
+        catalog = project.events
         classes = []
         seen = set()
         for namespace in catalog.namespaces.values():
@@ -58,7 +65,7 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 seen.add(root.reference)
                 assert root.value is not None and root.selector is not None
                 classes.append(
-                    rf"\phantomsection\label{{{entity_label(root.reference)}}}"
+                    rf"\phantomsection\label{{{self._label(project, root.reference)}}}"
                     rf"\texttt{{0x{root.value:02X}}} & {_identifier(root.id)} & "
                     rf"{tex_escape(root.name or root.id)} & "
                     rf"{tex_escape(root.selector.kind)} {root.selector.bits}-bit selector\\"
@@ -86,13 +93,14 @@ class EventReferenceRenderer(DocumentFragmentProvider):
             ]
         )
 
-    def render_event_contracts(self, catalog) -> str:
-        rows = []
+    def render_event_contracts(self, project) -> str:
+        catalog = project.events
+        rows: list[str] = []
         for resolved in catalog.resolved_events():
             event = resolved.event
             rows.extend(
                 (
-                    rf"\phantomsection\label{{{entity_label(event.reference)}}}"
+                    rf"\phantomsection\label{{{self._label(project, event.reference)}}}"
                     f"{_code(resolved)} & {_identifier(event.id)} & "
                     f"{_identifier(event.family) if event.family else '--'} & "
                     f"{_identifier(event.frame.upper())} & {_payload(event)}\\\\",
@@ -125,7 +133,8 @@ class EventReferenceRenderer(DocumentFragmentProvider):
             ]
         )
 
-    def render_index(self, catalog) -> str:
+    def render_index(self, project) -> str:
+        catalog = project.events
         rows = []
         for resolved in catalog.resolved_events():
             event = resolved.event
@@ -134,7 +143,7 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 f"{_identifier(resolved.owner)} & "
                 f"{_identifier(event.family) if event.family else '--'} & "
                 f"{_identifier(event.frame.upper())} & "
-                rf"\hyperref[{entity_label(event.reference)}]{{definition}} "
+                rf"\hyperref[{self._label(project, event.reference)}]{{definition}} "
                 r"(p.~\pageref{section:event-code-and-sources})\\"
             )
         return "\n".join(

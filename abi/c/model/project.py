@@ -6,23 +6,31 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from engine.entity import (
     Entity,
     EntityCatalog,
     EntityDisplayStyle,
     EntityKind,
-    entity_label,
+    opaque_entity_label,
 )
 from engine.document_topic import DomainDocumentCatalog, DomainDocumentTopic
 from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader
 
+if TYPE_CHECKING:
+    from engine.project import InstructionBundle
+    from engine.register import Register
+
+
+_T = TypeVar("_T")
+
 
 @dataclass(frozen=True, slots=True)
 class CType:
-    reference: Reference
+    reference: Reference["CType"]
     source: Path
     root: Path
     id: str
@@ -35,12 +43,12 @@ class CType:
 
 @dataclass(frozen=True, slots=True)
 class RegisterClass:
-    reference: Reference
+    reference: Reference["RegisterClass"]
     source: Path
     root: Path
     id: str
-    arguments: tuple[QualifiedReference, ...]
-    results: tuple[QualifiedReference, ...]
+    arguments: tuple[QualifiedReference[Register], ...]
+    results: tuple[QualifiedReference[Register], ...]
     allocation: str
     tuple_alignment: int
     exhaustion: str
@@ -49,7 +57,7 @@ class RegisterClass:
 @dataclass(frozen=True, slots=True)
 class LocationPolicy:
     mode: str
-    register_class: Reference | None
+    register_class: Reference["RegisterClass"] | None
     units: int | None
     alignment_units: int
     direct_maximum_bytes: int | None
@@ -58,7 +66,7 @@ class LocationPolicy:
 
 @dataclass(frozen=True, slots=True)
 class ValueClass:
-    reference: Reference
+    reference: Reference["ValueClass"]
     source: Path
     root: Path
     id: str
@@ -69,7 +77,7 @@ class ValueClass:
 
 @dataclass(frozen=True, slots=True)
 class Promotion:
-    reference: Reference
+    reference: Reference["Promotion"]
     source: Path
     root: Path
     id: str
@@ -79,18 +87,18 @@ class Promotion:
 
 @dataclass(frozen=True, slots=True)
 class StackConvention:
-    pointer: QualifiedReference
+    pointer: QualifiedReference[Register]
     growth: str
     entry_alignment_bytes: int
     first_argument_offset_bytes: int
     argument_slot_bytes: int
-    sret_register: QualifiedReference
+    sret_register: QualifiedReference[Register]
     red_zone_bytes: int
 
 
 @dataclass(frozen=True, slots=True)
 class PreservationSet:
-    registers: tuple[QualifiedReference, ...]
+    registers: tuple[QualifiedReference[Register], ...]
     disposition: str
 
 
@@ -102,51 +110,51 @@ class CallingConvention:
     register_class_inventory: DirectoryInventory
     value_class_inventory: DirectoryInventory
     promotion_inventory: DirectoryInventory
-    register_classes: tuple[Reference, ...]
-    value_classes: tuple[Reference, ...]
-    promotions: tuple[Reference, ...]
+    register_classes: tuple[Reference[RegisterClass], ...]
+    value_classes: tuple[Reference[ValueClass], ...]
+    promotions: tuple[Reference[Promotion], ...]
     preservation: tuple[PreservationSet, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class RuntimeHelper:
-    reference: Reference
+    reference: Reference["RuntimeHelper"]
     source: Path
     root: Path
     id: str
     symbol: str
-    result: Reference
-    parameters: tuple[Reference, ...]
+    result: Reference[CType]
+    parameters: tuple[Reference[CType], ...]
 
 
 @dataclass(frozen=True, slots=True)
 class MemoryOrderMapping:
-    reference: Reference
+    reference: Reference["MemoryOrderMapping"]
     source: Path
     root: Path
     id: str
     instruction_order: str
-    load: tuple[str | QualifiedReference, ...] | None
-    store: tuple[str | QualifiedReference, ...] | None
-    thread_fence: tuple[str | QualifiedReference, ...]
+    load: tuple[str | QualifiedReference[InstructionBundle], ...] | None
+    store: tuple[str | QualifiedReference[InstructionBundle], ...] | None
+    thread_fence: tuple[str | QualifiedReference[InstructionBundle], ...]
 
 
 @dataclass(frozen=True, slots=True)
 class AtomicLowering:
-    reference: Reference
+    reference: Reference["AtomicLowering"]
     source: Path
     root: Path
     id: str
     c_operations: tuple[str, ...]
     strategy: str
-    instructions: tuple[QualifiedReference, ...]
+    instructions: tuple[QualifiedReference[InstructionBundle], ...]
 
 
 @dataclass(frozen=True, slots=True)
 class ResolvedRegisterClass:
     definition: RegisterClass
-    arguments: tuple[object, ...]
-    results: tuple[object, ...]
+    arguments: tuple[Register, ...]
+    results: tuple[Register, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,9 +167,9 @@ class ResolvedValueClass:
 @dataclass(frozen=True, slots=True)
 class ResolvedCallingConvention:
     definition: CallingConvention
-    stack_pointer: object
-    sret_register: object
-    register_classes: Mapping[Reference, ResolvedRegisterClass]
+    stack_pointer: Register
+    sret_register: Register
+    register_classes: Mapping[Reference[RegisterClass], ResolvedRegisterClass]
     value_classes: Mapping[str, ResolvedValueClass]
     promotions: Mapping[str, str]
 
@@ -227,21 +235,55 @@ class CAbiProject:
             entities,
         )
 
-    def resolve(self, reference: str | Reference) -> object:
-        normalized = Reference.parse(reference)
-        for index in (
-            self.types,
-            self.register_classes,
-            self.value_classes,
-            self.promotions,
-            self.runtime_helpers,
-            self.memory_orders,
-            self.atomic_lowerings,
-            self.document_topics,
-        ):
-            if normalized in index:
-                return index.resolve(normalized)
-        return self.entities.resolve(normalized)
+    def resolve(self, reference: Reference[_T]) -> _T:
+        if reference in self.types:
+            return cast(_T, self.types.resolve(cast(Reference[CType], reference)))
+        if reference in self.register_classes:
+            return cast(
+                _T,
+                self.register_classes.resolve(
+                    cast(Reference[RegisterClass], reference)
+                ),
+            )
+        if reference in self.value_classes:
+            return cast(
+                _T,
+                self.value_classes.resolve(cast(Reference[ValueClass], reference)),
+            )
+        if reference in self.promotions:
+            return cast(
+                _T, self.promotions.resolve(cast(Reference[Promotion], reference))
+            )
+        if reference in self.runtime_helpers:
+            return cast(
+                _T,
+                self.runtime_helpers.resolve(cast(Reference[RuntimeHelper], reference)),
+            )
+        if reference in self.memory_orders:
+            return cast(
+                _T,
+                self.memory_orders.resolve(
+                    cast(Reference[MemoryOrderMapping], reference)
+                ),
+            )
+        if reference in self.atomic_lowerings:
+            return cast(
+                _T,
+                self.atomic_lowerings.resolve(
+                    cast(Reference[AtomicLowering], reference)
+                ),
+            )
+        if reference in self.document_topics:
+            return cast(
+                _T,
+                self.document_topics.resolve(
+                    cast(Reference[DomainDocumentTopic], reference)
+                ),
+            )
+        return cast(
+            _T,
+            self.entities.resolve(cast(Reference[Entity], reference)),
+        )
 
     def validate(self, workspace) -> None:
         """Resolve every local and cross-domain relationship."""
@@ -262,11 +304,11 @@ class CAbiProject:
                 workspace.resolve(register)
         for value_class in self.value_classes.values():
             for kind in value_class.kinds:
-                previous = kind_owners.get(kind)
-                if previous is not None:
+                call_kind_owner = kind_owners.get(kind)
+                if call_kind_owner is not None:
                     raise ValueError(
                         f"{value_class.source}: call kind {kind!r} is also "
-                        f"classified by {previous.reference}"
+                        f"classified by {call_kind_owner.id}"
                     )
                 kind_owners[kind] = value_class
             for policy in (value_class.argument, value_class.result):
@@ -275,22 +317,27 @@ class CAbiProject:
         convention = self.calling_convention
         workspace.resolve(convention.stack.pointer)
         workspace.resolve(convention.stack.sret_register)
-        allocated_registers: dict[QualifiedReference, Reference] = {}
-        for reference in convention.register_classes:
-            register_class = self.register_classes.resolve(reference)
+        allocated_registers: dict[
+            QualifiedReference[Register], Reference[RegisterClass]
+        ] = {}
+        for register_class_reference in convention.register_classes:
+            register_class = self.register_classes.resolve(register_class_reference)
             for register in register_class.arguments:
-                previous = allocated_registers.get(register)
-                if previous is not None:
+                allocation_owner = allocated_registers.get(register)
+                if allocation_owner is not None:
+                    previous_class = self.register_classes.resolve(allocation_owner)
+                    register_target = workspace.resolve(register)
                     raise ValueError(
-                        f"{register_class.source}: argument register {register} "
-                        f"is also allocated by {previous}"
+                        f"{register_class.source}: argument register "
+                        f"{register_target.id} is also allocated by "
+                        f"{previous_class.id}"
                     )
-                allocated_registers[register] = reference
-        for reference in convention.value_classes:
-            self.value_classes.resolve(reference)
-        promotion_sources: dict[str, Reference] = {}
-        for reference in convention.promotions:
-            promotion = self.promotions.resolve(reference)
+                allocated_registers[register] = register_class_reference
+        for value_class_reference in convention.value_classes:
+            self.value_classes.resolve(value_class_reference)
+        promotion_sources: dict[str, Reference[Promotion]] = {}
+        for promotion_reference in convention.promotions:
+            promotion = self.promotions.resolve(promotion_reference)
             if promotion.target_kind not in kind_owners:
                 raise ValueError(
                     f"{promotion.source}: target kind {promotion.target_kind!r} "
@@ -301,22 +348,24 @@ class CAbiProject:
                     raise ValueError(
                         f"{promotion.source}: source kind {kind!r} has no value class"
                     )
-                previous = promotion_sources.get(kind)
-                if previous is not None:
+                promotion_owner = promotion_sources.get(kind)
+                if promotion_owner is not None:
+                    previous_promotion = self.promotions.resolve(promotion_owner)
                     raise ValueError(
                         f"{promotion.source}: source kind {kind!r} is also "
-                        f"promoted by {previous}"
+                        f"promoted by {previous_promotion.id}"
                     )
-                promotion_sources[kind] = reference
-        preserved: dict[QualifiedReference, str] = {}
+                promotion_sources[kind] = promotion_reference
+        preserved: dict[QualifiedReference[Register], str] = {}
         for preservation in convention.preservation:
             for register in preservation.registers:
                 workspace.resolve(register)
-                previous = preserved.get(register)
-                if previous is not None:
+                previous_disposition = preserved.get(register)
+                if previous_disposition is not None:
+                    register_target = workspace.resolve(register)
                     raise ValueError(
-                        f"{convention.source}: register {register} has both "
-                        f"{previous!r} and {preservation.disposition!r} dispositions"
+                        f"{convention.source}: register {register_target.id} has both "
+                        f"{previous_disposition!r} and {preservation.disposition!r} dispositions"
                     )
                 preserved[register] = preservation.disposition
         for helper in self.runtime_helpers.values():
@@ -331,11 +380,11 @@ class CAbiProject:
         operation_owners: dict[str, AtomicLowering] = {}
         for lowering in self.atomic_lowerings.values():
             for operation in lowering.c_operations:
-                previous = operation_owners.get(operation)
-                if previous is not None:
+                operation_owner = operation_owners.get(operation)
+                if operation_owner is not None:
                     raise ValueError(
                         f"{lowering.source}: C operation {operation!r} is also "
-                        f"lowered by {previous.reference}"
+                        f"lowered by {operation_owner.id}"
                     )
                 operation_owners[operation] = lowering
             for instruction in lowering.instructions:
@@ -343,33 +392,35 @@ class CAbiProject:
 
     def resolved_calling_convention(self, workspace) -> ResolvedCallingConvention:
         convention = self.calling_convention
-        resolved_registers: dict[Reference, ResolvedRegisterClass] = {}
-        for item in convention.register_classes:
-            definition = self.register_classes.resolve(item)
-            resolved_registers[item] = ResolvedRegisterClass(
-                definition,
-                tuple(workspace.resolve(register) for register in definition.arguments),
-                tuple(workspace.resolve(register) for register in definition.results),
+        resolved_registers: dict[Reference[RegisterClass], ResolvedRegisterClass] = {}
+        for register_class_reference in convention.register_classes:
+            register_class = self.register_classes.resolve(register_class_reference)
+            resolved_registers[register_class_reference] = ResolvedRegisterClass(
+                register_class,
+                tuple(workspace.resolve(register) for register in register_class.arguments),
+                tuple(workspace.resolve(register) for register in register_class.results),
             )
         resolved_values: dict[str, ResolvedValueClass] = {}
-        for item in convention.value_classes:
-            definition = self.value_classes.resolve(item)
+        for value_class_reference in convention.value_classes:
+            value_class = self.value_classes.resolve(value_class_reference)
             argument_class = (
-                resolved_registers[definition.argument.register_class]
-                if definition.argument.register_class is not None
+                resolved_registers[value_class.argument.register_class]
+                if value_class.argument.register_class is not None
                 else None
             )
             result_class = (
-                resolved_registers[definition.result.register_class]
-                if definition.result.register_class is not None
+                resolved_registers[value_class.result.register_class]
+                if value_class.result.register_class is not None
                 else None
             )
-            resolved = ResolvedValueClass(definition, argument_class, result_class)
-            for kind in definition.kinds:
-                resolved_values[kind] = resolved
+            resolved_value_class = ResolvedValueClass(
+                value_class, argument_class, result_class
+            )
+            for kind in value_class.kinds:
+                resolved_values[kind] = resolved_value_class
         promotions: dict[str, str] = {}
-        for item in convention.promotions:
-            promotion = self.promotions.resolve(item)
+        for promotion_reference in convention.promotions:
+            promotion = self.promotions.resolve(promotion_reference)
             for kind in promotion.source_kinds:
                 promotions[kind] = promotion.target_kind
         return ResolvedCallingConvention(
@@ -425,9 +476,9 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         source = entity_root / "type.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "type.yaml")
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("types",), entity_id)
-        entity = CType(
-            reference,
+        c_type_reference: Reference[CType] = Reference(owner, ("types",), entity_id)
+        c_type = CType(
+            c_type_reference,
             source,
             entity_root,
             entity_id,
@@ -437,8 +488,8 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             raw["alignment_bytes"],
             raw.get("representation"),
         )
-        indexes.types.register(reference, entity)
-        types[entity_id] = entity
+        indexes.types.register(c_type_reference, c_type)
+        types[entity_id] = c_type
 
     for child_id in register_inventory.declared:
         child_root = register_inventory.root / child_id
@@ -447,11 +498,13 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             child_source, schemas / "register-class.yaml"
         )
         _matching_id(child_source, child_id, child)
-        reference = Reference(owner, ("register_classes",), child_id)
+        register_class_reference: Reference[RegisterClass] = Reference(
+            owner, ("register_classes",), child_id
+        )
         indexes.register_classes.register(
-            reference,
+            register_class_reference,
             RegisterClass(
-                reference, child_source, child_root, child_id,
+                register_class_reference, child_source, child_root, child_id,
                 tuple(QualifiedReference.parse(item) for item in child["arguments"]),
                 tuple(QualifiedReference.parse(item) for item in child["results"]),
                 child["allocation"], child.get("tuple_alignment", 1),
@@ -465,11 +518,13 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             child_source, schemas / "value-class.yaml"
         )
         _matching_id(child_source, child_id, child)
-        reference = Reference(owner, ("value_classes",), child_id)
+        value_class_reference: Reference[ValueClass] = Reference(
+            owner, ("value_classes",), child_id
+        )
         indexes.value_classes.register(
-            reference,
+            value_class_reference,
             ValueClass(
-                reference, child_source, child_root, child_id,
+                value_class_reference, child_source, child_root, child_id,
                 tuple(child["kinds"]), _location_policy(child["argument"]),
                 _location_policy(child["result"]),
             ),
@@ -481,11 +536,13 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             child_source, schemas / "promotion.yaml"
         )
         _matching_id(child_source, child_id, child)
-        reference = Reference(owner, ("promotions",), child_id)
+        promotion_reference: Reference[Promotion] = Reference(
+            owner, ("promotions",), child_id
+        )
         indexes.promotions.register(
-            reference,
+            promotion_reference,
             Promotion(
-                reference, child_source, child_root, child_id,
+                promotion_reference, child_source, child_root, child_id,
                 tuple(child["source_kinds"]), child["target_kind"],
             ),
         )
@@ -542,18 +599,23 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             source, schemas / "runtime-helper.yaml"
         )
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("runtime_helpers",), entity_id)
-        entity = RuntimeHelper(
-            reference,
+        helper_reference: Reference[RuntimeHelper] = Reference(
+            owner, ("runtime_helpers",), entity_id
+        )
+        helper = RuntimeHelper(
+            helper_reference,
             source,
             entity_root,
             entity_id,
             raw["symbol"],
-            Reference.parse(raw["result"]),
-            tuple(Reference.parse(item) for item in raw["parameters"]),
+            Reference.parse(cast(str, raw["result"])),
+            tuple(
+                Reference.parse(cast(str, parameter))
+                for parameter in cast(list[object], raw["parameters"])
+            ),
         )
-        indexes.runtime_helpers.register(reference, entity)
-        helpers[entity_id] = entity
+        indexes.runtime_helpers.register(helper_reference, helper)
+        helpers[entity_id] = helper
 
     orders: dict[str, MemoryOrderMapping] = {}
     for entity_id in order_inventory.declared:
@@ -563,9 +625,11 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             source, schemas / "memory-order.yaml"
         )
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("memory_orders",), entity_id)
-        entity = MemoryOrderMapping(
-            reference,
+        memory_order_reference: Reference[MemoryOrderMapping] = Reference(
+            owner, ("memory_orders",), entity_id
+        )
+        memory_order = MemoryOrderMapping(
+            memory_order_reference,
             source,
             entity_root,
             entity_id,
@@ -574,8 +638,8 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             _memory_order_sequence(raw.get("store")),
             _memory_order_sequence(raw["thread_fence"]) or (),
         )
-        indexes.memory_orders.register(reference, entity)
-        orders[entity_id] = entity
+        indexes.memory_orders.register(memory_order_reference, memory_order)
+        orders[entity_id] = memory_order
 
     atomic_lowerings: dict[str, AtomicLowering] = {}
     for entity_id in atomic_inventory.declared:
@@ -585,18 +649,23 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
             source, schemas / "atomic-lowering.yaml"
         )
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("atomic_lowerings",), entity_id)
-        entity = AtomicLowering(
-            reference,
+        atomic_lowering_reference: Reference[AtomicLowering] = Reference(
+            owner, ("atomic_lowerings",), entity_id
+        )
+        atomic_lowering = AtomicLowering(
+            atomic_lowering_reference,
             source,
             entity_root,
             entity_id,
             tuple(raw["c_operations"]),
             str(raw["strategy"]),
-            tuple(QualifiedReference.parse(item) for item in raw["instructions"]),
+            tuple(
+                QualifiedReference.parse(cast(str, instruction))
+                for instruction in cast(list[object], raw["instructions"])
+            ),
         )
-        indexes.atomic_lowerings.register(reference, entity)
-        atomic_lowerings[entity_id] = entity
+        indexes.atomic_lowerings.register(atomic_lowering_reference, atomic_lowering)
+        atomic_lowerings[entity_id] = atomic_lowering
 
     return CAbiNamespace(
         owner,
@@ -629,12 +698,12 @@ def _inventory(owner: str, root: Path, kind: str, plural: str) -> DirectoryInven
 def _location_policy(raw: Mapping[str, object]) -> LocationPolicy:
     return LocationPolicy(
         str(raw["mode"]),
-        Reference.parse(raw["register_class"])
+        Reference.parse(cast(str, raw["register_class"]))
         if "register_class" in raw
         else None,
-        int(raw["units"]) if "units" in raw else None,
-        int(raw.get("alignment_units", 1)),
-        int(raw["direct_maximum_bytes"])
+        int(cast(int | str, raw["units"])) if "units" in raw else None,
+        int(cast(int | str, raw.get("alignment_units", 1))),
+        int(cast(int | str, raw["direct_maximum_bytes"]))
         if "direct_maximum_bytes" in raw
         else None,
         str(raw["fallback"]) if "fallback" in raw else None,
@@ -643,12 +712,12 @@ def _location_policy(raw: Mapping[str, object]) -> LocationPolicy:
 
 def _memory_order_sequence(
     raw: object,
-) -> tuple[str | QualifiedReference, ...] | None:
+) -> tuple[str | QualifiedReference[InstructionBundle], ...] | None:
     if raw is None:
         return None
     return tuple(
         item if item == "access" else QualifiedReference.parse(item)
-        for item in raw
+        for item in cast(list[str], raw)
     )
 
 
@@ -683,14 +752,15 @@ def _build_entities(
                 if isinstance(value, DomainDocumentTopic)
                 else value.id
             )
+            entity_reference = cast(Reference[Entity], reference)
             result.register(
-                reference,
+                entity_reference,
                 Entity(
-                    reference,
+                    entity_reference,
                     kind,
                     display,
                     value,
-                    entity_label(reference),
+                    opaque_entity_label(len(result)),
                     EntityDisplayStyle.TEXT
                     if isinstance(value, DomainDocumentTopic)
                     else EntityDisplayStyle.CODE,

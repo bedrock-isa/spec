@@ -146,43 +146,60 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
                     "1" if result.signed else "0",
                     _lld_expression(relocation),
                     _c_string(relocation.calculation.code),
-                    _c_string(str(relocation.field) if relocation.field else ""),
+                    _c_string(
+                        _field_id(workspace, relocation.field)
+                        if relocation.field
+                        else ""
+                    ),
                 )
             )
             + ")"
         )
         for target in relocation.relaxations:
             lines.append(
-                f"BEDROCK_ELF_RELAXATION({relocation.id}, {target.element})"
+                f"BEDROCK_ELF_RELAXATION("
+                f"{relocation.id}, {project.relocations.resolve(target).id})"
             )
 
-    for model in sorted(project.code_models.values(), key=lambda item: item.id):
+    for code_model in sorted(project.code_models.values(), key=lambda item: item.id):
         lines.append(
-            f"BEDROCK_ELF_CODE_MODEL({model.id}, "
-            f"{_c_string(str(model.data['placement']))}, "
-            f"{_c_string(str(model.data['strategy']))})"
+            f"BEDROCK_ELF_CODE_MODEL({code_model.id}, "
+            f"{_c_string(str(code_model.data['placement']))}, "
+            f"{_c_string(str(code_model.data['strategy']))})"
         )
-        for relocation in model.default_relocations:
+        for code_relocation in code_model.default_relocations:
             lines.append(
-                f"BEDROCK_ELF_CODE_MODEL_RELOCATION({model.id}, {relocation.element})"
+                f"BEDROCK_ELF_CODE_MODEL_RELOCATION("
+                f"{code_model.id}, "
+                f"{project.relocations.resolve(code_relocation).id})"
             )
 
-    for model in sorted(project.tls_models.values(), key=lambda item: item.id):
-        base = "NONE" if model.base_register is None else model.base_register.local.element
-        protocol = "NONE" if model.protocol is None else model.protocol.element
-        lines.append(
-            f"BEDROCK_ELF_TLS_MODEL({model.id}, {base}, {protocol}, "
-            f"{_c_string(str(model.data['selection']))})"
+    for tls_model in sorted(project.tls_models.values(), key=lambda item: item.id):
+        base = (
+            "NONE"
+            if tls_model.base_register is None
+            else workspace.resolve(tls_model.base_register).id
         )
-        for relocation in model.relocations:
+        tls_protocol_id = (
+            "NONE"
+            if tls_model.protocol is None
+            else project.linkage_protocols.resolve(tls_model.protocol).id
+        )
+        lines.append(
+            f"BEDROCK_ELF_TLS_MODEL({tls_model.id}, {base}, {tls_protocol_id}, "
+            f"{_c_string(str(tls_model.data['selection']))})"
+        )
+        for tls_relocation in tls_model.relocations:
             lines.append(
-                f"BEDROCK_ELF_TLS_MODEL_RELOCATION({model.id}, {relocation.element})"
+                f"BEDROCK_ELF_TLS_MODEL_RELOCATION("
+                f"{tls_model.id}, "
+                f"{project.relocations.resolve(tls_relocation).id})"
             )
         lines.extend(
             _property_lines(
                 "BEDROCK_ELF_TLS_PROPERTY",
-                model.id,
-                model.data,
+                tls_model.id,
+                tls_model.data,
                 excluded={"id", "selection", "base_register", "protocol", "relocations"},
             )
         )
@@ -204,15 +221,17 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
         for offset, register in enumerate(assignment.registers):
             lines.append(
                 f"BEDROCK_ELF_DEBUG_REGISTER_MAPPING({range_name}, "
-                f"{assignment.first + offset}, {register.local.element})"
+                f"{assignment.first + offset}, {workspace.resolve(register).id})"
             )
 
     state = project.process_entry
-    tls_base = "NONE" if state.tls_base is None else state.tls_base.local.element
+    tls_base = (
+        "NONE" if state.tls_base is None else workspace.resolve(state.tls_base).id
+    )
     lines.append(
             f"BEDROCK_ELF_ENTRY_STATE("
-            f"{state.entry_point.local.element}, "
-            f"{_c_string(state.entry_point_source)}, {state.stack.local.element}, "
+            f"{workspace.resolve(state.entry_point).id}, "
+            f"{_c_string(state.entry_point_source)}, {workspace.resolve(state.stack).id}, "
             f"{state.stack_alignment_bytes}, {tls_base}, "
             f"{_c_string(state.payload_owner)})"
     )
@@ -221,35 +240,43 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
     for role, register in state.segment_contexts.items():
         lines.append(
             f"BEDROCK_ELF_ENTRY_SEGMENT_CONTEXT({_token(role)}, "
-            f"{register.local.element})"
+                f"{workspace.resolve(register).id})"
         )
     for requirement in state.readiness:
         lines.append(f"BEDROCK_ELF_ENTRY_READINESS({_token(requirement)})")
     for register in state.cleared:
-        lines.append(f"BEDROCK_ELF_ENTRY_CLEARED_REGISTER({register.local.element})")
+        lines.append(
+            f"BEDROCK_ELF_ENTRY_CLEARED_REGISTER({workspace.resolve(register).id})"
+        )
 
-    for protocol in sorted(
+    for linkage_protocol in sorted(
         project.linkage_protocols.values(), key=lambda item: item.id
     ):
-        lines.append(f"BEDROCK_ELF_LINKAGE_PROTOCOL({protocol.id})")
-        for index, step in enumerate(protocol.steps):
+        lines.append(f"BEDROCK_ELF_LINKAGE_PROTOCOL({linkage_protocol.id})")
+        for index, step in enumerate(linkage_protocol.steps):
             form = _c_string(step.form or "")
-            relocation = "NONE" if step.relocation is None else step.relocation.local.element
-            lines.append(
-                f"BEDROCK_ELF_LINKAGE_STEP({protocol.id}, {index}, "
-                f"{step.instruction.local.element}, {form}, {relocation})"
+            step_relocation = (
+                "NONE"
+                if step.relocation is None
+                else workspace.resolve(step.relocation).id
             )
-        for state in protocol.state:
-            for register in state.registers:
+            lines.append(
+                f"BEDROCK_ELF_LINKAGE_STEP({linkage_protocol.id}, {index}, "
+                f"{workspace.resolve(step.instruction).instruction.mnemonic}, "
+                f"{form}, {step_relocation})"
+            )
+        for state_contract in linkage_protocol.state:
+            for state_register in state_contract.registers:
                 lines.append(
-                    f"BEDROCK_ELF_LINKAGE_REGISTER({protocol.id}, "
-                    f"{_token(state.disposition)}, {register.local.element})"
+                    f"BEDROCK_ELF_LINKAGE_REGISTER({linkage_protocol.id}, "
+                    f"{_token(state_contract.disposition)}, "
+                    f"{workspace.resolve(state_register).id})"
                 )
         lines.extend(
             _property_lines(
                 "BEDROCK_ELF_LINKAGE_PROPERTY",
-                protocol.id,
-                protocol.data,
+                linkage_protocol.id,
+                linkage_protocol.data,
                 excluded={"id", "steps", "state"},
             )
         )
@@ -272,6 +299,12 @@ def _lld_expression(relocation: Relocation) -> str:
             f"{relocation.source}: no LLVM/LLD expression mapping for "
             f"{relocation.calculation.code!r} ({signature})"
         ) from error
+
+
+def _field_id(workspace, reference) -> str:
+    """Return the authored field/payload type ID without exposing its ref key."""
+
+    return workspace.resolve(reference).source.parent.name
 
 
 def _expression_signature(expression: RelocationExpression) -> str:

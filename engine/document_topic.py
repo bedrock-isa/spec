@@ -12,14 +12,14 @@ from .yaml_document import SchemaValidatedYamlLoader
 
 @dataclass(frozen=True, slots=True)
 class DomainDocumentTopic:
-    reference: Reference
+    reference: Reference["DomainDocumentTopic"]
     source: Path
     root: Path
     id: str
     title: str
     document: Path
     label: str
-    objects: tuple[QualifiedReference, ...]
+    objects: tuple[QualifiedReference[object], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,7 +74,9 @@ class DomainDocumentCatalog:
                     f"{source}: topic order differs from labels in {document}"
                 )
             positions[document] = position
-            reference = Reference(owner, ("document_topics",), entity_id)
+            reference: Reference[DomainDocumentTopic] = Reference(
+                owner, ("document_topics",), entity_id
+            )
             topic = DomainDocumentTopic(
                 reference,
                 source,

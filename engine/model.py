@@ -10,9 +10,11 @@ from types import MappingProxyType
 
 try:
     from .extension import ExtensionMetadata, ExtensionSetCatalog
+    from .reference import Reference
     from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from extension import ExtensionMetadata, ExtensionSetCatalog
+    from reference import Reference
     from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
@@ -22,13 +24,10 @@ class SailUnit:
 
     owner: str
     id: str
+    reference: Reference["SailUnit"]
     source: Path
     sources: tuple[Path, ...]
-    requires: tuple[str, ...]
-
-    @property
-    def reference(self) -> str:
-        return f"{self.owner}.{self.id}"
+    requires: tuple[Reference["SailUnit"], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,14 +36,12 @@ class DocumentTopic:
 
     owner: str
     id: str
+    reference: Reference["DocumentTopic"]
     source: Path
     document: Path
     artifact: str
     concept: str | None
 
-    @property
-    def reference(self) -> str:
-        return f"{self.owner}.{self.id}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,9 +106,13 @@ class ModelManifestLoader:
                 SailUnit(
                     owner=owner,
                     id=unit_id,
+                    reference=Reference.parse(f"{owner}.{unit_id}"),
                     source=manifest_path,
                     sources=sources,
-                    requires=tuple(raw.get("requires", ())),
+                    requires=tuple(
+                        Reference.parse(reference)
+                        for reference in raw.get("requires", ())
+                    ),
                 )
             )
         return tuple(units)
@@ -148,6 +149,7 @@ class ModelManifestLoader:
                 DocumentTopic(
                     owner=owner,
                     id=topic_id,
+                    reference=Reference.parse(f"{owner}.{topic_id}"),
                     source=manifest_path,
                     document=document,
                     artifact=raw.get("artifact", "isa-reference"),
@@ -163,11 +165,11 @@ class ModelCatalog:
 
     base: ModelNamespace
     extensions: Mapping[str, ModelNamespace]
-    sail_units: Mapping[str, SailUnit]
-    sail_order: tuple[str, ...]
-    document_topics: Mapping[str, DocumentTopic]
-    document_order: tuple[str, ...]
-    document_orders: Mapping[str, tuple[str, ...]]
+    sail_units: Mapping[Reference[SailUnit], SailUnit]
+    sail_order: tuple[Reference[SailUnit], ...]
+    document_topics: Mapping[Reference[DocumentTopic], DocumentTopic]
+    document_order: tuple[Reference[DocumentTopic], ...]
+    document_orders: Mapping[str, tuple[Reference[DocumentTopic], ...]]
 
     @classmethod
     def load(
@@ -229,22 +231,24 @@ class ModelDependencyResolver:
         base: ModelNamespace,
         extensions: Mapping[str, ModelNamespace],
     ) -> ModelCatalog:
-        sail_units: dict[str, SailUnit] = {}
-        topics: dict[str, DocumentTopic] = {}
-        topic_order: list[str] = []
+        sail_units: dict[Reference[SailUnit], SailUnit] = {}
+        topics: dict[Reference[DocumentTopic], DocumentTopic] = {}
+        topic_order: list[Reference[DocumentTopic]] = []
         for namespace in (base, *extensions.values()):
             for unit in namespace.sail_units:
                 if unit.reference in sail_units:
-                    raise ValueError(f"duplicate Sail unit {unit.reference}")
+                    raise ValueError(f"duplicate Sail unit {unit.owner}.{unit.id}")
                 sail_units[unit.reference] = unit
             for topic in namespace.document_topics:
                 if topic.reference in topics:
-                    raise ValueError(f"duplicate document topic {topic.reference}")
+                    raise ValueError(
+                        f"duplicate document topic {topic.owner}.{topic.id}"
+                    )
                 topics[topic.reference] = topic
                 topic_order.append(topic.reference)
 
         sail_order = self._resolve_sail_units(sail_units)
-        document_orders: dict[str, list[str]] = {}
+        document_orders: dict[str, list[Reference[DocumentTopic]]] = {}
         for reference in topic_order:
             topic = topics[reference]
             document_orders.setdefault(topic.artifact, []).append(reference)
@@ -262,25 +266,26 @@ class ModelDependencyResolver:
 
     @staticmethod
     def _resolve_sail_units(
-        units: Mapping[str, SailUnit],
-    ) -> tuple[str, ...]:
-        resolved: list[str] = []
-        complete: set[str] = set()
-        active: list[str] = []
+        units: Mapping[Reference[SailUnit], SailUnit],
+    ) -> tuple[Reference[SailUnit], ...]:
+        resolved: list[Reference[SailUnit]] = []
+        complete: set[Reference[SailUnit]] = set()
+        active: list[Reference[SailUnit]] = []
 
-        def resolve(reference: str) -> None:
+        def resolve(reference: Reference[SailUnit]) -> None:
             if reference in complete:
                 return
             if reference in active:
                 start = active.index(reference)
                 raise ValueError(
-                    "circular Sail dependency: "
-                    + " -> ".join((*active[start:], reference))
+                    "circular Sail dependency"
                 )
             unit = units.get(reference)
             if unit is None:
                 requiring = active[-1] if active else reference
-                raise ValueError(f"{requiring}: unknown required Sail unit {reference}")
+                raise ValueError(
+                    "unknown required Sail unit"
+                )
             active.append(reference)
             for required in unit.requires:
                 resolve(required)

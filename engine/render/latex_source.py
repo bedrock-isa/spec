@@ -29,16 +29,13 @@ def rewrite_direct_terms(text: str, catalog) -> tuple[str, int]:
 
     spellings = []
     for term in catalog.references.terms.values():
-        for form, value in (
-            ("canonical", term.forms.canonical),
-            ("plural", term.forms.plural),
-            ("adjective", term.forms.adjective),
+        for value in (
+            term.forms.canonical,
+            term.forms.plural,
+            term.forms.adjective,
         ):
             if value is not None:
-                payload = str(term.reference)
-                if form != "canonical":
-                    payload += f"|{form}"
-                spellings.append((value, f"(:term:{payload}:)"))
+                spellings.append((value, "(:term:detected:)"))
     spellings.sort(key=lambda item: len(item[0]), reverse=True)
     protected = tuple((match.start(), match.end()) for match in _PROTECTED_TEX_RE.finditer(text))
     replacements: list[tuple[int, int, str]] = []
@@ -61,26 +58,24 @@ def rewrite_direct_terms(text: str, catalog) -> tuple[str, int]:
 def rewrite_direct_entity_codes(text: str, entities) -> tuple[str, int]:
     """Replace unambiguous code-form instruction and event mentions."""
 
-    candidates: dict[str, list[str]] = defaultdict(list)
+    candidates: dict[str, int] = defaultdict(int)
     for entity in entities.references.values():
         if entity.kind not in {EntityKind.INSTRUCTION, EntityKind.EVENT}:
             continue
         escaped = entity.display.replace("_", r"\_")
-        candidates[rf"\texttt{{{escaped}}}"].append(str(entity.reference))
+        candidates[rf"\texttt{{{escaped}}}"] += 1
     protected = tuple(
         (match.start(), match.end()) for match in _ESCAPE_OR_COMMENT_RE.finditer(text)
     )
     replacements: list[tuple[int, int, str]] = []
-    for marker, references in candidates.items():
-        if len(references) != 1:
+    for marker, count in candidates.items():
+        if count != 1:
             continue
         for match in re.finditer(re.escape(marker), text):
             span = (match.start(), match.end())
             if any(_overlaps(span, item) for item in protected):
                 continue
-            replacements.append(
-                (span[0], span[1], f"(:ref:{references[0]}:)")
-            )
+            replacements.append((span[0], span[1], "(:ref:detected:)"))
     for start, end, replacement in sorted(replacements, reverse=True):
         text = text[:start] + replacement + text[end:]
     return text, len(replacements)

@@ -49,16 +49,16 @@ class TermAbbreviation:
 
 @dataclass(frozen=True, slots=True)
 class TermRelations:
-    broader: tuple[Reference, ...] = ()
-    related: tuple[Reference, ...] = ()
+    broader: tuple[Reference["Term"], ...] = ()
+    related: tuple[Reference["Term"], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class Term:
     """One canonical terminology entry owned by a terminology group."""
 
-    reference: Reference
-    group: Reference
+    reference: Reference["Term"]
+    group: Reference["TermGroup"]
     source: Path
     root: Path
     owner: str
@@ -75,7 +75,7 @@ class Term:
 class TermGroup:
     """A semantic group rendered as a subsection by the current manual."""
 
-    reference: Reference
+    reference: Reference["TermGroup"]
     source: Path
     root: Path
     owner: str
@@ -101,7 +101,7 @@ class TermReferenceIndexes:
 
 @dataclass(frozen=True, slots=True)
 class TermSpelling:
-    reference: Reference
+    reference: Reference[Term]
     form: str
     value: str
 
@@ -197,7 +197,9 @@ def _load_group(
             f"{source}: terminology group ID {group_id!r} does not match "
             f"directory {root.name!r}"
         )
-    group_reference = Reference(owner, ("term_groups",), group_id)
+    group_reference: Reference[TermGroup] = Reference(
+        owner, ("term_groups",), group_id
+    )
     terms_root = root / "terms"
     inventory = _load_inventory(owner, "term", terms_root, "terms")
     terms: dict[str, Term] = {}
@@ -220,7 +222,9 @@ def _load_group(
     )
 
 
-def _load_term(owner: str, group: Reference, root: Path, schema: Path) -> Term:
+def _load_term(
+    owner: str, group: Reference[TermGroup], root: Path, schema: Path
+) -> Term:
     source = root / "term.yaml"
     raw = SchemaValidatedYamlLoader().load(source, schema)
     term_id = raw["id"]

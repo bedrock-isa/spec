@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
-from ..entity import entity_label
+from ..reference import Reference
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
+
+if TYPE_CHECKING:
+    from ..register import RegisterGroup
+
+
+_CONTROL_REGISTER_GROUP: Reference["RegisterGroup"] = Reference(
+    "base", ("registers",), "CONTROL"
+)
 
 
 class RegistryAnchorRenderer(DocumentFragmentProvider):
@@ -39,13 +48,15 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
     @staticmethod
     def _control_registers(text: str, context: DocumentFragmentContext) -> str:
         catalog = context.project.registers
-        group = catalog.references.groups.resolve("base.registers.CONTROL")
+        group = catalog.references.groups.resolve(_CONTROL_REGISTER_GROUP)
         markers: dict[str, list[str]] = defaultdict(list)
         first = next(iter(group.registers.values()))
-        markers[rf"\texttt{{{first.id}}}"].append(entity_label(group.reference))
+        markers[rf"\texttt{{{first.id}}}"].append(
+            _label(context.project, group.reference)
+        )
         for register in group.registers.values():
             markers[rf"\texttt{{{register.id}}}"].append(
-                entity_label(register.reference)
+                _label(context.project, register.reference)
             )
         return _inject(text, markers, context.source)
 
@@ -66,15 +77,15 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
             ("VECTOR", "PREDICATE"): r"\hyperref[section:vector-register-model]{\texttt{P0},",
         }
         for group in context.project.registers.references.groups.values():
-            if str(group.reference) == "base.registers.CONTROL":
+            if group.owner == "base" and group.id == "CONTROL":
                 continue
             registers = tuple(group.registers.values())
             if not registers:
                 continue
             marker = group_markers[(group.owner, group.id)]
-            markers[marker].append(entity_label(group.reference))
+            markers[marker].append(_label(context.project, group.reference))
             markers[marker].extend(
-                entity_label(register.reference) for register in registers
+                _label(context.project, register.reference) for register in registers
             )
         return _inject(text, markers, context.source)
 
@@ -82,26 +93,26 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
     def _cpuid_directory(text: str, context: DocumentFragmentContext) -> str:
         catalog = context.project.cpuid
         markers: dict[str, list[str]] = defaultdict(list)
-        for cpuid_class in catalog.references.classes.values():
-            if cpuid_class.reference.owner != "base" or cpuid_class.extends is not None:
+        base = catalog.namespaces["base"]
+        for cpuid_class in base.classes.values():
+            if cpuid_class.extends is not None:
                 continue
             assert cpuid_class.value is not None
             marker = rf"\texttt{{0x{cpuid_class.value:08X}}} & --"
-            markers[marker].append(entity_label(cpuid_class.reference))
-        for leaf in catalog.references.leaves.values():
-            if leaf.reference.owner != "base" or leaf.extends is not None:
-                continue
-            cpuid_class = catalog.references.classes.resolve(
-                f"{leaf.reference.owner}.cpuid.{leaf.reference.path[-1]}"
-            )
-            while cpuid_class.extends is not None:
-                cpuid_class = catalog.references.classes.resolve(cpuid_class.extends)
-            assert cpuid_class.value is not None and leaf.value is not None
-            marker = (
-                rf"\texttt{{0x{cpuid_class.value:08X}}} & "
-                rf"\texttt{{0x{leaf.value:04X}}}"
-            )
-            markers[marker].append(entity_label(leaf.reference))
+            markers[marker].append(_label(context.project, cpuid_class.reference))
+        for cpuid_class in base.classes.values():
+            root_class = cpuid_class
+            while root_class.extends is not None:
+                root_class = catalog.references.classes.resolve(root_class.extends)
+            for leaf in cpuid_class.leaves.values():
+                if leaf.extends is not None:
+                    continue
+                assert root_class.value is not None and leaf.value is not None
+                marker = (
+                    rf"\texttt{{0x{root_class.value:08X}}} & "
+                    rf"\texttt{{0x{leaf.value:04X}}}"
+                )
+                markers[marker].append(_label(context.project, leaf.reference))
         return _inject(text, markers, context.source)
 
     @staticmethod
@@ -109,16 +120,18 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
         text: str, context: DocumentFragmentContext, owner: str
     ) -> str:
         catalog = context.project.cpuid
-        labels = []
+        namespace = catalog.namespaces[owner]
+        labels: list[str] = []
         labels.extend(
-            entity_label(cpuid_class.reference)
-            for cpuid_class in catalog.references.classes.values()
-            if cpuid_class.reference.owner == owner and cpuid_class.extends is None
+            _label(context.project, cpuid_class.reference)
+            for cpuid_class in namespace.classes.values()
+            if cpuid_class.extends is None
         )
         labels.extend(
-            entity_label(leaf.reference)
-            for leaf in catalog.references.leaves.values()
-            if leaf.reference.owner == owner and leaf.extends is None
+            _label(context.project, leaf.reference)
+            for cpuid_class in namespace.classes.values()
+            for leaf in cpuid_class.leaves.values()
+            if leaf.extends is None
         )
         if not labels:
             return text
@@ -142,3 +155,10 @@ def _inject(text: str, markers: dict[str, list[str]], source) -> str:
         )
         text = text.replace(marker, anchors + marker, 1)
     return text
+
+
+def _label(project, reference) -> str:
+    label = project.entities.resolve(reference).latex_label
+    if label is None:
+        raise ValueError("entity has no target in this LaTeX artifact")
+    return label

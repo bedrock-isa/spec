@@ -6,8 +6,13 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 import re
+from typing import TYPE_CHECKING
 
 from .reference import Reference, ReferenceError
+
+if TYPE_CHECKING:
+    from .entity import Entity
+    from .terminology import Term
 
 
 _ESCAPE_START_RE = re.compile(r"\(:([a-z][a-z0-9_-]*):")
@@ -44,14 +49,14 @@ class LiteralText:
 
 @dataclass(frozen=True, slots=True)
 class EntityReferenceText:
-    reference: Reference
+    reference: Reference["Entity"]
     start: int
     end: int
 
 
 @dataclass(frozen=True, slots=True)
 class TermReferenceText:
-    reference: Reference
+    reference: Reference["Term"]
     form: TermForm
     start: int
     end: int
@@ -96,7 +101,7 @@ class SemanticText:
         return cls(raw, origin, tuple(parts))
 
     @property
-    def dependencies(self) -> tuple[Reference, ...]:
+    def dependencies(self) -> tuple[Reference["Entity"] | Reference["Term"], ...]:
         return tuple(
             part.reference
             for part in self.parts
@@ -116,20 +121,24 @@ def _parse_escape(
     pieces = payload.split("|")
     if not pieces[0] or len(pieces) > 2:
         raise _syntax_error(origin, start, f"invalid {kind} escape payload")
-    try:
-        reference = Reference.parse(pieces[0])
-    except ReferenceError as error:
-        raise _syntax_error(origin, start, str(error)) from error
     if kind == "ref":
         if len(pieces) != 1:
             raise _syntax_error(origin, start, "ref escapes do not accept a modifier")
-        return EntityReferenceText(reference, start, end)
+        try:
+            entity_reference: Reference[Entity] = Reference.parse(pieces[0])
+        except ReferenceError as error:
+            raise _syntax_error(origin, start, str(error)) from error
+        return EntityReferenceText(entity_reference, start, end)
+    try:
+        term_reference: Reference[Term] = Reference.parse(pieces[0])
+    except ReferenceError as error:
+        raise _syntax_error(origin, start, str(error)) from error
     raw_form = pieces[1] if len(pieces) == 2 else TermForm.CANONICAL.value
     try:
         form = TermForm(raw_form)
     except ValueError as error:
         raise _syntax_error(origin, start, f"unknown term form {raw_form!r}") from error
-    return TermReferenceText(reference, form, start, end)
+    return TermReferenceText(term_reference, form, start, end)
 
 
 def _syntax_error(origin: TextOrigin, offset: int, message: str) -> SemanticTextError:

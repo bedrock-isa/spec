@@ -122,7 +122,8 @@ class AllocationCube:
 class AllocationEntry:
     """Raw reservation and constraint-filtered assignment for one form."""
 
-    reference: Reference
+    reference: Reference[InstructionBundle]
+    owner: str
     mnemonic: str
     form_id: str
     source: Path
@@ -374,6 +375,7 @@ class AllocationAnalyzer:
     def _entry(bundle: InstructionBundle, form: EncodingForm) -> AllocationEntry:
         return AllocationEntry(
             bundle.reference,
+            bundle.owner,
             bundle.instruction.mnemonic,
             form.id,
             bundle.encodings.source,

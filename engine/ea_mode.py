@@ -16,11 +16,11 @@ from jsonschema import Draft202012Validator
 try:
     from .encoding_metasyntax import EncodingMetasyntax
     from .reference import Reference, ReferenceError
-    from .type_system import FieldType, FieldTypeKind, TypeSystem
+    from .type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from encoding_metasyntax import EncodingMetasyntax
     from reference import Reference, ReferenceError
-    from type_system import FieldType, FieldTypeKind, TypeSystem
+    from type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
 
 
 def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
@@ -83,15 +83,15 @@ class EAModeCatalog:
     ) -> tuple["EAModeCatalog", ...]:
         root = Path(isa_root).resolve()
         profiles: dict[str, str] = {}
-        for reference, definition in type_system.field_types.items():
+        for definition in type_system.field_types.values():
             if definition.kind != FieldTypeKind.EFFECTIVE_ADDRESS:
                 continue
-            if reference.owner in profiles:
+            if definition.owner in profiles:
                 raise ValueError(
-                    f"{root}: owner {reference.owner!r} has multiple EA profiles"
+                    f"{root}: owner {definition.owner!r} has multiple EA profiles"
                 )
             assert definition.profile is not None
-            profiles[reference.owner] = definition.profile
+            profiles[definition.owner] = definition.profile
         owner_order = owners or tuple(profiles)
         catalogs: list[EAModeCatalog] = []
         for owner in owner_order:
@@ -140,7 +140,7 @@ class EAModeCatalog:
             )
         return matches[0]
 
-    def reference(self, mode_id: str) -> Reference:
+    def reference(self, mode_id: str) -> Reference["EAMode"]:
         if mode_id not in self.modes:
             raise ValueError(f"{self.source}: undeclared EA mode {mode_id!r}")
         return Reference(self.owner, (self.profile, "modes", self.mode_type), mode_id)
@@ -171,7 +171,11 @@ class EAMode(MutableMapping[str, Any]):
         self.catalog = catalog or EAModeCatalog.containing(
             self.source, self.isa_root, self.type_system
         )
-        self.reference = self.catalog.reference(str(self._data.get("id", "")))
+        self.reference: Reference[EAMode] = self.catalog.reference(
+            str(self._data.get("id", ""))
+        )
+        self._field_type_references: dict[str, Reference[FieldType]] = {}
+        self._payload_type_references: dict[tuple[int, int], Reference[PayloadType]] = {}
         self.validate()
 
     @classmethod
@@ -219,11 +223,7 @@ class EAMode(MutableMapping[str, Any]):
             where = f" at {location}" if location else ""
             raise ValueError(f"{self.source}{where}: {error.message}")
 
-        if self.reference.element != self._data["id"]:
-            raise ValueError(
-                f"{self.source}: mode id {self._data['id']!r} does not match "
-                f"reference element {self.reference.element!r}"
-            )
+        field_type_references, payload_type_references = self._parse_type_references()
 
         field_types = self.type_system.field_types
         payload_types = self.type_system.payload_types
@@ -263,7 +263,7 @@ class EAMode(MutableMapping[str, Any]):
         for character, field in fields.items():
             field_type = field["type"]
             try:
-                field_definition = field_types.resolve(field_type)
+                field_definition = field_types.resolve(field_type_references[character])
             except ReferenceError as error:
                 raise ValueError(
                     f"{self.source}: unknown field type {field_type!r}"
@@ -284,10 +284,10 @@ class EAMode(MutableMapping[str, Any]):
         payload_roles: list[str] = []
         for _, payloads, _, index in variants:
             variant_roles: list[str] = []
-            for payload in payloads:
+            for payload_index, payload in enumerate(payloads):
                 payload_type = payload["type"]
                 try:
-                    payload_types.resolve(payload_type)
+                    payload_types.resolve(payload_type_references[index, payload_index])
                 except ReferenceError as error:
                     raise ValueError(
                         f"{self.source}: unknown payload type {payload_type!r}"
@@ -315,6 +315,20 @@ class EAMode(MutableMapping[str, Any]):
                     f"{self.source}: encoding {index} autoupdate target has no matching field"
                 )
         self._validate_pseudocode(field_roles, payload_roles, compact)
+        self._field_type_references = field_type_references
+        self._payload_type_references = payload_type_references
+
+    def field_type_reference(self, symbol: str) -> Reference[FieldType]:
+        """Return the typed field-type reference for one field symbol."""
+
+        return self._field_type_references[symbol]
+
+    def payload_type_reference(
+        self, encoding_index: int, payload_index: int
+    ) -> Reference[PayloadType]:
+        """Return the typed payload-type reference for one encoding payload."""
+
+        return self._payload_type_references[encoding_index, payload_index]
 
     def save(self, path: str | Path | None = None) -> None:
         """Validate and write the mode to ``path`` or back to its source."""
@@ -325,11 +339,6 @@ class EAMode(MutableMapping[str, Any]):
             destination, self.isa_root, self.type_system
         )
         destination_reference = destination_catalog.reference(self._data["id"])
-        if destination_reference.element != self._data["id"]:
-            raise ValueError(
-                f"{destination}: mode id {self._data['id']!r} does not match "
-                f"reference element {destination_reference.element!r}"
-            )
         with destination.open("w", encoding="utf-8") as stream:
             yaml.safe_dump(
                 self._data,
@@ -387,9 +396,9 @@ class EAMode(MutableMapping[str, Any]):
         raise ValueError(f"{self.source}: cannot locate ISA root")
 
     def _profile_field_type(
-        self, field_types: Mapping[Reference, FieldType]
-    ) -> tuple[Reference, FieldType]:
-        profile = self.reference.path[0]
+        self, field_types: Mapping[Reference[FieldType], FieldType]
+    ) -> tuple[Reference[FieldType], FieldType]:
+        profile = self.catalog.profile
         candidates = [
             (reference, definition)
             for reference, definition in field_types.items()
@@ -402,6 +411,34 @@ class EAMode(MutableMapping[str, Any]):
                 f"profile {profile!r}; found {len(candidates)}"
             )
         return candidates[0]
+
+    def _parse_type_references(
+        self,
+    ) -> tuple[
+        dict[str, Reference[FieldType]],
+        dict[tuple[int, int], Reference[PayloadType]],
+    ]:
+        field_references: dict[str, Reference[FieldType]] = {}
+        for symbol, field in self._data.get("fields", {}).items():
+            try:
+                field_references[symbol] = Reference.parse(field["type"])
+            except ReferenceError as error:
+                raise ValueError(
+                    f"{self.source}: invalid field type {field['type']!r}"
+                ) from error
+
+        payload_references: dict[tuple[int, int], Reference[PayloadType]] = {}
+        for encoding_index, encoding in enumerate(self._data["encodings"]):
+            for payload_index, payload in enumerate(encoding.get("payloads", ())):
+                try:
+                    payload_references[encoding_index, payload_index] = Reference.parse(
+                        payload["type"]
+                    )
+                except ReferenceError as error:
+                    raise ValueError(
+                        f"{self.source}: invalid payload type {payload['type']!r}"
+                    ) from error
+        return field_references, payload_references
 
     def _validate_pseudocode(
         self, field_roles: list[str], payload_roles: list[str], compact: bool

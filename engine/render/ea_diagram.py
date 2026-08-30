@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from ..entity import Entity
 from ..generate_ea_diagrams import render_catalog
+from ..reference import Reference
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 
 
@@ -18,5 +22,13 @@ class EaDiagramFragmentRenderer(DocumentFragmentProvider):
     def expand(self, text: str, context: DocumentFragmentContext) -> str:
         if self.PLACEHOLDER not in text:
             return text
-        diagrams = render_catalog(context.project.catalog.ea_modes.items())
+        labeled_modes = []
+        for reference, mode in context.project.catalog.ea_modes.items():
+            entity = context.project.entities.resolve(
+                cast(Reference[Entity], reference)
+            )
+            if entity.latex_label is None:
+                raise ValueError("EA mode has no target in this LaTeX artifact")
+            labeled_modes.append((entity.latex_label, mode))
+        diagrams = render_catalog(labeled_modes)
         return text.replace(self.PLACEHOLDER, diagrams)

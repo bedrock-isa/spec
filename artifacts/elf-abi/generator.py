@@ -30,7 +30,10 @@ class Generator(AuthoredTexArtifactGenerator):
                     _DEBUG_REGISTER_TABLE_INPUT,
                     _debug_register_table(provider, context.workspace),
                 )
-                .replace(_ENTRY_STATE_TABLE_INPUT, _entry_state_table(provider)),
+                .replace(
+                    _ENTRY_STATE_TABLE_INPUT,
+                    _entry_state_table(provider, context.workspace),
+                ),
             )
             for artifact in generated.artifacts
         )
@@ -79,7 +82,7 @@ def _debug_register_table(project: ElfAbiProject, workspace) -> str:
         registers = (
             "---"
             if not assignment.registers
-            else _register_display(assignment.registers)
+            else _register_display(assignment.registers, workspace)
         )
         status = assignment.status
         if assignment.condition is not None:
@@ -107,32 +110,32 @@ def _debug_register_table(project: ElfAbiProject, workspace) -> str:
     )
 
 
-def _register_display(registers) -> str:
-    names = [item.local.element for item in registers]
+def _register_display(registers, workspace) -> str:
+    names = [workspace.resolve(item).id for item in registers]
     if len(names) == 1:
         return names[0]
     return f"{names[0]}..{names[-1]}"
 
 
-def _entry_state_table(project: ElfAbiProject) -> str:
+def _entry_state_table(project: ElfAbiProject, workspace) -> str:
     state = project.process_entry
     segments = "/".join(
-        state.segment_contexts[role].local.element
+        workspace.resolve(state.segment_contexts[role]).id
         for role in ("code", "data", "stack")
     )
     permissions = "/".join(state.stack_permissions)
-    cleared = ", ".join(item.local.element for item in state.cleared)
+    cleared = ", ".join(workspace.resolve(item).id for item in state.cleared)
     readiness = ", ".join(item.replace("_", " ") for item in state.readiness)
-    entry_pc = f"{state.entry_point.local.element} = {state.entry_point_source}"
+    entry_pc = f"{workspace.resolve(state.entry_point).id} = {state.entry_point_source}"
     entry_stack = (
-        f"{state.stack.local.element}, {state.stack_alignment_bytes}-byte aligned, "
+        f"{workspace.resolve(state.stack).id}, {state.stack_alignment_bytes}-byte aligned, "
         f"{permissions}"
     )
     rows = (
         f"Entry PC & {_code(entry_pc)}\\\\",
         f"Entry stack & {_code(entry_stack)}\\\\",
         f"Segment contexts & {_code(segments)}\\\\",
-        f"TLS base & {_code(state.tls_base.local.element if state.tls_base else 'absent')}\\\\",
+        f"TLS base & {_code(workspace.resolve(state.tls_base).id if state.tls_base else 'absent')}\\\\",
         f"Readiness & {readiness}\\\\",
         f"Cleared state & {_code(cleared)}\\\\",
         f"Stack payload owner & {_code(state.payload_owner)}\\\\",

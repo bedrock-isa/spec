@@ -7,18 +7,27 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from types import MappingProxyType
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from engine.entity import (
     Entity,
     EntityCatalog,
     EntityDisplayStyle,
     EntityKind,
-    entity_label,
+    opaque_entity_label,
 )
 from engine.document_topic import DomainDocumentCatalog, DomainDocumentTopic
 from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader
+
+if TYPE_CHECKING:
+    from engine.project import InstructionBundle, IsaProject
+    from engine.register import Register, RegisterGroup
+    from engine.type_system import FieldType, PayloadType
+
+
+_T = TypeVar("_T")
 
 from .relocation_metasyntax import RelocationMetasyntax
 
@@ -39,7 +48,7 @@ class RelocationResult:
 
 @dataclass(frozen=True, slots=True)
 class Relocation:
-    reference: Reference
+    reference: Reference["Relocation"]
     source: Path
     root: Path
     id: str
@@ -47,26 +56,26 @@ class Relocation:
     result: RelocationResult
     calculation: RelocationMetasyntax
     family: str | None
-    field: QualifiedReference | None
-    relaxations: tuple[Reference, ...]
+    field: QualifiedReference[FieldType] | QualifiedReference[PayloadType] | None
+    relaxations: tuple[Reference["Relocation"], ...]
 
 
 @dataclass(frozen=True, slots=True)
 class LinkageStep:
-    instruction: QualifiedReference
+    instruction: QualifiedReference[InstructionBundle]
     form: str | None
-    relocation: QualifiedReference | None
+    relocation: QualifiedReference["Relocation"] | None
 
 
 @dataclass(frozen=True, slots=True)
 class StateContract:
-    registers: tuple[QualifiedReference, ...]
+    registers: tuple[QualifiedReference[Register], ...]
     disposition: str
 
 
 @dataclass(frozen=True, slots=True)
 class LinkageProtocol:
-    reference: Reference
+    reference: Reference["LinkageProtocol"]
     source: Path
     root: Path
     id: str
@@ -77,23 +86,23 @@ class LinkageProtocol:
 
 @dataclass(frozen=True, slots=True)
 class TlsModel:
-    reference: Reference
+    reference: Reference["TlsModel"]
     source: Path
     root: Path
     id: str
-    base_register: QualifiedReference | None
-    protocol: Reference | None
-    relocations: tuple[Reference, ...]
+    base_register: QualifiedReference[Register] | None
+    protocol: Reference["LinkageProtocol"] | None
+    relocations: tuple[Reference[Relocation], ...]
     data: Mapping[str, object]
 
 
 @dataclass(frozen=True, slots=True)
 class CodeModel:
-    reference: Reference
+    reference: Reference["CodeModel"]
     source: Path
     root: Path
     id: str
-    default_relocations: tuple[Reference, ...]
+    default_relocations: tuple[Reference[Relocation], ...]
     data: Mapping[str, object]
 
 
@@ -101,7 +110,7 @@ class CodeModel:
 class DwarfRegisterRange:
     source: Path
     group: str | None
-    register_group: QualifiedReference | None
+    register_group: QualifiedReference[RegisterGroup] | None
     first: int
     last: int | None
     status: str
@@ -116,7 +125,7 @@ class DebugRegisterAssignment:
     first: int
     last: int | None
     status: str
-    registers: tuple[QualifiedReference, ...]
+    registers: tuple[QualifiedReference[Register], ...]
     condition: str | None
 
 
@@ -124,25 +133,25 @@ class DebugRegisterAssignment:
 class EntryState:
     source: Path
     root: Path
-    entry_point: QualifiedReference
+    entry_point: QualifiedReference[Register]
     entry_point_source: str
-    stack: QualifiedReference
+    stack: QualifiedReference[Register]
     stack_alignment_bytes: int
     stack_permissions: tuple[str, ...]
-    segment_contexts: Mapping[str, QualifiedReference]
-    tls_base: QualifiedReference | None
+    segment_contexts: Mapping[str, QualifiedReference[Register]]
+    tls_base: QualifiedReference[Register] | None
     readiness: tuple[str, ...]
-    cleared: tuple[QualifiedReference, ...]
+    cleared: tuple[QualifiedReference[Register], ...]
     payload_owner: str
 
 
 @dataclass(frozen=True, slots=True)
 class ElfRegisterGroup:
-    reference: Reference
+    reference: Reference["ElfRegisterGroup"]
     source: Path
     root: Path
     id: str
-    register_group: QualifiedReference
+    register_group: QualifiedReference[RegisterGroup]
     dwarf: tuple[DwarfRegisterRange, ...]
 
 
@@ -180,7 +189,7 @@ class ElfAbiProject:
     entities: EntityCatalog
 
     @classmethod
-    def load(cls, root: str | Path) -> "ElfAbiProject":
+    def load(cls, root: str | Path, isa: "IsaProject") -> "ElfAbiProject":
         domain_root = Path(root).resolve()
         schemas = domain_root / "schemas"
         relocations = ReferenceIndex[Relocation]()
@@ -197,6 +206,7 @@ class ElfAbiProject:
             tls_models,
             code_models,
             register_groups,
+            isa,
         )
         namespaces = MappingProxyType({"base": base})
         document_catalog = DomainDocumentCatalog.load(
@@ -231,84 +241,109 @@ class ElfAbiProject:
             entities,
         )
 
-    def resolve(self, reference: str | Reference) -> object:
-        normalized = Reference.parse(reference)
-        for index in (
-            self.relocations,
-            self.linkage_protocols,
-            self.tls_models,
-            self.code_models,
-            self.register_groups,
-            self.document_topics,
-        ):
-            if normalized in index:
-                return index.resolve(normalized)
-        return self.entities.resolve(normalized)
+    def resolve(self, reference: Reference[_T]) -> _T:
+        if reference in self.relocations:
+            return cast(
+                _T, self.relocations.resolve(cast(Reference[Relocation], reference))
+            )
+        if reference in self.linkage_protocols:
+            return cast(
+                _T,
+                self.linkage_protocols.resolve(
+                    cast(Reference[LinkageProtocol], reference)
+                ),
+            )
+        if reference in self.tls_models:
+            return cast(
+                _T, self.tls_models.resolve(cast(Reference[TlsModel], reference))
+            )
+        if reference in self.code_models:
+            return cast(
+                _T, self.code_models.resolve(cast(Reference[CodeModel], reference))
+            )
+        if reference in self.register_groups:
+            return cast(
+                _T,
+                self.register_groups.resolve(
+                    cast(Reference[ElfRegisterGroup], reference)
+                ),
+            )
+        if reference in self.document_topics:
+            return cast(
+                _T,
+                self.document_topics.resolve(
+                    cast(Reference[DomainDocumentTopic], reference)
+                ),
+            )
+        return cast(
+            _T, self.entities.resolve(cast(Reference[Entity], reference))
+        )
 
     def validate(self, workspace) -> None:
         """Resolve structured ISA and ELF references."""
 
         self.document_catalog.validate(workspace)
-        for relocation in self.relocations.values():
-            if relocation.field is not None:
-                workspace.resolve(relocation.field)
-            for relaxation in relocation.relaxations:
-                self.relocations.resolve(relaxation)
+        for relocation_definition in self.relocations.values():
+            if relocation_definition.field is not None:
+                workspace.resolve(relocation_definition.field)
+            for relaxation_reference in relocation_definition.relaxations:
+                self.relocations.resolve(relaxation_reference)
         values: dict[int, Relocation] = {}
-        for relocation in self.relocations.values():
-            previous = values.get(relocation.value)
-            if previous is not None:
+        for relocation_definition in self.relocations.values():
+            previous_relocation = values.get(relocation_definition.value)
+            if previous_relocation is not None:
                 raise ValueError(
-                    f"{relocation.source}: relocation value {relocation.value} "
-                    f"is also assigned to {previous.reference}"
+                    f"{relocation_definition.source}: relocation value "
+                    f"{relocation_definition.value} is also assigned to "
+                    f"{previous_relocation.id}"
                 )
-            values[relocation.value] = relocation
-        for protocol in self.linkage_protocols.values():
-            for step in protocol.steps:
+            values[relocation_definition.value] = relocation_definition
+        for protocol_definition in self.linkage_protocols.values():
+            for step in protocol_definition.steps:
                 workspace.resolve(step.instruction)
                 if step.relocation is not None:
                     target = workspace.resolve(step.relocation)
                     if not isinstance(target, Relocation):
                         raise ValueError(
-                            f"{protocol.source}: {step.relocation} names "
+                            f"{protocol_definition.source}: linkage step names "
                             "an entity outside the ELF relocation catalog"
                         )
-            for state in protocol.state:
-                for register in state.registers:
-                    workspace.resolve(register)
-        for model in self.tls_models.values():
-            if model.base_register is not None:
-                workspace.resolve(model.base_register)
-            if model.protocol is not None:
-                self.linkage_protocols.resolve(model.protocol)
-            for relocation in model.relocations:
-                self.relocations.resolve(relocation)
-        for model in self.code_models.values():
-            for relocation in model.default_relocations:
-                self.relocations.resolve(relocation)
+            for state_contract in protocol_definition.state:
+                for state_register in state_contract.registers:
+                    workspace.resolve(state_register)
+        for tls_model in self.tls_models.values():
+            if tls_model.base_register is not None:
+                workspace.resolve(tls_model.base_register)
+            if tls_model.protocol is not None:
+                self.linkage_protocols.resolve(tls_model.protocol)
+            for tls_relocation in tls_model.relocations:
+                self.relocations.resolve(tls_relocation)
+        for code_model in self.code_models.values():
+            for code_relocation in code_model.default_relocations:
+                self.relocations.resolve(code_relocation)
         debug_assignments = sorted(
             self.resolved_debug_registers(workspace), key=lambda item: item.first
         )
         _validate_debug_register_ranges(debug_assignments)
         for assignment in debug_assignments:
-            for register in assignment.registers:
-                workspace.resolve(register)
-        state = self.process_entry
-        for register in (
-            state.entry_point,
-            state.stack,
-            *state.segment_contexts.values(),
-            *state.cleared,
+            for assigned_register in assignment.registers:
+                workspace.resolve(assigned_register)
+        entry_state = self.process_entry
+        for entry_register in (
+            entry_state.entry_point,
+            entry_state.stack,
+            *entry_state.segment_contexts.values(),
+            *entry_state.cleared,
         ):
-            workspace.resolve(register)
-        if state.tls_base is not None:
-            workspace.resolve(state.tls_base)
+            workspace.resolve(entry_register)
+        if entry_state.tls_base is not None:
+            workspace.resolve(entry_state.tls_base)
 
     def resolved_debug_registers(self, workspace) -> tuple[DebugRegisterAssignment, ...]:
         result: list[DebugRegisterAssignment] = []
         for item in self.dwarf_ranges:
             if item.register_group is None:
-                registers: tuple[QualifiedReference, ...] = ()
+                registers: tuple[QualifiedReference[Register], ...] = ()
                 group = "RESERVED"
             else:
                 definition = workspace.resolve(item.register_group)
@@ -317,10 +352,16 @@ class ElfAbiProject:
                 missing = tuple(name for name in names if name not in available)
                 if missing:
                     raise ValueError(
-                        f"{item.source}: registers {missing} are not in {item.register_group}"
+                        f"{item.source}: registers {missing} are not in "
+                        f"register group {definition.id}"
                     )
-                registers = tuple(_register_reference(item.register_group, name) for name in names)
-                group = item.group or item.register_group.local.element
+                registers = tuple(
+                    _register_reference(
+                        item.register_group.domain, available[name]
+                    )
+                    for name in names
+                )
+                group = item.group or definition.id
             last = item.last
             if last is None and registers:
                 last = item.first + len(registers) - 1
@@ -342,6 +383,7 @@ def _load_namespace(
     tls_index: ReferenceIndex[TlsModel],
     code_model_index: ReferenceIndex[CodeModel],
     register_group_index: ReferenceIndex[ElfRegisterGroup],
+    isa: "IsaProject",
 ) -> ElfAbiNamespace:
     relocation_inventory = _inventory(owner, root, "relocation", "relocations")
     protocol_inventory = _inventory(
@@ -365,15 +407,17 @@ def _load_namespace(
             source, schemas / "relocation.yaml"
         )
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("relocations",), entity_id)
+        relocation_reference: Reference[Relocation] = Reference(
+            owner, ("relocations",), entity_id
+        )
         result = raw["result"]
         field = (
-            QualifiedReference.parse(str(raw["field"]))
+            QualifiedReference.parse(raw["field"])
             if "field" in raw
             else None
         )
-        entity = Relocation(
-            reference,
+        relocation_definition = Relocation(
+            relocation_reference,
             source,
             entity_root,
             entity_id,
@@ -388,8 +432,8 @@ def _load_namespace(
             field,
             tuple(Reference.parse(item) for item in raw.get("relaxations", ())),
         )
-        relocation_index.register(reference, entity)
-        relocations[entity_id] = entity
+        relocation_index.register(relocation_reference, relocation_definition)
+        relocations[entity_id] = relocation_definition
 
     protocols: dict[str, LinkageProtocol] = {}
     for entity_id in protocol_inventory.declared:
@@ -399,9 +443,11 @@ def _load_namespace(
             source, schemas / "linkage-protocol.yaml"
         )
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("linkage_protocols",), entity_id)
-        entity = LinkageProtocol(
-            reference,
+        protocol_reference: Reference[LinkageProtocol] = Reference(
+            owner, ("linkage_protocols",), entity_id
+        )
+        protocol_definition = LinkageProtocol(
+            protocol_reference,
             source,
             entity_root,
             entity_id,
@@ -427,8 +473,8 @@ def _load_namespace(
             ),
             MappingProxyType(raw),
         )
-        protocol_index.register(reference, entity)
-        protocols[entity_id] = entity
+        protocol_index.register(protocol_reference, protocol_definition)
+        protocols[entity_id] = protocol_definition
 
     tls_models: dict[str, TlsModel] = {}
     for entity_id in tls_inventory.declared:
@@ -436,9 +482,11 @@ def _load_namespace(
         source = entity_root / "model.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "tls-model.yaml")
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("tls_models",), entity_id)
-        entity = TlsModel(
-            reference,
+        tls_reference: Reference[TlsModel] = Reference(
+            owner, ("tls_models",), entity_id
+        )
+        tls_definition = TlsModel(
+            tls_reference,
             source,
             entity_root,
             entity_id,
@@ -449,8 +497,8 @@ def _load_namespace(
             tuple(Reference.parse(item) for item in raw.get("relocations", ())),
             MappingProxyType(raw),
         )
-        tls_index.register(reference, entity)
-        tls_models[entity_id] = entity
+        tls_index.register(tls_reference, tls_definition)
+        tls_models[entity_id] = tls_definition
 
     code_models: dict[str, CodeModel] = {}
     for entity_id in code_inventory.declared:
@@ -458,9 +506,11 @@ def _load_namespace(
         source = entity_root / "model.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "code-model.yaml")
         _matching_id(source, entity_id, raw)
-        reference = Reference(owner, ("code_models",), entity_id)
-        entity = CodeModel(
-            reference,
+        code_reference: Reference[CodeModel] = Reference(
+            owner, ("code_models",), entity_id
+        )
+        code_definition = CodeModel(
+            code_reference,
             source,
             entity_root,
             entity_id,
@@ -469,21 +519,28 @@ def _load_namespace(
             ),
             MappingProxyType(raw),
         )
-        code_model_index.register(reference, entity)
-        code_models[entity_id] = entity
+        code_model_index.register(code_reference, code_definition)
+        code_models[entity_id] = code_definition
 
     register_groups: dict[str, ElfRegisterGroup] = {}
-    entry_point: tuple[QualifiedReference, str] | None = None
-    stack: tuple[QualifiedReference, int, tuple[str, ...]] | None = None
-    segments: dict[str, QualifiedReference] = {}
-    tls_base: QualifiedReference | None = None
-    cleared: list[QualifiedReference] = []
+    entry_point: tuple[QualifiedReference[Register], str] | None = None
+    stack: tuple[QualifiedReference[Register], int, tuple[str, ...]] | None = None
+    segments: dict[str, QualifiedReference[Register]] = {}
+    tls_base: QualifiedReference[Register] | None = None
+    cleared: list[QualifiedReference[Register]] = []
     for entity_id in register_group_inventory.declared:
         entity_root = register_group_inventory.root / entity_id
         source = entity_root / "group.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "register-group.yaml")
         _matching_id(source, entity_id, raw)
-        register_group = QualifiedReference.parse(raw["register_group"])
+        register_group: QualifiedReference[RegisterGroup] = QualifiedReference.parse(
+            raw["register_group"]
+        )
+        if register_group.domain != "isa":
+            raise ValueError(f"{source}: register group must belong to isa")
+        register_group_definition = isa.registers.references.groups.resolve(
+            register_group.local
+        )
         dwarf = tuple(
             DwarfRegisterRange(
                 source,
@@ -497,14 +554,30 @@ def _load_namespace(
             )
             for item in raw.get("dwarf", ())
         )
-        reference = Reference(owner, ("registers",), entity_id)
-        group = ElfRegisterGroup(
-            reference, source, entity_root, entity_id, register_group, dwarf
+        elf_group_reference: Reference[ElfRegisterGroup] = Reference(
+            owner, ("registers",), entity_id
         )
-        register_group_index.register(reference, group)
-        register_groups[entity_id] = group
+        elf_group = ElfRegisterGroup(
+            elf_group_reference,
+            source,
+            entity_root,
+            entity_id,
+            register_group,
+            dwarf,
+        )
+        register_group_index.register(elf_group_reference, elf_group)
+        register_groups[entity_id] = elf_group
         for name, declaration in raw.get("entry", {}).items():
-            register = _register_reference(register_group, name)
+            try:
+                register_definition = register_group_definition.registers[name]
+            except KeyError as error:
+                raise ValueError(
+                    f"{source}: unknown register {name!r} in group "
+                    f"{register_group_definition.id!r}"
+                ) from error
+            register = _register_reference(
+                register_group.domain, register_definition
+            )
             role = declaration["role"]
             if role == "entry_point":
                 entry_point = (register, str(declaration["source"]))
@@ -627,17 +700,8 @@ def _inventory(
     )
 
 
-def _register_reference(
-    group: QualifiedReference, name: str
-) -> QualifiedReference:
-    return QualifiedReference(
-        group.domain,
-        Reference(
-            group.local.owner,
-            (*group.local.path, group.local.element),
-            name,
-        ),
-    )
+def _register_reference(domain: str, register: Register) -> QualifiedReference[Register]:
+    return QualifiedReference(domain, register.reference)
 
 
 def _matching_id(source: Path, expected: str, raw: Mapping[str, object]) -> None:
@@ -657,23 +721,32 @@ def _build_entities(
     document_topics: ReferenceIndex[DomainDocumentTopic],
 ) -> EntityCatalog:
     index = ReferenceIndex[Entity]()
-    for kind, values in (
-        (EntityKind.ELF_RELOCATION, relocations),
-        (EntityKind.ELF_LINKAGE_PROTOCOL, protocols),
-        (EntityKind.ELF_TLS_MODEL, tls_models),
-        (EntityKind.ELF_CODE_MODEL, code_models),
-        (EntityKind.ELF_DEBUG_REGISTER, register_groups),
-        (EntityKind.TOPIC, document_topics),
-    ):
-        for reference, value in values.items():
+    catalogs: tuple[tuple[EntityKind, ReferenceIndex[object]], ...] = (
+        (EntityKind.ELF_RELOCATION, cast(ReferenceIndex[object], relocations)),
+        (EntityKind.ELF_LINKAGE_PROTOCOL, cast(ReferenceIndex[object], protocols)),
+        (EntityKind.ELF_TLS_MODEL, cast(ReferenceIndex[object], tls_models)),
+        (EntityKind.ELF_CODE_MODEL, cast(ReferenceIndex[object], code_models)),
+        (EntityKind.ELF_DEBUG_REGISTER, cast(ReferenceIndex[object], register_groups)),
+        (EntityKind.TOPIC, cast(ReferenceIndex[object], document_topics)),
+    )
+    for kind, values in catalogs:
+        for typed_reference, value in values.items():
+            reference = cast(Reference[Entity], typed_reference)
+            display = (
+                value.title
+                if isinstance(value, DomainDocumentTopic)
+                else getattr(value, "id", None)
+            )
+            if not isinstance(display, str):
+                raise ValueError("ELF entity must provide a display identifier")
             index.register(
                 reference,
                 Entity(
                     reference,
                     kind,
-                    value.title if isinstance(value, DomainDocumentTopic) else value.id,
+                    display,
                     value,
-                    entity_label(reference),
+                    opaque_entity_label(len(index)),
                     EntityDisplayStyle.TEXT
                     if isinstance(value, DomainDocumentTopic)
                     else EntityDisplayStyle.CODE,

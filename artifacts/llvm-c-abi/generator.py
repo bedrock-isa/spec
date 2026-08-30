@@ -65,9 +65,13 @@ class Generator(ArtifactGenerator):
             (
                 GeneratedArtifact(
                     _CALLING_CONV_OUTPUT,
-                    _render_calling_convention(project, convention),
+                    _render_calling_convention(
+                        project, convention, context.workspace
+                    ),
                 ),
-                GeneratedArtifact(_CATALOG_OUTPUT, _render_catalog(project)),
+                GeneratedArtifact(
+                    _CATALOG_OUTPUT, _render_catalog(project, context.workspace)
+                ),
             ),
             self.artifact_id,
         )
@@ -117,7 +121,7 @@ def _validate_llvm_projection(
 
 
 def _render_calling_convention(
-    project: CAbiProject, convention: CallingConvention
+    project: CAbiProject, convention: CallingConvention, workspace
 ) -> str:
     classes = {
         project.register_classes.resolve(reference).id:
@@ -144,14 +148,15 @@ def _render_calling_convention(
     return_rules: list[str] = []
     for value_id in _LLVM_RETURN_CLASS_ORDER:
         value_class = value_classes[value_id]
+        result_register_class = value_class.result.register_class
+        if result_register_class is None:
+            raise ValueError(f"value class {value_class.id!r} has no result class")
         register_class = classes[
-            project.register_classes.resolve(
-                value_class.result.register_class
-            ).id
+            project.register_classes.resolve(result_register_class).id
         ]
         types = ", ".join(_LLVM_RETURN_TYPES[value_id])
         registers = ", ".join(
-            item.local.element for item in register_class.results
+            workspace.resolve(item).id for item in register_class.results
         )
         return_rules.append(
             f"  CCIfType<[{types}], CCAssignToReg<[{registers}]>>"
@@ -165,9 +170,9 @@ def _render_calling_convention(
     ).registers
     spillable = tuple(
         item for item in callee_saved
-        if item.local.path[-1] in _SPILLABLE_REGISTER_GROUPS
+        if workspace.resolve(item).group in _SPILLABLE_REGISTER_GROUPS
     )
-    lines.extend(_callee_saved_record("CSR_Bedrock_Save", spillable))
+    lines.extend(_callee_saved_record("CSR_Bedrock_Save", spillable, workspace))
     lines.append("")
     lines.extend(
         (
@@ -175,13 +180,13 @@ def _render_calling_convention(
             "// remains present in the complete C ABI call-preserved mask.",
         )
     )
-    lines.extend(_callee_saved_record("CSR_Bedrock", callee_saved))
+    lines.extend(_callee_saved_record("CSR_Bedrock", callee_saved, workspace))
     lines.append("")
     return "\n".join(lines)
 
 
-def _callee_saved_record(name: str, registers) -> list[str]:
-    names = [item.local.element for item in registers]
+def _callee_saved_record(name: str, registers, workspace) -> list[str]:
+    names = [workspace.resolve(item).id for item in registers]
     lines = [f"def {name} : CalleeSavedRegs<", "  (add " + names[0] + ","]
     for index in range(1, len(names)):
         suffix = ")>;" if index == len(names) - 1 else ","
@@ -189,7 +194,7 @@ def _callee_saved_record(name: str, registers) -> list[str]:
     return lines
 
 
-def _render_catalog(project: CAbiProject) -> str:
+def _render_catalog(project: CAbiProject, workspace) -> str:
     lines = [
         "//===-- BedrockGenCABI.inc - generated C ABI data --------*- C++ -*-===//",
         "//",
@@ -203,7 +208,7 @@ def _render_catalog(project: CAbiProject) -> str:
     ]
     namespace = project.namespaces["base"]
     for entity_id in namespace.type_inventory.declared:
-        item = project.types.resolve(f"base.types.{entity_id}")
+        item = namespace.types[entity_id]
         fixed = isinstance(item.size_bits, int)
         lines.append(
             "BEDROCK_C_TYPE(" + ", ".join((
@@ -219,10 +224,10 @@ def _render_catalog(project: CAbiProject) -> str:
     stack = convention.stack
     lines.append(
         "BEDROCK_C_CALLING_CONVENTION(" + ", ".join((
-            stack.pointer.local.element, _token(stack.growth),
+            workspace.resolve(stack.pointer).id, _token(stack.growth),
             str(stack.entry_alignment_bytes),
             str(stack.first_argument_offset_bytes),
-            str(stack.argument_slot_bytes), stack.sret_register.local.element,
+            str(stack.argument_slot_bytes), workspace.resolve(stack.sret_register).id,
             str(stack.red_zone_bytes),
         )) + ")"
     )
@@ -237,22 +242,26 @@ def _render_catalog(project: CAbiProject) -> str:
         for index, register in enumerate(register_class.arguments):
             lines.append(
                 f"BEDROCK_C_ARGUMENT_REGISTER({register_class.id}, {index}, "
-                f"{register.local.element})"
+                f"{workspace.resolve(register).id})"
             )
         for index, register in enumerate(register_class.results):
             lines.append(
                 f"BEDROCK_C_RESULT_REGISTER({register_class.id}, {index}, "
-                f"{register.local.element})"
+                f"{workspace.resolve(register).id})"
             )
-    for reference in convention.value_classes:
-        value_class = project.value_classes.resolve(reference)
+    for value_class_reference in convention.value_classes:
+        value_class = project.value_classes.resolve(value_class_reference)
         lines.append(f"BEDROCK_C_VALUE_CLASS({value_class.id})")
         for kind in value_class.kinds:
             lines.append(f"BEDROCK_C_VALUE_KIND({value_class.id}, {_token(kind)})")
-        lines.append(_location_line(value_class.id, "ARGUMENT", value_class.argument))
-        lines.append(_location_line(value_class.id, "RESULT", value_class.result))
-    for reference in convention.promotions:
-        promotion = project.promotions.resolve(reference)
+        lines.append(
+            _location_line(project, value_class.id, "ARGUMENT", value_class.argument)
+        )
+        lines.append(
+            _location_line(project, value_class.id, "RESULT", value_class.result)
+        )
+    for promotion_reference in convention.promotions:
+        promotion = project.promotions.resolve(promotion_reference)
         for source_kind in promotion.source_kinds:
             lines.append(
                 f"BEDROCK_C_PROMOTION({promotion.id}, {_token(source_kind)}, "
@@ -262,23 +271,23 @@ def _render_catalog(project: CAbiProject) -> str:
         for register in preservation.registers:
             lines.append(
                 f"BEDROCK_C_PRESERVATION_REGISTER("
-                f"{_token(preservation.disposition)}, {register.local.element})"
+                f"{_token(preservation.disposition)}, {workspace.resolve(register).id})"
             )
 
     for entity_id in namespace.runtime_helper_inventory.declared:
-        helper = project.runtime_helpers.resolve(f"base.runtime_helpers.{entity_id}")
+        helper = namespace.runtime_helpers[entity_id]
         lines.append(
             f"BEDROCK_C_RUNTIME_HELPER({helper.id}, {_c_string(helper.symbol)}, "
-            f"{helper.result.element})"
+            f"{project.types.resolve(helper.result).id})"
         )
         for index, parameter in enumerate(helper.parameters):
             lines.append(
                 f"BEDROCK_C_RUNTIME_PARAMETER({helper.id}, {index}, "
-                f"{parameter.element})"
+                f"{project.types.resolve(parameter).id})"
             )
 
     for entity_id in namespace.memory_order_inventory.declared:
-        mapping = project.memory_orders.resolve(f"base.memory_orders.{entity_id}")
+        mapping = namespace.memory_orders[entity_id]
         lines.append(
             f"BEDROCK_C_MEMORY_ORDER({mapping.id}, "
             f"{_token(mapping.instruction_order)}, "
@@ -290,16 +299,18 @@ def _render_catalog(project: CAbiProject) -> str:
         ):
             for index, step in enumerate(sequence or ()):
                 kind = "ACCESS" if step == "access" else "INSTRUCTION"
-                value = "NONE" if step == "access" else step.local.element
+                value = (
+                    "NONE"
+                    if step == "access"
+                    else workspace.resolve(step).instruction.mnemonic
+                )
                 lines.append(
                     f"BEDROCK_C_MEMORY_ORDER_STEP({mapping.id}, {operation}, "
                     f"{index}, {kind}, {value})"
                 )
 
     for entity_id in namespace.atomic_lowering_inventory.declared:
-        lowering = project.atomic_lowerings.resolve(
-            f"base.atomic_lowerings.{entity_id}"
-        )
+        lowering = namespace.atomic_lowerings[entity_id]
         lines.append(
             f"BEDROCK_C_ATOMIC_LOWERING({lowering.id}, "
             f"{_token(lowering.strategy)})"
@@ -311,7 +322,7 @@ def _render_catalog(project: CAbiProject) -> str:
         for index, instruction in enumerate(lowering.instructions):
             lines.append(
                 f"BEDROCK_C_ATOMIC_INSTRUCTION({lowering.id}, {index}, "
-                f"{instruction.local.element})"
+                f"{workspace.resolve(instruction).instruction.mnemonic})"
             )
     lines.extend(_macro_cleanup())
     lines.append("")
@@ -319,10 +330,12 @@ def _render_catalog(project: CAbiProject) -> str:
 
 
 def _location_line(
-    value_class: str, direction: str, policy: LocationPolicy
+    project: CAbiProject, value_class: str, direction: str, policy: LocationPolicy
 ) -> str:
     register_class = (
-        "NONE" if policy.register_class is None else policy.register_class.element
+        "NONE"
+        if policy.register_class is None
+        else project.register_classes.resolve(policy.register_class).id
     )
     return (
         f"BEDROCK_C_LOCATION_POLICY({value_class}, {direction}, "

@@ -10,7 +10,18 @@ from typing import Any
 
 from engine.reference import Reference
 
-from .project import ResolvedCallingConvention, ResolvedRegisterClass, ResolvedValueClass
+from typing import TYPE_CHECKING
+
+from .project import (
+    CAbiProject,
+    RegisterClass,
+    ResolvedCallingConvention,
+    ResolvedRegisterClass,
+    ResolvedValueClass,
+)
+
+if TYPE_CHECKING:
+    from engine.register import Register
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,11 +71,11 @@ class CallRules:
         except KeyError as error:
             raise ValueError(f"unsupported call kind {kind!r}") from error
 
-    def register_class(self, reference: Reference) -> ResolvedRegisterClass:
+    def register_class(self, reference: Reference[RegisterClass]) -> ResolvedRegisterClass:
         try:
             return self.convention.register_classes[reference]
         except KeyError as error:
-            raise ValueError(f"calling convention omits register class {reference}") from error
+            raise ValueError("calling convention omits a requested register class") from error
 
 
 def _positive_aggregate_size(kind: str, size: int | None, context: str) -> None:
@@ -148,12 +159,11 @@ def _uses_sret(value: ReturnValue, rules: CallRules) -> bool:
     return False
 
 
-def _register_name(register: object) -> str:
-    identifier = getattr(register, "id", None)
-    return str(identifier if identifier is not None else register)
+def _register_name(register: Register) -> str:
+    return register.id
 
 
-def _format_registers(registers: tuple[object, ...], kind: str) -> str:
+def _format_registers(registers: tuple[Register, ...], kind: str) -> str:
     names = tuple(_register_name(register) for register in registers)
     if len(names) == 1:
         return names[0]
@@ -187,7 +197,7 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
     stack = rules.convention.definition.stack
     uses_sret = _uses_sret(call.return_value, rules)
     cursors = {reference: 0 for reference in rules.convention.register_classes}
-    exhausted: set[Reference] = set()
+    exhausted: set[Reference[RegisterClass]] = set()
     general = rules.register_classes_by_id["GENERAL"]
     general_reference = general.definition.reference
     if uses_sret:
@@ -230,6 +240,7 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
         value_class = rules.value_class(effective_kind)
         policy = value_class.definition.argument
         mode = "copy-address" if policy.mode == "copy_address" else "value"
+        location: str | None
 
         if force_stack:
             if policy.mode == "copy_address" or effective_kind in {"vector", "predicate"}:
@@ -250,6 +261,8 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
                 location = allocate(general, units=1, alignment=1, kind="pointer")
             if location is None:
                 location = stack_location()
+
+        assert location is not None
 
         assignments.append(
             {
@@ -279,5 +292,7 @@ def default_rules() -> CallRules:
     repository = Path(__file__).resolve().parents[3]
     workspace = SpecWorkspace.from_isa(IsaProject.load(repository / "isa"))
     project = workspace.require_provider("abi.c")
+    if not isinstance(project, CAbiProject):
+        raise TypeError("abi.c provider must be a CAbiProject")
     resolved = project.resolved_calling_convention(workspace)
     return CallRules.from_convention(resolved)

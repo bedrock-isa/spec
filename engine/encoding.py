@@ -11,13 +11,13 @@ try:
     from .encoding_metasyntax import EncodingMetasyntax
     from .instruction_metasyntax import InstructionMetasyntax
     from .reference import Reference
-    from .type_system import TypeSystem
+    from .type_system import FieldType, PayloadType, TypeSystem
     from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from encoding_metasyntax import EncodingMetasyntax
     from instruction_metasyntax import InstructionMetasyntax
     from reference import Reference
-    from type_system import TypeSystem
+    from type_system import FieldType, PayloadType, TypeSystem
     from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
@@ -30,7 +30,7 @@ class FieldBinding:
 
     marker: str
     role: str
-    type: Reference
+    type: Reference[FieldType]
     access: str | None = None
 
 
@@ -39,7 +39,7 @@ class PayloadBinding:
     """One appended payload in encoded byte order."""
 
     role: str
-    type: Reference
+    type: Reference[PayloadType]
     access: str | None = None
 
 

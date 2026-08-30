@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from itertools import groupby
 import re
+from typing import TYPE_CHECKING, cast
 
 from ..dependency import DependencyGraph
 from ..entity import (
+    Entity,
     EntityDisplayStyle,
-    entity_label,
     instruction_label,
-    term_group_label as entity_term_group_label,
-    term_label as entity_term_label,
 )
 from ..reference import Reference
 from ..composition.document import (
@@ -31,6 +30,9 @@ from ..semantic_text import (
 from ..terminology import Term, TermCatalog, TermGroup
 from .document_fragment import DocumentFragmentPipeline
 from .latex_source import LatexSourcePreprocessor
+
+if TYPE_CHECKING:
+    from ..type_system import TypeSystem
 
 
 def tex_escape(value: object) -> str:
@@ -59,12 +61,12 @@ def tex_code(value: object) -> str:
     return r"\texttt{" + tex_escape(value).replace("--", r"{-}{-}") + "}"
 
 
-def term_group_label(group: TermGroup) -> str:
-    return entity_term_group_label(group.reference)
-
-
-def term_label(term: Term) -> str:
-    return entity_term_label(term.reference)
+def _entity_label(project, reference: Reference[object]) -> str:
+    entities = getattr(project, "entities", project)
+    label = entities.resolve(cast(Reference[Entity], reference)).latex_label
+    if label is None:
+        raise ValueError("entity has no target in this LaTeX artifact")
+    return label
 
 
 class LatexSemanticTextRenderer:
@@ -86,14 +88,13 @@ class LatexSemanticTextRenderer:
             if isinstance(part, EntityReferenceText):
                 if entities is None:
                     raise ValueError(
-                        f"{text.origin.source}: no entity catalog is available for "
-                        f"{part.reference}"
+                        f"{text.origin.source}: no entity catalog is available"
                     )
                 entity = entities.resolve(part.reference)
                 if entity.latex_label is None:
                     raise ValueError(
-                        f"{text.origin.source}: entity {part.reference} "
-                        "has no target in this LaTeX artifact"
+                        f"{text.origin.source}: entity has no target in this "
+                        "LaTeX artifact"
                     )
                 display = (
                     tex_code(entity.display)
@@ -104,9 +105,14 @@ class LatexSemanticTextRenderer:
                 continue
             assert isinstance(part, TermReferenceText)
             term = catalog.references.terms.resolve(part.reference)
+            if entities is None:
+                raise ValueError(
+                    f"{text.origin.source}: no entity catalog is available"
+                )
             display = self._term_form(term, part.form)
             parts.append(
-                rf"\hyperref[{term_label(term)}]{{{tex_escape(display)}}}"
+                rf"\hyperref[{_entity_label(entities, term.reference)}]"
+                rf"{{{tex_escape(display)}}}"
             )
         return "".join(parts)
 
@@ -124,7 +130,7 @@ class LatexSemanticTextRenderer:
             if form is TermForm.FIRST:
                 return f"{term.forms.canonical} ({term.abbreviation.canonical})"
         raise ValueError(
-            f"term {term.reference} does not define form {form.value!r}"
+            f"term {term.forms.canonical!r} does not define form {form.value!r}"
         )
 
 
@@ -139,7 +145,7 @@ class TermGroupRenderer:
         return "\n\n".join(
             (
                 rf"\subsection{{{tex_escape(group.title)}}}"
-                rf"\label{{{term_group_label(group)}}}",
+                rf"\label{{{_entity_label(project, group.reference)}}}",
                 *(
                     self._term(term, project, dependencies)
                     for term in group.terms.values()
@@ -164,7 +170,7 @@ class TermGroupRenderer:
             entities=project.entities,
         )
         return (
-            rf"\phantomsection\label{{{term_label(term)}}}" + "\n"
+            rf"\phantomsection\label{{{_entity_label(project, term.reference)}}}" + "\n"
             + f"{subject} is {definition}"
         )
 
@@ -172,7 +178,12 @@ class TermGroupRenderer:
 class InstructionEntryRenderer:
     """Render one instruction bundle from the current typed model."""
 
-    def render(self, bundle: InstructionBundle, description: str | None = None) -> str:
+    def render(
+        self,
+        bundle: InstructionBundle,
+        types: "TypeSystem",
+        description: str | None = None,
+    ) -> str:
         instruction = bundle.instruction
         mnemonic = instruction.mnemonic
         parts = [
@@ -194,8 +205,7 @@ class InstructionEntryRenderer:
                 self._field(
                     "Required CPUID flags",
                     self._ragged(
-                        tex_code(field.reference)
-                        for field in bundle.required_cpuid_flags
+                        tex_code(field.id) for field in bundle.required_cpuid_flags
                     ),
                 )
             )
@@ -214,7 +224,7 @@ class InstructionEntryRenderer:
             [
                 r"\manualinstructiondescriptionheading{Detailed Semantics}",
                 description,
-                self._forms(bundle),
+                self._forms(bundle, types),
                 r"\end{manualinstruction}",
             ]
         )
@@ -240,7 +250,7 @@ class InstructionEntryRenderer:
             lines.append(tex_code(name) + ": " + tex_escape(details))
         return self._field("Logical operands", self._ragged(lines))
 
-    def _forms(self, bundle: InstructionBundle) -> str:
+    def _forms(self, bundle: InstructionBundle, types: "TypeSystem") -> str:
         blocks = [r"\begin{manualinstructionforms}", r"\manualinstructionformsheading"]
         for form in bundle.encodings.forms:
             blocks.extend(
@@ -255,14 +265,16 @@ class InstructionEntryRenderer:
             if form.fields or form.payloads or form.constraints or form.overlaps:
                 blocks.append(r"\manualinstructionfieldsheading")
             for field in form.fields:
+                field_type = types.field_types.resolve(field.type)
                 blocks.append(
                     rf"\manualinstructionfielddescription{{{tex_code(field.marker)}}}"
-                    rf"{{{tex_code(field.role)}; {tex_code(field.type)}}}"
+                    rf"{{{tex_code(field.role)}; {tex_code(field_type.id)}}}"
                 )
             for payload in form.payloads:
+                payload_type = types.payload_types.resolve(payload.type)
                 blocks.append(
                     rf"\manualinstructionfielddescription{{Payload}}"
-                    rf"{{{tex_code(payload.role)}; {tex_code(payload.type)}}}"
+                    rf"{{{tex_code(payload.role)}; {tex_code(payload_type.id)}}}"
                 )
             for constraint in form.constraints:
                 values = constraint.allow or constraint.exclude
@@ -322,7 +334,9 @@ class LatexDocumentRenderer:
 
     def render(self, composition: DocumentComposition, project) -> str:
         self.dependencies.clear()
-        artifact = Reference("base", ("artifacts",), composition.artifact)
+        artifact: Reference[Entity] = Reference(
+            "base", ("artifacts",), composition.artifact
+        )
         parts = [
             self.sources.render(composition.preamble, project, artifact),
             self.sources.render(composition.title_page, project, artifact),
@@ -331,14 +345,14 @@ class LatexDocumentRenderer:
             if isinstance(block, TopicBlock):
                 parts.extend(
                     [
-                        f"% topic: {block.topic.reference}",
+                        f"% topic: {block.topic.id}",
                         self._topic(block.topic, project),
                     ]
                 )
             elif isinstance(block, TermGroupBlock):
                 parts.extend(
                     [
-                        f"% term-group: {block.group.reference}",
+                        f"% term-group: {block.group.id}",
                         self.terms.render(block.group, project, self.dependencies),
                     ]
                 )
@@ -354,13 +368,14 @@ class LatexDocumentRenderer:
                             item
                             for topic in block.introduction
                             for item in (
-                                f"% topic: {topic.reference}",
+                                f"% topic: {topic.id}",
                                 self._topic(topic, project),
                             )
                         ),
                         *(
                             self.instruction.render(
                                 bundle,
+                                project.types,
                                 self.sources.render(
                                     bundle.artifacts.description,
                                     project,
@@ -375,9 +390,9 @@ class LatexDocumentRenderer:
         return "\n\n".join(parts) + "\n"
 
     def _topic(self, topic, project) -> str:
-        reference = Reference.parse(topic.reference)
+        reference = topic.reference
         rendered = self.sources.render(topic.document, project, reference)
-        anchor = rf"\phantomsection\label{{{entity_label(reference)}}}"
+        anchor = rf"\phantomsection\label{{{_entity_label(project, reference)}}}"
         heading = re.compile(
             r"(\\(?:part|chapter|section|subsection|subsubsection)\*?\{[^{}]*\}"
             r"(?:\\label\{[^{}]*\})*)"

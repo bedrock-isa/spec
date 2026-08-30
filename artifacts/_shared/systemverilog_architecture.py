@@ -106,7 +106,7 @@ def _resolve_cpuid_class(catalog, item):
     seen = set()
     while current.value is None:
         if current.reference in seen or current.extends is None:
-            raise ValueError(f"unresolved CPUID class {item.reference}")
+            raise ValueError(f"unresolved CPUID class {item.id}")
         seen.add(current.reference)
         current = catalog.references.classes.resolve(current.extends)
     return current
@@ -117,7 +117,7 @@ def _resolve_cpuid_leaf(catalog, item):
     seen = set()
     while current.value is None:
         if current.reference in seen or current.extends is None:
-            raise ValueError(f"unresolved CPUID leaf {item.reference}")
+            raise ValueError(f"unresolved CPUID leaf {item.id}")
         seen.add(current.reference)
         current = catalog.references.leaves.resolve(current.extends)
     return current

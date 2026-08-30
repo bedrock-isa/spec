@@ -12,6 +12,7 @@ from ..encoding import EncodingForm, FieldBinding, PayloadBinding
 from ..encoding_architecture import ENCODING_CLASSES_BY_WIDTH
 from ..instruction_metasyntax import InstructionMetasyntaxOperand
 from ..project import InstructionBundle
+from ..reference import Reference
 from ..type_system import FieldType, FieldTypeKind, PayloadType, PayloadTypeKind
 from .sail_registry import ROUTE_CONSTRUCTORS
 
@@ -76,7 +77,7 @@ def _form_key(bundle: InstructionBundle, form: EncodingForm) -> str:
 
 
 def _field_type_name(definition: FieldType) -> str:
-    name = definition.reference.element
+    name = definition.id
     semantic_names = {
         "CC": "condition",
         "PTLVL": "pt_level",
@@ -93,7 +94,7 @@ def _field_type_name(definition: FieldType) -> str:
 
 
 def _payload_type_name(definition: PayloadType) -> str:
-    name = definition.reference.element
+    name = definition.id
     if definition.kind in {
         PayloadTypeKind.IMMEDIATE,
         PayloadTypeKind.PC_DISPLACEMENT,
@@ -124,7 +125,7 @@ def _field_kind(definition: FieldType) -> str:
         FieldTypeKind.REGISTER_SELECTOR,
         FieldTypeKind.REGISTER_PAIR_SELECTOR,
     }:
-        return "FieldFreg" if definition.reference.owner == "FP" else "FieldRn"
+        return "FieldFreg" if definition.owner == "FP" else "FieldRn"
     return "FieldBits"
 
 
@@ -282,6 +283,7 @@ def _fixed_syntax_representations(
             continue
 
         candidates = [name for name in logical if name not in used_roles]
+        role: str | None
         if item.kind == "decimal" and "imm" in candidates:
             role = "imm"
         else:
@@ -309,11 +311,15 @@ def _operand_representations(
         field = form.field_for_role(name)
         payload = next((item for item in form.payloads if item.role == name), None)
         if field is not None:
-            definition = program.project.types.field_types.resolve(field.type)
-            type_name = _field_type_name(definition)
+            field_definition = program.project.types.field_types.resolve(field.type)
+            type_name = _field_type_name(field_definition)
+            binding_access = field.access
         elif payload is not None:
-            definition = program.project.types.payload_types.resolve(payload.type)
-            type_name = _payload_type_name(definition)
+            payload_definition = program.project.types.payload_types.resolve(
+                payload.type
+            )
+            type_name = _payload_type_name(payload_definition)
+            binding_access = payload.access
         else:
             syntax = fixed_by_role.get(name)
             if syntax is None:
@@ -335,7 +341,7 @@ def _operand_representations(
             _OperandRepresentation(
                 name,
                 type_name,
-                str(field.access or metadata["access"]) if field else str(payload.access or metadata["access"]),
+                str(binding_access or metadata["access"]),
                 field=field,
                 payload=payload,
             )
@@ -406,7 +412,7 @@ def _render_payload(
 ) -> str:
     definition = program.project.types.payload_types.resolve(payload.type)
     operand = operands[payload.role]
-    signed = definition.signed is True or definition.reference.element.endswith("S")
+    signed = definition.signed is True or definition.id.endswith("S")
     return (
         f"struct {{ operand_name = {_constructor('Operand_', payload.role)}, "
         f"operand_type = {_constructor('OperandType_', operand.type_name)}, "
@@ -439,7 +445,7 @@ def _render_entry(program: SailProgram, bundle: InstructionBundle, form: Encodin
         f"  struct {{ form_id = {_constructor('Form_', _form_key(bundle, form))}, "
         f"operation = Op_{bundle.instruction.mnemonic}, "
         f"route = {ROUTE_CONSTRUCTORS[bundle.instruction.route]}, "
-        f"instruction_set = {INSTRUCTION_SET_CONSTRUCTORS[bundle.reference.owner]}, "
+        f"instruction_set = {INSTRUCTION_SET_CONSTRUCTORS[bundle.owner]}, "
         f"privilege = {'SupervisorPrivilege' if bundle.instruction.privileged else 'UserPrivilege'}, "
         f"predicate_mode = {PREDICATE_CONSTRUCTORS.get(bundle.instruction.mnemonic, 'PredicateNone')}, "
         f"repeat_rep = {str(repeat_rep).lower()}, repeat_repcc = {str(repeat_repcc).lower()}, "
@@ -463,6 +469,7 @@ class _EaVariant:
     patterns: tuple[str, ...]
     kind: str
     fields: Mapping[str, Mapping[str, str]]
+    field_types: Mapping[str, Reference[FieldType]]
     segment: str | None
     payload_width: int
     payload_signed: bool
@@ -473,7 +480,7 @@ class _EaVariant:
 
 
 def _payload_suffix(definition: PayloadType) -> str:
-    signed = definition.signed is True or definition.reference.element.endswith("S")
+    signed = definition.signed is True or definition.id.endswith("S")
     return f"{definition.bytes * 8}{'s' if signed else ''}"
 
 
@@ -507,16 +514,21 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
     descriptors = []
     for mode in program.project.catalog.ea_modes.values():
         raw = mode.to_dict()
-        mode_type = mode.reference.path[-1]
+        mode_type = mode.catalog.mode_type
         mode_id = str(raw["id"])
         fields = raw.get("fields", {})
+        field_types = {
+            marker: mode.field_type_reference(marker) for marker in fields
+        }
         segment, base = _mode_segment(raw, mode_id)
-        for encoding in raw["encodings"]:
+        for encoding_index, encoding in enumerate(raw["encodings"]):
             patterns = encoding["pattern"]
             chunks = (patterns,) if isinstance(patterns, str) else tuple(patterns)
             payloads = encoding.get("payloads", ())
             payload_definition = (
-                program.project.types.payload_types.resolve(payloads[0]["type"])
+                program.project.types.payload_types.resolve(
+                    mode.payload_type_reference(encoding_index, 0)
+                )
                 if payloads
                 else None
             )
@@ -539,13 +551,14 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                     chunks,
                     "escape" if raw["kind"] == "extension" else str(raw["kind"]),
                     fields,
+                    field_types,
                     segment,
                     payload_definition.bytes * 8 if payload_definition else 0,
                     bool(
                         payload_definition
                         and (
                             payload_definition.signed is True
-                            or payload_definition.reference.element.endswith("S")
+                            or payload_definition.id.endswith("S")
                         )
                     ),
                     base,
@@ -565,6 +578,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                         chunks,
                         str(raw["kind"]),
                         fields,
+                        field_types,
                         segment,
                         0,
                         False,
@@ -591,6 +605,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                         variant.patterns,
                         "float_immediate",
                         variant.fields,
+                        variant.field_types,
                         variant.segment,
                         variant.payload_width,
                         variant.payload_signed,
@@ -610,6 +625,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                     variant.patterns,
                     variant.kind,
                     variant.fields,
+                    variant.field_types,
                     variant.segment,
                     variant.payload_width,
                     variant.payload_signed,
@@ -631,7 +647,7 @@ def _render_ea_variant(program: SailProgram, variant: _EaVariant) -> str:
     joined = "".join(variant.patterns)
     fields = []
     for marker, raw in variant.fields.items():
-        definition = program.project.types.field_types.resolve(raw["type"])
+        definition = program.project.types.field_types.resolve(variant.field_types[marker])
         fields.append(
             f"struct {{ symbol = {_constructor('Field_', marker)}, "
             f"operand_type = {_constructor('OperandType_', _field_type_name(definition))}, "
@@ -658,7 +674,9 @@ class SailCatalogRenderer:
     _CATALOG_CHUNK_SIZE = 24
 
     def render(self, program: SailProgram) -> str:
-        entries_by_class = {name: [] for name in CLASS_CONSTRUCTORS}
+        entries_by_class: dict[str, list[str]] = {
+            name: [] for name in CLASS_CONSTRUCTORS
+        }
         for bundle in program.bundles:
             for form in bundle.encodings.forms:
                 encoding_class = ENCODING_CLASSES_BY_WIDTH[form.pattern.bit_width]
@@ -778,9 +796,11 @@ def catalog_id_declarations(program: SailProgram) -> list[str]:
                 )
     for variant in variants:
         fields.update(variant.fields)
-        for raw in variant.fields.values():
+        for reference in variant.field_types.values():
             operand_types.add(
-                _field_type_name(program.project.types.field_types.resolve(raw["type"]))
+                _field_type_name(
+                    program.project.types.field_types.resolve(reference)
+                )
             )
     groups = (
         ("Form_id", forms),

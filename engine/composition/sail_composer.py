@@ -16,11 +16,11 @@ class SailComposer:
         configuration: IsaConfiguration,
     ) -> SailProgram:
         owners = configuration.owners
-        bundles = tuple(
+        ordered_bundles = tuple(
             project.catalog.instructions.resolve(reference)
             for reference in project.catalog.instruction_order
-            if reference.owner in owners
         )
+        bundles = tuple(bundle for bundle in ordered_bundles if bundle.owner in owners)
         sail_units = tuple(
             project.model.sail_units[reference]
             for reference in project.model.sail_order

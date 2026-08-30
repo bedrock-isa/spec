@@ -6,18 +6,24 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias, TypeVar, cast
 
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 if TYPE_CHECKING:
+    from engine.project import InstructionBundle
+    from engine.register import RegisterGroup
     from engine.workspace import SpecWorkspace
+
+
+SignatureType: TypeAlias = str | QualifiedReference["InterfaceType"]
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True, slots=True)
 class InterfaceGroup:
-    reference: Reference
+    reference: Reference["InterfaceGroup"]
     id: str
     title: str
     source: Path
@@ -26,24 +32,28 @@ class InterfaceGroup:
 
 @dataclass(frozen=True, slots=True)
 class InterfaceType:
-    reference: Reference
+    reference: Reference["InterfaceType"]
     id: str
     owner: str
     group: str
     kind: str
     source: Path
     data: Mapping[str, object]
+    enum_source: QualifiedReference["RegisterGroup"] | None
+    field_types: tuple[SignatureType, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class InterfaceIntrinsic:
-    reference: Reference
+    reference: Reference["InterfaceIntrinsic"]
     id: str
     owner: str
     group: str
     source: Path
-    operation: QualifiedReference
+    operation: QualifiedReference["InstructionBundle"]
     data: Mapping[str, object]
+    result_type: SignatureType
+    parameter_types: tuple[SignatureType, ...]
 
     @property
     def c_spelling(self) -> str:
@@ -64,7 +74,7 @@ class InterfaceExtension:
 
 @dataclass(frozen=True, slots=True)
 class InterfaceUtility:
-    reference: Reference
+    reference: Reference["InterfaceUtility"]
     id: str
     owner: str
     group: str
@@ -97,15 +107,18 @@ class CInterfaceProject:
     def load(cls, root: str | Path) -> "CInterfaceProject":
         domain_root = Path(root).resolve()
         extensions = _load_extensions(domain_root)
-        type_groups, types = _load_groups(
+        type_groups, loaded_types = _load_groups(
             domain_root, "types", "type", extensions
         )
-        intrinsic_groups, intrinsics = _load_groups(
+        intrinsic_groups, loaded_intrinsics = _load_groups(
             domain_root, "intrinsics", "intrinsic", extensions
         )
-        utility_groups, utilities = _load_groups(
+        utility_groups, loaded_utilities = _load_groups(
             domain_root, "utilities", "utility", extensions
         )
+        types = cast(ReferenceIndex[InterfaceType], loaded_types)
+        intrinsics = cast(ReferenceIndex[InterfaceIntrinsic], loaded_intrinsics)
+        utilities = cast(ReferenceIndex[InterfaceUtility], loaded_utilities)
         collections = _load_collections(domain_root, intrinsic_groups)
         return cls(
             domain_root,
@@ -119,47 +132,52 @@ class CInterfaceProject:
             collections,
         )
 
-    def resolve(self, reference: str | Reference) -> object:
-        normalized = Reference.parse(reference)
+    def resolve(self, reference: Reference[_T]) -> _T:
         indexes: tuple[ReferenceIndex[object], ...] = (
-            self.type_groups,
-            self.intrinsic_groups,
-            self.utility_groups,
-            self.types,
-            self.intrinsics,
-            self.utilities,
+            cast(ReferenceIndex[object], self.type_groups),
+            cast(ReferenceIndex[object], self.intrinsic_groups),
+            cast(ReferenceIndex[object], self.utility_groups),
+            cast(ReferenceIndex[object], self.types),
+            cast(ReferenceIndex[object], self.intrinsics),
+            cast(ReferenceIndex[object], self.utilities),
         )
         for index in indexes:
-            if normalized in index:
-                return index.resolve(normalized)
-        raise ValueError(f"unknown interfaces.c reference {normalized}")
+            if reference in index:
+                return cast(_T, index.resolve(cast(Reference[object], reference)))
+        raise ValueError("unknown interfaces.c reference")
 
     def validate(self, workspace: "SpecWorkspace") -> None:
         """Resolve every cross-domain and local entity reference."""
 
         for intrinsic in self.intrinsics.values():
-            workspace.resolve(intrinsic.operation)
+            operation = workspace.resolve(intrinsic.operation)
             allowed_isa_owners = self._allowed_isa_owners(intrinsic.owner)
-            if intrinsic.operation.local.owner not in allowed_isa_owners:
+            if operation.owner not in allowed_isa_owners:
                 raise ValueError(
                     f"{intrinsic.source}: owner {intrinsic.owner!r} cannot lower "
-                    f"to {intrinsic.operation}; allowed ISA owners are "
+                    f"to ISA owner {operation.owner!r}; "
+                    f"allowed ISA owners are "
                     f"{sorted(allowed_isa_owners)}"
                 )
-            signature = intrinsic.data["signature"]
-            type_names = [signature["result"]]
-            type_names.extend(
-                parameter["type"] for parameter in signature["parameters"]
-            )
-            for type_name in type_names:
-                if isinstance(type_name, str) and _looks_like_local_reference(
-                    type_name
-                ):
-                    workspace.resolve(type_name, current_domain="interfaces.c")
+            for type_name in (intrinsic.result_type, *intrinsic.parameter_types):
+                if isinstance(type_name, QualifiedReference):
+                    target_type = workspace.resolve(type_name)
+                    if not isinstance(target_type, InterfaceType):
+                        raise ValueError(
+                            f"{intrinsic.source}: signature reference does not "
+                            "name an interface type"
+                        )
         for interface_type in self.types.values():
-            values = interface_type.data.get("values")
-            if isinstance(values, Mapping) and isinstance(values.get("source"), str):
-                workspace.resolve(str(values["source"]))
+            if interface_type.enum_source is not None:
+                workspace.resolve(interface_type.enum_source)
+            for field_type in interface_type.field_types:
+                if isinstance(field_type, QualifiedReference):
+                    target_type = workspace.resolve(field_type)
+                    if not isinstance(target_type, InterfaceType):
+                        raise ValueError(
+                            f"{interface_type.source}: field reference does not "
+                            "name an interface type"
+                        )
 
     def _allowed_isa_owners(self, owner: str) -> set[str]:
         allowed = {"base"}
@@ -181,7 +199,7 @@ def _load_groups(
     kind: str,
     singular: str,
     extensions: Mapping[str, InterfaceExtension],
-) -> tuple[ReferenceIndex[InterfaceGroup], ReferenceIndex]:
+) -> tuple[ReferenceIndex[InterfaceGroup], ReferenceIndex[object]]:
     groups_root = root / kind / "groups"
     declared = _load_inventory(groups_root / "groups.yaml", "groups")
     actual = _actual_directories(groups_root)
@@ -193,7 +211,7 @@ def _load_groups(
     group_schema = root / "schemas/group.yaml"
     entity_schema = root / f"schemas/{singular}.yaml"
     groups = ReferenceIndex[InterfaceGroup]()
-    entities = ReferenceIndex()
+    entities = ReferenceIndex[object]()
     for group_id in declared:
         group_root = groups_root / group_id
         group_data = SchemaValidatedYamlLoader().load(
@@ -203,7 +221,9 @@ def _load_groups(
             raise ValueError(
                 f"{group_root}/group.yaml: group ID must match directory {group_id!r}"
             )
-        group_reference = Reference("base", (kind,), group_id)
+        group_reference: Reference[InterfaceGroup] = Reference(
+            "base", (kind,), group_id
+        )
         groups.register(
             group_reference,
             InterfaceGroup(
@@ -230,33 +250,46 @@ def _load_groups(
             owner = str(data["owner"])
             if owner != "base" and owner not in extensions:
                 raise ValueError(f"{source}: unknown interface owner {owner!r}")
-            reference = Reference(owner, (kind, group_id), entity_id)
+            reference: Reference[object] = Reference(
+                owner, (kind, group_id), entity_id
+            )
+            entity: object
             if kind == "types":
+                enum_source = _enum_source(data)
+                field_types = _struct_field_types(data, source)
                 entity = InterfaceType(
-                    reference,
+                    cast(Reference[InterfaceType], reference),
                     entity_id,
                     owner,
                     group_id,
                     str(data["kind"]),
                     source,
                     MappingProxyType(data),
+                    enum_source,
+                    field_types,
                 )
             elif kind == "intrinsics":
-                operation = QualifiedReference.parse(str(data["lowering"]["operation"]))
+                operation = cast(
+                    "QualifiedReference[InstructionBundle]",
+                    QualifiedReference.parse(data["lowering"]["operation"]),
+                )
                 if operation.domain != "isa":
                     raise ValueError(f"{source}: lowering operation must be in isa")
+                result_type, parameter_types = _signature_types(data, source)
                 entity = InterfaceIntrinsic(
-                    reference,
+                    cast(Reference[InterfaceIntrinsic], reference),
                     entity_id,
                     owner,
                     group_id,
                     source,
                     operation,
                     MappingProxyType(data),
+                    result_type,
+                    parameter_types,
                 )
             else:
                 entity = InterfaceUtility(
-                    reference,
+                    cast(Reference[InterfaceUtility], reference),
                     entity_id,
                     owner,
                     group_id,
@@ -339,6 +372,66 @@ def _validate_extension_cycles(extensions: Mapping[str, InterfaceExtension]) -> 
 def _looks_like_local_reference(value: str) -> bool:
     return value.startswith("base.") or bool(
         value and value.split(".", 1)[0].isupper() and "." in value
+    )
+
+
+def _signature_type(value: object, source: Path) -> SignatureType:
+    if not isinstance(value, str):
+        raise ValueError(f"{source}: signature type must be a string")
+    if ":" not in value and not _looks_like_local_reference(value):
+        return value
+    return cast(
+        QualifiedReference[InterfaceType],
+        QualifiedReference.parse(value, current_domain="interfaces.c"),
+    )
+
+
+def _signature_types(
+    data: Mapping[str, object], source: Path
+) -> tuple[SignatureType, tuple[SignatureType, ...]]:
+    signature = data["signature"]
+    if not isinstance(signature, Mapping):
+        raise ValueError(f"{source}: signature must be a mapping")
+    parameters = signature["parameters"]
+    if not isinstance(parameters, list):
+        raise ValueError(f"{source}: signature parameters must be a list")
+    return (
+        _signature_type(signature["result"], source),
+        tuple(
+            _signature_parameter_type(parameter, source) for parameter in parameters
+        ),
+    )
+
+
+def _signature_parameter_type(parameter: object, source: Path) -> SignatureType:
+    if not isinstance(parameter, Mapping):
+        raise ValueError(f"{source}: signature parameter must be a mapping")
+    return _signature_type(parameter["type"], source)
+
+
+def _struct_field_types(
+    data: Mapping[str, object], source: Path
+) -> tuple[SignatureType, ...]:
+    fields = data.get("fields", ())
+    if not isinstance(fields, (list, tuple)):
+        raise ValueError(f"{source}: struct fields must be a list")
+    result: list[SignatureType] = []
+    for field in fields:
+        if not isinstance(field, Mapping):
+            raise ValueError(f"{source}: struct field must be a mapping")
+        result.append(_signature_type(field.get("type"), source))
+    return tuple(result)
+
+
+def _enum_source(
+    data: Mapping[str, object],
+) -> QualifiedReference[RegisterGroup] | None:
+    values = data.get("values")
+    if not isinstance(values, Mapping) or "source" not in values:
+        return None
+    return cast(
+        "QualifiedReference[RegisterGroup]",
+        QualifiedReference.parse(values["source"]),
     )
 
 

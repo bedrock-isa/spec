@@ -77,36 +77,44 @@ class DocumentComposition:
         if not isinstance(raw_blocks, list) or not raw_blocks:
             raise ValueError(f"{source}: body must be a non-empty list")
         blocks: list[DocumentBlock] = []
-        included_topics: list[str] = []
-        included_groups: list[Reference] = []
+        included_topics: list[Reference[DocumentTopic]] = []
+        included_groups: list[Reference[TermGroup]] = []
         included_owners: list[str] = []
         for index, raw in enumerate(raw_blocks):
             if not isinstance(raw, dict) or len(raw) != 1:
                 raise ValueError(f"{source}: body[{index}] must have one block kind")
             if "topic" in raw:
-                reference = raw["topic"]
-                topic = project.model.document_topics.get(reference)
+                raw_reference = raw["topic"]
+                if not isinstance(raw_reference, str):
+                    raise ValueError(f"{source}: body[{index}].topic must be a reference")
+                topic_reference: Reference[DocumentTopic] = Reference.parse(
+                    raw_reference
+                )
+                topic = project.model.document_topics.get(topic_reference)
                 if topic is None:
-                    raise ValueError(f"{source}: unknown topic {reference!r}")
+                    raise ValueError(f"{source}: unknown topic")
                 if topic.artifact != artifact:
                     raise ValueError(
-                        f"{source}: topic {reference} belongs to {topic.artifact}"
+                        f"{source}: topic {topic.id!r} belongs to {topic.artifact}"
                     )
-                included_topics.append(reference)
+                included_topics.append(topic_reference)
                 blocks.append(TopicBlock(topic))
                 continue
             if "term-group" in raw:
-                reference = raw["term-group"]
-                if not isinstance(reference, str):
+                raw_reference = raw["term-group"]
+                if not isinstance(raw_reference, str):
                     raise ValueError(
                         f"{source}: body[{index}].term-group must be a reference"
                     )
                 try:
-                    group = project.terminology.references.groups.resolve(reference)
+                    group_reference: Reference[TermGroup] = Reference.parse(
+                        raw_reference
+                    )
+                    group = project.terminology.references.groups.resolve(
+                        group_reference
+                    )
                 except ValueError as error:
-                    raise ValueError(
-                        f"{source}: unknown terminology group {reference!r}"
-                    ) from error
+                    raise ValueError(f"{source}: unknown terminology group") from error
                 included_groups.append(group.reference)
                 blocks.append(TermGroupBlock(group))
                 continue
@@ -137,19 +145,26 @@ class DocumentComposition:
                     raise ValueError(
                         f"{source}: instruction-set introduction must be a list"
                     )
-                for reference in raw_introduction:
-                    topic = project.model.document_topics.get(reference)
-                    if topic is None:
+                for raw_reference in raw_introduction:
+                    if not isinstance(raw_reference, str):
                         raise ValueError(
-                            f"{source}: unknown introduction topic {reference!r}"
+                            f"{source}: instruction-set introduction must contain references"
                         )
+                    introduction_reference: Reference[DocumentTopic] = Reference.parse(
+                        raw_reference
+                    )
+                    topic = project.model.document_topics.get(
+                        introduction_reference
+                    )
+                    if topic is None:
+                        raise ValueError(f"{source}: unknown introduction topic")
                     if topic.owner != owner or topic.artifact != artifact:
                         raise ValueError(
-                            f"{source}: introduction topic {reference} does not belong "
+                            f"{source}: introduction topic {topic.id!r} does not belong "
                             f"to {owner}.{artifact}"
                         )
                     introduction.append(topic)
-                    included_topics.append(reference)
+                    included_topics.append(introduction_reference)
                 included_owners.append(owner)
                 blocks.append(
                     InstructionSetBlock(owner, title, tuple(introduction), instructions)
@@ -167,9 +182,22 @@ class DocumentComposition:
         missing_topics = sorted(expected_topics - actual_topics)
         extra_topics = sorted(actual_topics - expected_topics)
         if duplicate_topics or missing_topics or extra_topics:
+            duplicate_topic_ids = [
+                project.model.document_topics[reference].id
+                for reference in duplicate_topics
+            ]
+            missing_topic_ids = [
+                project.model.document_topics[reference].id
+                for reference in missing_topics
+            ]
+            extra_topic_ids = [
+                project.model.document_topics[reference].id
+                for reference in extra_topics
+            ]
             raise ValueError(
-                f"{source}: invalid topic coverage: duplicates={duplicate_topics}, "
-                f"missing={missing_topics}, extra={extra_topics}"
+                f"{source}: invalid topic coverage: "
+                f"duplicates={duplicate_topic_ids}, "
+                f"missing={missing_topic_ids}, extra={extra_topic_ids}"
             )
 
         expected_groups = set(project.terminology.references.groups)
@@ -182,10 +210,22 @@ class DocumentComposition:
         missing_groups = sorted(expected_groups - actual_groups)
         extra_groups = sorted(actual_groups - expected_groups)
         if duplicate_groups or missing_groups or extra_groups:
+            duplicate_group_ids = [
+                project.terminology.references.groups.resolve(reference).id
+                for reference in duplicate_groups
+            ]
+            missing_group_ids = [
+                project.terminology.references.groups.resolve(reference).id
+                for reference in missing_groups
+            ]
+            extra_group_ids = [
+                project.terminology.references.groups.resolve(reference).id
+                for reference in extra_groups
+            ]
             raise ValueError(
                 f"{source}: invalid terminology group coverage: "
-                f"duplicates={duplicate_groups}, missing={missing_groups}, "
-                f"extra={extra_groups}"
+                f"duplicates={duplicate_group_ids}, "
+                f"missing={missing_group_ids}, extra={extra_group_ids}"
             )
 
         expected_owners = ["base", *project.catalog.extensions]

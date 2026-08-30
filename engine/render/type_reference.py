@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from ..entity import entity_label
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 from .latex_document import tex_escape
 
@@ -12,12 +11,16 @@ def _identifier(value: object) -> str:
     return rf"\texttt{{{escaped}}}"
 
 
-def _details(definition) -> str:
+def _details(definition, project) -> str:
     attributes = []
-    for name in ("value_type", "register_group", "profile"):
+    for name in ("value_type", "profile"):
         value = getattr(definition, name, None)
         if value is not None:
             attributes.append(f"{name}={value}")
+    register_group = getattr(definition, "register_group", None)
+    if register_group is not None:
+        group = project.registers.references.groups.resolve(register_group)
+        attributes.append(f"register_group={group.id}")
     signed = getattr(definition, "signed", None)
     if signed is not None:
         attributes.append(f"signed={'true' if signed else 'false'}")
@@ -43,23 +46,24 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
             return text
         replacement = "\n\n".join(
             (
-                self._field_types(context.project.types),
-                self._payload_types(context.project.types),
+                self._field_types(context.project),
+                self._payload_types(context.project),
             )
         )
         return text.replace(self.PLACEHOLDER, replacement)
 
     @staticmethod
-    def _field_types(types) -> str:
+    def _field_types(project) -> str:
         rows = []
         for reference, definition in sorted(
-            types.field_types.items(), key=lambda item: str(item[0])
+            project.types.field_types.items(),
+            key=lambda item: (item[1].owner, item[1].id),
         ):
             rows.append(
-                rf"\phantomsection\label{{{entity_label(reference)}}}"
-                f"{_identifier(reference.owner)} & {_identifier(reference.element)} & "
+                rf"\phantomsection\label{{{_label(project, reference)}}}"
+                f"{_identifier(definition.owner)} & {_identifier(definition.id)} & "
                 f"{definition.bits} & {_identifier(definition.kind)} & "
-                f"{_details(definition)}\\\\"
+                f"{_details(definition, project)}\\\\"
             )
         return "\n".join(
             [
@@ -83,16 +87,17 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
         )
 
     @staticmethod
-    def _payload_types(types) -> str:
+    def _payload_types(project) -> str:
         rows = []
         for reference, definition in sorted(
-            types.payload_types.items(), key=lambda item: str(item[0])
+            project.types.payload_types.items(),
+            key=lambda item: (item[1].owner, item[1].id),
         ):
             rows.append(
-                rf"\phantomsection\label{{{entity_label(reference)}}}"
-                f"{_identifier(reference.owner)} & {_identifier(reference.element)} & "
+                rf"\phantomsection\label{{{_label(project, reference)}}}"
+                f"{_identifier(definition.owner)} & {_identifier(definition.id)} & "
                 f"{definition.bytes} & {_identifier(definition.kind)} & "
-                f"{_details(definition)}\\\\"
+                f"{_details(definition, project)}\\\\"
             )
         return "\n".join(
             [
@@ -114,3 +119,10 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
                 r"\end{manualdenselongtable}",
             ]
         )
+
+
+def _label(project, reference) -> str:
+    label = project.entities.resolve(reference).latex_label
+    if label is None:
+        raise ValueError("entity has no target in this LaTeX artifact")
+    return label

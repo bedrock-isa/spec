@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 from ..composition import SailProgram
+from ..model import SailUnit
 
 
 class SailProjectRenderer:
@@ -14,14 +15,23 @@ class SailProjectRenderer:
         root = Path(output_root).resolve()
         lines = ["registry {", "  files generated/registry.sail", "}", ""]
         selected = {unit.reference: unit for unit in program.sail_units}
-        boundary = selected.pop("base.boundary", None)
+        boundary = next(
+            (
+                unit
+                for unit in program.sail_units
+                if unit.owner == "base" and unit.id == "boundary"
+            ),
+            None,
+        )
+        if boundary is not None:
+            selected.pop(boundary.reference)
         ordinary_units = tuple(
-            unit for unit in program.sail_units if unit.reference != "base.boundary"
+            unit for unit in program.sail_units if unit is not boundary
         )
         for unit in ordinary_units:
             requirements = ["registry"]
             requirements.extend(
-                _module_name(required)
+                _module_name(selected[required])
                 for required in unit.requires
                 if required in selected
             )
@@ -29,11 +39,11 @@ class SailProjectRenderer:
                 Path(os.path.relpath(source, root)).as_posix()
                 for source in unit.sources
             )
-            if unit.reference == "base.decode":
+            if unit.owner == "base" and unit.id == "decode":
                 sources = ("generated/catalog.sail", *sources)
             lines.extend(
                 [
-                    f"{_module_name(unit.reference)} {{",
+                    f"{_module_name(unit)} {{",
                     f"  requires {', '.join(requirements)}",
                     *_render_sources(sources),
                     "}",
@@ -48,7 +58,7 @@ class SailProjectRenderer:
             )
         ) + ("generated/dispatch.sail",)
         operation_requirements = [
-            "registry", *(_module_name(unit.reference) for unit in ordinary_units)
+            "registry", *(_module_name(unit) for unit in ordinary_units)
         ]
         lines.extend(
             [
@@ -63,7 +73,7 @@ class SailProjectRenderer:
         if boundary is not None:
             requirements = ["registry", "operation_entries"]
             requirements.extend(
-                _module_name(required)
+                _module_name(selected[required])
                 for required in boundary.requires
                 if required in selected
             )
@@ -73,7 +83,7 @@ class SailProjectRenderer:
             )
             lines.extend(
                 [
-                    f"{_module_name(boundary.reference)} {{",
+                    f"{_module_name(boundary)} {{",
                     f"  requires {', '.join(requirements)}",
                     *_render_sources(sources),
                     "}",
@@ -92,5 +102,6 @@ def _render_sources(sources: tuple[str, ...]) -> list[str]:
     ]
 
 
-def _module_name(reference: str) -> str:
-    return "model_" + re.sub(r"[^A-Za-z0-9_]", "_", reference)
+def _module_name(unit: SailUnit) -> str:
+    name = f"{unit.owner}_{unit.id}"
+    return "model_" + re.sub(r"[^A-Za-z0-9_]", "_", name)

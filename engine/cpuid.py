@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, cast
 
 try:
     from .extension import ExtensionSetCatalog
@@ -60,7 +60,7 @@ class CpuidIndexRange:
 class CpuidField:
     """One named allocation in a 64-bit CPUID result."""
 
-    reference: Reference
+    reference: Reference["CpuidField"]
     source: Path
     id: str
     lsb: int
@@ -78,7 +78,7 @@ class CpuidField:
 class CpuidQuery:
     """One fixed or indexed CPUID query allocation."""
 
-    reference: Reference
+    reference: Reference["CpuidQuery"]
     source: Path
     id: str
     indexes: CpuidIndexRange
@@ -89,13 +89,13 @@ class CpuidQuery:
 class CpuidLeaf:
     """One authored leaf definition or overlay fragment."""
 
-    reference: Reference
+    reference: Reference["CpuidLeaf"]
     source: Path
     root: Path
     id: str
     name: str
     value: int | None
-    extends: Reference | None
+    extends: Reference["CpuidLeaf"] | None
     queries: tuple[CpuidQuery, ...]
 
 
@@ -103,13 +103,13 @@ class CpuidLeaf:
 class CpuidClass:
     """One authored class definition or overlay fragment."""
 
-    reference: Reference
+    reference: Reference["CpuidClass"]
     source: Path
     root: Path
     id: str
     name: str
     value: int | None
-    extends: Reference | None
+    extends: Reference["CpuidClass"] | None
     leaf_inventory: CpuidInventory
     leaves: Mapping[str, CpuidLeaf]
 
@@ -227,7 +227,7 @@ def _load_class(
         raise ValueError(
             f"{source}: class ID {class_id!r} does not match directory {root.name!r}"
         )
-    reference = Reference(owner, ("cpuid",), class_id)
+    reference: Reference[CpuidClass] = Reference(owner, ("cpuid",), class_id)
     leaves_root = root / "leaves"
     inventory = _load_inventory(owner, leaves_root, "leaves")
     leaves: dict[str, CpuidLeaf] = {}
@@ -245,7 +245,7 @@ def _load_class(
         id=class_id,
         name=document["name"],
         value=document.get("value"),
-        extends=_optional_reference(document.get("extends")),
+        extends=_optional_class_reference(document.get("extends")),
         leaf_inventory=inventory,
         leaves=MappingProxyType(leaves),
     )
@@ -265,12 +265,16 @@ def _load_leaf(
         raise ValueError(
             f"{source}: leaf ID {leaf_id!r} does not match directory {root.name!r}"
         )
-    reference = Reference(owner, ("cpuid", class_id), leaf_id)
+    reference: Reference[CpuidLeaf] = Reference(
+        owner, ("cpuid", class_id), leaf_id
+    )
     layouts = document.get("layouts", {})
     queries: list[CpuidQuery] = []
     for raw_query in document["queries"]:
         query_id = raw_query["id"]
-        query_reference = Reference(owner, ("cpuid", class_id, leaf_id), query_id)
+        query_reference: Reference[CpuidQuery] = Reference(
+            owner, ("cpuid", class_id, leaf_id), query_id
+        )
         raw_fields: list[Mapping[str, Any]] = []
         layout_id = raw_query.get("layout")
         if layout_id is not None:
@@ -311,7 +315,7 @@ def _load_leaf(
         id=leaf_id,
         name=document["name"],
         value=document.get("value"),
-        extends=_optional_reference(document.get("extends")),
+        extends=_optional_leaf_reference(document.get("extends")),
         queries=tuple(queries),
     )
 
@@ -324,8 +328,12 @@ def _parse_indexes(raw: object) -> CpuidIndexRange:
     return CpuidIndexRange(raw["first"], raw["last"], raw.get("stride", 1))
 
 
-def _optional_reference(raw: object) -> Reference | None:
-    return None if raw is None else Reference.parse(raw)
+def _optional_class_reference(raw: object) -> Reference[CpuidClass] | None:
+    return None if raw is None else Reference.parse(cast(str, raw))
+
+
+def _optional_leaf_reference(raw: object) -> Reference[CpuidLeaf] | None:
+    return None if raw is None else Reference.parse(cast(str, raw))
 
 
 def _load_inventory(owner: str, root: Path, key: str) -> CpuidInventory:

@@ -6,8 +6,15 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
+from typing import TYPE_CHECKING, Callable, TypeVar, cast
 
-from .reference import QualifiedReference
+from .reference import QualifiedReference, Reference
+
+if TYPE_CHECKING:
+    from .project import IsaProject
+
+
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,15 +34,15 @@ class SpecWorkspace:
         )
 
     @classmethod
-    def from_isa(cls, project: object) -> "SpecWorkspace":
-        isa_root = Path(getattr(project, "root")).resolve()
+    def from_isa(cls, project: "IsaProject") -> "SpecWorkspace":
+        isa_root = project.root.resolve()
         repository = isa_root.parent
         providers: dict[str, object] = {"isa": project}
         elf_root = repository / "abi/elf"
         if elf_root.is_dir():
             from abi.elf.model import ElfAbiProject
 
-            providers["abi.elf"] = ElfAbiProject.load(elf_root)
+            providers["abi.elf"] = ElfAbiProject.load(elf_root, project)
         c_abi_root = repository / "abi/c"
         if c_abi_root.is_dir():
             from abi.c.model import CAbiProject
@@ -59,7 +66,9 @@ class SpecWorkspace:
                 validate(workspace)
         interface = providers.get("interfaces.c")
         if interface is not None:
-            interface.validate(workspace)
+            validate = getattr(interface, "validate", None)
+            if callable(validate):
+                validate(workspace)
         return workspace
 
     def require_provider(self, name: str) -> object:
@@ -73,23 +82,21 @@ class SpecWorkspace:
 
     def resolve(
         self,
-        reference: str | QualifiedReference,
-        *,
-        current_domain: str | None = None,
-    ) -> object:
+        reference: QualifiedReference[_T],
+    ) -> _T:
         """Resolve a qualified reference through its owning provider."""
 
-        qualified = QualifiedReference.parse(
-            reference, current_domain=current_domain
-        )
-        provider = self.require_provider(qualified.domain)
+        provider = self.require_provider(reference.domain)
         resolver = getattr(provider, "resolve", None)
         if callable(resolver):
-            return resolver(qualified.local)
+            typed_resolver = cast(
+                Callable[[Reference[_T]], _T], resolver
+            )
+            return typed_resolver(reference.local)
         entities = getattr(provider, "entities", None)
         if entities is not None and callable(getattr(entities, "resolve", None)):
-            entity = entities.resolve(qualified.local)
-            return getattr(entity, "value", entity)
+            entity = entities.resolve(reference.local)
+            return cast(_T, getattr(entity, "value", entity))
         raise ValueError(
-            f"workspace provider {qualified.domain!r} cannot resolve references"
+            f"workspace provider {reference.domain!r} cannot resolve references"
         )

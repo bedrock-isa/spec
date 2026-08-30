@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
+from typing import cast
 
 try:
     from .extension import ExtensionSetCatalog
@@ -40,7 +41,7 @@ class EventSelector:
 class ArchitecturalEvent:
     """One independently allocated leaf architectural event."""
 
-    reference: Reference
+    reference: Reference["ArchitecturalEvent"]
     source: Path
     root: Path
     id: str
@@ -56,14 +57,14 @@ class ArchitecturalEvent:
 class EventClass:
     """One event-code class definition or extension overlay."""
 
-    reference: Reference
+    reference: Reference["EventClass"]
     source: Path
     root: Path
     id: str
     name: str | None
     value: int | None
     selector: EventSelector | None
-    extends: Reference | None
+    extends: Reference["EventClass"] | None
     event_inventory: EventInventory
     events: Mapping[str, ArchitecturalEvent]
 
@@ -151,18 +152,18 @@ class EventCatalog:
     def root_class(self, event_class: EventClass) -> EventClass:
         """Resolve an event class overlay to its numeric class definition."""
 
-        active: list[Reference] = []
+        active: list[Reference[EventClass]] = []
         current = event_class
         while current.extends is not None:
             if current.reference in active:
                 cycle = (*active[active.index(current.reference) :], current.reference)
                 raise ValueError(
-                    "circular event class overlay: " + " -> ".join(map(str, cycle))
+                    "circular event class overlay"
                 )
             active.append(current.reference)
             current = self.references.classes.resolve(current.extends)
         if current.value is None or current.selector is None:
-            raise ValueError(f"incomplete event class definition {current.reference}")
+            raise ValueError(f"incomplete event class definition {current.id!r}")
         return current
 
     def selected_events(
@@ -244,14 +245,22 @@ def _load_class(
         raise ValueError(
             f"{source}: event class ID {raw['id']!r} does not match directory {root.name!r}"
         )
-    reference = Reference(owner, ("events",), raw["id"])
+    class_id = cast(str, raw["id"])
+    reference: Reference[EventClass] = Reference(
+        owner, ("events",), class_id
+    )
     selector_raw = raw.get("selector")
     selector = (
-        EventSelector(selector_raw["kind"], selector_raw["bits"])
+        EventSelector(
+            cast(str, cast(Mapping[str, object], selector_raw)["kind"]),
+            cast(int, cast(Mapping[str, object], selector_raw)["bits"]),
+        )
         if selector_raw is not None
         else None
     )
-    extends = Reference.parse(raw["extends"]) if "extends" in raw else None
+    extends: Reference[EventClass] | None = (
+        Reference.parse(cast(str, raw["extends"])) if "extends" in raw else None
+    )
     events_root = root / "events"
     inventory = _load_inventory(owner, events_root, "events")
     events: dict[str, ArchitecturalEvent] = {}
@@ -259,16 +268,16 @@ def _load_class(
         event_root = events_root / event_id
         if event_id in events or not event_root.is_dir():
             continue
-        event = _load_event(owner, reference, event_root, isa_root)
+        event = _load_event(owner, class_id, event_root, isa_root)
         references.events.register(event.reference, event)
         events[event_id] = event
     return EventClass(
         reference=reference,
         source=source,
         root=root,
-        id=raw["id"],
-        name=raw.get("name"),
-        value=raw.get("value"),
+        id=class_id,
+        name=cast(str | None, raw.get("name")),
+        value=cast(int | None, raw.get("value")),
         selector=selector,
         extends=extends,
         event_inventory=inventory,
@@ -277,7 +286,7 @@ def _load_class(
 
 
 def _load_event(
-    owner: str, class_reference: Reference, root: Path, isa_root: Path
+    owner: str, class_id: str, root: Path, isa_root: Path
 ) -> ArchitecturalEvent:
     source = root / "event.yaml"
     raw = _load_validated(source, isa_root / "schemas/event.yaml")
@@ -285,17 +294,18 @@ def _load_event(
         raise ValueError(
             f"{source}: event ID {raw['id']!r} does not match directory {root.name!r}"
         )
+    event_id = cast(str, raw["id"])
     return ArchitecturalEvent(
-        reference=Reference(owner, (*class_reference.path, class_reference.element), raw["id"]),
+        reference=Reference(owner, ("events", class_id), event_id),
         source=source,
         root=root,
-        id=raw["id"],
-        name=raw["name"],
-        summary=raw["summary"],
-        code=raw.get("code"),
-        family=raw.get("family"),
-        frame=raw["frame"],
-        payload=tuple(raw.get("payload", ())),
+        id=event_id,
+        name=cast(str, raw["name"]),
+        summary=cast(str, raw["summary"]),
+        code=cast(int | None, raw.get("code")),
+        family=cast(str | None, raw.get("family")),
+        frame=cast(str, raw["frame"]),
+        payload=tuple(cast(list[str], raw.get("payload", ()))),
     )
 
 

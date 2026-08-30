@@ -51,7 +51,8 @@ class ArtifactSet:
 class InstructionBundle:
     """The complete authoring boundary for one instruction."""
 
-    reference: Reference
+    reference: Reference["InstructionBundle"]
+    owner: str
     instruction: Instruction
     encodings: EncodingCatalog
     artifacts: ArtifactSet
@@ -128,7 +129,7 @@ class SourceCatalog:
 
     instructions: ReferenceIndex[InstructionBundle]
     ea_modes: ReferenceIndex[EAMode]
-    instruction_order: tuple[Reference, ...]
+    instruction_order: tuple[Reference[InstructionBundle], ...]
     base: InstructionSet
     extensions: Mapping[str, Extension]
     extension_catalog: ExtensionSetCatalog
@@ -144,7 +145,7 @@ class SourceCatalog:
         isa_root = Path(root).resolve()
         instructions = ReferenceIndex[InstructionBundle]()
         ea_modes = ReferenceIndex[EAMode]()
-        order: list[Reference] = []
+        order: list[Reference[InstructionBundle]] = []
         extension_catalog = extension_catalog or ExtensionSetCatalog.load(isa_root)
 
         base = cls._load_instruction_set(
@@ -229,21 +230,25 @@ class SourceCatalog:
             if extension_id in active:
                 start = active.index(extension_id)
                 cycle = (*active[start:], extension_id)
-                source = metadata[active[-1]].source
+                cycle_source = metadata[active[-1]].source
                 raise ValueError(
-                    f"{source}: circular extension dependency: {' -> '.join(cycle)}"
+                    f"{cycle_source}: circular extension dependency: "
+                    f"{' -> '.join(cycle)}"
                 )
             extension = metadata.get(extension_id)
             if extension is None:
                 requiring = metadata[active[-1]] if active else None
-                source = requiring.source if requiring is not None else extension_id
+                missing_source = (
+                    requiring.source if requiring is not None else extension_id
+                )
                 raise ValueError(
-                    f"{source}: required extension {extension_id!r} is not available"
+                    f"{missing_source}: required extension {extension_id!r} "
+                    "is not available"
                 )
 
             active.append(extension_id)
             fields: list[CpuidField] = []
-            seen: set[Reference] = set()
+            seen: set[Reference[CpuidField]] = set()
             for required_id in extension.requires:
                 for field in resolve(required_id):
                     if field.reference not in seen:
@@ -255,7 +260,7 @@ class SourceCatalog:
                 )
                 if field.reference in seen:
                     raise ValueError(
-                        f"{extension.source}: CPUID flag reference {field.reference} "
+                        f"{extension.source}: CPUID flag {field.id!r} "
                         "repeats an inherited requirement"
                     )
                 fields.append(field)
@@ -273,16 +278,14 @@ class SourceCatalog:
     def _resolve_cpuid_flag(
         raw_reference: str, source: Path, cpuid: CpuidCatalog
     ) -> CpuidField:
-        reference = Reference.parse(raw_reference)
+        reference: Reference[CpuidField] = Reference.parse(raw_reference)
         try:
             field = cpuid.references.fields.resolve(reference)
         except UnknownReferenceError as error:
-            raise ValueError(
-                f"{source}: unknown CPUID flag reference {reference}"
-            ) from error
+            raise ValueError(f"{source}: unknown CPUID flag reference") from error
         if field.bits != 1:
             raise ValueError(
-                f"{source}: CPUID flag reference {reference} names a {field.bits}-bit field"
+                f"{source}: CPUID flag {field.id!r} names a {field.bits}-bit field"
             )
         return field
 
@@ -301,16 +304,20 @@ class SourceCatalog:
             if extension_id in active:
                 start = active.index(extension_id)
                 cycle = (*active[start:], extension_id)
-                source = components[active[-1]].metadata.source
+                cycle_source = components[active[-1]].metadata.source
                 raise ValueError(
-                    f"{source}: circular extension dependency: {' -> '.join(cycle)}"
+                    f"{cycle_source}: circular extension dependency: "
+                    f"{' -> '.join(cycle)}"
                 )
             component = components.get(extension_id)
             if component is None:
                 requiring = components[active[-1]].metadata if active else None
-                source = requiring.source if requiring is not None else extension_id
+                missing_source = (
+                    requiring.source if requiring is not None else extension_id
+                )
                 raise ValueError(
-                    f"{source}: required extension {extension_id!r} is not available"
+                    f"{missing_source}: required extension {extension_id!r} "
+                    "is not available"
                 )
 
             active.append(extension_id)
@@ -347,7 +354,7 @@ class SourceCatalog:
         isa_root: Path,
         types: TypeSystem,
         instructions: ReferenceIndex[InstructionBundle],
-        order: list[Reference],
+        order: list[Reference[InstructionBundle]],
         required_cpuid_flags: tuple[CpuidField, ...],
         cpuid: CpuidCatalog,
     ) -> InstructionSet:
@@ -366,7 +373,9 @@ class SourceCatalog:
         bundles: list[InstructionBundle] = []
         for mnemonic in declared:
             directory = instruction_root / mnemonic
-            reference = Reference(owner, ("instructions",), mnemonic)
+            reference: Reference[InstructionBundle] = Reference(
+                owner, ("instructions",), mnemonic
+            )
             if reference in instructions or not directory.is_dir():
                 continue
             instruction = Instruction.load(directory / "instruction.yaml", isa_root)
@@ -380,8 +389,8 @@ class SourceCatalog:
                 )
                 if field.reference in seen_cpuid_flags:
                     raise ValueError(
-                        f"{instruction.source}: additional CPUID flag reference "
-                        f"{field.reference} repeats an inherited requirement"
+                        f"{instruction.source}: additional CPUID flag "
+                        f"{field.id!r} repeats an inherited requirement"
                     )
                 cpuid_flags.append(field)
                 seen_cpuid_flags.add(field.reference)
@@ -390,6 +399,7 @@ class SourceCatalog:
             )
             bundle = InstructionBundle(
                 reference=reference,
+                owner=owner,
                 instruction=instruction,
                 encodings=encoding_catalog,
                 artifacts=ArtifactSet(
@@ -432,7 +442,7 @@ class IsaProject:
     def load(cls, root: str | Path) -> "IsaProject":
         return IsaProjectLoader().load(root)
 
-    def bundle(self, value: str | Reference | Path) -> InstructionBundle:
+    def bundle(self, value: str | Reference[InstructionBundle] | Path) -> InstructionBundle:
         if isinstance(value, Reference):
             return self.catalog.instructions.resolve(value)
 
@@ -448,9 +458,9 @@ class IsaProject:
         text = str(value)
         if "." in text:
             try:
-                return self.catalog.instructions.resolve(text)
+                return self.catalog.instructions.resolve(Reference.parse(text))
             except UnknownReferenceError as error:
-                raise ValueError(str(error)) from error
+                raise ValueError("unknown instruction reference") from error
 
         matches = [
             bundle
@@ -460,7 +470,7 @@ class IsaProject:
         if not matches:
             raise ValueError(f"unknown instruction {text!r}")
         if len(matches) != 1:
-            owners = ", ".join(str(bundle.reference) for bundle in matches)
+            owners = ", ".join(bundle.owner for bundle in matches)
             raise ValueError(f"ambiguous instruction {text!r}: {owners}")
         return matches[0]
 
@@ -473,7 +483,7 @@ class IsaProject:
             raise ValueError(f"unknown extension {extension_id!r}") from error
 
     def select(
-        self, targets: Iterable[str | Reference | Path] = ()
+        self, targets: Iterable[str | Reference[InstructionBundle] | Path] = ()
     ) -> tuple[InstructionBundle, ...]:
         requested = tuple(targets)
         if not requested:
@@ -482,7 +492,7 @@ class IsaProject:
                 for reference in self.catalog.instruction_order
             )
         selected: list[InstructionBundle] = []
-        seen: set[Reference] = set()
+        seen: set[Reference[InstructionBundle]] = set()
         for target in requested:
             bundle = self.bundle(target)
             if bundle.reference not in seen:

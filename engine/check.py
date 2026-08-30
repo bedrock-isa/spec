@@ -17,7 +17,7 @@ try:
     from .event import EventCatalog, EventClass
     from .project import IsaProject, InstructionBundle
     from .reference import Reference, ReferenceError
-    from .register import RegisterCatalog, RegisterGroup, RegisterInventory
+    from .register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
     from .semantic_text import TermReferenceText
     from .terminology import Term, TermCatalog, TerminologyInventory
     from .type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
@@ -31,7 +31,7 @@ except ImportError:  # Support loading engine directly on PYTHONPATH.
     from event import EventCatalog, EventClass
     from project import IsaProject, InstructionBundle
     from reference import Reference, ReferenceError
-    from register import RegisterCatalog, RegisterGroup, RegisterInventory
+    from register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
     from semantic_text import TermReferenceText
     from terminology import Term, TermCatalog, TerminologyInventory
     from type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
@@ -208,8 +208,8 @@ class BundleValidator:
 
             constraint_roles: set[str] = set()
             for index, constraint in enumerate(form.constraints):
-                field = form.field_for_role(constraint.role)
-                if field is None:
+                constraint_field = form.field_for_role(constraint.role)
+                if constraint_field is None:
                     yield _error(
                         "constraint.role",
                         source,
@@ -235,14 +235,14 @@ class BundleValidator:
                     base,
                     index,
                     constraint,
-                    form.pattern.field_width(field.marker),
+                    form.pattern.field_width(constraint_field.marker),
                 )
 
             for index, overlap in enumerate(form.overlaps):
                 for role in overlap.operands:
                     operand = operands.get(role)
-                    field = form.field_for_role(role)
-                    if operand is None or field is None:
+                    overlap_field = form.field_for_role(role)
+                    if operand is None or overlap_field is None:
                         yield _error(
                             "overlap.operand",
                             source,
@@ -482,16 +482,18 @@ class CpuidValidator:
     def _resolve_classes(
         catalog: CpuidCatalog,
     ) -> tuple[
-        dict[Reference, int],
-        dict[Reference, Reference],
+        dict[Reference[CpuidClass], int],
+        dict[Reference[CpuidClass], Reference[CpuidClass]],
         tuple[Diagnostic, ...],
     ]:
-        values: dict[Reference, int] = {}
-        roots: dict[Reference, Reference] = {}
+        values: dict[Reference[CpuidClass], int] = {}
+        roots: dict[Reference[CpuidClass], Reference[CpuidClass]] = {}
         diagnostics: list[Diagnostic] = []
-        active: list[Reference] = []
+        active: list[Reference[CpuidClass]] = []
 
-        def resolve(cpuid_class: CpuidClass) -> tuple[int, Reference] | None:
+        def resolve(
+            cpuid_class: CpuidClass,
+        ) -> tuple[int, Reference[CpuidClass]] | None:
             if cpuid_class.reference in values:
                 return values[cpuid_class.reference], roots[cpuid_class.reference]
             if cpuid_class.reference in active:
@@ -503,12 +505,16 @@ class CpuidValidator:
                     _error(
                         "cpuid.class.extend-cycle",
                         cpuid_class.source,
-                        "circular CPUID class overlay: " + " -> ".join(map(str, cycle)),
+                        "circular CPUID class overlay: "
+                        + " -> ".join(
+                            catalog.references.classes.resolve(item).id
+                            for item in cycle
+                        ),
                     )
                 )
                 return None
             if cpuid_class.value is not None:
-                result = (cpuid_class.value, cpuid_class.reference)
+                resolved_result = (cpuid_class.value, cpuid_class.reference)
             else:
                 assert cpuid_class.extends is not None
                 try:
@@ -518,7 +524,7 @@ class CpuidValidator:
                         _error(
                             "cpuid.class.unknown-extends",
                             cpuid_class.source,
-                            f"unknown CPUID class overlay target {cpuid_class.extends}",
+                            "unknown CPUID class overlay target",
                             "extends",
                         )
                     )
@@ -534,12 +540,15 @@ class CpuidValidator:
                         )
                     )
                 active.append(cpuid_class.reference)
-                result = resolve(target)
+                inherited_result = resolve(target)
                 active.pop()
-                if result is None:
+                if inherited_result is None:
                     return None
-            values[cpuid_class.reference], roots[cpuid_class.reference] = result
-            return result
+                resolved_result = inherited_result
+            values[cpuid_class.reference], roots[cpuid_class.reference] = (
+                resolved_result
+            )
+            return resolved_result
 
         for cpuid_class in catalog.references.classes.values():
             resolve(cpuid_class)
@@ -548,17 +557,19 @@ class CpuidValidator:
     @staticmethod
     def _resolve_leaves(
         catalog: CpuidCatalog,
-        class_values: Mapping[Reference, int],
-        class_roots: Mapping[Reference, Reference],
+        class_values: Mapping[Reference[CpuidClass], int],
+        class_roots: Mapping[
+            Reference[CpuidClass], Reference[CpuidClass]
+        ],
     ) -> tuple[
-        dict[Reference, tuple[int, int]],
-        dict[Reference, Reference],
+        dict[Reference[CpuidLeaf], tuple[int, int]],
+        dict[Reference[CpuidLeaf], Reference[CpuidLeaf]],
         tuple[Diagnostic, ...],
     ]:
-        values: dict[Reference, tuple[int, int]] = {}
-        roots: dict[Reference, Reference] = {}
+        values: dict[Reference[CpuidLeaf], tuple[int, int]] = {}
+        roots: dict[Reference[CpuidLeaf], Reference[CpuidLeaf]] = {}
         diagnostics: list[Diagnostic] = []
-        active: list[Reference] = []
+        active: list[Reference[CpuidLeaf]] = []
 
         leaf_parents = {
             leaf.reference: cpuid_class.reference
@@ -567,7 +578,9 @@ class CpuidValidator:
             for leaf in cpuid_class.leaves.values()
         }
 
-        def resolve(leaf: CpuidLeaf) -> tuple[tuple[int, int], Reference] | None:
+        def resolve(
+            leaf: CpuidLeaf,
+        ) -> tuple[tuple[int, int], Reference[CpuidLeaf]] | None:
             if leaf.reference in values:
                 return values[leaf.reference], roots[leaf.reference]
             if leaf.reference in active:
@@ -576,7 +589,11 @@ class CpuidValidator:
                     _error(
                         "cpuid.leaf.extend-cycle",
                         leaf.source,
-                        "circular CPUID leaf overlay: " + " -> ".join(map(str, cycle)),
+                        "circular CPUID leaf overlay: "
+                        + " -> ".join(
+                            catalog.references.leaves.resolve(item).id
+                            for item in cycle
+                        ),
                     )
                 )
                 return None
@@ -595,7 +612,7 @@ class CpuidValidator:
                         _error(
                             "cpuid.leaf.unknown-extends",
                             leaf.source,
-                            f"unknown CPUID leaf overlay target {leaf.extends}",
+                            "unknown CPUID leaf overlay target",
                             "extends",
                         )
                     )
@@ -621,7 +638,7 @@ class CpuidValidator:
                         _error(
                             "cpuid.leaf.extend-class",
                             leaf.source,
-                            f"leaf overlay target {target.reference} belongs to a different "
+                            f"leaf overlay target {target.id!r} belongs to a different "
                             "numeric class",
                             "extends",
                         )
@@ -648,7 +665,7 @@ class CpuidValidator:
                 yield _error(
                     "cpuid.class.value-overlap",
                     left.source,
-                    f"class value 0x{left.value:08x} is also allocated by {right.reference}",
+                    f"class value 0x{left.value:08x} is also allocated by {right.id!r}",
                     "value",
                     related=(
                         RelatedLocation(right.source, "conflicting class allocation"),
@@ -658,7 +675,7 @@ class CpuidValidator:
     @staticmethod
     def _validate_leaf_allocations(
         catalog: CpuidCatalog,
-        class_values: Mapping[Reference, int],
+        class_values: Mapping[Reference[CpuidClass], int],
     ) -> Iterator[Diagnostic]:
         definitions: list[tuple[int, CpuidLeaf]] = []
         for namespace in catalog.namespaces.values():
@@ -679,7 +696,7 @@ class CpuidValidator:
                     "cpuid.leaf.value-overlap",
                     left.source,
                     f"leaf value 0x{left.value:04x} in class 0x{left_class:08x} "
-                    f"is also allocated by {right.reference}",
+                    f"is also allocated by {right.id!r}",
                     "value",
                     related=(
                         RelatedLocation(right.source, "conflicting leaf allocation"),
@@ -689,10 +706,12 @@ class CpuidValidator:
     @staticmethod
     def _validate_query_allocations(
         catalog: CpuidCatalog,
-        leaf_values: Mapping[Reference, tuple[int, int]],
-        leaf_roots: Mapping[Reference, Reference],
+        leaf_values: Mapping[Reference[CpuidLeaf], tuple[int, int]],
+        leaf_roots: Mapping[Reference[CpuidLeaf], Reference[CpuidLeaf]],
     ) -> Iterator[Diagnostic]:
-        entries: list[tuple[tuple[int, int], Reference, CpuidQuery]] = []
+        entries: list[
+            tuple[tuple[int, int], Reference[CpuidLeaf], CpuidQuery]
+        ] = []
         for namespace in catalog.namespaces.values():
             for cpuid_class in namespace.classes.values():
                 for leaf in cpuid_class.leaves.values():
@@ -736,7 +755,7 @@ class CpuidValidator:
                     yield _error(
                         "cpuid.query.index-overlap",
                         left.source,
-                        f"query {left.reference} overlaps {right.reference} in "
+                        f"query {left.id!r} overlaps {right.id!r} in "
                         f"class 0x{left_selector[0]:08x}, leaf 0x{left_selector[1]:04x}",
                         "queries",
                         related=(
@@ -752,8 +771,8 @@ class CpuidValidator:
                             yield _error(
                                 "cpuid.field.overlay-overlap",
                                 left_field.source,
-                                f"field {left_field.reference} overlaps "
-                                f"{right_field.reference} in a shared query",
+                                f"field {left_field.id!r} overlaps "
+                                f"{right_field.id!r} in a shared query",
                                 "queries",
                                 related=(
                                     RelatedLocation(
@@ -812,10 +831,12 @@ class EventValidator:
     @staticmethod
     def _resolve_classes(
         catalog: EventCatalog,
-    ) -> tuple[dict[Reference, EventClass], tuple[Diagnostic, ...]]:
-        roots: dict[Reference, EventClass] = {}
+    ) -> tuple[
+        dict[Reference[EventClass], EventClass], tuple[Diagnostic, ...]
+    ]:
+        roots: dict[Reference[EventClass], EventClass] = {}
         diagnostics: list[Diagnostic] = []
-        active: list[Reference] = []
+        active: list[Reference[EventClass]] = []
 
         def resolve(event_class: EventClass) -> EventClass | None:
             if event_class.reference in roots:
@@ -829,7 +850,11 @@ class EventValidator:
                     _error(
                         "event.class.extend-cycle",
                         event_class.source,
-                        "circular event class overlay: " + " -> ".join(map(str, cycle)),
+                        "circular event class overlay: "
+                        + " -> ".join(
+                            catalog.references.classes.resolve(item).id
+                            for item in cycle
+                        ),
                     )
                 )
                 return None
@@ -843,7 +868,7 @@ class EventValidator:
                     _error(
                         "event.class.unknown-extends",
                         event_class.source,
-                        f"unknown event class overlay target {event_class.extends}",
+                        "unknown event class overlay target",
                         "extends",
                     )
                 )
@@ -890,7 +915,7 @@ class EventValidator:
                 yield _error(
                     "event.class.value-overlap",
                     left.source,
-                    f"class value 0x{left.value:02x} is also allocated by {right.reference}",
+                    f"class value 0x{left.value:02x} is also allocated by {right.id!r}",
                     "value",
                     related=(
                         RelatedLocation(right.source, "conflicting class allocation"),
@@ -899,9 +924,10 @@ class EventValidator:
 
     @staticmethod
     def _validate_events(
-        catalog: EventCatalog, roots: Mapping[Reference, EventClass]
+        catalog: EventCatalog,
+        roots: Mapping[Reference[EventClass], EventClass],
     ) -> Iterator[Diagnostic]:
-        allocated: dict[tuple[Reference, int], Any] = {}
+        allocated: dict[tuple[Reference[EventClass], int], Any] = {}
         event_ids: dict[str, Any] = {}
         for event_class in catalog.references.classes.values():
             root = roots.get(event_class.reference)
@@ -913,7 +939,7 @@ class EventValidator:
                     yield _error(
                         "event.id-overlap",
                         event.source,
-                        f"event ID {event.id!r} is also used by {previous_id.reference}",
+                        f"event ID {event.id!r} is also used by {previous_id.id!r}",
                         "id",
                         related=(
                             RelatedLocation(previous_id.source, "conflicting event ID"),
@@ -947,7 +973,7 @@ class EventValidator:
                             "event.code.overlap",
                             event.source,
                             f"event code 0x{event.code:06x} is also allocated by "
-                            f"{previous.reference}",
+                            f"{previous.id!r}",
                             "code",
                             related=(
                                 RelatedLocation(
@@ -1028,7 +1054,7 @@ class RegisterValidator:
     def _validate_groups(catalog: RegisterCatalog) -> Iterator[Diagnostic]:
         for namespace in catalog.namespaces.values():
             for group in namespace.groups.values():
-                encodings: dict[int, object] = {}
+                encodings: dict[int, Register] = {}
                 for register in group.registers.values():
                     if register.encoding is not None:
                         previous = encodings.get(register.encoding)
@@ -1036,7 +1062,7 @@ class RegisterValidator:
                             yield _error(
                                 "register.encoding.duplicate",
                                 register.source,
-                                f"encoding {register.encoding} in group {group.reference} "
+                                f"encoding {register.encoding} in group {group.id!r} "
                                 "is allocated more than once",
                                 "encoding",
                                 related=(
@@ -1057,7 +1083,7 @@ class RegisterValidator:
                         yield _error(
                             "register.layout.width",
                             layout.source,
-                            f"layout has {layout.bits} bits but {register.reference} "
+                            f"layout has {layout.bits} bits but register {register.id!r} "
                             f"has width {register.width}",
                             "bits",
                         )
@@ -1082,10 +1108,10 @@ class RegisterValidator:
 
     @staticmethod
     def _validate_resets(catalog: RegisterCatalog) -> Iterator[Diagnostic]:
-        active: list[Reference] = []
-        resolved: set[Reference] = set()
+        active: list[Reference[Register]] = []
+        resolved: set[Reference[Register]] = set()
 
-        def resolve(register: object) -> Iterator[Diagnostic]:
+        def resolve(register: Register) -> Iterator[Diagnostic]:
             reference = register.reference
             if reference in resolved:
                 return
@@ -1099,7 +1125,7 @@ class RegisterValidator:
                         "register.reset.range",
                         register.source,
                         f"reset value {reset.value} does not fit {register.width}-bit "
-                        f"register {reference}",
+                        f"register {register.id!r}",
                         "reset",
                     )
             if reset is not None and reset.source is not None:
@@ -1109,7 +1135,7 @@ class RegisterValidator:
                     yield _error(
                         "register.reset.unknown-source",
                         register.source,
-                        f"unknown reset source {reset.source}",
+                        "unknown reset source",
                         "reset",
                     )
                 else:
@@ -1117,7 +1143,7 @@ class RegisterValidator:
                         yield _error(
                             "register.reset.width",
                             register.source,
-                            f"reset source {target.reference} has width {target.width}, "
+                            f"reset source {target.id!r} has width {target.width}, "
                             f"expected {register.width}",
                             "reset",
                         )
@@ -1130,7 +1156,10 @@ class RegisterValidator:
                             "register.reset.cycle",
                             register.source,
                             "register reset cycle: "
-                            + " -> ".join(str(item) for item in cycle),
+                            + " -> ".join(
+                                catalog.references.registers.resolve(item).id
+                                for item in cycle
+                            ),
                             "reset",
                         )
                     else:
@@ -1155,17 +1184,14 @@ class RegisterValidator:
             if field.kind not in register_field_kinds:
                 continue
             assert field.register_group is not None
-            group = RegisterValidator._resolve_group(
-                catalog, field.register_group, field.source, field.reference
-            )
+            group = RegisterValidator._resolve_group(catalog, field.register_group)
             if group is None:
                 yield _error(
                     "register.group.unknown",
                     field.source,
-                    f"field type {field.reference} uses unknown register group "
-                    f"{field.register_group!r}",
+                    f"field type {field.id!r} uses an unknown register group",
                     "field_types",
-                    field.reference.element,
+                    field.id,
                     "register_group",
                 )
                 continue
@@ -1185,17 +1211,14 @@ class RegisterValidator:
             if payload.kind != PayloadTypeKind.REGISTER_SELECTOR:
                 continue
             assert payload.register_group is not None
-            group = RegisterValidator._resolve_group(
-                catalog, payload.register_group, payload.source, payload.reference
-            )
+            group = RegisterValidator._resolve_group(catalog, payload.register_group)
             if group is None:
                 yield _error(
                     "register.group.unknown",
                     payload.source,
-                    f"payload type {payload.reference} uses unknown register group "
-                    f"{payload.register_group!r}",
+                    f"payload type {payload.id!r} uses an unknown register group",
                     "payload_types",
-                    payload.reference.element,
+                    payload.id,
                     "register_group",
                 )
                 continue
@@ -1206,12 +1229,10 @@ class RegisterValidator:
     @staticmethod
     def _resolve_group(
         catalog: RegisterCatalog,
-        raw_reference: str,
-        source: Path,
-        type_reference: Reference,
+        reference: Reference[RegisterGroup],
     ) -> RegisterGroup | None:
         try:
-            return catalog.references.groups.resolve(raw_reference)
+            return catalog.references.groups.resolve(reference)
         except (ReferenceError, ValueError):
             return None
 
@@ -1230,7 +1251,7 @@ class RegisterValidator:
                     yield _error(
                         "register.encoding.missing",
                         register.source,
-                        f"register {register.reference} has no encoding for the "
+                        f"register {register.id!r} has no encoding for the "
                         f"selector declared in {source}",
                         "encoding",
                     )
@@ -1239,7 +1260,7 @@ class RegisterValidator:
                 yield _error(
                     "register.encoding.range",
                     register.source,
-                    f"register {register.reference} encoding {register.encoding} does "
+                    f"register {register.id!r} encoding {register.encoding} does "
                     f"not fit the {bits}-bit selector declared in {source}",
                     "encoding",
                 )
@@ -1259,7 +1280,7 @@ class RegisterValidator:
             yield _error(
                 "register.pair.layout",
                 group.source,
-                f"pair-selected group {group.reference} must use contiguous "
+                f"pair-selected group {group.id!r} must use contiguous "
                 "zero-based member encodings",
             )
             return
@@ -1267,13 +1288,13 @@ class RegisterValidator:
             yield _error(
                 "register.pair.odd-count",
                 group.source,
-                f"pair-selected group {group.reference} has an odd member count",
+                f"pair-selected group {group.id!r} has an odd member count",
             )
         if (len(group.registers) + 1) // 2 > 1 << bits:
             yield _error(
                 "register.pair.range",
                 group.source,
-                f"register pairs in {group.reference} do not fit the {bits}-bit "
+                f"register pairs in {group.id!r} do not fit the {bits}-bit "
                 f"selector declared in {source}",
             )
 
@@ -1339,7 +1360,7 @@ class TerminologyValidator:
                         yield _error(
                             "terminology.relation.unknown",
                             term.source,
-                            f"{relation_name} relation names unknown term {reference}",
+                            f"{relation_name} relation names an unknown term",
                             "relations",
                             relation_name,
                             index,
@@ -1351,7 +1372,7 @@ class TerminologyValidator:
                     yield _error(
                         "terminology.definition.unknown-term",
                         term.source,
-                        f"definition names unknown term {part.reference}",
+                        "definition names an unknown term",
                         "definition",
                     )
                     continue
@@ -1360,7 +1381,7 @@ class TerminologyValidator:
                     yield _error(
                         "terminology.definition.unavailable-form",
                         term.source,
-                        f"term {part.reference} does not define form "
+                        f"term {target.id!r} does not define form "
                         f"{part.form.value!r}",
                         "definition",
                     )
@@ -1376,7 +1397,7 @@ class TerminologyValidator:
             yield _error(
                 "terminology.spelling.conflict",
                 conflicting.source,
-                f"spelling {spellings[1].value!r} is also owned by {first.reference}",
+                f"spelling {spellings[1].value!r} is also owned by {first.id!r}",
                 related=(
                     RelatedLocation(first.source, "conflicting terminology spelling"),
                 ),
@@ -1385,8 +1406,8 @@ class TerminologyValidator:
     @staticmethod
     def _validate_broader_relations(catalog: TermCatalog) -> Iterator[Diagnostic]:
         terms = catalog.references.terms
-        complete: set[Reference] = set()
-        active: list[Reference] = []
+        complete: set[Reference[Term]] = set()
+        active: list[Reference[Term]] = []
 
         def visit(term: Term) -> Iterator[Diagnostic]:
             if term.reference in complete:
@@ -1397,7 +1418,8 @@ class TerminologyValidator:
                 yield _error(
                     "terminology.relation.broader-cycle",
                     term.source,
-                    "circular broader relation: " + " -> ".join(map(str, cycle)),
+                    "circular broader relation: "
+                    + " -> ".join(terms.resolve(item).id for item in cycle),
                     "relations",
                     "broader",
                 )

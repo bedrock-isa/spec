@@ -5,9 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import TypeVar, cast
 
 from .reference import Reference, ReferenceIndex
 from .yaml_document import YamlDocumentLoader
+
+
+_T = TypeVar("_T")
 
 
 class EntityKind(StrEnum):
@@ -50,7 +54,7 @@ class EntityDisplayStyle(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class Entity:
-    reference: Reference
+    reference: Reference["Entity"]
     kind: EntityKind
     display: str
     value: object
@@ -77,7 +81,7 @@ class EntityCatalog:
         index = ReferenceIndex[Entity]()
 
         def add(
-            reference,
+            reference: Reference[_T],
             kind: EntityKind,
             display: str,
             value,
@@ -85,7 +89,7 @@ class EntityCatalog:
             label: str | None = None,
             style: EntityDisplayStyle = EntityDisplayStyle.TEXT,
         ) -> None:
-            normalized = Reference.parse(reference)
+            normalized = cast(Reference[Entity], reference)
             index.register(
                 normalized,
                 Entity(normalized, kind, display, value, label, style),
@@ -96,16 +100,18 @@ class EntityCatalog:
             artifact_id = raw.get("id")
             if not isinstance(artifact_id, str):
                 continue
-            reference = Reference("base", ("artifacts",), artifact_id)
+            reference: Reference[Entity] = Reference(
+                "base", ("artifacts",), artifact_id
+            )
             add(reference, EntityKind.ARTIFACT, artifact_id, path)
         for topic in model.document_topics.values():
-            reference = Reference.parse(topic.reference)
+            reference = cast(Reference[Entity], topic.reference)
             add(
                 reference,
                 EntityKind.TOPIC,
-                _humanize(reference.element),
+                _humanize(topic.id),
                 topic,
-                label=entity_label(reference),
+                label=opaque_entity_label(len(index)),
             )
         for reference, bundle in sources.instructions.items():
             add(
@@ -120,27 +126,27 @@ class EntityCatalog:
             add(
                 reference,
                 EntityKind.EA_MODE,
-                reference.element,
+                mode.id,
                 mode,
-                label=entity_label(reference),
+                label=opaque_entity_label(len(index)),
                 style=EntityDisplayStyle.CODE,
             )
         for reference, definition in types.field_types.items():
             add(
                 reference,
                 EntityKind.FIELD_TYPE,
-                reference.element,
+                definition.id,
                 definition,
-                label=entity_label(reference),
+                label=opaque_entity_label(len(index)),
                 style=EntityDisplayStyle.CODE,
             )
         for reference, definition in types.payload_types.items():
             add(
                 reference,
                 EntityKind.PAYLOAD_TYPE,
-                reference.element,
+                definition.id,
                 definition,
-                label=entity_label(reference),
+                label=opaque_entity_label(len(index)),
                 style=EntityDisplayStyle.CODE,
             )
         for kind, typed_index in (
@@ -157,20 +163,20 @@ class EntityCatalog:
                 display = getattr(value, "name", None) or getattr(value, "id", None)
                 label = None
                 if kind in {EntityKind.REGISTER_GROUP, EntityKind.REGISTER}:
-                    label = entity_label(reference)
+                    label = opaque_entity_label(len(index))
                 elif kind in {EntityKind.EVENT_CLASS, EntityKind.CPUID_CLASS}:
                     if value.extends is None:
-                        label = entity_label(reference)
+                        label = opaque_entity_label(len(index))
                 elif kind in {EntityKind.EVENT, EntityKind.CPUID_LEAF}:
                     if getattr(value, "extends", None) is None:
-                        label = entity_label(reference)
+                        label = opaque_entity_label(len(index))
                 elif kind in {EntityKind.CPUID_QUERY, EntityKind.CPUID_FIELD}:
-                    label = entity_label(reference)
+                    label = opaque_entity_label(len(index))
                 add(
                     reference,
                     kind,
                     str(
-                        getattr(value, "id", reference.element)
+                        value.id
                         if kind
                         in {
                             EntityKind.REGISTER,
@@ -179,7 +185,7 @@ class EntityCatalog:
                             EntityKind.CPUID_QUERY,
                             EntityKind.CPUID_FIELD,
                         }
-                        else display or reference.element
+                        else display
                     ),
                     value,
                     label=label,
@@ -202,7 +208,7 @@ class EntityCatalog:
                 EntityKind.TERM_GROUP,
                 group.title,
                 group,
-                label=term_group_label(reference),
+                label=opaque_entity_label(len(index)),
             )
         for reference, term in terminology.references.terms.items():
             add(
@@ -210,24 +216,18 @@ class EntityCatalog:
                 EntityKind.TERM,
                 term.forms.canonical,
                 term,
-                label=term_label(reference),
+                label=opaque_entity_label(len(index)),
             )
         return cls(index)
 
-    def resolve(self, reference: str | Reference) -> Entity:
+    def resolve(self, reference: Reference[Entity]) -> Entity:
         return self.references.resolve(reference)
 
 
-def reference_slug(reference: str | Reference) -> str:
-    import re
+def opaque_entity_label(ordinal: int) -> str:
+    """Return a deterministic opaque TeX anchor for a catalog position."""
 
-    normalized = Reference.parse(reference)
-    value = ".".join((normalized.owner, *normalized.path, normalized.element))
-    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
-
-
-def entity_label(reference: str | Reference) -> str:
-    return f"entity:{reference_slug(reference)}"
+    return f"entity:{ordinal:08d}"
 
 
 def instruction_label(mnemonic: str) -> str:
@@ -235,14 +235,6 @@ def instruction_label(mnemonic: str) -> str:
 
     slug = re.sub(r"[^a-z0-9]+", "-", mnemonic.lower()).strip("-")
     return f"instr:{slug}"
-
-
-def term_group_label(reference: str | Reference) -> str:
-    return f"term-group:{reference_slug(reference)}"
-
-
-def term_label(reference: str | Reference) -> str:
-    return f"term:{reference_slug(reference)}"
 
 
 def _humanize(value: str) -> str:

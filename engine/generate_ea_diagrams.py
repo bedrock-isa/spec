@@ -13,13 +13,9 @@ from typing import Any
 
 try:
     from .ea_mode import EAMode, EAModeCatalog
-    from .entity import entity_label
-    from .reference import Reference
     from .type_system import TypeSystem
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from ea_mode import EAMode, EAModeCatalog
-    from entity import entity_label
-    from reference import Reference
     from type_system import TypeSystem
 
 
@@ -119,16 +115,22 @@ def _format_fields(pattern: str | Sequence[str]) -> list[str]:
     return commands
 
 
-def _short_type(reference: str) -> str:
-    return reference.rsplit(".", 1)[-1]
+def _payload_type_id(mode: EAMode, encoding_index: int, payload_index: int) -> str:
+    reference = mode.payload_type_reference(encoding_index, payload_index)
+    return mode.type_system.payload_types.resolve(reference).id
 
 
-def _encoding_label(encoding: Mapping[str, Any]) -> str:
+def _encoding_label(
+    mode: EAMode, encoding_index: int, encoding: Mapping[str, Any]
+) -> str:
     parts: list[str] = []
     update = encoding.get("autoupdate")
     if update:
         parts.append(f"{update['target']} {update['type']}")
-    parts.extend(_short_type(payload["type"]) for payload in encoding.get("payloads", []))
+    parts.extend(
+        _payload_type_id(mode, encoding_index, payload_index)
+        for payload_index, _ in enumerate(encoding.get("payloads", []))
+    )
     return " + ".join(parts) if parts else "plain"
 
 
@@ -137,8 +139,10 @@ def render_encoding_diagram(mode: EAMode) -> str:
 
     caption = _title_case(f"{mode['name']} encodings")
     lines = [f"\\begin{{BedrockFormatDiagram}}{{{_tex(caption)}}}"]
-    for encoding in mode["encodings"]:
-        lines.append(f"\\BedrockFormatRow{{{_tex(_encoding_label(encoding))}}}{{%")
+    for encoding_index, encoding in enumerate(mode["encodings"]):
+        lines.append(
+            f"\\BedrockFormatRow{{{_tex(_encoding_label(mode, encoding_index, encoding))}}}{{%"
+        )
         lines.extend(_format_fields(encoding["pattern"]))
         lines.append("}")
     lines.append("\\end{BedrockFormatDiagram}")
@@ -689,11 +693,13 @@ def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
     if not isinstance(syntax, str):
         return ()
     variants: list[str] = []
-    for encoding in mode["encodings"]:
+    for encoding_index, encoding in enumerate(mode["encodings"]):
         rendered = syntax
         payloads = {
-            payload["role"]: _short_type(payload["type"]).lower()
-            for payload in encoding.get("payloads", [])
+            payload["role"]: _payload_type_id(
+                mode, encoding_index, payload_index
+            ).lower()
+            for payload_index, payload in enumerate(encoding.get("payloads", []))
         }
         optional_displacement = payloads.get("displacement")
         rendered = rendered.replace(
@@ -721,7 +727,7 @@ def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
 
 def _encoding_description(mode: EAMode) -> str:
     descriptions = []
-    for encoding in mode["encodings"]:
+    for encoding_index, encoding in enumerate(mode["encodings"]):
         pattern = " ".join(encoding["pattern"]) if isinstance(
             encoding["pattern"], list
         ) else encoding["pattern"]
@@ -731,7 +737,10 @@ def _encoding_description(mode: EAMode) -> str:
             details.append(f"{update['target']} {update['type']}")
         payloads = encoding.get("payloads", [])
         if payloads:
-            details.extend(_short_type(payload["type"]).lower() for payload in payloads)
+            details.extend(
+                _payload_type_id(mode, encoding_index, payload_index).lower()
+                for payload_index, _ in enumerate(payloads)
+            )
         suffix = f" ({', '.join(details)})" if details else ""
         descriptions.append(rf"\texttt{{{_tex(pattern)}}}{_tex(suffix)}")
     return "; ".join(descriptions) + "."
@@ -748,9 +757,12 @@ def _segment_description(mode: EAMode) -> str:
 
 def _payload_description(mode: EAMode) -> str:
     payloads = []
-    for encoding in mode["encodings"]:
-        for payload in encoding.get("payloads", []):
-            item = (payload["role"], _short_type(payload["type"]).lower())
+    for encoding_index, encoding in enumerate(mode["encodings"]):
+        for payload_index, payload in enumerate(encoding.get("payloads", [])):
+            item = (
+                payload["role"],
+                _payload_type_id(mode, encoding_index, payload_index).lower(),
+            )
             if item not in payloads:
                 payloads.append(item)
     if payloads:
@@ -792,7 +804,7 @@ def _update_description(mode: EAMode) -> str | None:
     return " ".join(sentences)
 
 
-def render_description_block(mode: EAMode, reference: Reference) -> str:
+def render_description_block(mode: EAMode) -> str:
     """Render the former hand-authored EA explanation block from mode data."""
 
     title = _title_case(f"{mode.catalog.name} {mode['name']}")
@@ -842,14 +854,14 @@ def _encoding_variant_mode(
 def _render_mode_section(
     mode: EAMode,
     *,
-    reference: Reference | None = None,
+    latex_label: str | None = None,
 ) -> str:
     parts = [f"\\par\\Needspace{{{_block_height(mode):.2f}in}}%"]
-    if reference is not None:
-        parts.append(rf"\phantomsection\label{{{entity_label(reference)}}}")
+    if latex_label is not None:
+        parts.append(rf"\phantomsection\label{{{latex_label}}}")
     parts.extend(
         (
-            render_description_block(mode, mode.reference),
+            render_description_block(mode),
             render_encoding_diagram(mode),
         )
     )
@@ -863,7 +875,9 @@ def _render_mode_section(
     return "\n\n".join(parts)
 
 
-def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
+def render_mode(
+    mode: EAMode, latex_label: str | None = None
+) -> str:
     relative_source = mode.source
     try:
         relative_source = mode.source.resolve().relative_to(mode.isa_root.resolve())
@@ -879,7 +893,7 @@ def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
             variant = _encoding_variant_mode(mode, encoding)
             section = _render_mode_section(
                 variant,
-                reference=reference if index == 0 else None,
+                latex_label=latex_label if index == 0 else None,
             )
             sections.append(section if index == 0 else f"\\clearpage\n{section}")
         return "\n\n".join((header, *sections))
@@ -887,7 +901,7 @@ def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
     return "\n\n".join(
         (
             header,
-            _render_mode_section(mode, reference=reference),
+            _render_mode_section(mode, latex_label=latex_label),
         )
     )
 
@@ -918,13 +932,13 @@ def render_modes(modes: Iterable[EAMode]) -> str:
     return header + separator.join(render_mode(mode) for mode in modes) + "\n"
 
 
-def render_catalog(modes: Iterable[tuple[Reference, EAMode]]) -> str:
-    """Render a loaded EA catalog with canonical entity anchors."""
+def render_catalog(modes: Iterable[tuple[str, EAMode]]) -> str:
+    """Render a loaded EA catalog with pre-resolved entity anchors."""
 
     header = "% Generated by engine.generate_ea_diagrams.\n"
     separator = "\n\n\\clearpage\n\n"
     return header + separator.join(
-        render_mode(mode, reference) for reference, mode in modes
+        render_mode(mode, latex_label) for latex_label, mode in modes
     ) + "\n"
 
 

@@ -17,6 +17,7 @@ from engine.generation import (
     GeneratedArtifact,
     GeneratedArtifactSet,
 )
+from engine.project import IsaProject
 from engine.reference import QualifiedReference, Reference
 from engine.render import LatexDocumentRenderer
 from engine.semantic_text import SemanticText
@@ -41,7 +42,7 @@ class _Node:
         self,
         id: str,
         domain: str,
-        reference: Reference,
+        reference: Reference[object],
         kind: str,
         display: str,
         display_style: str,
@@ -127,9 +128,11 @@ class Generator(ArtifactGenerator):
             ):
                 index = getattr(interface, attribute)
                 for reference, value in index.items():
-                    display = getattr(value, "title", None) or getattr(
-                        value, "id", reference.element
-                    )
+                    display = getattr(value, "title", None) or getattr(value, "id", None)
+                    if not isinstance(display, str):
+                        raise ValueError(
+                            "interface entity must provide a display identifier"
+                        )
                     self._add_node(
                         nodes,
                         context,
@@ -151,16 +154,19 @@ class Generator(ArtifactGenerator):
         context: ArtifactGenerationContext,
         *,
         domain: str,
-        reference: Reference,
+        reference: Reference[object],
         kind: str,
         display: str,
         display_style: str,
         value: object,
         source: Path | None,
     ) -> None:
-        node_id = _node_id(domain, reference)
-        if node_id in nodes:
-            raise ValueError(f"duplicate reference-graph node {node_id}")
+        if any(
+            node.domain == domain and node.reference == reference
+            for node in nodes.values()
+        ):
+            raise ValueError("duplicate reference-graph node")
+        node_id = f"node-{len(nodes):06d}"
         nodes[node_id] = _Node(
             id=node_id,
             domain=domain,
@@ -180,13 +186,15 @@ class Generator(ArtifactGenerator):
             context.workspace.root / "artifacts/isa-reference/artifact.yaml"
         )
         project = context.require_provider("isa")
+        if not isinstance(project, IsaProject):
+            raise TypeError("isa provider must be an IsaProject")
         composition = DocumentComposition.load(manual_definition, project)
         renderer = LatexDocumentRenderer()
         renderer.render(composition, project)
         occurrences: list[_Occurrence] = []
         for edge in renderer.dependencies.edges:
-            source = _node_id("isa", edge.source)
-            target = _node_id("isa", edge.target)
+            source = _node_id(nodes, "isa", edge.source)
+            target = _node_id(nodes, "isa", edge.target)
             _require_known_edge(nodes, source, target)
             occurrences.append(
                 _Occurrence(source, target, edge.kind)
@@ -202,7 +210,7 @@ class Generator(ArtifactGenerator):
             for target_domain, target_reference in _walk_references(
                 node.value, node.domain
             ):
-                target = _node_id(target_domain, target_reference)
+                target = _node_id(nodes, target_domain, target_reference)
                 if target == node.id:
                     continue
                 _require_known_edge(nodes, node.id, target)
@@ -216,7 +224,7 @@ def _walk_references(
     *,
     active: frozenset[int] = frozenset(),
     nested: bool = False,
-) -> Iterator[tuple[str, Reference]]:
+) -> Iterator[tuple[str, Reference[object]]]:
     if isinstance(value, QualifiedReference):
         yield value.domain, value.local
         return
@@ -296,7 +304,6 @@ def _render_graph(
         rendered = {
             "id": node.id,
             "domain": node.domain,
-            "reference": str(node.reference),
             "kind": node.kind,
             "label": node.display,
             "display_style": node.display_style,
@@ -333,39 +340,41 @@ def _topic_connectivity(
             continue
         per_topic = counts[occurrence.source]
         per_topic[occurrence.target] = per_topic.get(occurrence.target, 0) + 1
-        target = nodes[occurrence.target]
-        if target.kind == "topic" and occurrence.source != occurrence.target:
-            direct_pairs.add(tuple(sorted((occurrence.source, occurrence.target))))
+        target_node = nodes[occurrence.target]
+        if target_node.kind == "topic" and occurrence.source != occurrence.target:
+            left, right = sorted((occurrence.source, occurrence.target))
+            direct_pairs.add((left, right))
 
     document_frequency: dict[str, int] = defaultdict(int)
     for references in counts.values():
-        for target in references:
-            document_frequency[target] += 1
+        for target_id in references:
+            document_frequency[target_id] += 1
     topic_count = len(topic_ids)
     vectors: dict[str, dict[str, float]] = {}
     norms: dict[str, float] = {}
     inverted: dict[str, list[tuple[str, float]]] = defaultdict(list)
     for topic_id, references in counts.items():
         vector: dict[str, float] = {}
-        for target, frequency in references.items():
+        for target_id, frequency in references.items():
             inverse_document_frequency = math.log(
-                (topic_count + 1) / (document_frequency[target] + 1)
+                (topic_count + 1) / (document_frequency[target_id] + 1)
             ) + 1
             value = (1 + math.log(frequency)) * inverse_document_frequency
-            vector[target] = value
-            inverted[target].append((topic_id, value))
+            vector[target_id] = value
+            inverted[target_id].append((topic_id, value))
         vectors[topic_id] = vector
         norms[topic_id] = math.sqrt(sum(value * value for value in vector.values()))
 
     dots: dict[tuple[str, str], float] = defaultdict(float)
     evidence_scores: dict[tuple[str, str], dict[str, float]] = defaultdict(dict)
-    for target, entries in inverted.items():
-        for left_index, (left, left_value) in enumerate(entries):
-            for right, right_value in entries[left_index + 1 :]:
-                pair = tuple(sorted((left, right)))
+    for target_id, target_entries in inverted.items():
+        for left_index, (left, left_value) in enumerate(target_entries):
+            for right, right_value in target_entries[left_index + 1 :]:
+                pair_left, pair_right = sorted((left, right))
+                pair = (pair_left, pair_right)
                 contribution = left_value * right_value
                 dots[pair] += contribution
-                evidence_scores[pair][target] = contribution
+                evidence_scores[pair][target_id] = contribution
 
     candidates: dict[tuple[str, str], float] = {}
     for pair, dot in dots.items():
@@ -382,10 +391,12 @@ def _topic_connectivity(
         ranked[pair[0]].append((similarity, pair))
         ranked[pair[1]].append((similarity, pair))
     top_pairs: dict[str, set[tuple[str, str]]] = {}
-    for topic_id, entries in ranked.items():
+    for topic_id, ranked_entries in ranked.items():
         top_pairs[topic_id] = {
             pair
-            for _, pair in sorted(entries, key=lambda item: (-item[0], item[1]))[:6]
+            for _, pair in sorted(
+                ranked_entries, key=lambda item: (-item[0], item[1])
+            )[:6]
         }
     selected = {
         pair
@@ -444,8 +455,13 @@ def _entity_source(entity: Entity) -> Path | None:
     return source if isinstance(source, Path) else None
 
 
-def _node_id(domain: str, reference: Reference) -> str:
-    return f"{domain}:{reference}"
+def _node_id(
+    nodes: Mapping[str, _Node], domain: str, reference: Reference[object]
+) -> str:
+    for node_id, node in nodes.items():
+        if node.domain == domain and node.reference == reference:
+            return node_id
+    raise ValueError("reference graph node is not registered")
 
 
 def _require_known_edge(nodes: Mapping[str, _Node], source: str, target: str) -> None:
@@ -527,7 +543,7 @@ function simulate(){if(stable)return;const active=nodes.filter(n=>n.visible);for
 function screen(n){return{x:width/2+panX+n.x*zoom,y:height/2+panY+n.y*zoom}}
 function draw(){simulate();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);for(const l of links){if(!l.enabled)continue;const a=screen(l.a),b=screen(l.b);ctx.lineWidth=l.view==='topic'?.4+l.weight*1.8:.55;ctx.strokeStyle=l.view==='topic'?'#aab0c84d':l.kind==='structured'?'#72798b24':'#aab0c836';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}for(const n of nodes){if(!n.visible)continue;const p=screen(n),degree=view.value==='topic'?n.viewDegree:n.degree,r=Math.max(2,Math.min(9,2+Math.sqrt(degree)*.45))*Math.min(zoom,1.5);ctx.fillStyle=color(n.group,n===hover?1:.82);ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();if(n===hover||zoom>1.7&&degree>8){ctx.fillStyle='#eef0f5';ctx.font='11px system-ui';ctx.fillText(n.label,p.x+r+4,p.y+4)}}requestAnimationFrame(draw)}
 function nearest(x,y){let best=null,dist=14;for(const n of nodes){if(!n.visible)continue;const p=screen(n),d=Math.hypot(p.x-x,p.y-y);if(d<dist){best=n;dist=d}}return best}
-function show(n){hover=n;if(!n){details.classList.add('empty');return}details.classList.remove('empty');const degree=view.value==='topic'?n.viewDegree:n.degree,related=view.value==='topic'?links.filter(l=>l.enabled&&(l.a===n||l.b===n)).sort((a,b)=>b.weight-a.weight).slice(0,4).map(l=>{const other=l.a===n?l.b:l.a,evidence=(l.evidence||[]).slice(0,3).map(item=>item.label).join(', ');return `<dt>${escapeHtml(other.label)}</dt><dd>${l.weight.toFixed(2)}${evidence?` · ${escapeHtml(evidence)}`:''}</dd>`}).join(''):'';details.innerHTML=`<h2>${escapeHtml(n.label)}</h2><dl><dt>Reference</dt><dd>${escapeHtml(n.id)}</dd><dt>Kind</dt><dd>${escapeHtml(n.kind)}</dd><dt>Connections</dt><dd>${degree.toLocaleString()}</dd>${n.source?`<dt>Source</dt><dd>${escapeHtml(n.source)}</dd>`:''}${related}</dl>`}
+function show(n){hover=n;if(!n){details.classList.add('empty');return}details.classList.remove('empty');const degree=view.value==='topic'?n.viewDegree:n.degree,related=view.value==='topic'?links.filter(l=>l.enabled&&(l.a===n||l.b===n)).sort((a,b)=>b.weight-a.weight).slice(0,4).map(l=>{const other=l.a===n?l.b:l.a,evidence=(l.evidence||[]).slice(0,3).map(item=>item.label).join(', ');return `<dt>${escapeHtml(other.label)}</dt><dd>${l.weight.toFixed(2)}${evidence?` · ${escapeHtml(evidence)}`:''}</dd>`}).join(''):'';details.innerHTML=`<h2>${escapeHtml(n.label)}</h2><dl><dt>Node</dt><dd>${escapeHtml(n.id)}</dd><dt>Kind</dt><dd>${escapeHtml(n.kind)}</dd><dt>Connections</dt><dd>${degree.toLocaleString()}</dd>${n.source?`<dt>Source</dt><dd>${escapeHtml(n.source)}</dd>`:''}${related}</dl>`}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,panX,panY,node:nearest(e.clientX,e.clientY)};if(drag.node){stable=false;quietFrames=0}canvas.classList.add('dragging')});
 canvas.addEventListener('pointermove',e=>{if(drag){if(drag.node){drag.node.x+=(e.clientX-drag.x)/zoom;drag.node.y+=(e.clientY-drag.y)/zoom;drag.x=e.clientX;drag.y=e.clientY}else{panX=drag.panX+e.clientX-drag.x;panY=drag.panY+e.clientY-drag.y}}else show(nearest(e.clientX,e.clientY))});

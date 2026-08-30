@@ -24,10 +24,14 @@ class Generator(AuthoredTexArtifactGenerator):
         if not isinstance(provider, CAbiProject):
             raise TypeError("abi.c provider must be a CAbiProject")
         generated = super().generate(context)
-        return_table = _return_register_table(provider)
-        memory_order_table = _memory_order_table(provider)
-        atomic_primitive_table = _atomic_lowering_table(provider, fetch=False)
-        fetch_rmw_table = _atomic_lowering_table(provider, fetch=True)
+        return_table = _return_register_table(provider, context.workspace)
+        memory_order_table = _memory_order_table(provider, context.workspace)
+        atomic_primitive_table = _atomic_lowering_table(
+            provider, context.workspace, fetch=False
+        )
+        fetch_rmw_table = _atomic_lowering_table(
+            provider, context.workspace, fetch=True
+        )
         artifacts = tuple(
             GeneratedArtifact(
                 artifact.relative_path,
@@ -44,7 +48,7 @@ class Generator(AuthoredTexArtifactGenerator):
         return GeneratedArtifactSet(artifacts, generated.artifact_id)
 
 
-def _return_register_table(project: CAbiProject) -> str:
+def _return_register_table(project: CAbiProject, workspace) -> str:
     convention = project.calling_convention
     classes = {
         reference: project.register_classes.resolve(reference)
@@ -54,9 +58,14 @@ def _return_register_table(project: CAbiProject) -> str:
     for reference in convention.value_classes:
         value_class = project.value_classes.resolve(reference)
         policy = value_class.result
-        register_class = classes.get(policy.register_class)
+        register_class = (
+            None
+            if policy.register_class is None
+            else classes.get(policy.register_class)
+        )
         names = () if register_class is None else tuple(
-            item.local.element for item in register_class.results[: policy.units or 0]
+            workspace.resolve(item).id
+            for item in register_class.results[: policy.units or 0]
         )
         if policy.mode == "sret":
             rule = "sret pointer in R0; result pointer in R0"
@@ -87,19 +96,19 @@ def _return_register_table(project: CAbiProject) -> str:
     )
 
 
-def _memory_order_table(project: CAbiProject) -> str:
+def _memory_order_table(project: CAbiProject, workspace) -> str:
     inventory = project.namespaces["base"].memory_order_inventory
     rows = []
     for entity_id in inventory.declared:
-        mapping = project.memory_orders.resolve(f"base.memory_orders.{entity_id}")
+        mapping = project.namespaces["base"].memory_orders[entity_id]
         rows.append(
             " & ".join(
                 (
                     _code(entity_id.lower()),
                     _code(mapping.instruction_order),
-                    _sequence(mapping.load, "load"),
-                    _sequence(mapping.store, "store"),
-                    _sequence(mapping.thread_fence, "access"),
+                    _sequence(mapping.load, "load", workspace),
+                    _sequence(mapping.store, "store", workspace),
+                    _sequence(mapping.thread_fence, "access", workspace),
                 )
             )
             + r"\\"
@@ -122,13 +131,13 @@ def _memory_order_table(project: CAbiProject) -> str:
     )
 
 
-def _sequence(sequence, access_name: str) -> str:
+def _sequence(sequence, access_name: str, workspace) -> str:
     if sequence is None:
         return "---"
     if len(sequence) == 0:
         return "zero instructions"
     names = [
-        access_name if item == "access" else item.local.element
+        access_name if item == "access" else workspace.resolve(item).instruction.mnemonic
         for item in sequence
     ]
     return _code("; ".join(names))
@@ -139,19 +148,18 @@ def _code(value: str) -> str:
     return rf"\texttt{{{escaped}}}"
 
 
-def _atomic_lowering_table(project: CAbiProject, *, fetch: bool) -> str:
+def _atomic_lowering_table(project: CAbiProject, workspace, *, fetch: bool) -> str:
     inventory = project.namespaces["base"].atomic_lowering_inventory
     rows: list[str] = []
     for entity_id in inventory.declared:
-        lowering = project.atomic_lowerings.resolve(
-            f"base.atomic_lowerings.{entity_id}"
-        )
+        lowering = project.namespaces["base"].atomic_lowerings[entity_id]
         is_fetch = entity_id.startswith("FETCH_")
         if is_fetch != fetch:
             continue
         operations = ", ".join(lowering.c_operations)
         instructions = ", ".join(
-            item.local.element for item in lowering.instructions
+            workspace.resolve(item).instruction.mnemonic
+            for item in lowering.instructions
         )
         if lowering.strategy == "aligned_access":
             rule = f"aligned {instructions} access plus the order sequence"

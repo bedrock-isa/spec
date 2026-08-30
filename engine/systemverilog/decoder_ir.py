@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from ..encoding_architecture import ENCODING_CLASSES_BY_NAME
+from ..reference import Reference
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -384,8 +385,8 @@ def _derive_limits(
         ),
     )
 
-def _operand_type_name(reference: Any) -> str:
-    name = reference.element
+def _operand_type_name(definition: Any) -> str:
+    name = definition.id
     semantic_names = {
         "CC": "condition",
         "FLBMP": "flags_bitmap",
@@ -404,7 +405,7 @@ def _is_signed(definition: Any) -> bool:
     if getattr(definition, "signed", None) is not None:
         return bool(definition.signed)
     value_type = getattr(definition, "value_type", None)
-    return value_type == "signed_integer" or definition.reference.element.endswith("S")
+    return value_type == "signed_integer" or definition.id.endswith("S")
 
 
 def _legal_values(type_name: str, authored: tuple[int, ...]) -> tuple[int, ...]:
@@ -431,6 +432,7 @@ def _ea_form(
     project: Any,
     mode: Any,
     encoding: dict[str, Any],
+    encoding_index: int,
     *,
     family: str = "",
     kind_override: str | None = None,
@@ -442,12 +444,12 @@ def _ea_form(
     payloads = encoding.get("payloads", ())
     payload_binding = payloads[0] if payloads else None
     payload_definition = (
-        project.types.payload_types.resolve(payload_binding["type"])
+        project.types.payload_types.resolve(mode.payload_type_reference(encoding_index, 0))
         if payload_binding is not None
         else None
     )
     payload_name = (
-        payload_definition.reference.element.lower()
+        payload_definition.id.lower()
         if payload_definition is not None
         else ""
     )
@@ -471,11 +473,11 @@ def _ea_form(
 
     fields_ir = []
     for symbol, raw_field in sorted(mode.to_dict().get("fields", {}).items()):
-        definition = project.types.field_types.resolve(raw_field["type"])
+        definition = project.types.field_types.resolve(mode.field_type_reference(symbol))
         fields_ir.append(
             EaFieldIR(
                 symbol,
-                _operand_type_name(definition.reference),
+                _operand_type_name(definition),
                 raw_field["role"],
                 definition.bits,
                 gather_positions(joined, symbol),
@@ -554,18 +556,18 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
             1 if family == "EXT1" else 2,
             "memory",
             tuple(
-                _ea_form(project, mode, encoding, family=family)
+                _ea_form(project, mode, encoding, index, family=family)
                 for mode in family_modes[family]
-                for encoding in mode["encodings"]
+                for index, encoding in enumerate(mode["encodings"])
             ),
         )
         for family in ("EXT1", "EXT2")
     )
 
     scalar_forms = tuple(
-        _ea_form(project, mode, encoding)
+        _ea_form(project, mode, encoding, index)
         for mode in compact_modes
-        for encoding in mode["encodings"]
+        for index, encoding in enumerate(mode["encodings"])
     )
     profile_overrides: dict[str, tuple[EaFormIR, ...]] = {"ea": ()}
     extension_profiles = {
@@ -579,10 +581,11 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
                 project,
                 mode,
                 encoding,
+                index,
                 kind_override="float_immediate" if profile == "fea" else None,
             )
             for mode in modes
-            for encoding in mode["encodings"]
+            for index, encoding in enumerate(mode["encodings"])
         )
 
     profiles = []
@@ -652,7 +655,7 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
         )
     payloads = tuple(
         EaPayloadIR(
-            definition.reference.element.lower(),
+            definition.id.lower(),
             str(definition.kind),
             definition.bytes * 8,
             _is_signed(definition),
@@ -694,6 +697,7 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
             ),
             None,
         ) or logical.get("access", "read")
+        source: OperandSourceIR
         if marker is not None:
             definition = project.types.field_types.resolve(reference)
             positions = gather_positions(form.pattern.code, marker)
@@ -729,14 +733,14 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
         result.append(
             OperandIR(
                 role,
-                type_name or _operand_type_name(definition.reference),
+                type_name or _operand_type_name(definition),
                 width,
                 access,
                 logical.get("domain", ""),
                 ea_role,
                 ea_width,
                 _legal_values(
-                    type_name or _operand_type_name(definition.reference),
+                    type_name or _operand_type_name(definition),
                     authored_values,
                 ),
                 source,
@@ -773,13 +777,21 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
                 (
                     binding
                     for binding in unused_payloads
-                    if _operand_type_name(binding.type).lower() == (node.name or "").lower()
+                    if _operand_type_name(
+                        project.types.payload_types.resolve(binding.type)
+                    ).lower()
+                    == (node.name or "").lower()
                 ),
                 unused_payloads[0] if unused_payloads else None,
             )
             if match is not None:
                 unused_payloads.remove(match)
-                public_type = (node.name or _operand_type_name(match.type)).lower()
+                public_type = (
+                    node.name
+                    or _operand_type_name(
+                        project.types.payload_types.resolve(match.type)
+                    )
+                ).lower()
                 if public_type.startswith("disp"):
                     public_type = "imm" + public_type.removeprefix("disp")
                 elif public_type.startswith("abs"):
@@ -860,7 +872,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
     fields_ir = tuple(
         FieldIR(
             binding.marker,
-            _operand_type_name(binding.type),
+            _operand_type_name(project.types.field_types.resolve(binding.type)),
             project.types.field_types.resolve(binding.type).kind.value,
             project.types.field_types.resolve(binding.type).bits,
             gather_positions(form.pattern.code, binding.marker),
@@ -871,7 +883,9 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
     for constraint in form.constraints:
         binding = form.field_for_role(constraint.role)
         if binding is None:
-            raise ValueError(f"{bundle.reference}:{form.id}: constraint has no field")
+            raise ValueError(
+                f"{bundle.instruction.mnemonic}:{form.id}: constraint has no field"
+            )
         ranges = tuple(normalize_range(value) for value in constraint.allow)
         kind = "allow_ranges" if ranges else f"exclude_{constraint.exclude[0]}"
         constraints.append(
@@ -924,9 +938,9 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
         item.width // 8 for item in layout if isinstance(item, ReadPayloadIR)
     )
     required_flags = tuple(
-        field.reference.element for field in bundle.required_cpuid_flags
+        field.id for field in bundle.required_cpuid_flags
     )
-    key = f"{bundle.reference}.{form.id}"
+    key = f"{bundle.owner}.{bundle.instruction.mnemonic}.{form.id}"
     return FormIR(
         key,
         index,
@@ -953,7 +967,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
                 "FP": "fpu",
                 "FPTRANSA": "fpu.transcendental_approx",
                 "VECTOR": "vector",
-            }[bundle.reference.owner],
+            }[bundle.owner],
             "",
             "",
             privilege,
@@ -979,7 +993,7 @@ def _load_decode_ir(root: Path) -> DecodeIR:
     for reference in project.catalog.instruction_order:
         bundle = project.catalog.instructions.resolve(reference)
         for form in bundle.encodings.forms:
-            key = f"{bundle.reference}.{form.id}"
+            key = f"{bundle.owner}.{bundle.instruction.mnemonic}.{form.id}"
             pending.append((key, bundle, form))
     pending.sort(key=lambda item: item[0])
     forms_ir = tuple(

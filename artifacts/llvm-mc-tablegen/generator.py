@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from engine.encoding_architecture import ENCODING_CLASSES_BY_WIDTH
 from engine.encoding import EncodingForm
@@ -14,7 +14,12 @@ from engine.generation import (
     GeneratedArtifact,
     GeneratedArtifactSet,
 )
+from engine.project import IsaProject
+from engine.reference import Reference
 from engine.type_system import FieldTypeKind, PayloadTypeKind
+
+if TYPE_CHECKING:
+    from engine.register import RegisterGroup
 
 
 _OUTPUT = Path("BedrockGenISACatalog.td")
@@ -131,12 +136,14 @@ class Generator(ArtifactGenerator):
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("isa")
+        if not isinstance(project, IsaProject):
+            raise TypeError("isa provider must be an IsaProject")
         forms: list[_RenderedForm] = []
         vector_forms: list[_VectorForm] = []
         scalar_forms: list[_ScalarForm] = []
         repeat_entries: list[_RepeatEntry] = []
         used_names: set[str] = set()
-        selector_group_names = sorted(
+        selector_group_references = sorted(
             {
                 payload_type.register_group
                 for payload_type in project.types.payload_types.values()
@@ -146,7 +153,7 @@ class Generator(ArtifactGenerator):
         )
         selector_group_ids = {
             group_name: index + 1
-            for index, group_name in enumerate(selector_group_names)
+            for index, group_name in enumerate(selector_group_references)
         }
         register_selectors = [
             _RegisterSelector(
@@ -154,15 +161,15 @@ class Generator(ArtifactGenerator):
                 register.id.lower(),
                 register.encoding,
             )
-            for group_name in selector_group_names
+            for group_name in selector_group_references
             for register in project.registers.references.groups.resolve(
                 group_name
             ).registers.values()
             if register.encoding is not None
         ]
         for bundle in project.catalog.instructions.values():
-            bundle_id = str(bundle.reference)
-            owner = bundle.reference.owner
+            bundle_id = f"{bundle.owner}.{bundle.instruction.mnemonic}"
+            owner = bundle.owner
             for form in bundle.encodings.forms:
                 encoding_class = ENCODING_CLASSES_BY_WIDTH[form.pattern.bit_width]
                 field_types = tuple(
@@ -202,12 +209,14 @@ class Generator(ArtifactGenerator):
                         ),
                         field_markers=";".join(field.marker for field in form.fields),
                         field_roles=";".join(field.role for field in form.fields),
-                        field_types=";".join(str(field.type) for field in form.fields),
+                        field_types=";".join(
+                            field_type.id for field_type in field_types
+                        ),
                         payload_roles=";".join(
                             payload.role for payload in form.payloads
                         ),
                         payload_types=";".join(
-                            str(payload.type) for payload in form.payloads
+                            payload_type.id for payload_type in payload_types
                         ),
                     )
                 )
@@ -339,7 +348,7 @@ def _render_vector_form(
                     f"{identifier}: operand field {operand.field!r} has no binding"
                 )
             field_type = project.types.field_types.resolve(binding.type)
-            kind = _field_operand_kind(field_type, identifier)
+            kind = _field_operand_kind(project, field_type, identifier)
             access = binding.access
             if access is None:
                 logical = dict(bundle.instruction)["operands"].get(binding.role, {})
@@ -364,12 +373,12 @@ def _render_vector_form(
 
         if payload_index >= len(form.payloads):
             raise ValueError(f"{identifier}: unbound displayed operand {operand.name}")
-        binding = form.payloads[payload_index]
+        payload_binding = form.payloads[payload_index]
         payload_index += 1
-        payload_type = project.types.payload_types.resolve(binding.type)
+        payload_type = project.types.payload_types.resolve(payload_binding.type)
         signed = (
             payload_type.value_type == "signed_integer"
-            or str(binding.type).endswith("S")
+            or payload_type.id.endswith("S")
             or (operand.name or "").lower().endswith("s")
         )
         operands.append(
@@ -380,7 +389,7 @@ def _render_vector_form(
                 False,
             )
         )
-        explicit_roles.append(binding.role)
+        explicit_roles.append(payload_binding.role)
 
     if payload_index != len(form.payloads):
         raise ValueError(f"{identifier}: payload has no displayed operand")
@@ -433,7 +442,7 @@ def _render_scalar_form(
     form: EncodingForm,
     identifier: str,
     used_names: set[str],
-    selector_group_ids: dict[str, int] | None = None,
+    selector_group_ids: dict[Reference["RegisterGroup"], int] | None = None,
 ) -> _ScalarForm | None:
     """Return the common fixed-width scalar/FP codec projection, if applicable."""
 
@@ -563,8 +572,8 @@ def _render_scalar_form(
                         signed,
                         False,
                         (
-                            (selector_group_ids or {}).get(
-                                definition.register_group or "", 0
+                            _selector_group_id(
+                                selector_group_ids, definition.register_group
                             )
                             if definition.kind
                             == PayloadTypeKind.REGISTER_SELECTOR
@@ -587,7 +596,7 @@ def _render_scalar_form(
         if binding is None:
             return None
         definition = field_types[binding.marker]
-        kind = _scalar_field_operand_kind(definition)
+        kind = _scalar_field_operand_kind(project, definition)
         if kind is None:
             return None
         allowed = _constraint_values(form, binding.role, definition.bits)
@@ -676,7 +685,16 @@ def _render_scalar_form(
     )
 
 
-def _scalar_field_operand_kind(field_type) -> int | None:
+def _selector_group_id(
+    selector_group_ids: dict[Reference["RegisterGroup"], int] | None,
+    reference: Reference["RegisterGroup"] | None,
+) -> int:
+    if reference is None:
+        return 0
+    return (selector_group_ids or {}).get(reference, 0)
+
+
+def _scalar_field_operand_kind(project, field_type) -> int | None:
     if field_type.kind == FieldTypeKind.EFFECTIVE_ADDRESS:
         return _OPERAND_FEA if field_type.profile == "fea" else _OPERAND_EA
     if field_type.kind in {
@@ -687,17 +705,23 @@ def _scalar_field_operand_kind(field_type) -> int | None:
     }:
         return _OPERAND_IMMEDIATE
     if field_type.kind in {FieldTypeKind.REGISTER, FieldTypeKind.REGISTER_SELECTOR}:
-        group = field_type.register_group or ""
-        if group.endswith(".GPR"):
+        group = _register_group_id(project, field_type.register_group)
+        if group == "GPR":
             return _OPERAND_GPR
-        if group.endswith(".FPR"):
+        if group == "FPR":
             return _OPERAND_FPR
-        if group.endswith(".SEGMENT"):
+        if group == "SEGMENT":
             return _OPERAND_SEGMENT
     return None
 
 
-def _field_operand_kind(field_type, identifier: str) -> int:
+def _register_group_id(project, reference) -> str | None:
+    if reference is None:
+        return None
+    return project.registers.references.groups.resolve(reference).id
+
+
+def _field_operand_kind(project, field_type, identifier: str) -> int:
     if field_type.kind == FieldTypeKind.EFFECTIVE_ADDRESS:
         return _OPERAND_VEA if field_type.profile == "vea" else _OPERAND_EA
     if field_type.kind == FieldTypeKind.IMMEDIATE:
@@ -707,17 +731,17 @@ def _field_operand_kind(field_type, identifier: str) -> int:
         FieldTypeKind.REGISTER_SELECTOR,
         FieldTypeKind.REGISTER_PAIR_SELECTOR,
     }:
-        group = field_type.register_group or ""
-        if group.endswith(".GPR"):
+        group = _register_group_id(project, field_type.register_group)
+        if group == "GPR":
             return _OPERAND_GPR
-        if group.endswith(".FPR"):
+        if group == "FPR":
             return _OPERAND_FPR
-        if group.endswith(".VECTOR"):
+        if group == "VECTOR":
             return _OPERAND_VECTOR
-        if group.endswith(".PREDICATE"):
+        if group == "PREDICATE":
             return _OPERAND_PREDICATE
     raise ValueError(
-        f"{identifier}: unsupported vector operand field type {field_type.reference}"
+        f"{identifier}: unsupported vector operand field type {field_type.id}"
     )
 
 

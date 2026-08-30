@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, cast
 
 try:
     from .extension import ExtensionSetCatalog
@@ -42,7 +42,7 @@ class ResetSpec:
     """One static reset value, register source, or lifecycle policy."""
 
     value: int | None = None
-    source: Reference | None = None
+    source: Reference["Register"] | None = None
     cold: str | None = None
     warm: str | None = None
 
@@ -77,7 +77,7 @@ class RegisterLayout:
 class Register:
     """One architectural register, authored explicitly or expanded from a series."""
 
-    reference: Reference
+    reference: Reference["Register"]
     source: Path
     root: Path
     owner: str
@@ -116,7 +116,7 @@ class RegisterDiagram:
 class RegisterGroup:
     """A homogeneous architectural register group."""
 
-    reference: Reference
+    reference: Reference["RegisterGroup"]
     source: Path
     root: Path
     owner: str
@@ -239,7 +239,9 @@ def _load_group(
         raise ValueError(
             f"{source}: register group ID {group_id!r} does not match directory {root.name!r}"
         )
-    reference = Reference(owner, ("registers",), group_id)
+    reference: Reference[RegisterGroup] = Reference(
+        owner, ("registers",), group_id
+    )
     width = _decode_width(raw["width"], source)
     reset = _decode_reset(raw.get("reset"))
     layout = _load_layout(root / "layout.yaml", schemas["layout"])
@@ -422,7 +424,10 @@ def _load_diagram(inventory: RegisterInventory) -> RegisterDiagram | None:
         raise ValueError(
             f"{inventory.source}: diagram columns must contain exactly two group lists"
         )
-    columns = tuple(tuple(column) for column in raw_columns)
+    columns: tuple[tuple[str, ...], tuple[str, ...]] = (
+        tuple(cast(list[str], raw_columns[0])),
+        tuple(cast(list[str], raw_columns[1])),
+    )
     placed = tuple(group_id for column in columns for group_id in column)
     duplicates = sorted(
         group_id for group_id in set(placed) if placed.count(group_id) > 1

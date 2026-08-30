@@ -270,7 +270,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                         [
                             {
                                 "id": entry.name,
-                                "instruction": str(entry.reference),
+                                "instruction": f"{entry.owner}.{entry.mnemonic}",
                                 "pattern": entry.pattern,
                                 "raw": entry.raw_slots,
                                 "assigned": entry.assigned_slots,
@@ -353,23 +353,23 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                 json.dumps(
                     [
                         {
-                            "pattern": item.pattern,
-                            "first": item.cube.first,
-                            "last": item.cube.last,
-                            "slots": item.slots,
+                            "pattern": hole.pattern,
+                            "first": hole.cube.first,
+                            "last": hole.cube.last,
+                            "slots": hole.slots,
                         }
-                        for item in holes
+                        for hole in holes
                     ],
                     indent=2,
                 )
             )
         else:
             print("pattern  first..last  slots")
-            for item in holes:
-                digits = (item.cube.width + 3) // 4
+            for hole in holes:
+                digits = (hole.cube.width + 3) // 4
                 print(
-                    f"{item.pattern}  0x{item.cube.first:0{digits}x}.."
-                    f"0x{item.cube.last:0{digits}x}  {item.slots:,}"
+                    f"{hole.pattern}  0x{hole.cube.first:0{digits}x}.."
+                    f"0x{hole.cube.last:0{digits}x}  {hole.slots:,}"
                 )
         return 0
     except (OSError, ValueError) as error:
