@@ -1,0 +1,12 @@
+For each active H, S, or D element, VFNEG toggles the sign bit and preserves
+the remaining bits.
+
+The register form reads and overwrites each active destination lane. The
+memory-source form reads each active memory element and writes the result to the
+corresponding destination lane. An inactive destination lane retains its
+previous value.
+
+The memory-destination form transforms each active source-register element and
+writes the result to the corresponding memory element. Inactive memory elements
+retain their previous values, making the destination transaction a lane-wise
+read-modify-write.

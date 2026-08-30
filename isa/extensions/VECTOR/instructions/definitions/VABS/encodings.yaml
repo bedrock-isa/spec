@@ -1,7 +1,7 @@
 encodings:
-  b_w_l_q_h_s_d_x_pn_p_vn_v:
+  b_w_l_q_x_pn_p_vn_v:
     pattern: 1111101000000xxx1ppppvvvvv
-    syntax: VABS.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v)
+    syntax: VABS.{B|W|L|Q}(x) Pn(p), Vn(v)
     fields:
       x:
         role: size
@@ -16,11 +16,10 @@ encodings:
     - role: size
       allow: &id001
       - 0x0..0x3
-      - 0x5..0x7
       reason: reserved_vector_element_type
-  b_w_l_q_h_s_d_x_pn_p_ea_e_vn_v:
+  b_w_l_q_x_pn_p_ea_e_vn_v:
     pattern: 1111111100000010010xxx0010ppppvvvvveeeeeee
-    syntax: VABS.{B|W|L|Q|H|S|D}(x) Pn(p), <ea>(e), Vn(v)
+    syntax: VABS.{B|W|L|Q}(x) Pn(p), <ea>(e), Vn(v)
     fields:
       x:
         role: size
@@ -38,9 +37,9 @@ encodings:
     - role: size
       allow: *id001
       reason: reserved_vector_element_type
-  b_w_l_q_h_s_d_x_pn_p_vn_v_ea_e:
+  b_w_l_q_x_pn_p_vn_v_ea_e:
     pattern: 1111111100000010010xxx0011ppppvvvvveeeeeee
-    syntax: VABS.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), <ea>(e)
+    syntax: VABS.{B|W|L|Q}(x) Pn(p), Vn(v), <ea>(e)
     fields:
       x:
         role: size

@@ -1,0 +1,25 @@
+sail:
+  units:
+  - id: execution
+    requires:
+    - base.architectural-types
+    - base.decode-types
+    - base.decode
+    - base.runtime
+    - FP.contract
+    - FP.execution
+    - VECTOR.execution
+    sources:
+    - semantics/fp/reduction.sail
+    - semantics/fp/arithmetic.sail
+    - semantics/fp/conversion.sail
+    - semantics/uops/control.sail
+    - semantics/uops/fp_compute.sail
+documents:
+  topics:
+  - id: cpuid.vector-floating-point-discovery
+    source: documents/topics/cpuid/001_vector_floating_point_discovery.tex
+    concept: cpuid
+  - id: introduction.vector-floating-point-semantics
+    source: documents/topics/introduction/001_floating_point_exceptions_conversions_and_reductions.tex
+    concept: vectorfp

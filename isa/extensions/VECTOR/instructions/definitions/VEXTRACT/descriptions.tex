@@ -1,7 +1,6 @@
 VEXTRACT interprets the scalar index as unsigned and selects that lane from
 Vn. The B, W, L, and Q forms zero-extend the selected lane to the complete Rn
-result. The H, S, and D forms copy the selected floating-point value to Fn and
-leave FFLAGS unchanged.
+result.
 
 An index at or above the selected vector element count raises
 VECTOR\_LANE\_INDEX\_OUT\_OF\_RANGE. The faulting instruction

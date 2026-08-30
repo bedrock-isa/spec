@@ -1,6 +1,6 @@
 mnemonic: VREDADD
 name: Vector Add Reduction
-summary: Reduces active integer or floating-point elements to one scalar sum.
+summary: Reduces active integer elements to one scalar sum.
 route: vector
 sail_entries:
 - execute_VREDADD

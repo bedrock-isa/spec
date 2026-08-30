@@ -5,8 +5,6 @@ route: vector
 sail_entries:
 - execute_VSLIDEUP
 privileged: false
-assembly:
-  width_suffix_aliases: true
 operands:
   govern:
     role: governing_predicate

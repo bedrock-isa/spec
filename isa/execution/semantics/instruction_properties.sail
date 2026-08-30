@@ -114,6 +114,7 @@ function cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =
         CpuidFlag_FP => state.fp_enabled,
         CpuidFlag_FPTRANSA => state.fptrans_enabled,
         CpuidFlag_VECTOR => state.vector_enabled,
+        CpuidFlag_VECTORFP => state.fp_enabled & state.vector_enabled,
     }
 
 function cpuid_flags_available(flags : list(Cpuid_flag), state : Cpu_state) -> bool =
@@ -205,7 +206,7 @@ val condition_size_field : list(Decoded_field) -> option(int)
 function operation_width(instruction : Decoded_instruction) -> int =
     match condition_size_field(instruction.fields) {
         Some(selector) => {
-            if instruction.form.instruction_set == VectorSet then {
+            if instruction.form.instruction_set == VectorSet | instruction.form.instruction_set == VectorFpuSet then {
                 if selector == 0 then {
                     1
                 } else {

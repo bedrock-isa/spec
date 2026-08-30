@@ -1,6 +1,6 @@
 mnemonic: VMUL
 name: Vector Multiply
-summary: Multiplies corresponding active integer or floating-point elements.
+summary: Multiplies corresponding active integer elements.
 route: vector
 sail_entries:
 - execute_VMUL

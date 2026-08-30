@@ -5,8 +5,6 @@ route: vector
 sail_entries:
 - execute_PLOOP
 privileged: false
-assembly:
-  width_suffix_aliases: true
 operands:
   remaining:
     role: counter

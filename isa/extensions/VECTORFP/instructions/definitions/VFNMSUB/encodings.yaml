@@ -1,0 +1,25 @@
+encodings:
+  h_s_d_z_pn_p_vn_v_vn_w_vn_y:
+    pattern: 111111011101zz1ppppvvvvvwwwwwyyyyy
+    syntax: VFNMSUB.{H|S|D}(z) Pn(p), Vn(v), Vn(w), Vn(y)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_HSD
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      w:
+        role: rhs
+        type: VECTOR.field_types.Vn
+      y:
+        role: dst
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow:
+      - 0x1..0x3
+      reason: reserved_vector_element_type

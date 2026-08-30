@@ -1,40 +1,10 @@
-union clause Uop_kind = UopVectorFp : Semantic_operation
 union clause Uop_kind = UopVectorCompute : Semantic_operation
-
-val vector_fp_uop_execute : (
-        Semantic_operation,
-        Uop,
-        list(Uop_value),
-        Decoded_instruction,
-        Cpu_state,
-        Cpu_state,
-    ) -> Uop_step
 
 val vector_register_compute_result : (
         Semantic_operation,
         Decoded_instruction,
         Cpu_state,
     ) -> option(Vector_compute_result)
-
-function vector_instruction_uses_fp(instruction : Decoded_instruction) -> bool = {
-    let operation = instruction.form.operation;
-    let semantics = vector_semantics(operation);
-    let fp_capable = semantics.fp_basic | semantics.fp_conversion
-                   | semantics.fp_reduction_operation != None();
-    let integer_capable = semantics.integer_binary != None()
-                        | semantics.integer_unary != None()
-                        | semantics.integer_compare != None()
-                        | semantics.integer_reduction != None();
-    let fp_size : bool = match condition_size_field(instruction.fields) {
-        Some(selector) => selector >= 5,
-        None() => false,
-    };
-    let fp_reduction_destination : bool = match operand_named(instruction, Operand_dst) {
-        Some(destination) => destination.operand_type == OperandType_Fn,
-        None() => false,
-    };
-    fp_capable & (not_bool(integer_capable) | fp_size | fp_reduction_destination)
-}
 
 union clause Uop_kind = UopVectorBranchGuard : Vector_branch_uop_operation
 union clause Uop_kind = UopVectorLoopGuard : unit
@@ -83,6 +53,3 @@ function clause execute_uop(UopVectorLoopGuard(), _, values, instruction, before
         _ => uop_step_fault(faulted(before, instruction.form.operation, IllegalInstruction,
                                "PLOOP operands are unavailable")),
     }
-
-function clause execute_uop(UopVectorFp(operation), uop, values, instruction, before, speculative) =
-    vector_fp_uop_execute(operation, uop, values, instruction, before, speculative)

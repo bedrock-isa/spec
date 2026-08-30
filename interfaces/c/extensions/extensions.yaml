@@ -2,3 +2,4 @@ extensions:
 - FP
 - FPTRANSA
 - VECTOR
+- VECTORFP

@@ -6,7 +6,6 @@ function clause vector_semantics(Op_VDUP) =
     {
         vector_default_semantics() with
         special = Some(VectorSpecialDuplicate),
-        fp_allowed_causes = fflags_none,
     }
 
 

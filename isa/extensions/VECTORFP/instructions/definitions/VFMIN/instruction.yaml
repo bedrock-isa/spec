@@ -1,0 +1,20 @@
+mnemonic: VFMIN
+name: Vector Floating-Point Minimum
+summary: Selects the floating-point minimum in each active lane.
+route: vector
+sail_entries:
+- execute_VFMIN
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

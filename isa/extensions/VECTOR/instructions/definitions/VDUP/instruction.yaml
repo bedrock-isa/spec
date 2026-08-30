@@ -1,6 +1,6 @@
 mnemonic: VDUP
 name: Vector Duplicate
-summary: Broadcasts a scalar register, floating-point register, or immediate value to every vector lane.
+summary: Broadcasts an integer scalar register or immediate value to every vector lane.
 route: vector
 sail_entries:
 - execute_VDUP

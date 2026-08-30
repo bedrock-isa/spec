@@ -1,0 +1,32 @@
+mnemonic: VFCMPcc
+name: Vector Floating-Point Conditional Compare
+summary: Compares active floating-point lanes and writes a complete predicate image.
+route: vector
+sail_entries:
+- execute_VFCMPcc
+privileged: false
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  lhs:
+    role: source
+    access: read
+    value_type: vector
+  rhs:
+    role: source
+    access: read
+    value_type: vector
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: write
+    value_type: predicate

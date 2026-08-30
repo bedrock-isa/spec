@@ -1,0 +1,7 @@
+id: VECTORFP
+name: Vector Floating-Point Extension
+requires:
+- FP
+- VECTOR
+required_cpuid_flags:
+- VECTORFP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTORFP

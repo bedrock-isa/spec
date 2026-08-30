@@ -5,8 +5,6 @@ route: vector
 sail_entries:
 - execute_VZIPLO
 privileged: false
-assembly:
-  width_suffix_aliases: true
 operands:
   govern:
     role: governing_predicate

@@ -496,18 +496,18 @@ class IsaProject:
     def vector_diagram(
         self, value: str | Reference[VectorDiagram]
     ) -> VectorDiagram:
-        """Resolve one fully qualified instruction-owned VECTOR diagram."""
+        """Resolve one fully qualified instruction-owned vector diagram."""
 
         reference: Reference[VectorDiagram] = Reference.parse(value)
         if (
-            reference.owner != "VECTOR"
+            reference.owner not in {"VECTOR", "VECTORFP"}
             or len(reference.path) != 3
             or reference.path[0] != "instructions"
             or reference.path[2] != "diagrams"
         ):
             raise ValueError(
-                "VECTOR diagram references must have the form "
-                "VECTOR.instructions.<mnemonic>.diagrams.<id>"
+                "vector diagram references must have the form "
+                "VECTOR|VECTORFP.instructions.<mnemonic>.diagrams.<id>"
             )
         instruction_reference: Reference[InstructionBundle] = Reference(
             reference.owner,
@@ -518,7 +518,7 @@ class IsaProject:
             bundle = self.catalog.instructions.resolve(instruction_reference)
             return bundle.diagrams.resolve(reference)
         except UnknownReferenceError as error:
-            raise ValueError("unknown VECTOR diagram reference") from error
+            raise ValueError("unknown vector diagram reference") from error
 
     def select(
         self, targets: Iterable[str | Reference[InstructionBundle] | Path] = ()

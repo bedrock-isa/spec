@@ -473,25 +473,25 @@ struct VectorConversion {
 
 fn vector_conversion(operation: i32) -> Option<VectorConversion> {
     let (destination_width, source_fp, destination_fp, unsigned) =
-        if operation == operation::OP_VCVTH {
+        if operation == operation::OP_VFCVTH {
             (2, true, true, false)
-        } else if operation == operation::OP_VCVTS {
+        } else if operation == operation::OP_VFCVTS {
             (4, true, true, false)
-        } else if operation == operation::OP_VCVTD {
+        } else if operation == operation::OP_VFCVTD {
             (8, true, true, false)
-        } else if operation == operation::OP_VCVTUH {
+        } else if operation == operation::OP_VFCVTUH {
             (2, false, true, true)
-        } else if operation == operation::OP_VCVTUS {
+        } else if operation == operation::OP_VFCVTUS {
             (4, false, true, true)
-        } else if operation == operation::OP_VCVTUD {
+        } else if operation == operation::OP_VFCVTUD {
             (8, false, true, true)
-        } else if operation == operation::OP_VCVTL {
+        } else if operation == operation::OP_VFCVTL {
             (4, true, false, false)
-        } else if operation == operation::OP_VCVTUL {
+        } else if operation == operation::OP_VFCVTUL {
             (4, true, false, true)
-        } else if operation == operation::OP_VCVTQ {
+        } else if operation == operation::OP_VFCVTQ {
             (8, true, false, false)
-        } else if operation == operation::OP_VCVTUQ {
+        } else if operation == operation::OP_VFCVTUQ {
             (8, true, false, true)
         } else {
             return None;

@@ -1,6 +1,6 @@
 mnemonic: VINSERT
 name: Vector Lane Insert
-summary: Replaces one indexed vector lane with an integer or floating-point scalar value.
+summary: Replaces one indexed vector lane with an integer scalar value.
 route: vector
 sail_entries:
 - execute_VINSERT

@@ -1,7 +1,6 @@
 mnemonic: VABS
 name: Vector Absolute Value
-summary: Computes the absolute value of active integer elements or clears the sign of active floating-point
-  elements.
+summary: Computes the absolute value of active integer elements.
 route: vector
 sail_entries:
 - execute_VABS

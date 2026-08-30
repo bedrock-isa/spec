@@ -1,0 +1,22 @@
+encodings:
+  h_s_d_z_fn_r_rn_s_vn_v:
+    pattern: 11111101111110000zz11rrrrssssvvvvv
+    syntax: VFINSERT.{H|S|D}(z) Fn(r), Rn(s), Vn(v)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_HSD
+      r:
+        role: src
+        type: FP.field_types.Fn
+      s:
+        role: index
+        type: base.field_types.Rn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow:
+      - 0x1..0x3
+      reason: reserved_vector_element_type

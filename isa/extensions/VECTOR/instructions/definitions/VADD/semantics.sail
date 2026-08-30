@@ -6,9 +6,6 @@ function clause vector_semantics(Op_VADD) =
     {
         vector_default_semantics() with
         integer_binary = Some(VectorIntegerAdd),
-        fp_basic = true,
-        fp_primitive = true,
-        fp_scalar_operation = Some(fp_arithmetic_semantic_operation(FpArithmeticAdd)),
     }
 
 

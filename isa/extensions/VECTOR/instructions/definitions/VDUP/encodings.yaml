@@ -12,24 +12,6 @@ encodings:
       v:
         role: dst
         type: VECTOR.field_types.Vn
-  h_s_d_z_fn_r_vn_v:
-    pattern: 11111010010010zz1rrrrvvvvv
-    syntax: VDUP.{H|S|D}(z) Fn(r), Vn(v)
-    fields:
-      z:
-        role: size
-        type: VECTOR.field_types.SIZE_HSD
-      r:
-        role: src
-        type: FP.field_types.Fn
-      v:
-        role: dst
-        type: VECTOR.field_types.Vn
-    constraints:
-    - role: size
-      allow:
-      - 0x1..0x3
-      reason: reserved_vector_element_type
   b_imm8_vn_v:
     pattern: 111110100110100000010vvvvv
     syntax: VDUP.B <imm8>, Vn(v)

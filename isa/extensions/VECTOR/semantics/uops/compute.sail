@@ -35,8 +35,6 @@ function clause execute_uop(UopVectorCompute(operation), uop, values, instructio
             faulted(before, instruction.form.operation, InvalidControlState,
                     "vector compute uop does not match its instruction"),
         )
-    } else if vector_instruction_uses_fp(instruction) then {
-        vector_fp_uop_execute(operation, uop, values, instruction, before, speculative)
     } else match vector_memory_operand(instruction.operands) {
         Some(_) => execute_uop(UopVectorMemoryCompute(operation), uop, values, instruction, before, speculative),
         None() => match vector_register_compute_result(operation, instruction, speculative) {

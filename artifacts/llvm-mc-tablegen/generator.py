@@ -56,6 +56,7 @@ class _VectorForm(NamedTuple):
     record_name: str
     identifier: str
     mnemonic: str
+    owner: str
     pattern: str
     suffixes: str
     encoding_class: int
@@ -220,7 +221,7 @@ class Generator(ArtifactGenerator):
                         ),
                     )
                 )
-                if owner == "VECTOR":
+                if owner in {"VECTOR", "VECTORFP"}:
                     vector_forms.append(
                         _render_vector_form(
                             project, bundle, form, identifier, used_names
@@ -422,6 +423,7 @@ def _render_vector_form(
         record_name=_record_name("vector." + identifier, used_names),
         identifier=identifier,
         mnemonic=mnemonic,
+        owner=bundle.owner,
         pattern=form.pattern.code,
         suffixes=suffixes,
         encoding_class=_VECTOR_ENCODING_CLASS[encoding_class.name],
@@ -988,7 +990,7 @@ def _render_vector_tables(forms: list[_VectorForm]) -> list[str]:
     lines = [
         "",
         "class BedrockVectorEncodingForm<",
-        "    string id, string mnemonic, string pattern, string suffixes,",
+        "    string id, string mnemonic, string owner, string pattern, string suffixes,",
         "    bits<8> encodingClass, bits<8> suffixField,",
         "    bits<8> allowedSuffixMask, bits<16> allowedConditionMask,",
         "    bit hasCondition, bit hasWidthOnlyAliases, bits<8> operandCount,",
@@ -996,6 +998,7 @@ def _render_vector_tables(forms: list[_VectorForm]) -> list[str]:
         "    bits<8> distinctOperandA, bits<8> distinctOperandB> {",
         "  string Id = id;",
         "  string Mnemonic = mnemonic;",
+        "  string Owner = owner;",
         "  string Pattern = pattern;",
         "  string Suffixes = suffixes;",
         "  bits<8> EncodingClass = encodingClass;",
@@ -1013,7 +1016,7 @@ def _render_vector_tables(forms: list[_VectorForm]) -> list[str]:
         "def BedrockVectorEncodingForms : GenericTable {",
         '  let FilterClass = "BedrockVectorEncodingForm";',
         '  let CppTypeName = "VectorEncodingForm";',
-        "  let Fields = [\"Id\", \"Mnemonic\", \"Pattern\", \"Suffixes\",",
+        "  let Fields = [\"Id\", \"Mnemonic\", \"Owner\", \"Pattern\", \"Suffixes\",",
         "                \"EncodingClass\", \"SuffixField\",",
         "                \"AllowedSuffixMask\", \"AllowedConditionMask\",",
         "                \"HasCondition\", \"HasWidthOnlyAliases\",",
@@ -1027,6 +1030,7 @@ def _render_vector_tables(forms: list[_VectorForm]) -> list[str]:
         values = [
             _td_string(form.identifier),
             _td_string(form.mnemonic),
+            _td_string(form.owner),
             _td_string(form.pattern),
             _td_string(form.suffixes),
             str(form.encoding_class),
@@ -1055,9 +1059,9 @@ def _render_vector_tables(forms: list[_VectorForm]) -> list[str]:
         lines.extend(
             (
                 f"def {form.record_name} : BedrockVectorEncodingForm<",
-                "  " + ", ".join(values[:11]) + ",",
-                "  " + ", ".join(values[11:27]) + ",",
-                "  " + ", ".join(values[27:]) + ">;",
+                "  " + ", ".join(values[:12]) + ",",
+                "  " + ", ".join(values[12:28]) + ",",
+                "  " + ", ".join(values[28:]) + ">;",
             )
         )
     return lines

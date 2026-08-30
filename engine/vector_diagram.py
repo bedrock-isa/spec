@@ -42,6 +42,7 @@ WIDTH_CONNECTION_EFFECTS = frozenset({"copy", "sign-fill", "zero"})
 WIDTH_CONNECTION_DISPLAYS = frozenset({"transfer", "expansion-guide"})
 PREDICATE_WIDTH_TERMS = frozenset({"source-lanes", "destination-lanes"})
 PREDICATE_LANE_EDGE_DISPLAYS = frozenset({"transfer", "control"})
+VECTOR_DIAGRAM_OWNERS = frozenset({"VECTOR", "VECTORFP"})
 
 
 class VectorDiagramError(ValueError):
@@ -97,10 +98,10 @@ class VectorDiagramCatalog:
         diagrams = ReferenceIndex[VectorDiagram]()
         if not collection_root.exists():
             return cls(owner, instruction, collection_root, None, diagrams)
-        if owner != "VECTOR":
+        if owner not in VECTOR_DIAGRAM_OWNERS:
             raise ValueError(
                 f"{collection_root}: finite VECTOR diagrams may only be owned "
-                "by VECTOR instructions"
+                "by VECTOR or VECTORFP instructions"
             )
         inventory = DirectoryInventory.load(
             owner=owner,

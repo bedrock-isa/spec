@@ -7,8 +7,6 @@ function clause vector_semantics(Op_VREDADD) =
         vector_default_semantics() with
         integer_reduction = Some(VectorReduceAdd),
         reduction = true,
-        fp_reduction_operation = Some(fp_arithmetic_semantic_operation(FpArithmeticAdd)),
-        fp_reduction_identity = VectorFpReductionZero,
     }
 
 

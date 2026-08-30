@@ -1,0 +1,24 @@
+mnemonic: VFMADD
+name: Vector Floating-Point Fused Multiply-Add
+summary: Performs fused multiply-add on corresponding active floating-point elements.
+route: vector
+sail_entries:
+- execute_VFMADD
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  lhs:
+    role: source
+    access: read
+    value_type: vector
+  rhs:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

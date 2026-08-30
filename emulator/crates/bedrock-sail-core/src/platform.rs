@@ -32,7 +32,7 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (BASE_CLASS, 0, 3..=10) => name_word(VENDOR_NAME, usize::from(index - 3)),
         (BASE_CLASS, 0, 11..=18) => name_word(PROCESSOR_NAME, usize::from(index - 11)),
         (EXTENSION_CLASS, 0, 0) => header_with_leaf(2, 1),
-        (EXTENSION_CLASS, 0, 1) => 0b111,
+        (EXTENSION_CLASS, 0, 1) => 0b1111,
         (EXTENSION_CLASS, 1, 0) => 0x0044,
         (EXTENSION_CLASS, 1, id) if FPTRANSA_CONTRACT_IDS.contains(&id) => {
             (1_u64 << 63) | (1_u64 << 32) | (0x0100_u64 << 16) | 0x0100

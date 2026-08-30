@@ -1,4 +1,4 @@
-"""Explicit placement and TeX projection for instruction-owned VECTOR diagrams."""
+"""Explicit placement and TeX projection for instruction-owned vector diagrams."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def _layout(example: VectorExample) -> tuple[str, str, str]:
 
 
 class VectorDiagramRenderer:
-    """Project one validated finite VECTOR example into the reference TeX DSL."""
+    """Project one validated finite vector example into the reference TeX DSL."""
 
     def render(self, diagram: VectorDiagram) -> str:
         needspace, x_scale, y_scale = _layout(diagram.example)
@@ -126,7 +126,7 @@ class VectorDiagramPlacementRenderer:
             except (ReferenceError, ValueError) as error:
                 line = text.count("\n", 0, match.start()) + 1
                 raise ValueError(
-                    f"{path}:{line}: invalid VECTOR diagram reference "
+                    f"{path}:{line}: invalid vector diagram reference "
                     f"{raw_reference!r}"
                 ) from error
             if reference not in bundle.diagrams.diagrams:

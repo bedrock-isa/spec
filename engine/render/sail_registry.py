@@ -63,6 +63,9 @@ EXTENSION_CONTRIBUTIONS = {
         instruction_sets=("VectorSet",),
         fault_kinds=("VectorRangeFault",),
     ),
+    "VECTORFP": SailTypeContribution(
+        instruction_sets=("VectorFpuSet",),
+    ),
 }
 
 
@@ -88,8 +91,6 @@ class SailRegistryRenderer:
             instruction_sets.extend(contribution.instruction_sets)
             faults.extend(contribution.fault_kinds)
             effects.extend(contribution.effect_kinds)
-        if program.configuration.enables("FP") and program.configuration.enables("VECTOR"):
-            instruction_sets.append("VectorFpuSet")
         event_entries = program.project.events.resolved_events(
             program.configuration.owners
         )

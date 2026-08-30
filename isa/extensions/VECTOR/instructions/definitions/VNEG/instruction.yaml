@@ -1,6 +1,6 @@
 mnemonic: VNEG
 name: Vector Negate
-summary: Negates active integer elements or toggles the sign of active floating-point elements.
+summary: Negates active integer elements.
 route: vector
 sail_entries:
 - execute_VNEG

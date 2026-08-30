@@ -5,8 +5,6 @@ route: vector
 sail_entries:
 - execute_VLCNT
 privileged: false
-assembly:
-  width_suffix_aliases: true
 operands:
   dst:
     role: destination

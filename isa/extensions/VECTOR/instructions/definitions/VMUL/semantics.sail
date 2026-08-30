@@ -6,9 +6,6 @@ function clause vector_semantics(Op_VMUL) =
     {
         vector_default_semantics() with
         integer_binary = Some(VectorIntegerMultiplyLow),
-        fp_basic = true,
-        fp_primitive = true,
-        fp_scalar_operation = Some(fp_arithmetic_semantic_operation(FpArithmeticMultiply)),
     }
 
 

@@ -6,7 +6,6 @@ function clause vector_semantics(Op_VINSERT) =
     {
         vector_default_semantics() with
         special = Some(VectorSpecialInsert),
-        fp_allowed_causes = fflags_none,
     }
 
 

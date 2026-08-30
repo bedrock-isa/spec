@@ -967,6 +967,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
                 "FP": "fpu",
                 "FPTRANSA": "fpu.transcendental_approx",
                 "VECTOR": "vector",
+                "VECTORFP": "vector",
             }[bundle.owner],
             "",
             "",
@@ -1002,7 +1003,7 @@ def _load_decode_ir(root: Path) -> DecodeIR:
     )
     flags = tuple(
         CpuidFlagIR(name, name, 0, 0, 0, index)
-        for index, name in enumerate(("FP", "FPTRANSA", "VECTOR"))
+        for index, name in enumerate(("FP", "FPTRANSA", "VECTOR", "VECTORFP"))
     )
     return DecodeIR(
         flags,

@@ -1,9 +1,8 @@
 VSUB subtracts each corresponding active source element from its destination
 element. For B, W, L, and Q elements, the selected-width modular difference
-replaces the destination element. For H, S, and D elements, the exact
-difference is rounded according to the floating-point environment. The
-register form and the memory-source form write the result to the destination
-vector lane. An inactive destination lane retains its previous value.
+replaces the destination element. The register form and the memory-source form
+write the result to the destination vector lane. An inactive destination lane
+retains its previous value.
 
 The memory-destination form reads each active destination element, subtracts
 the corresponding source-register element, and writes the result back to that

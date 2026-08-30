@@ -1,0 +1,20 @@
+mnemonic: VFCVTUQ
+name: Vector Floating-Point Convert to Unsigned Quadword
+summary: Converts active floating-point elements to unsigned quadwords.
+route: vector
+sail_entries:
+- execute_VFCVTUQ
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

@@ -820,7 +820,7 @@ mod tests {
         }
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
 
-        // VADD.S P0, V1, V0
+        // VFADD.S P0, V1, V0
         core.execute_on_bus(&mut ram, &[0xcb, 0xf7, 0x83, 0x00, 0x20])
             .unwrap();
 
@@ -849,7 +849,7 @@ mod tests {
         }
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
 
-        // VADD.H P0, V1, V0
+        // VFADD.H P0, V1, V0
         core.execute_on_bus(&mut ram, &[0xcb, 0xf7, 0x82, 0x80, 0x20])
             .unwrap();
         let state = core.state().unwrap();
@@ -860,7 +860,7 @@ mod tests {
             );
         }
 
-        // VCLASS.H P0, V0: positive normal -> class bit 6.
+        // VFCLASS.H P0, V0: positive normal -> class bit 6.
         core.execute_on_bus(&mut ram, &[0xc7, 0xe8, 0x84, 0x00])
             .unwrap();
         let state = core.state().unwrap();
@@ -874,7 +874,7 @@ mod tests {
         let mut state = state;
         state.vector_registers[0] = state.vector_registers[1];
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
-        // VCMPEQ.H P0, V1, V0, P1
+        // VFCMPEQ.H P0, V1, V0, P1
         core.execute_on_bus(&mut ram, &[0xcb, 0xf5, 0x48, 0x04, 0x20])
             .unwrap();
         assert_eq!(core.state().unwrap().predicate_registers[1], [0x55, 0x55]);
@@ -892,7 +892,7 @@ mod tests {
         }
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
 
-        // VCVTS.H P0, V1, V0
+        // VFCVTS.H P0, V1, V0
         core.execute_on_bus(&mut ram, &[0xcb, 0xf7, 0xa2, 0x80, 0x20])
             .unwrap();
         let state = core.state().unwrap();
@@ -916,7 +916,7 @@ mod tests {
                 .copy_from_slice(&0x3c00_u16.to_le_bytes());
         }
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
-        // VREDADD.H P0, V1, F0
+        // VFREDADD.H P0, V1, F0
         core.execute_on_bus(&mut ram, &[0xcb, 0xf7, 0xec, 0x80, 0x01])
             .unwrap();
         assert_eq!(core.state().unwrap().floating_registers[0], 0x4800);

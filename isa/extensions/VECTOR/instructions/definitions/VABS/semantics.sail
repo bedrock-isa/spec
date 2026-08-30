@@ -6,9 +6,6 @@ function clause vector_semantics(Op_VABS) =
     {
         vector_default_semantics() with
         integer_unary = Some(VectorUnaryAbsolute),
-        fp_basic = true,
-        fp_exact = Some(VectorFpAbsolute),
-        fp_allowed_causes = fflags_none,
     }
 
 

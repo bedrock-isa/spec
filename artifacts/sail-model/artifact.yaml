@@ -6,6 +6,7 @@ extensions:
 - FP
 - FPTRANSA
 - VECTOR
+- VECTORFP
 outputs:
   registry: generated/registry.sail
   catalog: generated/catalog.sail

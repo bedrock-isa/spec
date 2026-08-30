@@ -1055,7 +1055,7 @@ mod tests {
                 .copy_from_slice(&2.0_f32.to_bits().to_le_bytes());
         }
         assert_eq!(vector.set_state(vector_state), SailCoreStatus::Ok);
-        // VADD.S P0, V1, V0
+        // VFADD.S P0, V1, V0
         assert_eq!(
             vector.execute(&[0xcb, 0xf7, 0x83, 0x00, 0x20]),
             SailCoreStatus::Ok

@@ -6,9 +6,6 @@ function clause vector_semantics(Op_VNEG) =
     {
         vector_default_semantics() with
         integer_unary = Some(VectorUnaryNegate),
-        fp_basic = true,
-        fp_exact = Some(VectorFpNegate),
-        fp_allowed_causes = fflags_none,
     }
 
 

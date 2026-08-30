@@ -10,11 +10,15 @@ An instruction that writes a predicate result writes a complete packed
 predicate image.  It sets or clears each significant result bit and clears
 all nonsignificant bits.  Integer comparisons support \texttt{EQ},
 \texttt{NE}, \texttt{ULT}, \texttt{UGE}, \texttt{ULE}, \texttt{UGT},
-\texttt{LT}, \texttt{GE}, \texttt{LE}, and \texttt{GT}.  FP comparisons
-support \texttt{EQ}, \texttt{NE}, \texttt{LT}, \texttt{LE}, \texttt{GE},
-\texttt{GT}, \texttt{VS} for unordered, and \texttt{VC} for ordered.
+\texttt{LT}, \texttt{GE}, \texttt{LE}, and \texttt{GT}. VECTORFP defines its
+own floating-point comparison forms.
 (:ref:VECTOR.instructions.VTESTZ:) and (:ref:VECTOR.instructions.VTESTNZ:) are distinct integer test operations.
 Vector integer operations do not update scalar \texttt{FLAGS}.
+
+Integer reductions return a zero-extended result in an \texttt{Rn}.  For an
+empty predicate, ADD, OR, and XOR return zero; AND and unsigned MIN return the
+all-ones value of the selected width; signed MIN returns the signed maximum;
+signed MAX returns the signed minimum; and unsigned MAX returns zero.
 
 (:ref:VECTOR.instructions.PLOOP:) consumes a remaining-count register and an offset register.  If
 the remaining count is zero, it takes its encoded branch target and does not

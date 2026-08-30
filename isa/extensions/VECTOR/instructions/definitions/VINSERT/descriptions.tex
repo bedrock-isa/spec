@@ -1,7 +1,6 @@
 VINSERT interprets the scalar index as unsigned and replaces only that lane of
-Vd. The B, W, L, and Q forms use the corresponding low (:term:base.terms.field:) of Rn. The H, S,
-and D forms copy the selected floating-point value from Fn and leave FFLAGS
-unchanged. Every lane at another index retains its previous value.
+Vd. The B, W, L, and Q forms use the corresponding low (:term:base.terms.field:) of
+Rn. Every lane at another index retains its previous value.
 
 An index at or above the selected vector element count raises
 VECTOR\_LANE\_INDEX\_OUT\_OF\_RANGE. The faulting instruction

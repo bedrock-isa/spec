@@ -6,8 +6,6 @@ sail:
     - base.decode-types
     - base.decode
     - base.runtime
-    - FP.contract
-    - FP.execution
     sources:
     - semantics/catalog.sail
     - semantics/images.sail
@@ -15,12 +13,8 @@ sail:
     - semantics/permutation.sail
     - semantics/predicate.sail
     - semantics/runtime.sail
-    - semantics/fp/reduction.sail
-    - semantics/fp/arithmetic.sail
-    - semantics/fp/conversion.sail
     - semantics/uops/control.sail
     - semantics/uops/memory_access.sail
-    - semantics/uops/fp_compute.sail
     - semantics/uops/compute.sail
     - semantics/uops/step_request.sail
     - semantics/uops/step_execute.sail
@@ -55,9 +49,6 @@ documents:
     concept: vector
   - id: introduction.resumable-gather-and-scatter
     source: documents/topics/introduction/005_resumable_gather_and_scatter.tex
-    concept: vector
-  - id: introduction.floating-point-exceptions-conversions-and-reductions
-    source: documents/topics/introduction/006_floating_point_exceptions_conversions_and_reductions.tex
     concept: vector
   - id: introduction.execution-and-saved-state
     source: documents/topics/introduction/007_execution_and_saved_state.tex

@@ -1,0 +1,22 @@
+encodings:
+  l_q_z_pn_p_vn_v_vn_w:
+    pattern: 11111101111011011zz1ppppvvvvvwwwww
+    syntax: VFCVTUH.{L|Q}(z) Pn(p), Vn(v), Vn(w)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_V_LQ
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      w:
+        role: dst
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow:
+      - 0x2..0x3
+      reason: reserved_vector_element_type

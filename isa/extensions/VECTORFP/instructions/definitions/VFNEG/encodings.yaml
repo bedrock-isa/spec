@@ -1,0 +1,63 @@
+encodings:
+  h_s_d_x_pn_p_vn_v:
+    pattern: 1111101000000xxx0ppppvvvvv
+    syntax: VFNEG.{H|S|D}(x) Pn(p), Vn(v)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow: &id001
+      - 0x5..0x7
+      reason: reserved_vector_element_type
+  h_s_d_x_pn_p_ea_e_vn_v:
+    pattern: 1111111100000010010xxx0000ppppvvvvveeeeeee
+    syntax: VFNEG.{H|S|D}(x) Pn(p), <ea>(e), Vn(v)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA
+    constraints:
+    - role: size
+      allow: *id001
+      reason: reserved_vector_element_type
+  h_s_d_x_pn_p_vn_v_ea_e:
+    pattern: 1111111100000010010xxx0001ppppvvvvveeeeeee
+    syntax: VFNEG.{H|S|D}(x) Pn(p), Vn(v), <ea>(e)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      e:
+        role: dst
+        type: VECTOR.field_types.VEA
+    constraints:
+    - role: size
+      allow: *id001
+      reason: reserved_vector_element_type
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

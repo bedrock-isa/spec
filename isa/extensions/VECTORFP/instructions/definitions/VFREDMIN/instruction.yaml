@@ -1,0 +1,20 @@
+mnemonic: VFREDMIN
+name: Vector Floating-Point Minimum Reduction
+summary: Reduces active floating-point elements to one minimum value.
+route: vector
+sail_entries:
+- execute_VFREDMIN
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: write
+    value_type: floating

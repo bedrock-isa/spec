@@ -1,0 +1,9 @@
+id: VECTORFP
+requires:
+- FP
+- VECTOR
+requires-isa:
+- VECTORFP
+compiler-features:
+  clang:
+  - vectorfp

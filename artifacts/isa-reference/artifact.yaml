@@ -115,6 +115,7 @@ body:
 - topic: base.cpuid.cpuid-feature-discovery.optional-extension-directory
 - topic: FP.cpuid.floating-point-discovery
 - topic: VECTOR.cpuid.vector-parameter-discovery
+- topic: VECTORFP.cpuid.vector-floating-point-discovery
 - topic: FPTRANSA.cpuid.fptransa-accuracy-discovery
 - topic: base.cpuid.cpuid-feature-discovery.implementation-class-directory
 - topic: base.cpuid.cpuid-feature-discovery.cache-topology-discovery
@@ -162,8 +163,12 @@ body:
     - VECTOR.introduction.lane-mapping-and-scalar-bridges
     - VECTOR.introduction.vector-memory-operations
     - VECTOR.introduction.resumable-gather-and-scatter
-    - VECTOR.introduction.floating-point-exceptions-conversions-and-reductions
     - VECTOR.introduction.execution-and-saved-state
+- instruction-set:
+    owner: VECTORFP
+    title: Scalable-Vector Floating-Point Instructions
+    introduction:
+    - VECTORFP.introduction.vector-floating-point-semantics
 - topic: base.indexes.reference-navigation.reference-indexes
 - topic: base.indexes.reference-navigation.canonical-field-names
 - topic: base.indexes.reference-navigation.architectural-state-index

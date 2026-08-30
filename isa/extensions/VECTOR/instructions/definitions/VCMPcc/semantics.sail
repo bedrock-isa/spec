@@ -6,9 +6,6 @@ function clause vector_semantics(Op_VCMPcc) =
     {
         vector_default_semantics() with
         integer_compare = Some(VectorCompareCondition),
-        fp_basic = true,
-        fp_compare = true,
-        fp_allowed_causes = fflags_nv,
     }
 
 

@@ -1,6 +1,6 @@
 mnemonic: VADD
 name: Vector Add
-summary: Adds corresponding active vector elements using integer or floating-point arithmetic.
+summary: Adds corresponding active integer vector elements.
 route: vector
 sail_entries:
 - execute_VADD
