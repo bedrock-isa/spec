@@ -126,7 +126,9 @@ class DocumentTest(unittest.TestCase):
         self.assertEqual(
             artifact.content.count(r"\begin{manualinstruction}"), len(bundles)
         )
-        self.assertEqual(artifact.content.count("Allocation pattern:"), form_count)
+        self.assertEqual(
+            artifact.content.count(r"\begin{manualformblock}"), form_count
+        )
         self.assertEqual(artifact.content.count(r"\begin{document}"), 1)
         self.assertEqual(artifact.content.count(r"\end{document}"), 1)
         self.assertIn("Architectural Leaf Event Contracts", artifact.content)
@@ -191,6 +193,56 @@ class DocumentTest(unittest.TestCase):
                     artifact.content.count(rf"\label{{{entity.latex_label}}}"),
                     1,
                 )
+
+    def test_instruction_formats_render_physical_instruction_bytes(self) -> None:
+        artifact = self.generator.generate(
+            ArtifactGenerationContext.create(self.project, self.root / "output")
+        ).artifact("tex/isa-reference.tex")
+
+        extrashort = self._instruction_format(
+            artifact.content, "ADD.Q 8, SP"
+        )
+        self.assertIn(
+            r"\manualbitfieldrow{}{\manualbyterowlabels{0}{1}}{%", extrashort
+        )
+        self.assertIn(r"\manualbitfixed{0}{1}", extrashort)
+        self.assertIn(r"\manualbitfixed{0001110}{7}", extrashort)
+
+        short = self._instruction_format(
+            artifact.content, r"ADD.\{L\textbar{}Q\}(z) Rn(s), Rn(d)"
+        )
+        self.assertIn(
+            r"\manualbitfieldrow{}{\manualbyterowlabels{0}{2}}{%", short
+        )
+        self.assertIn(r"\manualbitfixed{10}{2}", short)
+        self.assertIn(r"\manualbitfixed{00001}{5}", short)
+        self.assertIn(r"\manualbitvariable{z}{1}", short)
+        self.assertIn(r"\manualbitgap{1}", short)
+        self.assertIn(r"\manualbitvariable{s}{4}", short)
+        self.assertIn(r"\manualbitvariable{d}{4}", short)
+
+        extended = self._instruction_format(
+            artifact.content, r"ADD.Q \textless{}imm16s\textgreater{}, SP"
+        )
+        self.assertIn(
+            r"\manualbitfieldrow{}{\manualbyterowlabels{0}{3}}{%", extended
+        )
+        self.assertIn(r"\manualbitfixed{11}{2}", extended)
+        self.assertIn(r"\manualbitvariable{L}{4}", extended)
+        self.assertIn(r"\manualbitfixed{10111100}{8}", extended)
+        self.assertIn(r"\manualbitfixed{00000000}{8}", extended)
+        self.assertEqual(extended.count(r"\manualbitgap{1}"), 2)
+
+    @staticmethod
+    def _instruction_format(tex: str, syntax: str) -> str:
+        begin = (
+            r"\begin{manualbitdiagram}{Format: Instruction format for "
+            + syntax
+            + "}"
+        )
+        start = tex.index(begin)
+        end = tex.index(r"\end{manualbitdiagram}", start)
+        return tex[start:end]
 
     def test_source_preprocessor_expands_inputs_and_term_escapes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -452,7 +504,8 @@ class DocumentTest(unittest.TestCase):
         tex = """\\begin{document}
 % topic: base.events
 \\section{Events}\\label{event:new}\\begin{manualinstruction}{ADD}{Add}{instr:add}
-Allocation pattern:
+\\begin{manualformblock}{2.75in}
+\\end{manualformblock}
 \\end{document}
 """
         report = TexValidator().validate(tex, expected_topics=1, expected_forms=1)
@@ -465,6 +518,7 @@ Allocation pattern:
 
         self.assertFalse(report.passed)
         self.assertIn("rendered 0 topics", report.errors[0])
+        self.assertIn("rendered 0 forms", report.errors[1])
 
     def test_fragment_pipeline_accepts_independent_providers(self) -> None:
         pipeline = DocumentFragmentPipeline((_SampleFragmentProvider(),))

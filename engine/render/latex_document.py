@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from itertools import groupby
 import re
 from typing import TYPE_CHECKING, cast
 
@@ -28,11 +27,13 @@ from ..semantic_text import (
     TermReferenceText,
 )
 from ..terminology import Term, TermCatalog, TermGroup
+from ..type_system import FieldTypeKind
 from .document_fragment import DocumentFragmentPipeline
 from .latex_source import LatexSourcePreprocessor
 
 if TYPE_CHECKING:
-    from ..type_system import TypeSystem
+    from ..encoding import EncodingForm, FieldBinding
+    from ..type_system import FieldType, TypeSystem
 
 
 def tex_escape(value: object) -> str:
@@ -215,7 +216,6 @@ class InstructionEntryRenderer:
             if repeat["type"] == "repcc":
                 text += "; REPcc observes " + tex_code(repeat["observed_value"])
             parts.append(self._field("Repeat eligibility", text))
-        parts.append(self._operand_block(bundle))
         if description is None:
             description = bundle.artifacts.description.read_text(
                 encoding="utf-8"
@@ -239,80 +239,326 @@ class InstructionEntryRenderer:
         rendered = "".join(rf"\noindent {line}\par " for line in lines)
         return rf"\begin{{manualraggedblock}}{rendered}\end{{manualraggedblock}}"
 
-    def _operand_block(self, bundle: InstructionBundle) -> str:
-        operands = bundle.instruction.to_dict()["operands"]
-        lines = []
-        for name, operand in operands.items():
-            details = ", ".join(
-                str(operand[key]).replace("_", " ")
-                for key in ("role", "access", "value_type")
-            )
-            lines.append(tex_code(name) + ": " + tex_escape(details))
-        return self._field("Logical operands", self._ragged(lines))
-
     def _forms(self, bundle: InstructionBundle, types: "TypeSystem") -> str:
-        blocks = [r"\begin{manualinstructionforms}", r"\manualinstructionformsheading"]
-        for form in bundle.encodings.forms:
+        blocks = [r"\begin{manualinstructionforms}"]
+        for index, form in enumerate(bundle.encodings.forms):
             blocks.extend(
                 [
                     r"\begin{manualformblock}{2.75in}",
+                    *([r"\manualinstructionformsheading"] if index == 0 else []),
                     rf"\textbf{{{tex_code(form.syntax.code)}}}\par",
                     r"\manualinstructionformatheading",
-                    rf"Allocation pattern: {tex_code(form.pattern.code)}\par",
-                    self._pattern_diagram(form.syntax.code, form.pattern.code),
+                    self._instruction_diagram(form),
                 ]
             )
-            if form.fields or form.payloads or form.constraints or form.overlaps:
+            descriptions = self._field_descriptions(bundle, form, types)
+            if descriptions:
                 blocks.append(r"\manualinstructionfieldsheading")
-            for field in form.fields:
-                field_type = types.field_types.resolve(field.type)
-                blocks.append(
-                    rf"\manualinstructionfielddescription{{{tex_code(field.marker)}}}"
-                    rf"{{{tex_code(field.role)}; {tex_code(field_type.id)}}}"
-                )
-            for payload in form.payloads:
-                payload_type = types.payload_types.resolve(payload.type)
-                blocks.append(
-                    rf"\manualinstructionfielddescription{{Payload}}"
-                    rf"{{{tex_code(payload.role)}; {tex_code(payload_type.id)}}}"
-                )
-            for constraint in form.constraints:
-                values = constraint.allow or constraint.exclude
-                verb = "allows" if constraint.allow else "excludes"
-                blocks.append(
-                    rf"\manualinstructionfielddescription{{Constraint}}"
-                    rf"{{{tex_code(constraint.role)} {verb} "
-                    + ", ".join(tex_code(value) for value in values)
-                    + rf" ({tex_code(constraint.reason)})}}"
-                )
-            for overlap in form.overlaps:
-                blocks.append(
-                    rf"\manualinstructionfielddescription{{Operand overlap}}"
-                    rf"{{{tex_code(overlap.operands[0])} and "
-                    rf"{tex_code(overlap.operands[1])}: {tex_code(overlap.type)}}}"
-                )
+                blocks.extend(descriptions)
             blocks.append(r"\end{manualformblock}")
         blocks.append(r"\end{manualinstructionforms}")
         return "\n".join(blocks)
 
-    @staticmethod
-    def _pattern_diagram(syntax: str, pattern: str) -> str:
-        fields = []
-        for character, run in groupby(pattern):
-            width = len(tuple(run))
-            if character in "01":
-                fields.append(rf"\manualbitfixed{{{character * width}}}{{{width}}}")
+    def _field_descriptions(
+        self,
+        bundle: InstructionBundle,
+        form: "EncodingForm",
+        types: "TypeSystem",
+    ) -> list[str]:
+        descriptions: list[str] = []
+        if form.pattern.bit_width >= 18:
+            descriptions.append(
+                r"\manualinstructionfielddescription{Length field \texttt{L}}"
+                r"{Encodes the encoded instruction length as $3+L$ bytes. "
+                r"The encoded length must cover the required instruction length; "
+                r"trailing bytes are uninterpreted padding.}"
+            )
+
+        for field in self._ordered_fields(form):
+            field_type = types.field_types.resolve(field.type)
+            label = self._field_label(field, field_type)
+            description = self._field_description(bundle, form, field, field_type)
+            descriptions.append(
+                rf"\manualinstructionfielddescription{{{label}}}{{{description}}}"
+            )
+
+        for overlap in form.overlaps:
+            left, right = (
+                self._operand_name(operand) for operand in overlap.operands
+            )
+            subjects = f"the {left} and {right} operands"
+            if overlap.type == "same_value":
+                meaning = (
+                    f"When {subjects} designate the same architectural register, "
+                    "the final value equals that register's initial value."
+                )
             else:
-                fields.append(rf"\manualbitfieldcode{{{character}}}{{{width}}}")
+                meaning = (
+                    f"When {subjects} designate the same architectural register, "
+                    "the instruction raises "
+                    "ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before "
+                    "architectural effects."
+                )
+            descriptions.append(
+                r"\manualinstructionfielddescription{Operand overlap}"
+                rf"{{{tex_escape(meaning)}}}"
+            )
+        return descriptions
+
+    @staticmethod
+    def _ordered_fields(form: "EncodingForm") -> tuple["FieldBinding", ...]:
+        ordered: list[FieldBinding] = []
+        seen: set[str] = set()
+        for marker in form.pattern.code:
+            if marker in "01" or marker in seen:
+                continue
+            field = form.field_for_marker(marker)
+            if field is None:
+                raise ValueError(
+                    f"encoding form {form.id!r} has no binding for field {marker!r}"
+                )
+            ordered.append(field)
+            seen.add(marker)
+        ordered.extend(field for field in form.fields if field.marker not in seen)
+        return tuple(ordered)
+
+    @staticmethod
+    def _field_label(field: "FieldBinding", field_type: "FieldType") -> str:
+        names = {
+            FieldTypeKind.SIZE_SELECTOR: "Size field",
+            FieldTypeKind.EFFECTIVE_ADDRESS: "Effective Address field",
+            FieldTypeKind.REGISTER_SELECTOR: "Register field",
+            FieldTypeKind.REGISTER: "Register field",
+            FieldTypeKind.REGISTER_PAIR_SELECTOR: "Register-pair field",
+            FieldTypeKind.ENUM_CONDITION: "Condition field",
+            FieldTypeKind.IMMEDIATE: "Immediate field",
+            FieldTypeKind.MEMORY_ORDER: "Memory-order field",
+            FieldTypeKind.FLAGS: "Flags field",
+            FieldTypeKind.PAGE_TABLE_LEVEL: "Page-table-level field",
+        }
+        return f"{names[field_type.kind]} {tex_code(field.marker)}"
+
+    def _field_description(
+        self,
+        bundle: InstructionBundle,
+        form: "EncodingForm",
+        field: "FieldBinding",
+        field_type: "FieldType",
+    ) -> str:
+        kind = field_type.kind
+        target = self._operand_target(bundle, field.role)
+        if kind is FieldTypeKind.SIZE_SELECTOR:
+            choices = form.syntax.selected_size_codes or tuple(
+                value.code for value in field_type.values
+            )
+            text = (
+                f"Selects {'/'.join(choices)}."
+                if choices
+                else "Selects the operand size."
+            )
+        elif kind is FieldTypeKind.EFFECTIVE_ADDRESS:
+            text = f"Specifies {target}."
+            if any(
+                constraint.role == field.role
+                and "immediate" in constraint.exclude
+                for constraint in form.constraints
+            ):
+                text += " Immediate addressing is unavailable in this form."
+        elif kind in {
+            FieldTypeKind.REGISTER_SELECTOR,
+            FieldTypeKind.REGISTER,
+        }:
+            text = f"Selects {target}."
+        elif kind is FieldTypeKind.REGISTER_PAIR_SELECTOR:
+            text = f"Selects {target} as a register pair."
+        elif kind is FieldTypeKind.ENUM_CONDITION:
+            text = "Selects the condition code."
+        elif kind is FieldTypeKind.IMMEDIATE:
+            text = "Encodes the immediate value."
+        elif kind is FieldTypeKind.MEMORY_ORDER:
+            text = "Selects the memory ordering."
+        elif kind is FieldTypeKind.FLAGS:
+            text = "Selects the architectural flags."
+        elif kind is FieldTypeKind.PAGE_TABLE_LEVEL:
+            text = "Selects the page-table level."
+        else:  # pragma: no cover - exhaustive over FieldTypeKind
+            raise ValueError(f"unsupported field type kind {kind!r}")
+
+        allowed = self._allowed_values(form, field.role)
+        if allowed and kind is not FieldTypeKind.SIZE_SELECTOR:
+            text += f" Allowed encoded values: {self._value_ranges(allowed)}."
+        return tex_escape(text)
+
+    @staticmethod
+    def _operand_target(bundle: InstructionBundle, role: str) -> str:
+        operands = bundle.instruction.to_dict().get("operands", {})
+        operand = operands.get(role) if isinstance(operands, dict) else None
+        if isinstance(operand, dict):
+            semantic_role = str(operand.get("role", "")).replace("_", "-")
+            if semantic_role:
+                return f"the {semantic_role} operand"
+        return "the operand"
+
+    @staticmethod
+    def _operand_name(role: str) -> str:
+        special = {
+            "dst": "destination",
+            "src": "source",
+            "lhs": "left-hand",
+            "rhs": "right-hand",
+            "govern": "governing-predicate",
+            "sin_dst": "sine destination",
+            "cos_dst": "cosine destination",
+        }
+        return special.get(role, role.replace("_", "-"))
+
+    @staticmethod
+    def _allowed_values(form: "EncodingForm", role: str) -> set[int]:
+        allowed: set[int] = set()
+        for constraint in form.constraints:
+            if constraint.role != role:
+                continue
+            for item in constraint.allow:
+                if isinstance(item, int):
+                    allowed.add(item)
+                    continue
+                bounds = item.split("..", maxsplit=1)
+                low = int(bounds[0], 0)
+                high = int(bounds[-1], 0)
+                allowed.update(range(low, high + 1))
+        return allowed
+
+    @staticmethod
+    def _value_ranges(values: set[int]) -> str:
+        runs: list[tuple[int, int]] = []
+        start = previous = min(values)
+        for value in sorted(values)[1:]:
+            if value == previous + 1:
+                previous = value
+                continue
+            runs.append((start, previous))
+            start = previous = value
+        runs.append((start, previous))
+        return ", ".join(
+            str(low) if low == high else f"{low}-{high}"
+            for low, high in runs
+        )
+
+    @classmethod
+    def _instruction_diagram(cls, form: "EncodingForm") -> str:
+        byte_segments = cls._instruction_bytes(form)
+        fields: list[str] = []
+        for byte_index, segments in enumerate(byte_segments):
+            if byte_index:
+                fields.append(r"\manualbitgap{1}")
+            for label, width in segments:
+                macro = (
+                    "manualbitfixed"
+                    if set(label) <= {"0", "1"}
+                    else "manualbitvariable"
+                )
+                fields.append(rf"\{macro}{{{tex_escape(label)}}}{{{width}}}")
         return "\n".join(
             [
-                rf"\begin{{manualbitdiagram}}{{Allocation bits for {tex_escape(syntax)}}}",
-                rf"\manualbitrow{{allocation[{len(pattern) - 1}:0]}}{{%",
+                rf"\begin{{manualbitdiagram}}{{Format: Instruction format for "
+                rf"{tex_escape(form.syntax.code)}}}",
+                rf"\manualbitfieldrow{{}}{{\manualbyterowlabels{{0}}"
+                rf"{{{len(byte_segments)}}}}}{{%",
                 *fields,
                 "}",
                 r"\end{manualbitdiagram}",
             ]
         )
+
+    @classmethod
+    def _instruction_bytes(
+        cls, form: "EncodingForm"
+    ) -> list[list[tuple[str, int]]]:
+        pattern = form.pattern.code
+        width = form.pattern.bit_width
+        if width == 7:
+            segments = [("0", 1), *cls._bit_segments(pattern)]
+            first, remaining = cls._split_segments(segments, 8)
+            byte_segments = [first]
+        elif width == 14:
+            segments = [("10", 2), *cls._bit_segments(pattern)]
+            first, second = cls._split_segments(segments, 8)
+            byte_segments = [first, second]
+            remaining = []
+        elif width in {18, 26, 34, 42}:
+            header = [("11", 2), ("L", 4), *cls._bit_segments(pattern[:10])]
+            first, second = cls._split_segments(header, 8)
+            byte_segments = [first, second]
+            remaining_pattern = pattern[10:]
+            while remaining_pattern:
+                byte_segments.append(cls._bit_segments(remaining_pattern[:8]))
+                remaining_pattern = remaining_pattern[8:]
+            remaining = []
+        else:
+            raise ValueError(
+                f"encoding form {form.id!r} has unsupported primary width {width}"
+            )
+        if remaining:
+            raise ValueError(
+                f"encoding form {form.id!r} does not end at a byte boundary"
+            )
+        for byte_index, byte in enumerate(byte_segments):
+            byte_width = sum(segment_width for _label, segment_width in byte)
+            if byte_width != 8:
+                raise ValueError(
+                    f"encoding form {form.id!r} byte {byte_index} has "
+                    f"{byte_width} bits; expected 8"
+                )
+        return byte_segments
+
+    @staticmethod
+    def _bit_segments(bits: str) -> list[tuple[str, int]]:
+        if not bits:
+            return []
+        segments: list[tuple[str, int]] = []
+        start = 0
+
+        def segment_class(character: str) -> str:
+            return "fixed" if character in "01" else character
+
+        current = segment_class(bits[0])
+        for index, character in enumerate(bits[1:], start=1):
+            kind = segment_class(character)
+            if kind == current:
+                continue
+            chunk = bits[start:index]
+            segments.append(
+                (chunk if current == "fixed" else chunk[0], len(chunk))
+            )
+            start = index
+            current = kind
+        chunk = bits[start:]
+        segments.append((chunk if current == "fixed" else chunk[0], len(chunk)))
+        return segments
+
+    @staticmethod
+    def _split_segments(
+        segments: list[tuple[str, int]], width: int
+    ) -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
+        left: list[tuple[str, int]] = []
+        right: list[tuple[str, int]] = []
+        remaining = width
+        for label, segment_width in segments:
+            if remaining <= 0:
+                right.append((label, segment_width))
+            elif segment_width <= remaining:
+                left.append((label, segment_width))
+                remaining -= segment_width
+            else:
+                left_label = label
+                right_label = label
+                if len(label) == segment_width and set(label) <= {"0", "1"}:
+                    left_label = label[:remaining]
+                    right_label = label[remaining:]
+                left.append((left_label, remaining))
+                right.append((right_label, segment_width - remaining))
+                remaining = 0
+        return left, right
 
 
 class LatexDocumentRenderer:

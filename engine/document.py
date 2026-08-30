@@ -51,7 +51,7 @@ class TexValidator:
         topic_count = tex.count("% topic:")
         if topic_count != expected_topics:
             errors.append(f"rendered {topic_count} topics; expected {expected_topics}")
-        form_count = tex.count("Allocation pattern:")
+        form_count = tex.count(r"\begin{manualformblock}")
         if form_count != expected_forms:
             errors.append(f"rendered {form_count} forms; expected {expected_forms}")
         if tex.count(r"\begin{document}") != 1 or tex.count(r"\end{document}") != 1:

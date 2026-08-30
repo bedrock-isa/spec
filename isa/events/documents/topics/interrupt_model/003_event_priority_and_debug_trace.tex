@@ -10,7 +10,7 @@ delivers DEBUG\_TRACE with the following trace-unit boundary as its saved PC.
 
 The (:ref:base.instructions.TRACE:) marker instruction is an (:term:base.terms.ordinary:) instruction for this trace-unit rule
 and separately records the marker described by its instruction entry. The
-\hyperref[term-group:base-term-groups-tracing]{tracing terminology} distinguishes the instruction, (:term:base.terms.trace_unit:), and event.
+The (:ref:base.term_groups.tracing:) section distinguishes the instruction, (:term:base.terms.trace_unit:), and event.
 
 RF is a one-shot DEBUG\_TRACE suppressor. If sampled RF is one, successful trace-unit completion clears RF and does
 not produce DEBUG\_TRACE. A synchronous fault or asynchronous event before that completion preserves RF. WRSTATUS,

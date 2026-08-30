@@ -1,30 +1,57 @@
 \subsection{Representative Encodings}
-\begin{manuallistedformatdiagram}{Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)}
-\manualformatrow{allocation[13:0]}{%
-\manualformatfixed{00}{2}
-\manualformatfixed{000}{3}
-\manualformatfieldcode{z}{1}
-\manualformatfieldcode{s}{4}
-\manualformatfieldcode{d}{4}
-}
-\end{manuallistedformatdiagram}
 
-\begin{manuallistedformatdiagram}{Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \textless{}ea\textgreater{}(e)}
-\manualformatrow{allocation[17:0]}{%
-\manualformatfixed{00}{2}
-\manualformatfixed{0000}{4}
-\manualformatfieldcode{z}{1}
-\manualformatfieldcode{s}{4}
-\manualformatfieldcode{e}{7}
-}
-\end{manuallistedformatdiagram}
+The following (:term:base.terms.opcode_space:) byte layouts show framing, encoded length, fixed (:term:base.terms.opcode:) bits, and
+operand-selector (:term:base.terms.field|plural:) in instruction-stream order. Each row is read from bit 7 to bit 0.
 
-\begin{manuallistedformatdiagram}{Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
-\manualformatrow{allocation[25:0]}{%
-\manualformatfixed{1111000000}{10}
-\manualformatfieldcode{z}{2}
-\manualformatfixed{000}{3}
-\manualformatfieldcode{s}{4}
-\manualformatfieldcode{e}{7}
+\begin{manuallistedbitdiagram}{Short Encoding for MOV.X(z:L/Q) Rn(s), Rn(d)}
+\manualbitfieldrow{byte 0}{\manualbyterowlabels{0}{1}}{%
+\manualbitfixed{10}{2}
+\manualbitfixed{00000}{5}
+\manualbitfieldtext{z}{1}
 }
-\end{manuallistedformatdiagram}
+\manualbitfieldrow{byte 1}{\manualbyterowlabels{1}{1}}{%
+\manualbitfieldtext{s}{4}
+\manualbitfieldtext{d}{4}
+}
+\end{manuallistedbitdiagram}
+
+\begin{manuallistedbitdiagram}{Medium Encoding for MOV.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
+\manualbitfieldrow{byte 0}{\manualbyterowlabels{0}{1}}{%
+\manualbitfixed{11}{2}
+\manualbitfixed{0000}{4}
+\manualbitfixed{00}{2}
+}
+\manualbitfieldrow{byte 1}{\manualbyterowlabels{1}{1}}{%
+\manualbitfixed{000}{3}
+\manualbitfieldtext{z}{2}
+\manualbitfieldtext{s}{3}
+}
+\manualbitfieldrow{byte 2}{\manualbyterowlabels{2}{1}}{%
+\manualbitfieldtext{s}{1}
+\manualbitfieldtext{e}{7}
+}
+\end{manuallistedbitdiagram}
+
+\begin{manuallistedbitdiagram}{Long Encoding for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
+\manualbitfieldrow{byte 0}{\manualbyterowlabels{0}{1}}{%
+\manualbitfixed{11}{2}
+\manualbitfixed{0001}{4}
+\manualbitfixed{11}{2}
+}
+\manualbitfieldrow{byte 1}{\manualbyterowlabels{1}{1}}{%
+\manualbitfixed{11001100}{8}
+}
+\manualbitfieldrow{byte 2}{\manualbyterowlabels{2}{1}}{%
+\manualbitfieldtext{z}{2}
+\manualbitfixed{100}{3}
+\manualbitfieldtext{s}{3}
+}
+\manualbitfieldrow{byte 3}{\manualbyterowlabels{3}{1}}{%
+\manualbitfieldtext{s}{1}
+\manualbitfieldtext{e}{7}
+}
+\end{manuallistedbitdiagram}
+
+In these examples, \texttt{z} selects the operation size, \texttt{s} and \texttt{d} select integer registers,
+and \texttt{e} selects an effective-address form. A (:term:base.terms.field:) may cross a byte boundary, as \texttt{s} does in the
+medium and long examples.

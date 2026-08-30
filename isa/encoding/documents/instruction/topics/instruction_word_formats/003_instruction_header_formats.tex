@@ -1,18 +1,15 @@
 \subsection{Instruction Header Formats}
 
-Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended
-instructions use byte 0 and byte 1 to determine both (:term:base.terms.encoded_instruction_length:) and opcode-space selection.
+Instruction framing is byte-oriented. Byte 0 identifies extrashort and short instructions. Extended
+instructions use byte 0 and byte 1: byte 0 supplies the framing and encoded length, while the remaining
+bits of those bytes carry the first fixed bits that select the (:term:base.terms.opcode:) and the first
+operand-selector (:term:base.terms.field|plural:).
 
-Extended byte0[5:2] is L, and the (:term:base.terms.encoded_instruction_length:) is 3+L bytes. The opcode-space allocation bits begin at
-byte0[1:0], continue through byte1, and then through later opcode-space bytes as required by the encoding class.
-
-An extended instruction is invalid if its (:term:base.terms.encoded_instruction_length:) is shorter than the opcode-space length: 3 bytes
-for medium, 4 bytes for long, 5 bytes for extralong, and 6 bytes for xxlong.
-
-The first eight allocation bits select the extended (:term:base.terms.opcode_space:).
-The value \texttt{11111111} selects the xxlong class, whose six-byte (:term:base.terms.opcode_space:) provides 42
-allocation bits. The value \texttt{11111110} is (:term:base.terms.reserved:) for custom extensions; it retains extralong framing and is
-unallocated by the standard ISA. All other existing selectors retain their class and allocation.
+For an extended instruction, byte0[5:2] is \texttt{L} and the (:term:base.terms.encoded_instruction_length:) is $3+L$ bytes. The
+(:term:base.terms.opcode_space:) contains fixed bits that select the (:term:base.terms.opcode:) and operand-selector (:term:base.terms.field|plural:);
+it occupies three bytes for medium instructions, four bytes for long instructions, five bytes for extralong
+instructions, and six bytes for xxlong instructions. An extended instruction is invalid when its encoded
+length is shorter than the (:term:base.terms.opcode_space:) selected by its (:term:base.terms.header:).
 
 \texttt{LEN n, <instruction>} requests an encoded extended instruction length of \texttt{n} bytes, where
 \texttt{3 <= n <= 18}. The requested length must cover the (:term:base.terms.required_instruction_length:). Without \texttt{LEN}, the
@@ -23,31 +20,33 @@ the length; (:term:base.terms.padding:) byte values are not (:term:base.terms.pr
 \begin{manuallistedbitdiagram}{Instruction Start Byte Formats}[fig:instruction-header-byte-formats]
 \manualbitrow{extrashort byte}{%
 \manualbitfixed{0}{1}
-\manualbitfieldtext{ALLOC}{7}
+\manualbitfieldtext{enc.}{7}
 }
 \manualbitfieldrow{short bytes}{\manualbyterowlabels{0}{2}}{%
 \manualbitfixed{10}{2}
-\manualbitfieldtext{A-HI}{6}
+\manualbitfieldtext{enc.}{6}
 \manualbitgap{1}
-\manualbitfieldtext{A-LO}{8}
+\manualbitfieldtext{enc.}{8}
 }
 \manualbitfieldrow{extended start bytes}{\manualbyterowlabels{0}{2}}{%
 \manualbitfixed{11}{2}
 \manualbitfieldtext{L}{4}
-\manualbitfieldtext{A}{2}
+\manualbitfieldtext{}{2}
 \manualbitgap{1}
-\manualbitfieldtext{A-LO}{8}
+\manualbitfieldtext{enc.}{8}
 }
 \end{manuallistedbitdiagram}
 
-Figure~\ref{fig:instruction-header-byte-formats} annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6
-select short (\texttt{10}) or extended (\texttt{11}) framing. For short instructions, bits 5..2 and 1..0 continue
-the opcode-space allocation bits. For extended instructions, bits 5..2 are \texttt{L}, bits 1..0 begin the
-opcode-space allocation bits, and byte 1 continues them. Thus \texttt{L} encodes the (:term:base.terms.encoded_instruction_length:) as
-$3+L$ bytes directly in
-Figure~\ref{fig:instruction-header-byte-formats}.
+Figure~\ref{fig:instruction-header-byte-formats} is read from high to low bit. \texttt{enc.} denotes
+instruction-specific bits within the (:term:base.terms.opcode_space:): fixed (:term:base.terms.opcode:) bits and operand-selector (:term:base.terms.field|plural:). In byte 0, bit 7
+selects extrashort framing; bits 7..6 select short (\texttt{10}) or extended (\texttt{11}) framing. For extended
+instructions, \texttt{L} directly encodes the (:term:base.terms.encoded_instruction_length:) as $3+L$ bytes.
 
-\input{isa/encoding/documents/instruction/fragments/instruction_encoding_diagrams.tex}
+The extended class selector is byte0[1:0] followed by byte1[7:4]. Values 0 through 59 select a medium
+(:term:base.terms.opcode_space:), and values 60 through 62 select a long (:term:base.terms.opcode_space:). When the selector is 63,
+byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extralong and
+\texttt{11111111} selects xxlong. The \texttt{11111110} prefix retains extralong framing but is
+(:term:base.terms.reserved:) for custom extensions and is not assigned by the standard ISA.
 
 \manualtablecaption{Encoded Instruction Length Truth Table}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
@@ -64,36 +63,36 @@ Figure~\ref{fig:instruction-header-byte-formats}.
 \endhead
 \texttt{0xxxxxxx} & -- & 1\\
 \texttt{10xxxxxx} & \texttt{xxxxxxxx} & 2\\
-\texttt{110000oo} & \texttt{bbbbxxxx} & 3\\
-\texttt{110001oo} & \texttt{bbbbxxxx} & 4\\
-\texttt{110010oo} & \texttt{bbbbxxxx} & 5\\
-\texttt{110011oo} & \texttt{bbbbxxxx} & 6\\
-\texttt{110100oo} & \texttt{bbbbxxxx} & 7\\
-\texttt{110101oo} & \texttt{bbbbxxxx} & 8\\
-\texttt{110110oo} & \texttt{bbbbxxxx} & 9\\
-\texttt{110111oo} & \texttt{bbbbxxxx} & 10\\
-\texttt{111000oo} & \texttt{bbbbxxxx} & 11\\
-\texttt{111001oo} & \texttt{bbbbxxxx} & 12\\
-\texttt{111010oo} & \texttt{bbbbxxxx} & 13\\
-\texttt{111011oo} & \texttt{bbbbxxxx} & 14\\
-\texttt{111100oo} & \texttt{bbbbxxxx} & 15\\
-\texttt{111101oo} & \texttt{bbbbxxxx} & 16\\
-\texttt{111110oo} & \texttt{bbbbxxxx} & 17\\
-\texttt{111111oo} & \texttt{bbbbxxxx} & 18\\
+\texttt{110000xx} & \texttt{xxxxxxxx} & 3\\
+\texttt{110001xx} & \texttt{xxxxxxxx} & 4\\
+\texttt{110010xx} & \texttt{xxxxxxxx} & 5\\
+\texttt{110011xx} & \texttt{xxxxxxxx} & 6\\
+\texttt{110100xx} & \texttt{xxxxxxxx} & 7\\
+\texttt{110101xx} & \texttt{xxxxxxxx} & 8\\
+\texttt{110110xx} & \texttt{xxxxxxxx} & 9\\
+\texttt{110111xx} & \texttt{xxxxxxxx} & 10\\
+\texttt{111000xx} & \texttt{xxxxxxxx} & 11\\
+\texttt{111001xx} & \texttt{xxxxxxxx} & 12\\
+\texttt{111010xx} & \texttt{xxxxxxxx} & 13\\
+\texttt{111011xx} & \texttt{xxxxxxxx} & 14\\
+\texttt{111100xx} & \texttt{xxxxxxxx} & 15\\
+\texttt{111101xx} & \texttt{xxxxxxxx} & 16\\
+\texttt{111110xx} & \texttt{xxxxxxxx} & 17\\
+\texttt{111111xx} & \texttt{xxxxxxxx} & 18\\
 \bottomrule
 \end{manuallongtable}
 
-\manualtablecaption{Encoding Class Summary}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.45in}@{}}
+\manualtablecaption{Opcode-Space Class Summary}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.15in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
-\textbf{Class} & \textbf{Allocation Bits} & \textbf{Framing or Opcode Selector} & \textbf{Opcode-space Bytes} & \textbf{Validity}\\
+\textbf{Class} & \textbf{Opcode-Space Bytes} & \textbf{Header Selector} & \textbf{Minimum Bytes} & \textbf{Validity}\\
 \midrule
-\texttt{extrashort} & 7 & \texttt{0xxxxxxx} & 1 & exactly 1 byte\\
-\texttt{short} & 14 & \texttt{10xxxxxx} & 2 & exactly 2 bytes\\
-\texttt{medium} & 18 & \texttt{0xxxxxxx}, \texttt{10xxxxxx}, \texttt{110xxxxx}, \texttt{1110xxxx} & 3 & any extended (:term:base.terms.encoded_instruction_length:)\\
-\texttt{long} & 26 & \texttt{11110xxx}, \texttt{111110xx} & 4 & (:term:base.terms.encoded_instruction_length:) at least 4 bytes\\
-\texttt{extralong} & 34 & \texttt{1111110x}, \texttt{11111110} & 5 & (:term:base.terms.encoded_instruction_length:) at least 5 bytes\\
-\texttt{xxlong} & 42 & \texttt{11111111} & 6 & (:term:base.terms.encoded_instruction_length:) at least 6 bytes\\
+\texttt{extrashort} & byte 0 & \texttt{0xxxxxxx} & 1 & exactly 1 byte\\
+\texttt{short} & bytes 0--1 & \texttt{10xxxxxx} & 2 & exactly 2 bytes\\
+\texttt{medium} & bytes 0--2 & extended selector 0--59 & 3 & encoded length at least 3 bytes\\
+\texttt{long} & bytes 0--3 & extended selector 60--62 & 4 & encoded length at least 4 bytes\\
+\texttt{extralong} & bytes 0--4 & extended selector 63, non-xxlong prefix & 5 & encoded length at least 5 bytes\\
+\texttt{xxlong} & bytes 0--5 & all-one eight-bit prefix & 6 & encoded length at least 6 bytes\\
 \bottomrule
 \end{manualtabular}
