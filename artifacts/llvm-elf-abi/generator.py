@@ -304,7 +304,7 @@ def _lld_expression(relocation: Relocation) -> str:
 def _field_id(workspace, reference) -> str:
     """Return the authored field/payload type ID without exposing its ref key."""
 
-    return workspace.resolve(reference).source.parent.name
+    return workspace.resolve(reference).id
 
 
 def _expression_signature(expression: RelocationExpression) -> str:

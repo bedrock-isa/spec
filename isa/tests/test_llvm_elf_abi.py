@@ -62,6 +62,25 @@ class LlvmElfAbiArtifactTests(unittest.TestCase):
         self.assertEqual(by_name["R_BEDROCK_TLSDESC"][6], "TLSDESC")
         self.assertEqual(by_name["R_BEDROCK_ABS32S"][4:6], ("32", "1"))
 
+    def test_relocation_fields_use_authored_type_ids(self) -> None:
+        actual = dict(
+            re.findall(
+                r'^BEDROCK_ELF_RELOCATION\((R_BEDROCK_[A-Z0-9_]+), '
+                r'.*, "([A-Z0-9_]*)"\)$',
+                self.catalog,
+                flags=re.MULTILINE,
+            )
+        )
+        expected = {
+            relocation.id: (
+                self.workspace.resolve(relocation.field).id
+                if relocation.field
+                else ""
+            )
+            for relocation in self.elf.relocations.values()
+        }
+        self.assertEqual(actual, expected)
+
     def test_relaxation_edges_come_from_the_catalog(self) -> None:
         actual = set(
             re.findall(
