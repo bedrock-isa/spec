@@ -5,14 +5,14 @@ bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-updat
 Each extended descriptor selects its segment from the encoded SREG (:term:base.terms.field:) SEG(s), the fixed SS segment for SP, the fixed CS
 segment for PC, or the operation\textquotesingle{}s default data segment.
 
-\manualtablecaption{EA Payload Names}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.30in}@{}}
+\BedrockTableCaption{EA Payload Names}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.30in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
 \midrule
 \endfirsthead
-\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{4}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
@@ -31,7 +31,7 @@ imm64 & 8 & unsigned & immediate operand (:term:base.terms.payload:)\\
 EXT1 descriptor & 1 & encoded & one-byte extended EA descriptor; present only for EXT1 escapes\\
 EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only for EXT2 escapes\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 For a compact displacement, absolute address, or immediate, the selected (:term:base.terms.payload:) follows the compact (:term:base.terms.field:) at that
 operand\textquotesingle{}s (:term:base.terms.payload:) position. Extended-descriptor construction begins with the compact escape value in the (:term:base.terms.opcode:)

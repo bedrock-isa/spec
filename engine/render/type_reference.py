@@ -59,22 +59,23 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
             project.types.field_types.items(),
             key=lambda item: (item[1].owner, item[1].id),
         ):
+            anchor = rf"\phantomsection\label{{{_label(project, reference)}}}"
             rows.append(
-                rf"\phantomsection\label{{{_label(project, reference)}}}"
-                f"{_identifier(definition.owner)} & {_identifier(definition.id)} & "
+                f"{_identifier(definition.owner)}{anchor} & "
+                f"{_identifier(definition.id)} & "
                 f"{definition.bits} & {_identifier(definition.kind)} & "
                 f"{_details(definition, project)}\\\\"
             )
         return "\n".join(
             [
-                r"\manualtablecaption{Encoding Field-Type Registry}",
-                r"\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.32in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{2.25in}@{}}",
+                r"\BedrockTableCaption{Encoding Field-Type Registry}",
+                r"\begin{BedrockDenseLongTable}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.32in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{2.25in}@{}}",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Owner} & \textbf{Type} & \textbf{Bits} & \textbf{Kind} & \textbf{Attributes}\\",
                 r"\midrule",
                 r"\endfirsthead",
-                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\",
+                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Owner} & \textbf{Type} & \textbf{Bits} & \textbf{Kind} & \textbf{Attributes}\\",
@@ -82,7 +83,7 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
                 r"\endhead",
                 *rows,
                 r"\bottomrule",
-                r"\end{manualdenselongtable}",
+                r"\end{BedrockDenseLongTable}",
             ]
         )
 
@@ -93,22 +94,23 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
             project.types.payload_types.items(),
             key=lambda item: (item[1].owner, item[1].id),
         ):
+            anchor = rf"\phantomsection\label{{{_label(project, reference)}}}"
             rows.append(
-                rf"\phantomsection\label{{{_label(project, reference)}}}"
-                f"{_identifier(definition.owner)} & {_identifier(definition.id)} & "
+                f"{_identifier(definition.owner)}{anchor} & "
+                f"{_identifier(definition.id)} & "
                 f"{definition.bytes} & {_identifier(definition.kind)} & "
                 f"{_details(definition, project)}\\\\"
             )
         return "\n".join(
             [
-                r"\manualtablecaption{Encoding Payload-Type Registry}",
-                r"\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{2.19in}@{}}",
+                r"\BedrockTableCaption{Encoding Payload-Type Registry}",
+                r"\begin{BedrockDenseLongTable}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{2.19in}@{}}",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Owner} & \textbf{Type} & \textbf{Bytes} & \textbf{Kind} & \textbf{Attributes}\\",
                 r"\midrule",
                 r"\endfirsthead",
-                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\",
+                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Owner} & \textbf{Type} & \textbf{Bytes} & \textbf{Kind} & \textbf{Attributes}\\",
@@ -116,7 +118,7 @@ class EncodingTypeReferenceRenderer(DocumentFragmentProvider):
                 r"\endhead",
                 *rows,
                 r"\bottomrule",
-                r"\end{manualdenselongtable}",
+                r"\end{BedrockDenseLongTable}",
             ]
         )
 

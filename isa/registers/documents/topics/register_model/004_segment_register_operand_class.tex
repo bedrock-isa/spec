@@ -8,14 +8,14 @@ SREG selects DS, SS, and GS0 through GS5. Instruction fetch and fixed PC-relativ
 PC together.
 
 \Needspace{1.25in}
-\manualtablecaption{Segment Register Operand Encoding}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.60in}@{}}
+\BedrockTableCaption{Segment Register Operand Encoding}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.60in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Segment} & \textbf{Bits} & \textbf{Role} & \textbf{Use}\\
 \midrule
 \endfirsthead
-\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Segment} & \textbf{Bits} & \textbf{Role} & \textbf{Use}\\
@@ -30,6 +30,6 @@ PC together.
 \texttt{GS4} & \texttt{110} & general & general segment register 4\\
 \texttt{GS5} & \texttt{111} & general & general segment register 5\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 \label{table:sreg-encoding}

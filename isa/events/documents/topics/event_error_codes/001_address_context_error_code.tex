@@ -25,14 +25,14 @@ event code identifies the failure; ERROR\_CODE carries only the access context c
 \texttt{ATOMIC} and \texttt{USER\_DOMAIN}.
 \par}
 
-\manualtablecaption{PAGE Event ERROR\_CODE Fields}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{3.35in}@{}}
+\BedrockTableCaption{PAGE Event ERROR\_CODE Fields}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{3.35in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endfirsthead
-\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
@@ -51,7 +51,7 @@ event code identifies the failure; ERROR\_CODE carries only the access context c
 29..27 & \texttt{ACCESS\_SIZE} & 0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q\\
 63..30 & (:term:base.terms.reserved:) & zero\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 Saved \texttt{STATUS.PM} records the originating privilege. \texttt{USER\_DOMAIN} distinguishes the (:term:base.terms.ordinary:) user
 permission path from the checked user-access path used by supervisor instructions such as (:ref:base.instructions.MOVUC:),

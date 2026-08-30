@@ -14,8 +14,8 @@ by hardware; bits \texttt{63..58} are (:term:base.terms.reserved:) and (:term:ba
 selects the leaf or table-pointer layout. A nonzero (:term:base.terms.reserved:) bit in a present
 descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 
-\manualtablecaption{Leaf Descriptor Fields (P=1, T=0)}
-\begin{manualtabular}{@{}p{0.75in}p{0.75in}p{4.00in}@{}}
+\BedrockTableCaption{Leaf Descriptor Fields (P=1, T=0)}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
@@ -32,10 +32,10 @@ descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 \texttt{SW[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
 (:term:base.terms.reserved:) & \texttt{63..58} & (:term:base.terms.must_be_zero:)\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
-\manualtablecaption{Leaf AM Encodings}
-\begin{manualtabular}{@{}p{0.65in}p{1.35in}p{1.15in}p{2.35in}@{}}
+\BedrockTableCaption{Leaf AM Encodings}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.35in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}\textbf{AM} & \textbf{Permission} & \textbf{Class} & \textbf{Name}\\
 \midrule
@@ -48,15 +48,15 @@ descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 \texttt{110} & write & MMIO & \texttt{MMIO\_W}\\
 \texttt{111} & read/write & MMIO & \texttt{MMIO\_RW}\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 No leaf encoding grants both write and execute, and no MMIO leaf grants
 execute. This W\textasciicircum X property applies to one selected translation.
 The architecture does not compare aliases: distinct descriptors for the same
 physical page may have different permissions, AM classes, or CP values.
 
-\manualtablecaption{Table-Pointer Descriptor Fields (P=1, T=1)}
-\begin{manualtabular}{@{}p{0.75in}p{0.75in}p{4.00in}@{}}
+\BedrockTableCaption{Table-Pointer Descriptor Fields (P=1, T=1)}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
@@ -71,7 +71,7 @@ physical page may have different permissions, AM classes, or CP values.
 \texttt{SW[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
 (:term:base.terms.reserved:) & \texttt{63..58} & (:term:base.terms.must_be_zero:)\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 A table pointer with \texttt{R=W=X=0}, or a table pointer at L1, is malformed.
 The walker begins with R, W, X, and U enabled, intersects each table bitmap and

@@ -1,26 +1,28 @@
 \Needspace{1.25in}
-\manualtablecaption{CPUID Class and Leaf Directory}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.80in}@{}}
+Classes \texttt{0x00000000}, \texttt{0x00000001}, and \texttt{0x00000002} respectively contain the Bedrock base
+ISA, optional extensions, and implementation properties.
+
+\BedrockTableCaption{CPUID Class and Leaf Directory}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.88in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.50in}>{\raggedright\arraybackslash}p{0.58in}>{\raggedright\arraybackslash}p{1.81in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
 \midrule
 \endfirsthead
-\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
 \midrule
 \endhead
-\texttt{0x00000000} & -- & \textit{Bedrock base ISA} & -- & base identity, architecture and implementation revisions, vendor name, and processor name\\
-\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..18} & common (:term:base.terms.header:), identity, revisions, vendor name, and processor name\\
-\texttt{0x00000001} & -- & \textit{Optional extensions} & -- & extension-contributed architectural groups and discovery leaves\\
-\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0..1} & common (:term:base.terms.header:) and optional architectural-group bits\\
-\texttt{0x00000002} & -- & \textit{Implementation properties} & -- & cache topology, performance counters, address widths, and SAVE/RESTORE area layout\\
-\texttt{0x00000002} & \texttt{0x0000} & \texttt{IMPLEMENTATION\_DIRECTORY} & \texttt{0..0} & common implementation-class (:term:base.terms.header:)\\
-\texttt{0x00000002} & \texttt{0x0001} & \texttt{CACHE\_TOPOLOGY} & \texttt{0..n} & common (:term:base.terms.header:), maintenance granule, and cache-sharing descriptors\\
-\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..3} & common (:term:base.terms.header:) and standard RDPMC-counter presence\\
-\texttt{0x00000002} & \texttt{0x0003} & \texttt{ADDRESS\_WIDTHS} & \texttt{0..1} & common (:term:base.terms.header:) and the implementation physical-address width\\
-\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & common (:term:base.terms.header:), SAVE/RESTORE sizes, bitmap, and component descriptors\\
+\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_\allowbreak{}IDENTITY} & \texttt{0..18} & common (:term:base.terms.header:), identity, revisions, vendor name, and processor name\\
+\addlinespace[3pt]
+\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_\allowbreak{}DIRECTORY} & \texttt{0..1} & common (:term:base.terms.header:) and optional architectural-group bits\\
+\addlinespace[3pt]
+\texttt{0x00000002} & \texttt{0x0000} & \texttt{IMPLEMENTATION\_\allowbreak{}DIRECTORY} & \texttt{0..0} & common implementation-class (:term:base.terms.header:)\\
+\texttt{0x00000002} & \texttt{0x0001} & \texttt{CACHE\_\allowbreak{}TOPOLOGY} & \texttt{0..n} & common (:term:base.terms.header:), maintenance granule, and cache-sharing descriptors\\
+\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_\allowbreak{}COUNTERS} & \texttt{0..3} & common (:term:base.terms.header:) and standard RDPMC-counter presence\\
+\texttt{0x00000002} & \texttt{0x0003} & \texttt{ADDRESS\_\allowbreak{}WIDTHS} & \texttt{0..1} & common (:term:base.terms.header:) and the implementation physical-address width\\
+\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_\allowbreak{}LAYOUT} & \texttt{0..n} & common (:term:base.terms.header:), SAVE/RESTORE sizes, bitmap, and component descriptors\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}

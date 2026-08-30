@@ -12,8 +12,8 @@ SETF, WRFLAGS, CMPXCHG, SEGLEA, and the bounds-check instructions. CMPJcc and TE
 for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts,
 rotates, moves, extensions, min/max, and multiply/divide instructions leave FLAGS unchanged.
 
-\manualtablecaption{Integer Condition-Code Bits}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.90in}@{}}
+\BedrockTableCaption{Integer Condition-Code Bits}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bit} & \textbf{Name} & \textbf{Meaning}\\
@@ -23,4 +23,4 @@ N & negative & Set from the most significant result bit at the operand size.\\
 C & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for subtraction.\\
 V & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}

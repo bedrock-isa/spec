@@ -6,14 +6,14 @@ canonical aliases such as JMP for Jcc.T.
 The condition-code bits are the low four meaningful bits of FLAGS, as shown in the Programming Model section.
 
 \Needspace{1.25in}
-\manualtablecaption{Condition Code Encoding}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.0in}@{}}
+\BedrockTableCaption{Condition Code Encoding}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.0in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Name} & \textbf{Aliases} & \textbf{Expression}\\
 \midrule
 \endfirsthead
-\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Name} & \textbf{Aliases} & \textbf{Expression}\\
@@ -36,6 +36,6 @@ The condition-code bits are the low four meaningful bits of FLAGS, as shown in t
 \texttt{1110} & \texttt{LE} & \texttt{-} & Z == 1 \textbar{}\textbar{} N != V\\
 \texttt{1111} & \texttt{GT} & \texttt{-} & Z == 0 \&\& N == V\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 \label{table:condition-code-encoding}

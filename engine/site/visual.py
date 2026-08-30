@@ -388,6 +388,7 @@ def _visual_document(expanded: str, visuals: Iterable[VisualSpec]) -> str:
         r"\renewcommand{\manualfigurecaption}[1]{}",
         r"\renewcommand{\manualfigurecaptionandlabel}[2]{}",
         r"\renewcommand{\manualtablecaption}[1]{}",
+        r"\renewcommand{\BedrockTableCaption}[1]{}",
         ]
     )
     return rendered[:preamble_end] + setup + rendered[preamble_end + len(DOCUMENT_BEGIN) :]
@@ -467,4 +468,3 @@ def render_visuals(
             raise SiteVisualError(
                 f"{document}: invalid SVG output for visual {visual.id}"
             )
-

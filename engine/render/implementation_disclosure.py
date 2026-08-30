@@ -28,14 +28,14 @@ class ImplementationDisclosureRenderer(DocumentFragmentProvider):
         return "\n".join(
             [
                 r"\Needspace{3.0in}",
-                r"\manualtablecaption{Implementation-Defined Disclosure Register}",
-                r"\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{2.10in}@{}}",
+                r"\BedrockTableCaption{Implementation-Defined Disclosure Register}",
+                r"\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{2.10in}@{}}",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Item} & \textbf{Defining rule} & \textbf{Publication}\\",
                 r"\midrule",
                 r"\endfirsthead",
-                r"\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\",
+                r"\multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Item} & \textbf{Defining rule} & \textbf{Publication}\\",
@@ -43,6 +43,6 @@ class ImplementationDisclosureRenderer(DocumentFragmentProvider):
                 r"\endhead",
                 *rows,
                 r"\bottomrule",
-                r"\end{manuallongtable}",
+                r"\end{BedrockLongTable}",
             ]
         )

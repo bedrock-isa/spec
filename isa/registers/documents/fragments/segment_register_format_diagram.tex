@@ -8,8 +8,8 @@
 \end{manuallistedformatdiagram}
 
 \Needspace{2.3in}
-\manualtablecaption{Segment Register Fields}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.05in}@{}}
+\BedrockTableCaption{Segment Register Fields}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.05in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
@@ -19,7 +19,7 @@
 \texttt{m} & \texttt{6..1} & unsigned mantissa used to derive \(\mathit{span}\); zero selects the disabled image\\
 \texttt{b} & \texttt{0} & for an enabled image, zero selects translated-window mode and one selects bounds-only mode\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 The following quantities are evaluated mathematically without 64-bit truncation:
 \[

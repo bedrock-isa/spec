@@ -9,8 +9,9 @@ The destination is a one-hot bitmap selected directly from the sign, exponent, f
 }
 \end{manualbitdiagram}
 
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.8in}>{\raggedright\arraybackslash}p{3.6in}@{}}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.8in}>{\raggedright\arraybackslash}p{3.6in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Bit} & \textbf{Class}\\
 \midrule
 0 & negative infinity\\
@@ -24,6 +25,6 @@ The destination is a one-hot bitmap selected directly from the sign, exponent, f
 8 & signaling NaN\\
 9 & quiet NaN\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 Bits 63..10 of the destination (:term:base.terms.rn_register:) are zero.
 No (:term:FP.terms.floating_point_exception_flag:) is changed.

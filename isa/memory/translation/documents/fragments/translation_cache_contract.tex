@@ -1,5 +1,5 @@
 \Needspace{1.25in}
-\manualtablecaption{Translation-Cache Entry Identity}
+\BedrockTableCaption{Translation-Cache Entry Identity}
 \begingroup\footnotesize
 \setlength{\aboverulesep}{0pt}
 \setlength{\belowrulesep}{0pt}
@@ -20,14 +20,14 @@
 
 
 \Needspace{1.25in}
-\manualtablecaption{Local Translation-Cache Transitions}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{2.25in}>{\raggedright\arraybackslash}p{1.85in}@{}}
+\BedrockTableCaption{Local Translation-Cache Transitions}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{2.25in}>{\raggedright\arraybackslash}p{1.85in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Operation} & \textbf{Non-Global Entries} & \textbf{Global Entries}\\
 \midrule
 \endfirsthead
-\multicolumn{3}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{3}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Operation} & \textbf{Non-Global Entries} & \textbf{Global Entries}\\
@@ -43,11 +43,11 @@
 (:ref:base.instructions.INVASID:) & invalidate every entry tagged with the selected ASID & preserve\\
 (:ref:base.instructions.INVTLB:) & invalidate every local entry & invalidate every local entry\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 
 \Needspace{1.25in}
-\manualtablecaption{Remote Translation Shootdown Protocol}
+\BedrockTableCaption{Remote Translation Shootdown Protocol}
 \begingroup\footnotesize
 \setlength{\aboverulesep}{0pt}
 \setlength{\belowrulesep}{0pt}

@@ -30,8 +30,8 @@ actual contracts in each family begin at low nibble one.
 (:term:base.terms.field|plural:) use unsigned Q8.8.
 \par}
 
-\manualtablecaption{FPTRANSA Accuracy Result}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
+\BedrockTableCaption{FPTRANSA Accuracy Result}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
@@ -42,7 +42,7 @@ actual contracts in each family begin at low nibble one.
 \texttt{40..62} & (:term:base.terms.reserved:) & zero\\
 \texttt{63} & \texttt{PRESENT} & the instruction and both S and D encodings are available\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 For a certified bound $K$, the (:term:base.terms.field:) value is $\lceil 256K\rceil$ and the advertised bound is the (:term:base.terms.field:) divided by
 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as \texttt{0x0080}, \texttt{0x0100}, \texttt{0x0180},

@@ -1,12 +1,12 @@
 \Needspace{1.25in}
-\manualtablecaption{Immediate Operand Interpretation}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.70in}@{}}
+\BedrockTableCaption{Immediate Operand Interpretation}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.70in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
 \midrule
 \endfirsthead
-\multicolumn{6}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{6}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
@@ -18,4 +18,4 @@
 \texttt{imm6} & 6 & unsigned & 0..63 & zero-extend & integer encodings with an explicit B/W/L/Q operation size\\
 \texttt{imm7} & 7 & unsigned & 0..127 & zero-extend & EXTRACT register-pair encodings\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}

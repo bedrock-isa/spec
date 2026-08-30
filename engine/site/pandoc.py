@@ -39,6 +39,9 @@ LONGTABLE_CONTINUATION_RE = re.compile(
     r"\\endfirsthead.*?\\endhead", flags=re.DOTALL
 )
 SUPPORTED_TABLE_ENVIRONMENTS = (
+    "BedrockDenseLongTable",
+    "BedrockLongTable",
+    "BedrockTabular",
     "manualdenselongtable",
     "manualflageffects",
     "manuallongtable",
@@ -64,6 +67,9 @@ LEADING_TABLE_NUMBER_RE = re.compile(
     flags=re.MULTILINE,
 )
 SITE_TABLE_ENVIRONMENT = {
+    "BedrockDenseLongTable": "longtable",
+    "BedrockLongTable": "longtable",
+    "BedrockTabular": "tabular",
     "manualdenselongtable": "longtable",
     "manuallongtable": "longtable",
     "manualtabular": "tabular",
@@ -246,6 +252,12 @@ def _normalize_reader_macros(text: str) -> str:
         "manualinstructionfielddescription",
         2,
         lambda label, value: rf"\par\textbf{{{label}}} --- {value}\par ",
+    )
+    text = _replace_command(
+        text,
+        "BedrockTableCaption",
+        1,
+        lambda title: rf"\par\textbf{{{title}}}\par ",
     )
     text = _replace_command(
         text,

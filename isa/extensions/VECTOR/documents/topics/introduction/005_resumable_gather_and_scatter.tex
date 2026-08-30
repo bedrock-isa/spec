@@ -55,10 +55,10 @@ token is part of (:term:base.terms.architectural_state:).
 The lane number $i$ is implicit and does not appear in assembly syntax.  Before
 default-data-segment translation, the address forms are:
 
-\begin{center}
-\begin{tabular}{lll}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.50in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.15in}@{}}
 \toprule
-Canonical address & Constraint & Lane offset \\
+\rowcolor{ManualHeaderFill}
+\textbf{Canonical address} & \textbf{Constraint} & \textbf{Lane offset} \\
 \midrule
 \texttt{[Rb + Rs]} & any $T$ & $Rb+i\mathbin{\cdot}signed64(Rs)$ \\
 \texttt{[Va]} & \texttt{L} & $zero\_extend_{64}(Va.L[i])$ \\
@@ -67,8 +67,7 @@ Canonical address & Constraint & Lane offset \\
 \texttt{[Rb + Va * scale]} & any $T$ & $Rb+zero\_extend_{64}(Va.T[i])E$ \\
 \texttt{[Rb + Va * scale + disp]} & any $T$ & preceding indexed address plus \texttt{disp} \\
 \bottomrule
-\end{tabular}
-\end{center}
+\end{BedrockTabular}
 
 In the scalar-stride form, \texttt{Rs} supplies the signed lane stride even
 though the canonical spelling is the familiar-looking \texttt{[Rb + Rs]}.

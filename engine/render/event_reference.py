@@ -64,9 +64,12 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                     continue
                 seen.add(root.reference)
                 assert root.value is not None and root.selector is not None
-                classes.append(
+                anchor = (
                     rf"\phantomsection\label{{{self._label(project, root.reference)}}}"
-                    rf"\texttt{{0x{root.value:02X}}} & {_identifier(root.id)} & "
+                )
+                classes.append(
+                    rf"\texttt{{0x{root.value:02X}}}{anchor} & "
+                    rf"{_identifier(root.id)} & "
                     rf"{tex_escape(root.name or root.id)} & "
                     rf"{tex_escape(root.selector.kind)} {root.selector.bits}-bit selector\\"
                 )
@@ -79,15 +82,15 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 "}",
                 r"\end{manuallistedformatdiagram}",
                 "",
-                r"\manualtablecaption{Architectural Event Classes}",
-                r"\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.65in}>{\raggedright\arraybackslash}p{2.10in}@{}}",
+                r"\BedrockTableCaption{Architectural Event Classes}",
+                r"\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.65in}>{\raggedright\arraybackslash}p{2.10in}@{}}",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Value} & \textbf{Class} & \textbf{Name} & \textbf{Selector policy}\\",
                 r"\midrule",
                 *classes,
                 r"\bottomrule",
-                r"\end{manualtabular}",
+                r"\end{BedrockTabular}",
                 "",
                 r"Class values not listed above are reserved. Fixed selectors are allocated by this specification; platform and source selectors are supplied by the corresponding event source.",
             ]
@@ -98,10 +101,12 @@ class EventReferenceRenderer(DocumentFragmentProvider):
         rows: list[str] = []
         for resolved in catalog.resolved_events():
             event = resolved.event
+            anchor = (
+                rf"\phantomsection\label{{{self._label(project, event.reference)}}}"
+            )
             rows.extend(
                 (
-                    rf"\phantomsection\label{{{self._label(project, event.reference)}}}"
-                    f"{_code(resolved)} & {_identifier(event.id)} & "
+                    f"{_code(resolved)}{anchor} & {_identifier(event.id)} & "
                     f"{_identifier(event.family) if event.family else '--'} & "
                     f"{_identifier(event.frame.upper())} & {_payload(event)}\\\\",
                     r"\multicolumn{5}{@{}p{5.67in}@{}}{\scriptsize "
@@ -113,14 +118,14 @@ class EventReferenceRenderer(DocumentFragmentProvider):
             [
                 r"\begingroup\footnotesize",
                 r"\Needspace{1.25in}",
-                r"\manualtablecaption{Architectural Leaf Event Contracts}",
-                r"\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.35in}@{}}",
+                r"\BedrockTableCaption{Architectural Leaf Event Contracts}",
+                r"\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.35in}@{}}",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Code} & \textbf{Event} & \textbf{Family} & \textbf{Frame} & \textbf{Payload}\\",
                 r"\midrule",
                 r"\endfirsthead",
-                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\",
+                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Code} & \textbf{Event} & \textbf{Family} & \textbf{Frame} & \textbf{Payload}\\",
@@ -128,7 +133,7 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 r"\endhead",
                 *rows,
                 r"\bottomrule",
-                r"\end{manuallongtable}",
+                r"\end{BedrockLongTable}",
                 r"\endgroup",
             ]
         )
@@ -149,14 +154,14 @@ class EventReferenceRenderer(DocumentFragmentProvider):
         return "\n".join(
             [
                 r"\enlargethispage{1.5\baselineskip}",
-                r"\manualtablecaption{Architectural Event Index}",
-                r"\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.80in}@{}}",
+                r"\BedrockTableCaption{Architectural Event Index}",
+                r"\begin{BedrockDenseLongTable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.80in}@{}}",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Code} & \textbf{Event} & \textbf{Owner} & \textbf{Family} & \textbf{Frame} & \textbf{Definition}\\",
                 r"\midrule",
                 r"\endfirsthead",
-                r"\multicolumn{6}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\",
+                r"\multicolumn{6}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
                 r"\toprule",
                 r"\rowcolor{ManualHeaderFill}",
                 r"\textbf{Code} & \textbf{Event} & \textbf{Owner} & \textbf{Family} & \textbf{Frame} & \textbf{Definition}\\",
@@ -164,6 +169,6 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 r"\endhead",
                 *rows,
                 r"\bottomrule",
-                r"\end{manualdenselongtable}",
+                r"\end{BedrockDenseLongTable}",
             ]
         )

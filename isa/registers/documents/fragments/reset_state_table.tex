@@ -1,5 +1,5 @@
 \Needspace{1.25in}
-\manualtablecaption{Warm RESET Contract}
+\BedrockTableCaption{Warm RESET Contract}
 \begingroup\footnotesize
 \setlength{\aboverulesep}{0pt}
 \setlength{\belowrulesep}{0pt}
@@ -22,14 +22,14 @@ Other (:term:base.terms.logical_processor|plural:) & unchanged\\
 
 
 \Needspace{1.25in}
-\manualtablecaption{Architectural Reset State}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{2.00in}>{\raggedright\arraybackslash}p{2.40in}@{}}
+\BedrockTableCaption{Architectural Reset State}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{2.00in}>{\raggedright\arraybackslash}p{2.40in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{State} & \textbf{Reset Value}\\
 \midrule
 \endfirsthead
-\multicolumn{2}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{2}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{State} & \textbf{Reset Value}\\
@@ -53,4 +53,4 @@ Coherent data- and instruction-cache contents & retained as coherent contents\\
 Processor execution state & running at BOOTPC\\
 BOOTPC,\allowbreak{} BOOTCFG & platform supplied on cold reset; (:term:base.terms.preserved:) by warm RESET\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}

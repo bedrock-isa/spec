@@ -1,12 +1,12 @@
 \Needspace{1.25in}
-\manualtablecaption{FPTRANSA Accuracy Contracts}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.90in}@{}}
+\BedrockTableCaption{FPTRANSA Accuracy Contracts}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.90in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Contract ID} & \textbf{Mnemonic} & \textbf{Reference} & \textbf{Domain} & \textbf{ISA maximum}\\
 \midrule
 \endfirsthead
-\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Contract ID} & \textbf{Mnemonic} & \textbf{Reference} & \textbf{Domain} & \textbf{ISA maximum}\\
@@ -32,4 +32,4 @@
 \texttt{0x0043} & (:ref:FPTRANSA.instructions.FLOG2A:) & log2(x) & positive finite values and positive infinity after DAZ; signed zero is the DZ boundary & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
 \texttt{0x0044} & (:ref:FPTRANSA.instructions.FLOG10A:) & log10(x) & positive finite values and positive infinity after DAZ; signed zero is the DZ boundary & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}

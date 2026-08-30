@@ -2,7 +2,7 @@
 
 FCMP and FTEST write \texttt{Z,N,C,V} as follows.
 
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}@{}}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Relation} & \textbf{Z} & \textbf{N} & \textbf{C} & \textbf{V}\\
@@ -12,7 +12,7 @@ equal & 1 & 0 & 0 & 0\\
 less & 0 & 1 & 1 & 0\\
 unordered & 0 & 0 & 0 & 1\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 A quiet NaN produces unordered without NV. A signaling NaN produces unordered and NV. FTEST compares its operand
 with positive zero under these rules.

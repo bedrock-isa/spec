@@ -11,8 +11,8 @@ FLAGS and STATUS are accessed through dedicated read/write instructions.
 }
 \end{manuallistedformatdiagram}
 
-\manualtablecaption{FLAGS Fields}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.20in}@{}}
+\BedrockTableCaption{FLAGS Fields}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.20in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
@@ -23,7 +23,7 @@ FLAGS and STATUS are accessed through dedicated read/write instructions.
 \texttt{C} & \texttt{1} & unsigned carry out for addition or unsigned borrow for subtraction\\
 \texttt{V} & \texttt{0} & signed overflow or an explicitly reported exceptional condition\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 (:ref:base.instructions.RDFLAGS:) and (:ref:base.instructions.WRFLAGS:) are unprivileged.
 (:ref:base.instructions.RDFLAGS:) reads and zero-extends the 16-bit image; (:ref:base.instructions.WRFLAGS:) writes the low 16 bits and requires every
@@ -49,8 +49,8 @@ In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, 
 \texttt{NI}, and \texttt{EA}.
 \par}
 
-\manualtablecaption{STATUS Fields}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.20in}@{}}
+\BedrockTableCaption{STATUS Fields}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.20in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
@@ -65,7 +65,7 @@ In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, 
 \texttt{NI} & \texttt{1} & inhibits NMI admission while preserving the NMI pending\\
 \texttt{EA} & \texttt{0} & hardware-managed architectural event-active state\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 In user mode, \texttt{PM}, \texttt{EA}, \texttt{EDEPTH}, and \texttt{UO} are always observed as zero.
 

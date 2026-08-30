@@ -4,8 +4,8 @@ Ordinary implicit stack operations capture the current SS and SP before their fi
 $SP_{\mathrm{old}}$; the applicable segment, translation, and complete-range checks finish before the operation commits.
 
 \Needspace{3.4in}
-\manualtablecaption{Ordinary Implicit Stack Operations}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.92in}>{\raggedright\arraybackslash}p{1.18in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{2.72in}@{}}
+\BedrockTableCaption{Ordinary Implicit Stack Operations}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.92in}>{\raggedright\arraybackslash}p{1.18in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{2.72in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Operation} & \textbf{Stack range} & \textbf{Committed SP} & \textbf{Slot layout or value order}\\
@@ -35,7 +35,7 @@ $[SP_{\mathrm{old}},SP_{\mathrm{old}}+16)$ &
 $SP_{\mathrm{old}}+16$ &
 (:term:base.terms.continuation:) PC at $SP_{\mathrm{old}}$ and return CS image at $SP_{\mathrm{old}}+8$\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 The complete range and all source values are established before a push operation changes memory or SP. A pop
 operation reads its complete range and completes any applicable destination validation before changing a destination

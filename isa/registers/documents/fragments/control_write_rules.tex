@@ -1,12 +1,12 @@
 \Needspace{1.25in}
-\manualtablecaption{WRCR Selector Rules}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.35in}@{}}
+\BedrockTableCaption{WRCR Selector Rules}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.35in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Register} & \textbf{Writable Image} & \textbf{Validation} & \textbf{Commit and Side Effect}\\
 \midrule
 \endfirsthead
-\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Register} & \textbf{Writable Image} & \textbf{Validation} & \textbf{Commit and Side Effect}\\
@@ -25,4 +25,4 @@
 \texttt{BOOTCFG} & complete opaque 64-bit platform boot configuration & no image transformation & replace BOOTCFG atomically\\
 \texttt{PMC} & EN; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & EN is Boolean & replace PMC atomically\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}

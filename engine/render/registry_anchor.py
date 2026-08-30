@@ -98,20 +98,20 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
             if cpuid_class.extends is not None:
                 continue
             assert cpuid_class.value is not None
-            marker = rf"\texttt{{0x{cpuid_class.value:08X}}} & --"
-            markers[marker].append(_label(context.project, cpuid_class.reference))
-        for cpuid_class in base.classes.values():
-            root_class = cpuid_class
-            while root_class.extends is not None:
-                root_class = catalog.references.classes.resolve(root_class.extends)
+            first_leaf = True
             for leaf in cpuid_class.leaves.values():
                 if leaf.extends is not None:
                     continue
-                assert root_class.value is not None and leaf.value is not None
+                assert leaf.value is not None
                 marker = (
-                    rf"\texttt{{0x{root_class.value:08X}}} & "
+                    rf"\texttt{{0x{cpuid_class.value:08X}}} & "
                     rf"\texttt{{0x{leaf.value:04X}}}"
                 )
+                if first_leaf:
+                    markers[marker].append(
+                        _label(context.project, cpuid_class.reference)
+                    )
+                    first_leaf = False
                 markers[marker].append(_label(context.project, leaf.reference))
         return _inject(text, markers, context.source)
 
@@ -143,6 +143,7 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
         )
         return text[: heading_end + 1] + anchors + "\n" + text[heading_end + 1 :]
 
+
 def _inject(text: str, markers: dict[str, list[str]], source) -> str:
     for marker, labels in markers.items():
         count = text.count(marker)
@@ -153,7 +154,7 @@ def _inject(text: str, markers: dict[str, list[str]], source) -> str:
         anchors = "".join(
             rf"\phantomsection\label{{{label}}}" for label in labels
         )
-        text = text.replace(marker, anchors + marker, 1)
+        text = text.replace(marker, marker + anchors, 1)
     return text
 
 

@@ -15,8 +15,8 @@ processor before selecting its optional architectural behavior.
 }
 \end{manuallistedformatdiagram}
 
-\manualtablecaption{CPUID Query Selector}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.90in}@{}}
+\BedrockTableCaption{CPUID Query Selector}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
@@ -25,7 +25,7 @@ processor before selecting its optional architectural behavior.
 \texttt{16..31} & \texttt{leaf} & information leaf within the selected class\\
 \texttt{32..63} & \texttt{class} & CPUID information class\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 Index zero of every defined leaf is a common discovery (:term:base.terms.header:). Leaf-specific (:term:base.terms.payload:) begins at index one. An unknown
 class, leaf, or index returns zero.
@@ -47,8 +47,8 @@ class, leaf, or index returns zero.
 }
 \end{manuallistedformatdiagram}
 
-\manualtablecaption{CPUID Common Leaf Header}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.05in}@{}}
+\BedrockTableCaption{CPUID Common Leaf Header}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.05in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Query} & \textbf{Bits 63..32} & \textbf{Bits 31..16} & \textbf{Bits 15..0}\\
@@ -57,7 +57,7 @@ class 0, leaf 0, index 0 & \texttt{MAX\_CLASS} & \texttt{MAX\_LEAF} & \texttt{MA
 other class, leaf 0, index 0 & (:term:base.terms.reserved:), zero & \texttt{MAX\_LEAF} & \texttt{MAX\_INDEX}\\
 any class, leaf 1 or greater, index 0 & (:term:base.terms.reserved:), zero & (:term:base.terms.reserved:), zero & \texttt{MAX\_INDEX}\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 \texttt{MAX\_CLASS} is the greatest class recognized by the implementation, \texttt{MAX\_LEAF} is the greatest leaf
 recognized within the selected class, and \texttt{MAX\_INDEX} is the greatest index recognized within the selected

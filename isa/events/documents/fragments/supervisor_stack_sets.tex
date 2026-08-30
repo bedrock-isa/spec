@@ -1,7 +1,7 @@
 The configured supervisor stack pairs select only the first user-origin entry and delivery-failure recovery.
 
-\manualtablecaption{Supervisor Stack Roles}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{3.15in}@{}}
+\BedrockTableCaption{Supervisor Stack Roles}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{3.15in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Pair} & \textbf{Role} & \textbf{Use}\\
@@ -11,7 +11,7 @@ The configured supervisor stack pairs select only the first user-origin entry an
 \texttt{FSS:FSP} & fault & first user-origin exception or NMI\\
 \texttt{DSS:DSP} & recovery & \texttt{EVENT\_DELIVERY\_FAILURE} family event\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 A first user-origin entry loads the applicable configured pair. Supervisor-origin and all nested entries retain the current SS:SP and push a full frame there; event class never promotes an active handler to another configured stack. Delivery failure uses DSS:DSP when the hidden current-DFA bit is clear. Failure with current DFA set enters shutdown.
 

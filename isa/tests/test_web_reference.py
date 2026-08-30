@@ -88,13 +88,13 @@ class WebReferenceTest(unittest.TestCase):
     def test_current_style_wrappers_are_lowered_at_the_pandoc_boundary(self) -> None:
         normalized = normalize_latex_for_site(
             r"""\begin{document}
-\begin{manuallongtable}{ll}A & B\\\end{manuallongtable}
+\begin{BedrockLongTable}{ll}A & B\\\end{BedrockLongTable}
 \manualfield{Profile:}{bedrock-elf}
 \end{document}
 """
         )
 
-        self.assertNotIn("manuallongtable", normalized)
+        self.assertNotIn("BedrockLongTable", normalized)
         self.assertNotIn(r"\manualfield", normalized)
         self.assertEqual(normalized.count(r"\begin{longtable}"), 1)
         self.assertEqual(normalized.count(r"\begin{tabular}"), 1)

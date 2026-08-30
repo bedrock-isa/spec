@@ -48,14 +48,14 @@ byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extral
 \texttt{11111111} selects xxlong. The \texttt{11111110} prefix retains extralong framing but is
 (:term:base.terms.reserved:) for custom extensions and is not assigned by the standard ISA.
 
-\manualtablecaption{Encoded Instruction Length Truth Table}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
+\BedrockTableCaption{Encoded Instruction Length Truth Table}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
 \midrule
 \endfirsthead
-\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
@@ -80,10 +80,10 @@ byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extral
 \texttt{111110xx} & \texttt{xxxxxxxx} & 17\\
 \texttt{111111xx} & \texttt{xxxxxxxx} & 18\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
-\manualtablecaption{Opcode-Space Class Summary}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.15in}@{}}
+\BedrockTableCaption{Opcode-Space Class Summary}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.15in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Class} & \textbf{Opcode-Space Bytes} & \textbf{Header Selector} & \textbf{Minimum Bytes} & \textbf{Validity}\\
@@ -95,4 +95,4 @@ byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extral
 \texttt{extralong} & bytes 0--4 & extended selector 63, non-xxlong prefix & 5 & encoded length at least 5 bytes\\
 \texttt{xxlong} & bytes 0--5 & all-one eight-bit prefix & 6 & encoded length at least 6 bytes\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}

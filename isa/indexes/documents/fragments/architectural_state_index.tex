@@ -1,12 +1,12 @@
 \Needspace{1.25in}
-\manualtablecaption{Architectural State Index}
-\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{1.30in}@{}}
+\BedrockTableCaption{Architectural State Index}
+\begin{BedrockDenseLongTable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{1.30in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{State} & \textbf{Fields} & \textbf{Readers} & \textbf{Writers} & \textbf{Reset}\\
 \midrule
 \endfirsthead
-\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{State} & \textbf{Fields} & \textbf{Readers} & \textbf{Writers} & \textbf{Reset}\\
@@ -47,4 +47,4 @@
 \hyperref[section:control-registers]{\texttt{BOOTCFG}} (p.~\pageref{section:control-registers}) & -- & (:ref:base.instructions.RDCR:) & (:ref:base.instructions.WRCR:) and named architectural transitions & platform supplied on cold reset; (:term:base.terms.preserved:) by warm RESET\\
 \hyperref[section:control-registers]{\texttt{PMC}} (p.~\pageref{section:control-registers}) & \texttt{EN} & (:ref:base.instructions.RDCR:) & (:ref:base.instructions.WRCR:) and named architectural transitions & 0\\
 \bottomrule
-\end{manualdenselongtable}
+\end{BedrockDenseLongTable}

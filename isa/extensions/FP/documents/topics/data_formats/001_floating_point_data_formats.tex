@@ -1,6 +1,6 @@
 \subsection{Floating-Point Data Formats}
-\manualtablecaption{Floating-Point Scalar Sizes}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\BedrockTableCaption{Floating-Point Scalar Sizes}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Code} & \textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
@@ -9,7 +9,7 @@
 \texttt{S} & \texttt{.S} & 32 & 4 & Single\\
 \texttt{D} & \texttt{.D} & 64 & 8 & Double\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 Floating-point scalar formats are little-endian in memory as well. H is IEEE-754 binary16 with 11 bits of
 significand precision, minimum normal exponent $-14$, and minimum subnormal quantum $2^{-24}$. H is available to

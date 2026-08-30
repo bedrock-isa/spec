@@ -50,8 +50,8 @@ For (:ref:base.events.EXCEPTION.MACHINE_CHECK:), the error code has this layout:
 \texttt{RETRY\_SAFE}, \texttt{SEVERITY}, and \texttt{SOURCE}.
 \par}
 
-\manualtablecaption{MACHINE\_CHECK ERROR\_CODE Fields}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
+\BedrockTableCaption{MACHINE\_CHECK ERROR\_CODE Fields}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
@@ -66,21 +66,21 @@ For (:ref:base.events.EXCEPTION.MACHINE_CHECK:), the error code has this layout:
 26 & \texttt{EVENT\_AUX\_VALID} & \texttt{EVENT\_AUX} was produced\\
 63..27 & (:term:base.terms.reserved:) & zero\\
 \bottomrule
-\end{manualtabular}
+\end{BedrockTabular}
 
 When valid, \texttt{EVENT\_AUX} contains an implementation-defined syndrome. Associated effective and linear
 addresses are supplied when available.
 
 \texttt{RETRY\_SAFE=1} requires \texttt{PRECISE=1}. The valid severity and (:term:base.terms.continuation:) combinations are:
 
-\manualtablecaption{MACHINE\_CHECK Valid Continuation Combinations}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.25in}@{}}
+\BedrockTableCaption{MACHINE\_CHECK Valid Continuation Combinations}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.25in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and (:term:base.terms.continuation:) meaning}\\
 \midrule
 \endfirsthead
-\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{4}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and (:term:base.terms.continuation:) meaning}\\
@@ -93,7 +93,7 @@ recoverable & 1 & 1 & Saved PC identifies the responsible instruction and (:term
 fatal & 0 & 0 & Saved PC is the next instruction at the delivery boundary and is diagnostic only.\\
 fatal & 1 & 0 & Saved PC identifies the responsible instruction and pre-instruction (:term:base.terms.architectural_state:) for diagnosis only.\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 All other combinations are invalid and are not generated. In particular, corrected machine checks never set either
 bit, \texttt{PRECISE=0, RETRY\_SAFE=1} is invalid for every severity, fatal machine checks never set
@@ -127,14 +127,14 @@ For an event in the \texttt{BUS\_FAILURE} family, the error code has this layout
 \texttt{R} denote \texttt{ATOMIC}, \texttt{USER\_DOMAIN}, and \texttt{RETRY\_SAFE}.
 \par}
 
-\manualtablecaption{BUS\_FAILURE ERROR\_CODE Fields}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
+\BedrockTableCaption{BUS\_FAILURE ERROR\_CODE Fields}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endfirsthead
-\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\multicolumn{3}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
@@ -154,7 +154,7 @@ For an event in the \texttt{BUS\_FAILURE} family, the error code has this layout
 30 & \texttt{RETRY\_SAFE} & retry cannot duplicate an external effect\\
 63..31 & (:term:base.terms.reserved:) & zero\\
 \bottomrule
-\end{manuallongtable}
+\end{BedrockLongTable}
 
 A bus error during a page walk reports the level whose PTE access failed. When valid, \texttt{EVENT\_AUX}
 contains the final byte address available for the failed access.
