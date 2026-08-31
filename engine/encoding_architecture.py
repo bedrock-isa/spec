@@ -63,6 +63,7 @@ OPERATOR_SPACES = (
     OperatorSpace("extralong", "fpu", "111111001?"),
     OperatorSpace("extralong", "vector", "11111101??"),
     OperatorSpace("xxlong", "vector", "1111111100"),
+    OperatorSpace("xxlong", "wait", "1111111101"),
 )
 
 OPERATOR_SPACE_PREFIX_BITS = 10

@@ -95,6 +95,9 @@ EXTENSION_CONTRIBUTIONS = {
     "VECTORFP": SailTypeContribution(
         instruction_sets=("VectorFpuSet",),
     ),
+    "WAIT": SailTypeContribution(
+        instruction_sets=("WaitSet",),
+    ),
 }
 
 

@@ -31,6 +31,7 @@ INSTRUCTION_SET_CONSTRUCTORS = {
     "FPTRANSA": "FpuTranscendentalSet",
     "VECTOR": "VectorSet",
     "VECTORFP": "VectorFpuSet",
+    "WAIT": "WaitSet",
 }
 ACCESS_CONSTRUCTORS = {
     "read": "AccessRead",

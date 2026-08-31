@@ -3,6 +3,6 @@ intrinsics:
 - cpuid
 - rdpmc
 - read_status
+- relax
 - trace
-- wait
 - yield

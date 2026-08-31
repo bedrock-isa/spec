@@ -1,0 +1,7 @@
+id: WAIT_DISCOVERY
+name: Address Wait Discovery
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}

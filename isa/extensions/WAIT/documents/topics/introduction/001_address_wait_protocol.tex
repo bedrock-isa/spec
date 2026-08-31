@@ -1,0 +1,10 @@
+\subsection{Address Wait Protocol}\label{section:address-wait-protocol}
+WAIT and WAKE form an address-scoped blocking protocol. A waiter supplies an expected value and a memory address.
+The comparison read and monitor arm are indivisible: the logical processor blocks only when the selected memory
+value still equals the expected value at the instant the monitor becomes visible to WAKE.
+
+WAKE broadcasts to every armed waiter whose resolved physical start address is the same as its operand address.
+It does not modify memory. An ordinary store is not required to wake a waiter; synchronization code first changes
+the condition with a release operation and then executes WAKE. A waiter always rechecks its condition because WAIT
+may return spuriously. These rules prevent a wake from being lost between the comparison and monitor arm without
+turning WAKE itself into a memory-ordering operation.

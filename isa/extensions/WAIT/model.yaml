@@ -1,0 +1,16 @@
+sail:
+  units:
+  - id: execution
+    requires:
+    - base.architectural-types
+    - base.decode-types
+    - base.decode
+    - base.runtime
+    sources:
+    - semantics/uops/address_wait.sail
+documents:
+  topics:
+  - id: cpuid.wait-extension-discovery
+    source: documents/topics/cpuid/001_wait_extension_discovery.tex
+  - id: introduction.address-wait-protocol
+    source: documents/topics/introduction/001_address_wait_protocol.tex

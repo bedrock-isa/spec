@@ -27,6 +27,8 @@ enum Primitive_request_kind = {
     StackRange,
     SegmentBoundsPoint,
     AtomicReadModifyWrite,
+    AddressWait,
+    AddressWake,
     AddressTranslateRequest,
     PhysicalPteRead,
     CacheMaintenanceBlock,
@@ -111,6 +113,8 @@ enum Transaction_response_kind = {
     ResponseSegmentBounds,
     ResponseIntegerExternal,
     ResponseAtomic,
+    ResponseAddressWait,
+    ResponseAddressWake,
     ResponseAddressTranslation,
     ResponsePteRead,
     ResponseCacheMaintenance,
@@ -322,7 +326,7 @@ enum Integer_divide_uop_operation = {
 
 enum Core_action_uop_operation = {
     CoreActionHalt,
-    CoreActionWait,
+    CoreActionRelax,
     CoreActionYield,
     CoreActionTrace,
     CoreActionSpeculationFence,

@@ -12,6 +12,8 @@ function response_matches_request(
         StackRange => kind == ResponseStackRange,
         SegmentBoundsPoint => kind == ResponseSegmentBounds,
         AtomicReadModifyWrite => kind == ResponseAtomic,
+        AddressWait => kind == ResponseAddressWait,
+        AddressWake => kind == ResponseAddressWake,
         AddressTranslateRequest => kind == ResponseAddressTranslation,
         PhysicalPteRead => kind == ResponsePteRead,
         CacheMaintenanceBlock => kind == ResponseCacheMaintenance,

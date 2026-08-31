@@ -73,6 +73,7 @@ function initial_cpu() -> Cpu_state = struct {
   fp16_convert_enabled = false,
   fptrans_enabled = false,
   vector_enabled = true,
+  wait_enabled = false,
   vector_length_bytes = 16,
   halted = false,
   run_state = Running,

@@ -75,6 +75,7 @@ function cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =
         CpuidFlag_FPTRANSA => state.fptrans_enabled,
         CpuidFlag_VECTOR => state.vector_enabled,
         CpuidFlag_VECTORFP => state.fp_enabled & state.vector_enabled,
+        CpuidFlag_WAIT => state.wait_enabled,
     }
 
 function cpuid_flags_available(flags : list(Cpuid_flag), state : Cpu_state) -> bool =

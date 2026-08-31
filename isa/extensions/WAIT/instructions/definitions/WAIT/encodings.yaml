@@ -1,0 +1,19 @@
+encodings:
+  b_w_l_q_z_rn_x_ea_e:
+    pattern: 11111111010000000000000000000zzxxxxeeeeeee
+    syntax: WAIT.{B|W|L|Q}(z) Rn(x), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      x:
+        role: expected
+        type: base.field_types.Rn
+      e:
+        role: memory
+        type: base.field_types.EA
+    constraints:
+    - role: memory
+      exclude:
+      - immediate
+      reason: memory_operand_required

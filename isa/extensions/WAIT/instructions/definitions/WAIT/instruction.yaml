@@ -1,0 +1,14 @@
+mnemonic: WAIT
+name: Wait On Address
+summary: Waits while a memory value equals the expected register value.
+route: core_control
+privileged: false
+operands:
+  expected:
+    role: source
+    access: read
+    value_type: integer
+  memory:
+    role: source
+    access: read
+    value_type: integer

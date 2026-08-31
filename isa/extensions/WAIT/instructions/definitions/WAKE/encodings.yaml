@@ -1,0 +1,13 @@
+encodings:
+  ea_e:
+    pattern: 11111111010001000000000000000000000eeeeeee
+    syntax: WAKE <ea>(e)
+    fields:
+      e:
+        role: address
+        type: base.field_types.EA
+    constraints:
+    - role: address
+      exclude:
+      - immediate
+      reason: memory_operand_required

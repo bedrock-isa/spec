@@ -1,0 +1,10 @@
+mnemonic: WAKE
+name: Wake Address Waiters
+summary: Wakes all waiters armed on the addressed location.
+route: core_control
+privileged: false
+operands:
+  address:
+    role: address
+    access: address
+    value_type: integer

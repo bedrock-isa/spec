@@ -121,6 +121,7 @@ body:
 - topic: VECTOR.cpuid.vector-parameter-discovery
 - topic: VECTORFP.cpuid.vector-floating-point-discovery
 - topic: FPTRANSA.cpuid.fptransa-accuracy-discovery
+- topic: WAIT.cpuid.wait-extension-discovery
 - topic: base.cpuid.cpuid-feature-discovery.implementation-class-directory
 - topic: base.cpuid.cpuid-feature-discovery.cache-topology-discovery
 - topic: base.cpuid.cpuid-feature-discovery.performance-counter-discovery
@@ -144,6 +145,11 @@ body:
 - instruction-set:
     owner: base
     title: General Instructions
+- instruction-set:
+    owner: WAIT
+    title: Address Wait Instructions
+    introduction:
+    - WAIT.introduction.address-wait-protocol
 - instruction-set:
     owner: FP
     title: Floating-Point Instructions

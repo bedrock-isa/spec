@@ -1,4 +1,4 @@
-id: wait
+id: relax
 owner: base
 description: >-
   Unprivileged PAUSE-like convergent hint; retires normally and permits a finite implementation-selected delay, including zero, before subsequent execution.

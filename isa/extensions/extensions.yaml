@@ -3,3 +3,4 @@ extensions:
 - FPTRANSA
 - VECTOR
 - VECTORFP
+- WAIT

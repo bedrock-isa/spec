@@ -5,6 +5,7 @@ function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   reset.fp16_convert_enabled = state.fp16_convert_enabled;
   reset.fptrans_enabled = state.fptrans_enabled;
   reset.vector_enabled = state.vector_enabled;
+  reset.wait_enabled = state.wait_enabled;
   reset.vector_length_bytes = state.vector_length_bytes;
   reset.vector_registers = zero_vector_registers(state.vector_length_bytes);
   reset.predicate_registers = zero_predicate_registers(state.vector_length_bytes);

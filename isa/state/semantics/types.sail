@@ -36,6 +36,7 @@ struct Cpu_state = {
   fp16_convert_enabled : bool,
   fptrans_enabled : bool,
   vector_enabled : bool,
+  wait_enabled : bool,
   vector_length_bytes : int,
   halted : bool,
   run_state : Run_state,

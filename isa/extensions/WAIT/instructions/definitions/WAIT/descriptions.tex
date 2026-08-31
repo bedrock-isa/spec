@@ -1,0 +1,7 @@
+WAIT performs an acquire-ordered read of the selected-width memory operand. The comparison read and monitor arm
+are indivisible. If the value differs from the expected register value, the instruction returns without blocking.
+If the values are equal, the logical processor may block until a matching WAKE or a spurious return. Software
+therefore rechecks the condition after every return.
+
+The monitor is identified by the resolved physical start address of the memory operand. WAIT does not modify the
+memory value, the expected register, or FLAGS. Ordinary stores are not required to make the instruction return.
