@@ -53,6 +53,12 @@ class SailDispatchRenderer:
         if program.execution_provider is None:
             lines.extend(
                 [
+                    "function control_register_write_valid(",
+                    "  control : Control_register, source : bits(64), before : Cpu_state,",
+                    "  candidate : Cpu_state",
+                    ") -> bool =",
+                    "  base_control_register_write_valid(control, source, before, candidate)",
+                    "",
                     "function event_from_fault(result : Execution_result) -> Event_record =",
                     "  base_event_from_fault(result)",
                     "",

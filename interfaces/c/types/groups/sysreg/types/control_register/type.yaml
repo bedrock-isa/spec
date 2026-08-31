@@ -3,6 +3,6 @@ owner: base
 kind: enum
 summary: Architectural control-register selectors.
 values:
-  source: isa:base.registers.CONTROL
+  source: isa:base.control_registers
   require-encoding: true
   member-prefix: __BEDROCK_CR_

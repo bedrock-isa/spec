@@ -1,0 +1,4 @@
+bits: 64
+fields:
+- {id: L, lsb: 0, bits: 1, summary: Indirect-landing enforcement enable.}
+- {id: S, lsb: 1, bits: 1, summary: Shadow-return enforcement enable.}

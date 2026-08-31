@@ -168,6 +168,7 @@ class Generator(ArtifactGenerator):
             group_name: index + 1
             for index, group_name in enumerate(selector_group_references)
         }
+        control_selector_group_id = len(selector_group_ids) + 1
         register_selectors = [
             _RegisterSelector(
                 selector_group_ids[group_name],
@@ -180,6 +181,14 @@ class Generator(ArtifactGenerator):
             ).registers.values()
             if register.encoding is not None
         ]
+        register_selectors.extend(
+            _RegisterSelector(
+                control_selector_group_id,
+                register.id.lower(),
+                register.selector,
+            )
+            for register in project.control_registers.references.registers.values()
+        )
         for bundle in project.catalog.instructions.values():
             bundle_id = f"{bundle.owner}.{bundle.instruction.mnemonic}"
             owner = bundle.owner
@@ -247,6 +256,7 @@ class Generator(ArtifactGenerator):
                         identifier,
                         used_names,
                         selector_group_ids,
+                        control_selector_group_id,
                     )
                     if scalar_form is not None:
                         scalar_forms.append(scalar_form)
@@ -463,6 +473,7 @@ def _render_scalar_form(
     identifier: str,
     used_names: set[str],
     selector_group_ids: dict[Reference["RegisterGroup"], int] | None = None,
+    control_selector_group_id: int = 0,
 ) -> _ScalarForm | None:
     """Return the common fixed-width scalar/FP codec projection, if applicable."""
 
@@ -564,6 +575,7 @@ def _render_scalar_form(
                     PayloadTypeKind.PC_DISPLACEMENT,
                     PayloadTypeKind.FLOATING_POINT_CONSTANT_ID,
                     PayloadTypeKind.REGISTER_SELECTOR,
+                    PayloadTypeKind.CONTROL_REGISTER_SELECTOR,
                 }:
                     return None
                 signed = (
@@ -579,7 +591,10 @@ def _render_scalar_form(
                     _ScalarOperand(
                         (
                             _OPERAND_REGISTER_SELECTOR
-                            if definition.kind == PayloadTypeKind.REGISTER_SELECTOR
+                            if definition.kind in {
+                                PayloadTypeKind.REGISTER_SELECTOR,
+                                PayloadTypeKind.CONTROL_REGISTER_SELECTOR,
+                            }
                             else (
                                 _OPERAND_TAIL_SIGNED
                                 if signed
@@ -595,7 +610,7 @@ def _render_scalar_form(
                                 selector_group_ids, definition.register_group
                             )
                             if definition.kind == PayloadTypeKind.REGISTER_SELECTOR
-                            else 0
+                            else control_selector_group_id
                         ),
                         1,
                     )

@@ -535,6 +535,49 @@ class RegisterContractsGenerator(_Generator):
                                 ),
                             )
                         )
+        for owner, namespace in project.control_registers.namespaces.items():
+            if not namespace.registers:
+                continue
+            group_name = (
+                f"REGISTER_GROUP_{_identifier(owner)}_CONTROL_REGISTERS"
+            )
+            group_index = len(group_names)
+            group_names.append(group_name)
+            for register in namespace.registers.values():
+                fields = register.layout.fields if register.layout else ()
+                writable_mask = (
+                    sum(_mask(field.lsb, field.bits) for field in fields)
+                    if register.layout is not None
+                    else (1 << 64) - 1
+                )
+                reset_known = (
+                    register.reset is not None
+                    and register.reset.value is not None
+                )
+                registers.append(
+                    RegisterContractProjection(
+                        owner=owner,
+                        group_id="CONTROL_REGISTERS",
+                        group_index=group_index,
+                        register_id=register.id,
+                        encoding=register.selector,
+                        width_kind=0,
+                        fixed_width=64,
+                        writable_mask=writable_mask,
+                        reset_known=reset_known,
+                        reset_value=(
+                            register.reset.value if reset_known else 0
+                        ),
+                        fields=tuple(
+                            RegisterFieldProjection(
+                                field.id,
+                                field.lsb,
+                                _mask(field.lsb, field.bits),
+                            )
+                            for field in fields
+                        ),
+                    )
+                )
         return RegisterContractsProjection(tuple(group_names), tuple(registers))
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:

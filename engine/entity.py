@@ -27,6 +27,8 @@ class EntityKind(StrEnum):
     EVENT = "event"
     REGISTER_GROUP = "register-group"
     REGISTER = "register"
+    CONTROL_REGISTER_NAMESPACE = "control-register-namespace"
+    CONTROL_REGISTER = "control-register"
     TERM_GROUP = "term-group"
     TERM = "term"
     ELF_RELOCATION = "elf-relocation"
@@ -76,6 +78,7 @@ class EntityCatalog:
         cpuid,
         events,
         registers,
+        control_registers,
         terminology,
         model,
     ) -> "EntityCatalog":
@@ -150,6 +153,11 @@ class EntityCatalog:
             (EntityKind.EVENT, events.references.events),
             (EntityKind.REGISTER_GROUP, registers.references.groups),
             (EntityKind.REGISTER, registers.references.registers),
+            (
+                EntityKind.CONTROL_REGISTER_NAMESPACE,
+                control_registers.references.namespaces,
+            ),
+            (EntityKind.CONTROL_REGISTER, control_registers.references.registers),
         ):
             for reference, value in typed_index.items():
                 display = getattr(value, "name", None) or getattr(value, "id", None)
@@ -161,6 +169,7 @@ class EntityCatalog:
                         if kind
                         in {
                             EntityKind.REGISTER,
+                            EntityKind.CONTROL_REGISTER,
                             EntityKind.EVENT,
                             EntityKind.CPUID_LEAF,
                             EntityKind.CPUID_QUERY,

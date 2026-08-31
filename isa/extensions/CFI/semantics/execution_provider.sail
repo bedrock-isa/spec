@@ -1,9 +1,3 @@
-function cfi_control_index(selector : int) -> option(int) =
-  if selector == 4608 then Some(27)
-  else if selector == 4609 then Some(28)
-  else if selector == 4610 then Some(29)
-  else None()
-
 function cfi_indirect_target(instruction : Decoded_instruction) -> bool =
   match operand_named(instruction, Operand_target) {
     Some(target) =>
@@ -55,56 +49,6 @@ function cfi_execute_optional_jump(program : option(list(Uop)),
     ),
   }
 
-function cfi_try_read_control(instruction : Decoded_instruction,
-                              state : Cpu_state) -> option(Execution_result) =
-  match value_named(instruction, state, Operand_cr) {
-    None() => None(),
-    Some(raw) => match cfi_control_index(unsigned(raw[15 .. 0])) {
-      None() => None(),
-      Some(index) => Some(read_state_register(
-        instruction, state, state.controls[unsigned(get_slice_int(5, index, 0))]
-      )),
-    },
-  }
-
-function cfi_control_write_valid(selector : int, value : bits(64),
-                                 candidate : Cpu_state) -> bool =
-  if selector == 4608 then
-    (value & 0xFFFFFFFFFFFFFFFC) == 0x0000000000000000
-    & (value[1] == bitzero | cfi_shadow_push_state_valid(candidate))
-  else if selector == 4609 then
-    segment_image_valid(value)
-    & (not_bool(cfi_shadow_enabled(candidate))
-       | cfi_shadow_push_state_valid(candidate))
-  else if selector == 4610 then
-    (value & 0x000000000000000F) == 0x0000000000000000
-    & (not_bool(cfi_shadow_enabled(candidate))
-       | cfi_shadow_push_state_valid(candidate))
-  else false
-
-function cfi_try_write_control(instruction : Decoded_instruction,
-                               state : Cpu_state) -> option(Execution_result) =
-  match (value_named(instruction, state, Operand_cr),
-         value_named(instruction, state, Operand_src)) {
-    (Some(raw), Some(value)) => {
-      let selector = unsigned(raw[15 .. 0]);
-      match cfi_control_index(selector) {
-        None() => None(),
-        Some(index) => {
-          var candidate = state;
-          candidate.controls[unsigned(get_slice_int(5, index, 0))] = value;
-          if cfi_control_write_valid(selector, value, candidate) then
-            Some(local_result(state, instruction, candidate, CommitControl))
-          else Some(faulted(
-            state, instruction.form.operation, InvalidControlState,
-            "invalid CFI control-register image"
-          ))
-        },
-      }
-    },
-    _ => None(),
-  }
-
 function cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =
   if flag == CpuidFlag_CFI then true else base_cpuid_flag_enabled(flag, state)
 
@@ -124,14 +68,6 @@ function execute_operation_entry(instruction : Decoded_instruction, state : Cpu_
     Op_LRET => uop_program_execute(
       cfi_return_program(lower_LRET_uops(instruction), state), instruction, state
     ),
-    Op_RDCR => match cfi_try_read_control(instruction, state) {
-      Some(result) => result,
-      None() => execute_base_operation_entry(instruction, state),
-    },
-    Op_WRCR => match cfi_try_write_control(instruction, state) {
-      Some(result) => result,
-      None() => execute_base_operation_entry(instruction, state),
-    },
     _ => execute_base_operation_entry(instruction, state),
   }
 

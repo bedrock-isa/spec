@@ -1,0 +1,3 @@
+id: SSP
+selector: 0x0201
+summary: User-origin system-call initial stack top.

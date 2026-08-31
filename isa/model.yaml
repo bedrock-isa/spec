@@ -39,10 +39,10 @@ sail:
     - execution/semantics/primitives/integer_arithmetic.sail
     - execution/semantics/primitives/integer_logical.sail
     - instructions/semantics/integer/operands.sail
+    - control_registers/semantics/control_state.sail
     - instructions/semantics/integer/arithmetic.sail
     - instructions/semantics/integer/data_control.sail
     - instructions/semantics/integer/routing.sail
-    - state/semantics/control_state.sail
     - state/semantics/reset.sail
     - memory/access/semantics/transactions.sail
     - execution/semantics/uops.sail
@@ -146,8 +146,8 @@ documents:
     source: registers/documents/topics/register_model/003_segment_registers.tex
   - id: registers.register-model.segment-register-operand-class
     source: registers/documents/topics/register_model/004_segment_register_operand_class.tex
-  - id: registers.register-model.control-registers
-    source: registers/documents/topics/register_model/005_control_registers.tex
+  - id: control_registers.control-registers
+    source: control_registers/documents/topics/001_control_registers.tex
   - id: encoding.data.data-formats.data-formats
     source: encoding/documents/data/topics/data_formats/001_data_formats.tex
   - id: encoding.data.data-formats.integer-data-sizes

@@ -94,6 +94,7 @@ def _payload_type_name(definition: PayloadType) -> str:
         PayloadTypeKind.PC_DISPLACEMENT,
         PayloadTypeKind.PC_ABSOLUTE,
         PayloadTypeKind.REGISTER_SELECTOR,
+        PayloadTypeKind.CONTROL_REGISTER_SELECTOR,
     }:
         if name == "FCONST":
             return "fconst_id"

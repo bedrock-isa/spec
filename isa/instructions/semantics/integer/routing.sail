@@ -85,7 +85,9 @@ function route_environment(
                 commit_point = true,
                 suppress_fault = suppress_fault,
                 selector = if kind == ResetSerializeRequest then 0x000000000000003F else 0x0000000000000000,
-                expected = if kind == ResetSerializeRequest then state.controls[23] else 0x0000000000000000,
+                expected = if kind == ResetSerializeRequest
+                  then control_register_value(state, ControlRegister_BASE_BOOTPC)
+                  else 0x0000000000000000,
             },
         effects =
             [|typed_effect(effect_kind, instruction, state, address, 0x0000000000000000, width, 0, suppress_fault)|],

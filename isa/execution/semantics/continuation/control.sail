@@ -16,12 +16,14 @@ function resume_control_phase(previous : Execution_result, response : Transactio
     PhaseControlTransition =>
       if previous.request.role == RequestRoleUserReturnTarget then
         completed(previous.state, pending_after(previous), CommitControl, [||])
-      else match control_index(unsigned(pending_transaction(previous.pending).captured_first[15 .. 0])) {
+      else match control_register_from_selector(unsigned(pending_transaction(previous.pending).captured_first[15 .. 0])) {
         None() => faulted(previous.state, previous.pending.operation,
                           InvalidControlState, "unknown control-register selector"),
-        Some(index) => {
-          var updated = pending_after(previous);
-          updated.controls[unsigned(index)] = pending_transaction(previous.pending).captured_second;
+        Some(control) => {
+          let updated = control_register_with_value(
+            pending_after(previous), control,
+            pending_transaction(previous.pending).captured_second
+          );
           completed(previous.state, updated, CommitControl, [||])
         },
       },

@@ -1,7 +1,6 @@
 payload_types:
   CR:
-    type: register_selector
-    register_group: base.registers.CONTROL
+    type: control_register_selector
     bytes: 2
   PMC:
     type: register_selector

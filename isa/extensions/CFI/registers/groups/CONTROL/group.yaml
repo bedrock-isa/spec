@@ -1,4 +1,0 @@
-id: CONTROL
-width: 64
-summary: Privileged control-flow integrity configuration and shadow-stack state.
-reset: 0

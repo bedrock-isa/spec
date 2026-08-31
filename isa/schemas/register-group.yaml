@@ -51,7 +51,7 @@ $defs:
       properties:
         from:
           type: string
-          pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$
+          pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.(?:registers\.[A-Z][A-Z0-9_]*|control_registers)\.[A-Z][A-Z0-9_]*$
     - type: object
       additionalProperties: false
       required: [cold, warm]

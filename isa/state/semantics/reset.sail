@@ -28,9 +28,13 @@ function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   reset.vector_component_size = state.vector_component_size;
   reset.vector_component_alignment = state.vector_component_alignment;
   reset.vector_component_init_policy = state.vector_component_init_policy;
-  reset.controls[23] = state.controls[23];
-  reset.controls[24] = state.controls[24];
-  reset.pc = state.controls[23];
+  reset = control_register_with_value(
+    reset, ControlRegister_BASE_BOOTPC,
+    control_register_value(state, ControlRegister_BASE_BOOTPC));
+  reset = control_register_with_value(
+    reset, ControlRegister_BASE_BOOTCFG,
+    control_register_value(state, ControlRegister_BASE_BOOTCFG));
+  reset.pc = control_register_value(state, ControlRegister_BASE_BOOTPC);
   reset.status = 0x0000000000000010;
   reset.supervisor = true;
   reset.halted = false;

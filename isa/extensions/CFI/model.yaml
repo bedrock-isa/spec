@@ -10,14 +10,15 @@ sail:
     - base.decode
     - base.runtime
     sources:
+    - control_registers/semantics/control_state.sail
     - semantics/uops/control_flow.sail
   execution_provider: semantics/execution_provider.sail
 documents:
   topics:
   - id: cpuid.control-flow-integrity-discovery
     source: documents/topics/cpuid/001_control_flow_integrity_discovery.tex
-  - id: registers.control-flow-integrity-controls
-    source: documents/topics/registers/001_control_flow_integrity_controls.tex
+  - id: control_registers.control-flow-integrity-controls
+    source: control_registers/documents/topics/001_control_flow_integrity_controls.tex
   - id: events.control-flow-integrity-violation
     source: documents/topics/events/001_control_flow_integrity_violation.tex
   - id: introduction.control-flow-integrity-model

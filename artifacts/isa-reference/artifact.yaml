@@ -39,8 +39,8 @@ body:
 - topic: VECTOR.registers.vector-register-model
 - topic: base.registers.register-model.segment-registers
 - topic: base.registers.register-model.segment-register-operand-class
-- topic: base.registers.register-model.control-registers
-- topic: CFI.registers.control-flow-integrity-controls
+- topic: base.control_registers.control-registers
+- topic: CFI.control_registers.control-flow-integrity-controls
 - topic: base.encoding.data.data-formats.data-formats
 - topic: base.encoding.data.data-formats.integer-data-sizes
 - topic: base.encoding.data.data-formats.little-endian-memory-organization

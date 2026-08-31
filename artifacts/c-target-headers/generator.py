@@ -176,9 +176,18 @@ def _render_type(
         source = context.workspace.resolve(interface_type.enum_source)
         prefix = str(values["member-prefix"])
         entries = [
-            (name, item.encoding)
+            (
+                name,
+                item.encoding
+                if hasattr(item, "encoding")
+                else item.selector,
+            )
             for name, item in source.registers.items()
-            if item.encoding is not None
+            if (
+                item.encoding
+                if hasattr(item, "encoding")
+                else item.selector
+            ) is not None
         ]
         body = ",\n".join(f"  {prefix}{name} = {value:#x}" for name, value in entries)
         return f"typedef enum {tag} {{\n{body}\n}} {spelling};"

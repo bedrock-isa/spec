@@ -4,7 +4,7 @@ function live_event_state_valid(state : Cpu_state) -> bool =
   else state.supervisor & state.status[4] == bitone
        & status_event_depth(state.status) >= 1 & status_event_depth(state.status) <= 15
        & (not_bool(status_user_origin(state.status))
-          | state.controls[11][32] == bitone)
+          | control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone)
 
 function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> Execution_result =
   if state.run_state != Running then
@@ -52,13 +52,16 @@ function machine_check_payload_valid(error_code : bits(64), fault_ea : bits(64),
 function latch_ingress(state : Cpu_state, ingress : Async_ingress) -> Cpu_state = {
   var updated = state;
   if ingress.nmi_pending then {
-    if updated.controls[2][7] == bitzero then
+    if control_register_value(updated, ControlRegister_BASE_ECR)[7] == bitzero then
       updated.nmi_latched_source = ingress.nmi_source
     else {
       updated.nmi_relatched = true;
       updated.nmi_relatched_source = ingress.nmi_source
     };
-    updated.controls[2] = updated.controls[2] | 0x0000000000000080
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_ECR,
+      control_register_value(updated, ControlRegister_BASE_ECR)
+      | 0x0000000000000080)
   } else ();
   if ingress.machine_check_pending then {
     updated.machine_check_pending = true;
@@ -91,7 +94,7 @@ function machine_check_state_valid(state : Cpu_state) -> bool =
 
 function admitted_async_event(state : Cpu_state, ingress : Async_ingress)
   -> option(Event_record) = {
-  let ecr = state.controls[2];
+  let ecr = control_register_value(state, ControlRegister_BASE_ECR);
   let nmi = ecr[7] == bitone;
   let interrupt = ingress.interrupt_pending;
   let max_depth = unsigned(ecr[11 .. 8]);
@@ -137,13 +140,14 @@ function execute_boundary(instruction : Decoded_instruction, state : Cpu_state,
   else if latched.machine_check_pending & not_bool(machine_check_state_valid(latched)) then
     boundary_shutdown(latched)
   else if latched.machine_check_pending
-          & (latched.controls[2][0] == bitzero
+          & (control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitzero
              | status_event_depth(latched.status) >= 15) then
     boundary_shutdown(latched)
   else match admitted_async_event(latched, ingress) {
     Some(event) => boundary_with_event(latched, event),
     None() =>
-      if latched.controls[2][7] == bitone & latched.controls[2][0] == bitone
+      if control_register_value(latched, ControlRegister_BASE_ECR)[7] == bitone
+         & control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitone
          & latched.status[1] == bitzero
          & status_event_depth(latched.status) >= 15 then
         boundary_shutdown(latched)
@@ -178,7 +182,7 @@ function resume_boundary(result : Execution_result, sampled_status : bits(64),
     if latched.machine_check_pending & not_bool(machine_check_state_valid(latched)) then
       boundary_shutdown(latched)
     else if latched.machine_check_pending
-       & (latched.controls[2][0] == bitzero
+       & (control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitzero
           | status_event_depth(latched.status) >= 15) then
       boundary_shutdown(latched)
     else if latched.machine_check_pending then boundary_with_event(latched, machine_check_event(latched))

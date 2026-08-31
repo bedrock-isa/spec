@@ -1,0 +1,3 @@
+id: CFICTL
+selector: 0x1200
+summary: Enables indirect-landing and shadow-return enforcement.

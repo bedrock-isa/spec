@@ -5,6 +5,7 @@ from .document_fragment import (
     DocumentFragmentPipeline,
     DocumentFragmentProvider,
 )
+from .control_register_reference import ControlRegisterReferenceRenderer
 from .cpuid_leaf import (
     CpuidLeafFragmentRenderer,
     CpuidLeafProjection,
@@ -60,6 +61,7 @@ from .sail_registry import (
 from .vector_diagram import VectorDiagramPlacementRenderer, VectorDiagramRenderer
 
 __all__ = [
+    "ControlRegisterReferenceRenderer",
     "CpuidLeafFragmentRenderer",
     "CpuidLeafProjection",
     "DocumentFragmentContext",

@@ -100,25 +100,36 @@ function event_storage_slots(event : Event_record, state : Cpu_state) -> int =
   else event_frame_slots(event.frame_type)
 
 function event_stack_segment(event : Event_record, state : Cpu_state) -> bits(64) =
-  if event.code == 0x00000018 then state.controls[21]
+  if event.code == 0x00000018 then
+    control_register_value(state, ControlRegister_BASE_DSS)
   else if not_bool(event_uses_user_bank(state)) then state.segments[2]
-  else if event.code == 0x00000020 then state.controls[15]
-  else if event.kind == EventInterrupt then state.controls[17]
-  else state.controls[19]
+  else if event.code == 0x00000020 then
+    control_register_value(state, ControlRegister_BASE_SSS)
+  else if event.kind == EventInterrupt then
+    control_register_value(state, ControlRegister_BASE_ISS)
+  else control_register_value(state, ControlRegister_BASE_FSS)
 
 function event_stack_top(event : Event_record, state : Cpu_state) -> bits(64) =
-  if event.code == 0x00000018 then state.controls[22]
+  if event.code == 0x00000018 then
+    control_register_value(state, ControlRegister_BASE_DSP)
   else if not_bool(event_uses_user_bank(state)) then state.sp
-  else if event.code == 0x00000020 then state.controls[16]
-  else if event.kind == EventInterrupt then state.controls[18]
-  else state.controls[20]
+  else if event.code == 0x00000020 then
+    control_register_value(state, ControlRegister_BASE_SSP)
+  else if event.kind == EventInterrupt then
+    control_register_value(state, ControlRegister_BASE_ISP)
+  else control_register_value(state, ControlRegister_BASE_FSP)
 
 function event_entry_state_valid(state : Cpu_state) -> bool =
-  segment_image_valid(state.controls[13])
-  & segment_image_valid(state.controls[14])
-  & (state.controls[12] & 0x000000000000000F) == 0x0000000000000000
-  & paging_canonical(state.controls[12], state.controls[0])
-  & segment_point(state.controls[13], state.controls[12]).in_bounds
+  segment_image_valid(control_register_value(state, ControlRegister_BASE_ECS))
+  & segment_image_valid(control_register_value(state, ControlRegister_BASE_EDS))
+  & (control_register_value(state, ControlRegister_BASE_EPC)
+     & 0x000000000000000F) == 0x0000000000000000
+  & paging_canonical(
+      control_register_value(state, ControlRegister_BASE_EPC),
+      control_register_value(state, ControlRegister_BASE_PTCR))
+  & segment_point(
+      control_register_value(state, ControlRegister_BASE_ECS),
+      control_register_value(state, ControlRegister_BASE_EPC)).in_bounds
 
 function event_stack_state_valid(event : Event_record, state : Cpu_state) -> bool = {
   let segment_image = event_stack_segment(event, state);
@@ -137,7 +148,10 @@ function event_frame_address_valid(event : Event_record, state : Cpu_state) -> b
 }
 
 function event_target_request(state : Cpu_state) -> Primitive_request =
-  { target_probe_request(0, state.controls[13], state.controls[12]) with
+  { target_probe_request(
+      0,
+      control_register_value(state, ControlRegister_BASE_ECS),
+      control_register_value(state, ControlRegister_BASE_EPC)) with
     role = RequestRoleEventEntryTarget }
 
 function event_stack_range_request(event : Event_record, state : Cpu_state,
@@ -180,20 +194,28 @@ function committed_event_entry(before : Cpu_state, event : Event_record,
   var updated = before;
   let user_origin = event_uses_user_bank(before);
   if user_origin then {
-    updated.controls[6] = event.saved_pc;
-    updated.controls[7] = before.sp;
-    updated.controls[8] = before.segments[0];
-    updated.controls[9] = before.segments[1];
-    updated.controls[10] = before.segments[2];
-    updated.controls[11] = 0x0000000100000000
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_UPC, event.saved_pc);
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_USP, before.sp);
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_UCS, before.segments[0]);
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_UDS, before.segments[1]);
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_USS, before.segments[2]);
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_UCTL,
+      0x0000000100000000
       | sail_shiftleft(before.status & 0x000000000000FFFF, 16)
-      | sail_zero_extend(before.flags, 64);
-    updated.controls[26] = sail_zero_extend(event.code, 64)
+      | sail_zero_extend(before.flags, 64));
+    updated = control_register_with_value(
+      updated, ControlRegister_BASE_UINFO, sail_zero_extend(event.code, 64))
   } else ();
   updated.sp = new_sp;
-  updated.pc = before.controls[12];
-  updated.segments[0] = before.controls[13];
-  updated.segments[1] = before.controls[14];
+  updated.pc = control_register_value(before, ControlRegister_BASE_EPC);
+  updated.segments[0] = control_register_value(before, ControlRegister_BASE_ECS);
+  updated.segments[1] = control_register_value(before, ControlRegister_BASE_EDS);
   updated.segments[2] = stack_segment;
   updated.status = status_with_event_state(
     (before.status & 0x0000000000000002) | 0x0000000000000011,
@@ -259,7 +281,8 @@ function event_shutdown(state : Cpu_state) -> Execution_result = completed(
 
 function start_event_attempt(event : Event_record, state : Cpu_state,
                              attempt : int) -> Execution_result =
-  if state.controls[2][0] == bitzero | status_event_depth(state.status) >= 15 then event_shutdown(state)
+  if control_register_value(state, ControlRegister_BASE_ECR)[0] == bitzero
+     | status_event_depth(state.status) >= 15 then event_shutdown(state)
   else if not_bool(event_entry_state_valid(state)) then
     if attempt >= 1 then event_shutdown(state)
     else start_event_attempt(double_fault_event(event, 0), state, 1)
@@ -299,7 +322,7 @@ function start_event_control(operation : Event_control_uop_operation,
   else if operation == EventControlSyscall then
     if state.supervisor | state.status[0] == bitone
        | status_event_depth(state.status) != 0
-       | state.controls[11][32] == bitone then
+       | control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone then
       faulted(state, Op_SYSCALL, InvalidControlState, "invalid SYSCALL source state")
     else start_admitted_event(
       make_event(EventSynchronous, EventFrameBasic, 0x00000020, 4,
@@ -308,11 +331,14 @@ function start_event_control(operation : Event_control_uop_operation,
   else {
     let direct = state.supervisor & state.status[0] == bitzero
       & status_event_depth(state.status) == 0
-      & not_bool(status_user_origin(state.status)) & state.controls[11][32] == bitone;
+      & not_bool(status_user_origin(state.status))
+      & control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone;
     let outer = state.supervisor & state.status[0] == bitone
       & status_event_depth(state.status) == 1
-      & status_user_origin(state.status) & state.controls[11][32] == bitone;
-    if status_user_origin(state.status) & state.controls[11][32] == bitzero then
+      & status_user_origin(state.status)
+      & control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone;
+    if status_user_origin(state.status)
+       & control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitzero then
       faulted(state, Op_ERET, InvalidControlState, "invalid live user-origin chain")
     else if direct | outer then start_user_return(instruction, state)
     else if state.supervisor & state.status[0] == bitone
@@ -347,28 +373,33 @@ function valid_frame_control(control : bits(64), state : Cpu_state) -> bool = {
 
 function start_user_return(instruction : Decoded_instruction, state : Cpu_state)
   -> Execution_result = {
-    let uctl = state.controls[11];
+    let uctl = control_register_value(state, ControlRegister_BASE_UCTL);
     let saved_status = sail_shiftright(uctl, 16) & 0x000000000000FFFF;
     let saved_flags = uctl & 0x000000000000FFFF;
     if not_bool(state.supervisor) | not_bool(user_return_bank_image_valid(state))
     then faulted(state, Op_ERET, InvalidControlState, "invalid user-return bank")
     else {
       var after = state;
-      after.pc = state.controls[6];
-      after.sp = state.controls[7];
-      after.segments[0] = state.controls[8];
-      after.segments[1] = state.controls[9];
-      after.segments[2] = state.controls[10];
+      after.pc = control_register_value(state, ControlRegister_BASE_UPC);
+      after.sp = control_register_value(state, ControlRegister_BASE_USP);
+      after.segments[0] = control_register_value(state, ControlRegister_BASE_UCS);
+      after.segments[1] = control_register_value(state, ControlRegister_BASE_UDS);
+      after.segments[2] = control_register_value(state, ControlRegister_BASE_USS);
       after.flags = saved_flags[3 .. 0];
       after.status = saved_status;
       after.supervisor = false;
       after.current_dfa = false;
-      after.controls[11] = uctl & 0xFFFFFFFEFFFFFFFF;
-      let request = { target_probe_request(0, state.controls[8], state.controls[6]) with
+      after = control_register_with_value(
+        after, ControlRegister_BASE_UCTL, uctl & 0xFFFFFFFEFFFFFFFF);
+      let request = { target_probe_request(
+          0,
+          control_register_value(state, ControlRegister_BASE_UCS),
+          control_register_value(state, ControlRegister_BASE_UPC)) with
         kind = ControlTransitionRequest, role = RequestRoleUserReturnTarget, commit_point = true };
       waiting_transaction(TransactionControl,
         state, after, instruction, CommitControl, empty_destination(), PhaseControlTransition,
-        0, state.controls[6], 0x0000000000000000, request
+        0, control_register_value(state, ControlRegister_BASE_UPC),
+        0x0000000000000000, request
       )
     }
 }

@@ -142,14 +142,15 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
   if ptquery | vtop then {
     let linear = value;
     let target_level = if ptquery then unsigned(selector[2 .. 0]) else 1;
-    let root_level = if state.controls[0][7] == bitone then 5 else 4;
+    let ptcr = control_register_value(state, ControlRegister_BASE_PTCR);
+    let root_level = if ptcr[7] == bitone then 5 else 4;
     if target_level < 1 | target_level > 5 then
       faulted(state, operation, IllegalInstruction, "invalid PTQUERY level")
     else if ptquery
             & not_bool(segment_point(address.segment_image,
                                      address.effective_address).in_bounds) then
       faulted(state, operation, AccessFault, "PTQUERY effective address outside segment")
-    else if vtop & state.controls[0][0] == bitzero then {
+    else if vtop & ptcr[0] == bitzero then {
       var direct = advance_pc(evaluated.image, instruction);
       let valid = physical_address_fits_pabits(linear);
       if destination.kind == DestinationRn then
@@ -159,7 +160,7 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
       direct.flags = if valid then 0x1 else 0x0;
       completed(state, direct, CommitControl, [||])
     }
-    else if not_bool(paging_canonical(linear, state.controls[0]))
+    else if not_bool(paging_canonical(linear, ptcr))
          | (ptquery & target_level == 5 & root_level == 4) then {
       var failed = advance_pc(evaluated.image, instruction);
       if destination.kind == DestinationRn then failed.registers[unsigned(destination.index)] = 0x0000000000000000
@@ -171,7 +172,7 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
       state, advance_pc(evaluated.image, instruction), instruction, CommitControl,
       destination, PhasePteRead, 0, linear, bits_from_int(target_level),
       pte_read_request(state, ptquery, linear,
-                       state.controls[0] & paging_pfn_mask(state.controls[0]),
+                       ptcr & paging_pfn_mask(ptcr),
                        root_level, target_level, 0)
     )
   }

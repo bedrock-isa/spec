@@ -10,6 +10,7 @@ from typing import Any
 
 from .allocation import AllocationCube, forms_overlap, numeric_bounds
 from .cpuid import CpuidCatalog, CpuidLeaf, CpuidQuery, CpuidResolutionError
+from .control_register import ControlRegister, ControlRegisterCatalog
 from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
 from .encoding import OperandConstraint
 from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH
@@ -823,11 +824,14 @@ class RegisterValidator:
     """Validate register inventories, layouts, reset state, and type bindings."""
 
     def validate(
-        self, catalog: RegisterCatalog, types: TypeSystem
+        self,
+        catalog: RegisterCatalog,
+        types: TypeSystem,
+        control_registers: ControlRegisterCatalog,
     ) -> Iterator[Diagnostic]:
         yield from self._validate_inventories(catalog)
         yield from self._validate_groups(catalog)
-        yield from self._validate_resets(catalog)
+        yield from self._validate_resets(catalog, control_registers)
         yield from self._validate_types(catalog, types)
 
     @staticmethod
@@ -926,7 +930,9 @@ class RegisterValidator:
                                 )
 
     @staticmethod
-    def _validate_resets(catalog: RegisterCatalog) -> Iterator[Diagnostic]:
+    def _validate_resets(
+        catalog: RegisterCatalog, control_registers: ControlRegisterCatalog
+    ) -> Iterator[Diagnostic]:
         active: list[Reference[Register]] = []
         resolved: set[Reference[Register]] = set()
 
@@ -949,7 +955,11 @@ class RegisterValidator:
                     )
             if reset is not None and reset.source is not None:
                 try:
-                    target = catalog.references.registers.resolve(reset.source)
+                    target = (
+                        control_registers.references.registers.resolve(reset.source)
+                        if reset.source.path[:1] == ("control_registers",)
+                        else catalog.references.registers.resolve(reset.source)
+                    )
                 except (ReferenceError, ValueError):
                     yield _error(
                         "register.reset.unknown-source",
@@ -976,14 +986,19 @@ class RegisterValidator:
                             register.source,
                             "register reset cycle: "
                             + " -> ".join(
-                                catalog.references.registers.resolve(item).id
+                                (
+                                    control_registers.references.registers.resolve(item).id
+                                    if item.path[:1] == ("control_registers",)
+                                    else catalog.references.registers.resolve(item).id
+                                )
                                 for item in cycle
                             ),
                             "reset",
                         )
                     else:
                         active.append(reference)
-                        yield from resolve(target)
+                        if target.reference.path[:1] == ("registers",):
+                            yield from resolve(target)
                         active.pop()
             resolved.add(reference)
 
@@ -1116,6 +1131,70 @@ class RegisterValidator:
                 f"register pairs in {group.id!r} do not fit the {bits}-bit "
                 f"selector declared in {source}",
             )
+
+
+class ControlRegisterValidator:
+    """Validate distributed control-register membership and image contracts."""
+
+    def validate(self, catalog: ControlRegisterCatalog) -> Iterator[Diagnostic]:
+        for namespace in catalog.namespaces.values():
+            inventory = namespace.inventory
+            declared = set(inventory.declared)
+            actual = set(inventory.actual)
+            for missing in sorted(declared - actual):
+                yield _error(
+                    "control-register.missing-directory",
+                    inventory.source,
+                    f"declared control register {missing!r} has no directory",
+                )
+            for undeclared in sorted(actual - declared):
+                yield _error(
+                    "control-register.undeclared-directory",
+                    inventory.root / undeclared,
+                    f"control-register directory {undeclared!r} is not declared",
+                )
+            for duplicate in sorted(
+                item for item in declared if inventory.declared.count(item) > 1
+            ):
+                yield _error(
+                    "control-register.duplicate",
+                    inventory.source,
+                    f"control register {duplicate!r} is listed more than once",
+                )
+        for register in catalog.references.registers.values():
+            yield from self._validate_register(register)
+
+    @staticmethod
+    def _validate_register(register: ControlRegister) -> Iterator[Diagnostic]:
+        reset = register.reset
+        if reset is not None and reset.value is not None and reset.value >= 1 << 64:
+            yield _error(
+                "control-register.reset.range",
+                register.source,
+                f"reset value does not fit control register {register.id!r}",
+                "reset",
+            )
+        layout = register.layout
+        if layout is None:
+            return
+        for field in layout.fields:
+            if field.msb >= 64:
+                yield _error(
+                    "control-register.layout.field-range",
+                    layout.source,
+                    f"field {field.id!r} occupies bits {field.msb}..{field.lsb} "
+                    "outside a 64-bit control register",
+                    "fields",
+                )
+        for index, left in enumerate(layout.fields):
+            for right in layout.fields[index + 1 :]:
+                if left.overlaps(right):
+                    yield _error(
+                        "control-register.layout.field-overlap",
+                        layout.source,
+                        f"fields {left.id!r} and {right.id!r} overlap",
+                        "fields",
+                    )
 
 
 class TerminologyValidator:
@@ -1315,8 +1394,19 @@ class RegisterValidationRule(ValidationRule):
     def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
         if scope.complete and scope.project.registers.references.groups:
             yield from self.validator.validate(
-                scope.project.registers, scope.project.types
+                scope.project.registers,
+                scope.project.types,
+                scope.project.control_registers,
             )
+
+
+class ControlRegisterValidationRule(ValidationRule):
+    def __init__(self, validator: ControlRegisterValidator | None = None) -> None:
+        self.validator = validator or ControlRegisterValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if scope.complete:
+            yield from self.validator.validate(scope.project.control_registers)
 
 
 class TerminologyValidationRule(ValidationRule):
@@ -1378,6 +1468,7 @@ class CheckService:
             CpuidValidationRule(),
             EventValidationRule(),
             RegisterValidationRule(),
+            ControlRegisterValidationRule(),
             TerminologyValidationRule(),
             DocumentSourceValidationRule(),
         )

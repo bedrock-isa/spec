@@ -3,9 +3,9 @@ union clause Uop_kind = UopSystemState : System_state_uop_operation
 function clause execute_uop(UopSystemState(operation), _, _, instruction, before, speculative) = {
     if operation == SystemReadControl then match (value_named(instruction, speculative, Operand_cr),
                                                    destination_named(instruction, Operand_dst, 8)) {
-        (Some(raw), Some(destination)) => match control_index(unsigned(raw[15 .. 0])) {
-            Some(index) => uop_step_complete(write_local_destination(speculative, instruction.form.operation,
-                                                                 destination, speculative.controls[unsigned(index)]),
+        (Some(raw), Some(destination)) => match control_register_from_selector(unsigned(raw[15 .. 0])) {
+            Some(control) => uop_step_complete(write_local_destination(speculative, instruction.form.operation,
+                                                                 destination, control_register_value(speculative, control)),
                                         CommitRegisters),
             None() => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
                                         "unknown control-register selector")),
@@ -70,32 +70,29 @@ function clause execute_uop(UopSystemState(operation), _, _, instruction, before
                 value_named(instruction, speculative, Operand_cr)) {
         (Some(source), Some(raw_selector)) => {
             let selector = unsigned(raw_selector[15 .. 0]);
-            let needs_transition = selector == 0 | selector == 1 | selector == 272 | selector == 4097
-              | (selector == 2 & source[0] == bitone & speculative.controls[2][0] == bitzero)
-              | ((selector >= 264 & selector <= 270)
-                 & (speculative.controls[11][32] == bitone | (selector == 269 & source[32] == bitone)));
-            if needs_transition then uop_step_delegate(start_system_request(
-                SystemWriteControl, instruction, speculative))
-            else match control_index(selector) {
+            match control_register_from_selector(selector) {
                 None() => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
                                             "unknown control-register selector")),
-                Some(index) => {
-                    let invalid = (control_segment_requires_valid_image(selector) & not_bool(segment_image_valid(source)))
-                      | (control_pointer_requires_alignment(selector) & (source & 0x000000000000003F) != 0x0000000000000000)
-                      | (selector == 4352 & (source & 0xFFFFFFFFFFFFFFFE) != 0x0000000000000000)
-                      | (selector == 2 & ((source & 0xFFFFFFFFFFFFF07E) != 0x0000000000000000
-                                         | (source[0] == bitone & not_bool(event_control_bank_valid(speculative)))))
-                      | (selector == 269 & ((source & 0xFFFFFFFE00000000) != 0x0000000000000000
-                                            | (source & 0x00000000FFD10000) != 0x0000000000000000
-                                            | source[15 .. 4] != 0x000))
-                      | (selector == 270 & source[63 .. 32] != 0x00000000);
-                    if invalid then uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
-                                                      "invalid control-register image"))
-                    else { var updated = speculative;
-                      updated.controls[unsigned(index)] = if selector == 2 then
-                        (source & 0x0000000000000F01) | (speculative.controls[2] & 0x0000000000000080)
-                        else source;
-                      uop_step_complete(updated, CommitControl) }
+                Some(control) => {
+                    if control_register_write_needs_transition(control, source, speculative) then
+                      uop_step_delegate(start_system_request(
+                        SystemWriteControl, instruction, speculative
+                      ))
+                    else {
+                      let written = control_register_written_value(
+                        control, source, speculative
+                      );
+                      let candidate = control_register_with_value(
+                        speculative, control, written
+                      );
+                      if not_bool(control_register_write_valid(
+                           control, source, speculative, candidate
+                         )) then uop_step_fault(faulted(
+                           before, instruction.form.operation, InvalidControlState,
+                           "invalid control-register image"
+                         ))
+                      else uop_step_complete(candidate, CommitControl)
+                    }
                 },
             }
         },

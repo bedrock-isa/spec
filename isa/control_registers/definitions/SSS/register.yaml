@@ -1,0 +1,3 @@
+id: SSS
+selector: 0x0200
+summary: User-origin system-call stack-segment image.

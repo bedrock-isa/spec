@@ -10,6 +10,7 @@ from types import MappingProxyType
 from typing import TypeVar, cast
 
 from .cpuid import CpuidCatalog, CpuidField
+from .control_register import ControlRegisterCatalog
 from .dependency import EntityDependency
 from .disclosure import ImplementationDisclosureCatalog
 from .ea_mode import EAMode, EAModeCatalog
@@ -501,6 +502,7 @@ class IsaProject:
     cpuid: CpuidCatalog
     events: EventCatalog
     registers: RegisterCatalog
+    control_registers: ControlRegisterCatalog
     terminology: TermCatalog
     model: ModelCatalog
     disclosures: ImplementationDisclosureCatalog
@@ -627,6 +629,13 @@ class IsaProject:
                     cast(Reference[object], register.reset.source),
                     "register-reset-source",
                 )
+        for register in self.control_registers.references.registers.values():
+            if register.reset is not None and register.reset.source is not None:
+                add(
+                    cast(Reference[object], register.reference),
+                    cast(Reference[object], register.reset.source),
+                    "control-register-reset-source",
+                )
 
         for term in self.terminology.references.terms.values():
             source = cast(Reference[object], term.reference)
@@ -744,6 +753,7 @@ class IsaProjectLoader:
         cpuid = CpuidCatalog.load(isa_root, extension_catalog)
         events = EventCatalog.load(isa_root, extension_catalog)
         registers = RegisterCatalog.load(isa_root, extension_catalog)
+        control_registers = ControlRegisterCatalog.load(isa_root, extension_catalog)
         terminology = TermCatalog.load(isa_root, extension_catalog)
         catalog = SourceCatalog.discover(isa_root, types, cpuid, extension_catalog)
         model = ModelCatalog.load(
@@ -761,6 +771,7 @@ class IsaProjectLoader:
             cpuid,
             events,
             registers,
+            control_registers,
             terminology,
             model,
         )
@@ -771,6 +782,7 @@ class IsaProjectLoader:
             cpuid,
             events,
             registers,
+            control_registers,
             terminology,
             model,
             disclosures,

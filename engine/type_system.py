@@ -41,6 +41,7 @@ class PayloadTypeKind(StrEnum):
     PC_ABSOLUTE = "pc_absolute"
     FLOATING_POINT_CONSTANT_ID = "floating_point_constant_id"
     REGISTER_SELECTOR = "register_selector"
+    CONTROL_REGISTER_SELECTOR = "control_register_selector"
 
 
 @dataclass(frozen=True, slots=True)

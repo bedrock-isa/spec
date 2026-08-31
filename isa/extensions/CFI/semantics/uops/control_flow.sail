@@ -1,44 +1,14 @@
-function cfi_landing_enabled(state : Cpu_state) -> bool =
-  state.controls[27][0] == bitone
-
-function cfi_shadow_enabled(state : Cpu_state) -> bool =
-  state.controls[27][1] == bitone
-
 function cfi_fault(state : Cpu_state, operation : Semantic_operation,
                    cause : int, detail : string) -> Execution_result =
   faulted_with_error_code(
     state, operation, CfiViolationFault, detail, bits_from_int(cause)
   )
 
-function cfi_segment_range_valid(image : bits(64), start : bits(64), width : int)
-  -> bool = {
-  let last = add_bits(start, bits_from_int(width - 1));
-  width > 0
-  & unsigned(last) >= unsigned(start)
-  & segment_point(image, start).in_bounds
-  & segment_point(image, last).in_bounds
-}
-
-function cfi_shadow_segment_valid(image : bits(64)) -> bool =
-  segment_image_valid(image) & image[6 .. 1] != 0b000000
-
-function cfi_shadow_push_state_valid(state : Cpu_state) -> bool = {
-  let next = sub_bits(state.controls[29], 0x0000000000000010);
-  cfi_shadow_segment_valid(state.controls[28])
-  & (state.controls[29] & 0x000000000000000F) == 0x0000000000000000
-  & cfi_segment_range_valid(state.controls[28], next, 16)
-}
-
-function cfi_shadow_pop_state_valid(state : Cpu_state) -> bool =
-  cfi_shadow_segment_valid(state.controls[28])
-  & (state.controls[29] & 0x000000000000000F) == 0x0000000000000000
-  & cfi_segment_range_valid(state.controls[28], state.controls[29], 16)
-
 function cfi_shadow_request(kind : Primitive_request_kind, state : Cpu_state,
                             address : bits(64), access : Transaction_access,
                             low : bits(64), high : bits(64), commit : bool)
   -> Primitive_request = {
-  let image = state.controls[28];
+  let image = control_register_value(state, ControlRegister_CFI_CFISS);
   let point = segment_point(image, address);
   {
     empty_primitive_request() with
@@ -140,9 +110,10 @@ function clause execute_uop(UopCfiShadowPushPrepare(), _, values, instruction,
     ))
   else {
     var updated = speculative;
-    updated.controls[29] = sub_bits(
-      speculative.controls[29], 0x0000000000000010
-    );
+    updated = control_register_with_value(
+      updated, ControlRegister_CFI_CFISP,
+      sub_bits(control_register_value(speculative, ControlRegister_CFI_CFISP),
+               0x0000000000000010));
     uop_step_continue(updated, values)
   }
 
@@ -159,7 +130,9 @@ function clause execute_uop(UopCfiShadowPush(), uop, values, instruction,
         uop_step_wait(
           0 - 1,
           cfi_shadow_request(
-            CompoundMemoryStore, speculative, speculative.controls[29], AccessStackWrite,
+            CompoundMemoryStore, speculative,
+            control_register_value(speculative, ControlRegister_CFI_CFISP),
+            AccessStackWrite,
             return_pc, return_cs, true
           ),
           return_pc,
@@ -179,7 +152,8 @@ function clause execute_uop(UopCfiShadowLoad(), uop, _, instruction,
   else uop_step_wait(
     uop.destination.index,
     cfi_shadow_request(
-      MemoryRead, speculative, speculative.controls[29], AccessStackRead,
+      MemoryRead, speculative,
+      control_register_value(speculative, ControlRegister_CFI_CFISP), AccessStackRead,
       0x0000000000000000, 0x0000000000000000, false
     ),
     0x0000000000000000,
@@ -201,9 +175,10 @@ function clause execute_uop(UopCfiShadowCheck(), uop, values, instruction,
         ))
       else {
         var updated = speculative;
-        updated.controls[29] = add_bits(
-          speculative.controls[29], 0x0000000000000010
-        );
+        updated = control_register_with_value(
+          updated, ControlRegister_CFI_CFISP,
+          add_bits(control_register_value(speculative, ControlRegister_CFI_CFISP),
+                   0x0000000000000010));
         uop_step_continue(updated, values)
       },
     _ => uop_step_fault(cfi_fault(

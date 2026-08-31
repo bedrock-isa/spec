@@ -1,0 +1,5 @@
+reset: 0
+control_registers:
+- CFICTL
+- CFISS
+- CFISP

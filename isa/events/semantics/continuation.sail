@@ -14,11 +14,17 @@ function resume_events_phase(previous : Execution_result, response : Transaction
           );
           if event.kind == EventNmi then {
             if previous.state.nmi_relatched then {
-              updated.controls[2] = updated.controls[2] | 0x0000000000000080;
+              updated = control_register_with_value(
+                updated, ControlRegister_BASE_ECR,
+                control_register_value(updated, ControlRegister_BASE_ECR)
+                | 0x0000000000000080);
               updated.nmi_latched_source = previous.state.nmi_relatched_source
             }
             else {
-              updated.controls[2] = updated.controls[2] & 0xFFFFFFFFFFFFFF7F;
+              updated = control_register_with_value(
+                updated, ControlRegister_BASE_ECR,
+                control_register_value(updated, ControlRegister_BASE_ECR)
+                & 0xFFFFFFFFFFFFFF7F);
               updated.nmi_latched_source = 0x000000
             };
             updated.nmi_relatched = false;
@@ -58,11 +64,17 @@ function resume_events_phase(previous : Execution_result, response : Transaction
         );
         if event.kind == EventNmi then {
           if previous.state.nmi_relatched then {
-            updated.controls[2] = updated.controls[2] | 0x0000000000000080;
+            updated = control_register_with_value(
+              updated, ControlRegister_BASE_ECR,
+              control_register_value(updated, ControlRegister_BASE_ECR)
+              | 0x0000000000000080);
             updated.nmi_latched_source = previous.state.nmi_relatched_source
           }
           else {
-            updated.controls[2] = updated.controls[2] & 0xFFFFFFFFFFFFFF7F;
+            updated = control_register_with_value(
+              updated, ControlRegister_BASE_ECR,
+              control_register_value(updated, ControlRegister_BASE_ECR)
+              & 0xFFFFFFFFFFFFFF7F);
             updated.nmi_latched_source = 0x000000
           };
           updated.nmi_relatched = false;

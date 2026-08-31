@@ -1,0 +1,4 @@
+id: BOOTCFG
+selector: 0x1001
+summary: Opaque platform boot configuration preserved by warm reset.
+reset: {cold: platform, warm: preserve}

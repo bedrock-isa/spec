@@ -93,7 +93,8 @@ function restored_event_state_valid(state : Cpu_state, saved_status : bits(64),
   let user_origin = status_user_origin(saved_status);
   if saved_status[15 .. 11] != 0b00000 | (saved_dfa & not_bool(active)) then false
   else if privileged & active then
-    depth > 0 & (not_bool(user_origin) | state.controls[11][32] == bitone)
+    depth > 0 & (not_bool(user_origin)
+      | control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone)
   else if privileged then depth == 0 & not_bool(user_origin) & not_bool(saved_dfa)
   else not_bool(active) & depth == 0 & not_bool(user_origin) & not_bool(saved_dfa)
 }

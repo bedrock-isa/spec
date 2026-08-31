@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/control-register
+title: Bedrock architectural control register
+type: object
+additionalProperties: false
+required: [id, selector, summary]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  selector:
+    type: integer
+    minimum: 0
+    maximum: 65535
+  summary:
+    type: string
+    minLength: 1
+  reset:
+    oneOf:
+    - type: integer
+      minimum: 0
+      maximum: 18446744073709551615
+    - type: object
+      additionalProperties: false
+      required: [from]
+      properties:
+        from:
+          type: string
+          pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.(?:registers\.[A-Z][A-Z0-9_]*|control_registers)\.[A-Z][A-Z0-9_]*$
+    - type: object
+      additionalProperties: false
+      required: [cold, warm]
+      properties:
+        cold: {enum: [platform]}
+        warm: {enum: [preserve]}
+x-interpretation-rules:
+- control_registers/definitions/control_registers.yaml declares owner-local membership and default reset state.
+- Each declared member owns control_registers/definitions/<ID>/register.yaml and an optional 64-bit layout.yaml.
+- Base and selected extension members share one global 16-bit selector space.
+- Inventory order declares membership only; public selector order and executable storage order are separate projections.

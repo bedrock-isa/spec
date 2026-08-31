@@ -1,0 +1,3 @@
+id: DSS
+selector: 0x0230
+summary: Double-fault stack-segment image.
