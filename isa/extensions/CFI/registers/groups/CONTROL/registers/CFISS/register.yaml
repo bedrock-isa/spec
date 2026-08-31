@@ -1,0 +1,3 @@
+id: CFISS
+encoding: 0x1201
+summary: Segment image used for implicit shadow-stack accesses.

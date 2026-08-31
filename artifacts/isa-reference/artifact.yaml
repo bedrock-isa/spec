@@ -40,6 +40,7 @@ body:
 - topic: base.registers.register-model.segment-registers
 - topic: base.registers.register-model.segment-register-operand-class
 - topic: base.registers.register-model.control-registers
+- topic: CFI.registers.control-flow-integrity-controls
 - topic: base.encoding.data.data-formats.data-formats
 - topic: base.encoding.data.data-formats.integer-data-sizes
 - topic: base.encoding.data.data-formats.little-endian-memory-organization
@@ -106,6 +107,7 @@ body:
 - topic: base.events.event-error-codes.address-context-error-code
 - topic: base.events.event-error-codes.other-exception-error-codes
 - topic: FP.events.floating-point-exception-payload
+- topic: CFI.events.control-flow-integrity-violation
 - topic: base.events.event-auxiliary-payloads.auxiliary-payloads
 - topic: base.events.interrupt-model.machine-check-and-bus-error-continuation
 - topic: base.events.interrupt-model.delivery-failure-and-shutdown
@@ -122,6 +124,7 @@ body:
 - topic: VECTORFP.cpuid.vector-floating-point-discovery
 - topic: FPTRANSA.cpuid.fptransa-accuracy-discovery
 - topic: WAIT.cpuid.wait-extension-discovery
+- topic: CFI.cpuid.control-flow-integrity-discovery
 - topic: base.cpuid.cpuid-feature-discovery.implementation-class-directory
 - topic: base.cpuid.cpuid-feature-discovery.cache-topology-discovery
 - topic: base.cpuid.cpuid-feature-discovery.performance-counter-discovery
@@ -150,6 +153,11 @@ body:
     title: Address Wait Instructions
     introduction:
     - WAIT.introduction.address-wait-protocol
+- instruction-set:
+    owner: CFI
+    title: Control-Flow Integrity Instructions
+    introduction:
+    - CFI.introduction.control-flow-integrity-model
 - instruction-set:
     owner: FP
     title: Floating-Point Instructions

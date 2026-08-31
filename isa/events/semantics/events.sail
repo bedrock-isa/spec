@@ -24,6 +24,48 @@ function make_event(kind : Event_kind, frame_type : Event_frame_type, code : bit
   event_aux = 0x0000000000000000
 }
 
+function base_event_from_fault(result : Execution_result) -> Event_record = match result.fault {
+  None() => make_event(EventSynchronous, EventFrameError, 0x0000000D, 3, result.state.pc),
+  Some(fault) => {
+    let code : bits(32) = if fault.kind == IllegalInstruction
+                          | fault.kind == ExtensionUnavailable then 0x00000003
+      else if fault.kind == PrivilegeFault then 0x00000008
+      else if fault.kind == BoundsFault | fault.kind == AlignmentFault
+           | fault.kind == TranslationFault
+        then 0x00000009
+      else if fault.kind == AccessFault & not_bool(fault.bus_error) then 0x0000000C
+      else if fault.kind == DivideByZero | fault.kind == DivideOverflow then 0x0000000A
+      else if fault.kind == VectorRangeFault then 0x0000000B
+      else if fault.kind == FloatingPointFault then 0x0000000E
+      else if fault.bus_error then 0x0000001A
+      else 0x0000000D;
+    let frame_type = if code == 0x00000008 then EventFrameBasic
+      else if code == 0x00000009 | code == 0x0000000C then EventFramePage
+      else if code == 0x0000001A then EventFrameAuxiliary
+      else EventFrameError;
+    var event = make_event(EventSynchronous, frame_type, code, 3, result.state.pc);
+    if code == 0x00000003 | code == 0x0000000A | code == 0x0000000B | code == 0x0000000D
+       | code == 0x0000000E then
+      event.error_code = fault.error_code
+    else if code == 0x00000009 | code == 0x0000000C then {
+      event.error_code = fault.error_code;
+      if result.request.kind != NoPrimitiveRequest then {
+        event.fault_ea = result.request.effective_address;
+        event.fault_linear = result.request.linear_address;
+        event.error_code = event.error_code | 0x0000000003000000
+      } else ()
+    }
+    else if code == 0x0000001A then {
+      event.fault_ea = result.request.effective_address;
+      event.fault_linear = result.request.linear_address;
+      event.event_aux = result.request.range_start;
+      event.error_code = fault.error_code
+    }
+    else event.error_code = fault.error_code;
+    event
+  },
+}
+
 function encode_event_frame(state : Cpu_state, event : Event_record,
                             control : bits(64)) -> list(bits(8)) = {
   let slot7 = le64_bytes(0x0000000000000000);

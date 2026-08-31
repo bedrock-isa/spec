@@ -40,3 +40,17 @@ class SailEntryValidator:
                     f"{semantics.bundle.instruction.source}: Sail entry {missing} "
                     f"is not defined by {semantics.source}"
                 )
+        provider = program.execution_provider
+        if provider is None:
+            return
+        text = provider.provider.read_text(encoding="utf-8")
+        for entry in (
+            "execute_operation_entry",
+            "cpuid_flag_enabled",
+            "event_from_fault",
+        ):
+            if re.search(rf"(?m)^function\s+{entry}\s*\(", text) is None:
+                raise ValueError(
+                    f"{provider.source}: execution provider does not define "
+                    f"{entry} in {provider.provider}"
+                )

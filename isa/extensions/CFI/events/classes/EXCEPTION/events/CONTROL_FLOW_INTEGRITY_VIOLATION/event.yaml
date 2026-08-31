@@ -1,0 +1,7 @@
+id: CONTROL_FLOW_INTEGRITY_VIOLATION
+name: Control-Flow Integrity Violation
+summary: An enforced indirect target or shadow-return relation fails validation.
+code: 0x44
+family: CONTROL_FLOW_INTEGRITY
+frame: error
+payload: [CFI_CAUSE]

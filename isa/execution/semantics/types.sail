@@ -569,6 +569,7 @@ union Uop_step = {
 // continuations resume through this declared boundary without depending on a
 // generic route dispatcher.
 val execute_operation_entry : (Decoded_instruction, Cpu_state) -> Execution_result
+val event_from_fault : Execution_result -> Event_record
 val start_repeat_transaction : (Decoded_instruction, Cpu_state) -> Execution_result
 val start_event_control : (Event_control_uop_operation, Decoded_instruction, Cpu_state) -> Execution_result
 val start_system_request : (System_request_uop_operation, Decoded_instruction, Cpu_state) -> Execution_result

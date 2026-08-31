@@ -4,3 +4,4 @@ extensions:
 - VECTOR
 - VECTORFP
 - WAIT
+- CFI

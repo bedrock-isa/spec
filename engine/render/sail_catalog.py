@@ -14,7 +14,7 @@ from ..instruction_metasyntax import InstructionMetasyntaxOperand
 from ..project import InstructionBundle
 from ..reference import Reference
 from ..type_system import FieldType, FieldTypeKind, PayloadType, PayloadTypeKind
-from .sail_registry import ROUTE_CONSTRUCTORS
+from .sail_registry import ROUTE_CONSTRUCTORS, instruction_set_constructor
 
 
 CLASS_CONSTRUCTORS = {
@@ -24,14 +24,6 @@ CLASS_CONSTRUCTORS = {
     "long": "Long",
     "extralong": "ExtraLong",
     "xxlong": "Xxlong",
-}
-INSTRUCTION_SET_CONSTRUCTORS = {
-    "base": "BaseSet",
-    "FP": "FpuSet",
-    "FPTRANSA": "FpuTranscendentalSet",
-    "VECTOR": "VectorSet",
-    "VECTORFP": "VectorFpuSet",
-    "WAIT": "WaitSet",
 }
 ACCESS_CONSTRUCTORS = {
     "read": "AccessRead",
@@ -461,7 +453,7 @@ def _render_entry(program: SailProgram, bundle: InstructionBundle, form: Encodin
         f"  struct {{ form_id = {_constructor('Form_', _form_key(bundle, form))}, "
         f"operation = Op_{bundle.instruction.mnemonic}, "
         f"route = {ROUTE_CONSTRUCTORS[bundle.instruction.route]}, "
-        f"instruction_set = {INSTRUCTION_SET_CONSTRUCTORS[bundle.owner]}, "
+        f"instruction_set = {instruction_set_constructor(program, bundle.owner)}, "
         f"privilege = {'SupervisorPrivilege' if bundle.instruction.privileged else 'UserPrivilege'}, "
         f"predicate_mode = {PREDICATE_CONSTRUCTORS.get(bundle.instruction.mnemonic, 'PredicateNone')}, "
         f"repeat_rep = {str(repeat_rep).lower()}, repeat_repcc = {str(repeat_repcc).lower()}, "

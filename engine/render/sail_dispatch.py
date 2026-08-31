@@ -28,10 +28,15 @@ class SailDispatchRenderer:
         )
 
     def render(self, program: SailProgram) -> str:
+        dispatch_function = (
+            "execute_base_operation_entry"
+            if program.execution_provider is not None
+            else "execute_operation_entry"
+        )
         lines = [
             "// Generated from instruction-local Sail entry declarations. Do not edit.",
             "",
-            "function execute_operation_entry(instruction : Decoded_instruction, state : Cpu_state)",
+            f"function {dispatch_function}(instruction : Decoded_instruction, state : Cpu_state)",
             "  -> Execution_result = match instruction.form.operation {",
         ]
         for entry in self.project(program).entries:
@@ -45,4 +50,15 @@ class SailDispatchRenderer:
             )
             lines.append(f"  {entry.operation} => {execution},")
         lines.extend(["}", ""])
+        if program.execution_provider is None:
+            lines.extend(
+                [
+                    "function event_from_fault(result : Execution_result) -> Event_record =",
+                    "  base_event_from_fault(result)",
+                    "",
+                    "function cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =",
+                    "  base_cpuid_flag_enabled(flag, state)",
+                    "",
+                ]
+            )
         return "\n".join(lines)

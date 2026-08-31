@@ -1,0 +1,4 @@
+id: CFI
+name: Control-Flow Integrity Extension
+required_cpuid_flags:
+- CFI.cpuid.EXTENSIONS.DIRECTORY.FEATURES.CFI

@@ -103,6 +103,15 @@ class SailUnit:
 
 
 @dataclass(frozen=True, slots=True)
+class ExecutionProvider:
+    """One owner-local implementation of the injectable execution boundaries."""
+
+    owner: str
+    source: Path
+    provider: Path
+
+
+@dataclass(frozen=True, slots=True)
 class DocumentTopic:
     """One owner-local authored TeX source available to public composers."""
 
@@ -120,7 +129,10 @@ class ModelNamespace:
     owner: str
     source: Path
     root: Path
+    instruction_set: str | None
+    fault_kinds: tuple[str, ...]
     sail_units: tuple[SailUnit, ...]
+    execution_provider: ExecutionProvider | None
     document_topics: tuple[DocumentTopic, ...]
 
 
@@ -138,9 +150,32 @@ class ModelManifestLoader:
 
         manifest = SchemaValidatedYamlLoader().load(source, self.schema)
 
+        sail = manifest.get("sail", {})
+        instruction_set = (
+            str(sail["instruction_set"])
+            if isinstance(sail, Mapping) and "instruction_set" in sail
+            else None
+        )
+        fault_kinds = (
+            tuple(str(item) for item in sail.get("fault_kinds", ()))
+            if isinstance(sail, Mapping)
+            else ()
+        )
         sail_units = self._load_sail_units(owner, namespace_root, source, manifest)
+        provider = self._load_execution_provider(
+            owner, namespace_root, source, manifest, sail_units
+        )
         topics = self._load_document_topics(owner, namespace_root, source, manifest)
-        return ModelNamespace(owner, source, namespace_root, sail_units, topics)
+        return ModelNamespace(
+            owner,
+            source,
+            namespace_root,
+            instruction_set,
+            fault_kinds,
+            sail_units,
+            provider,
+            topics,
+        )
 
     @staticmethod
     def _load_sail_units(
@@ -189,6 +224,35 @@ class ModelManifestLoader:
                 )
             )
         return tuple(units)
+
+    @staticmethod
+    def _load_execution_provider(
+        owner: str,
+        root: Path,
+        manifest_path: Path,
+        manifest: Mapping[str, object],
+        sail_units: tuple[SailUnit, ...],
+    ) -> ExecutionProvider | None:
+        section = manifest.get("sail", {})
+        raw_provider = (
+            section.get("execution_provider")
+            if isinstance(section, Mapping)
+            else None
+        )
+        if raw_provider is None:
+            return None
+        provider = _owned_source(
+            owner, root, raw_provider, ".sail", manifest_path
+        )
+        for unit in sail_units:
+            if provider in unit.sources:
+                raise ModelSourceOwnershipConflictError(
+                    manifest_path,
+                    provider,
+                    f"{owner}.{unit.id}",
+                    f"{owner}.execution_provider",
+                )
+        return ExecutionProvider(owner, manifest_path, provider)
 
     @staticmethod
     def _load_document_topics(

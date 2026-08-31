@@ -12,10 +12,23 @@ properties:
     additionalProperties: false
     required: [units]
     properties:
+      instruction_set:
+        type: string
+        pattern: ^[A-Z][A-Za-z0-9]*$
+      fault_kinds:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: ^[A-Z][A-Za-z0-9]*$
       units:
         type: array
         items:
           $ref: '#/$defs/sail-unit'
+      execution_provider:
+        allOf:
+        - $ref: '#/$defs/owner-source'
+        - pattern: \.sail$
   documents:
     type: object
     additionalProperties: false
@@ -68,6 +81,10 @@ x-interpretation-rules:
 - model.yaml is owned by the directory containing it and contains two independent catalogs.
 - Every declared base or extension namespace has a model.yaml; absence is an error rather than an empty namespace.
 - sail.units are executable dependency nodes; each owns one or more ordered Sail sources.
+- sail.instruction_set optionally declares the Sail Instruction_set constructor owned by an extension namespace.
+- sail.fault_kinds declares Fault_kind constructors contributed by the owner to selected executable models.
+- sail.execution_provider is an optional owner-local Sail source that implements the final execute_operation_entry, cpuid_flag_enabled, and event_from_fault boundaries after generated instruction dispatch.
+- A selected configuration has at most one execution provider; without one, generated adapters implement all three boundaries directly from the base semantics.
 - documents.topics are owner-local TeX sources; each file owns one available subtopic.
 - Every document topic source contains exactly one sectioning command and is included without generated splitting.
 - Reader-facing artifacts select and order topics explicitly in their own compositions.

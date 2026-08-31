@@ -124,8 +124,18 @@ class SailRegistryRenderer:
             contribution = EXTENSION_CONTRIBUTIONS.get(
                 extension_id, SailTypeContribution()
             )
-            instruction_sets.extend(contribution.instruction_sets)
-            faults.extend(contribution.fault_kinds)
+            declared_instruction_set = program.project.model.extensions[
+                extension_id
+            ].instruction_set
+            instruction_sets.extend(
+                (declared_instruction_set,)
+                if declared_instruction_set is not None
+                else contribution.instruction_sets
+            )
+            declared_faults = program.project.model.extensions[
+                extension_id
+            ].fault_kinds
+            faults.extend(declared_faults or contribution.fault_kinds)
             effects.extend(contribution.effect_kinds)
         event_entries = program.project.events.resolved_events(
             program.configuration.owners
@@ -264,3 +274,15 @@ def _constructors(values: Iterable[str]) -> list[str]:
 
 def _operation(bundle: InstructionBundle) -> str:
     return f"Op_{bundle.instruction.mnemonic}"
+
+
+def instruction_set_constructor(program: SailProgram, owner: str) -> str:
+    if owner == "base":
+        return "BaseSet"
+    declared = program.project.model.extensions[owner].instruction_set
+    if declared is not None:
+        return declared
+    contribution = EXTENSION_CONTRIBUTIONS.get(owner)
+    if contribution is None or len(contribution.instruction_sets) != 1:
+        raise ValueError(f"{owner}: no Sail instruction-set constructor")
+    return contribution.instruction_sets[0]

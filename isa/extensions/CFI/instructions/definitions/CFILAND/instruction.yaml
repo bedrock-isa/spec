@@ -1,0 +1,6 @@
+mnemonic: CFILAND
+name: Control-Flow Integrity Landing Pad
+summary: Marks a valid destination for an enforced indirect control transfer.
+route: control_flow
+privileged: false
+operands: {}

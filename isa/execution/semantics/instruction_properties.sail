@@ -47,36 +47,38 @@ function find_operand_by_name(name : Operand_id, operands : list(Decoded_operand
         },
     }
 
-function cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =
-    match flag {
-        CpuidFlag_MOVACQ => state.base_instruction_features[0] == bitone,
-        CpuidFlag_MOVREL => state.base_instruction_features[1] == bitone,
-        CpuidFlag_FETCHXCHG => state.base_instruction_features[2] == bitone,
-        CpuidFlag_CMPXCHGP => state.base_instruction_features[3] == bitone,
-        CpuidFlag_SPECFENCE => state.base_instruction_features[4] == bitone,
-        CpuidFlag_BIC => state.base_instruction_features[5] == bitone,
-        CpuidFlag_BFEXTU => state.base_instruction_features[6] == bitone,
-        CpuidFlag_BFEXTS => state.base_instruction_features[7] == bitone,
-        CpuidFlag_BFINS => state.base_instruction_features[8] == bitone,
-        CpuidFlag_REVBIT => state.base_instruction_features[9] == bitone,
-        CpuidFlag_FETCHANDN => state.base_instruction_features[10] == bitone,
-        CpuidFlag_FETCHMINS => state.base_instruction_features[11] == bitone,
-        CpuidFlag_FETCHMINU => state.base_instruction_features[12] == bitone,
-        CpuidFlag_FETCHMAXS => state.base_instruction_features[13] == bitone,
-        CpuidFlag_FETCHMAXU => state.base_instruction_features[14] == bitone,
-        CpuidFlag_MADD => state.base_instruction_features[15] == bitone,
-        CpuidFlag_MSUB => state.base_instruction_features[16] == bitone,
-        CpuidFlag_LDP => state.base_instruction_features[17] == bitone,
-        CpuidFlag_STP => state.base_instruction_features[18] == bitone,
-        CpuidFlag_CRC32 => state.base_instruction_features[19] == bitone,
-        CpuidFlag_CRC32C => state.base_instruction_features[20] == bitone,
-        CpuidFlag_FP => state.fp_enabled,
-        CpuidFlag_FP16_CONVERT => state.fp16_convert_enabled,
-        CpuidFlag_FPTRANSA => state.fptrans_enabled,
-        CpuidFlag_VECTOR => state.vector_enabled,
-        CpuidFlag_VECTORFP => state.fp_enabled & state.vector_enabled,
-        CpuidFlag_WAIT => state.wait_enabled,
-    }
+function base_cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =
+  match flag {
+    CpuidFlag_MOVACQ => state.base_instruction_features[0] == bitone,
+    CpuidFlag_MOVREL => state.base_instruction_features[1] == bitone,
+    CpuidFlag_FETCHXCHG => state.base_instruction_features[2] == bitone,
+    CpuidFlag_CMPXCHGP => state.base_instruction_features[3] == bitone,
+    CpuidFlag_SPECFENCE => state.base_instruction_features[4] == bitone,
+    CpuidFlag_BIC => state.base_instruction_features[5] == bitone,
+    CpuidFlag_BFEXTU => state.base_instruction_features[6] == bitone,
+    CpuidFlag_BFEXTS => state.base_instruction_features[7] == bitone,
+    CpuidFlag_BFINS => state.base_instruction_features[8] == bitone,
+    CpuidFlag_REVBIT => state.base_instruction_features[9] == bitone,
+    CpuidFlag_FETCHANDN => state.base_instruction_features[10] == bitone,
+    CpuidFlag_FETCHMINS => state.base_instruction_features[11] == bitone,
+    CpuidFlag_FETCHMINU => state.base_instruction_features[12] == bitone,
+    CpuidFlag_FETCHMAXS => state.base_instruction_features[13] == bitone,
+    CpuidFlag_FETCHMAXU => state.base_instruction_features[14] == bitone,
+    CpuidFlag_MADD => state.base_instruction_features[15] == bitone,
+    CpuidFlag_MSUB => state.base_instruction_features[16] == bitone,
+    CpuidFlag_LDP => state.base_instruction_features[17] == bitone,
+    CpuidFlag_STP => state.base_instruction_features[18] == bitone,
+    CpuidFlag_CRC32 => state.base_instruction_features[19] == bitone,
+    CpuidFlag_CRC32C => state.base_instruction_features[20] == bitone,
+    CpuidFlag_FP => state.fp_enabled,
+    CpuidFlag_FP16_CONVERT => state.fp16_convert_enabled,
+    CpuidFlag_FPTRANSA => state.fptrans_enabled,
+    CpuidFlag_VECTOR => state.vector_enabled,
+    CpuidFlag_VECTORFP => state.fp_enabled & state.vector_enabled,
+    CpuidFlag_WAIT => state.wait_enabled,
+  }
+
+val cpuid_flag_enabled : (Cpuid_flag, Cpu_state) -> bool
 
 function cpuid_flags_available(flags : list(Cpuid_flag), state : Cpu_state) -> bool =
     match flags {

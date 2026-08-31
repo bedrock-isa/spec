@@ -1,0 +1,3 @@
+id: EXTENSIONS
+name: Optional Extensions
+extends: base.cpuid.EXTENSIONS

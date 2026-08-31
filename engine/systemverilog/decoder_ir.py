@@ -928,7 +928,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
                 "FPTRANSA": "fpu.transcendental_approx",
                 "VECTOR": "vector",
                 "VECTORFP": "vector",
-            }[bundle.owner],
+            }.get(bundle.owner, bundle.owner.lower()),
             "",
             "",
             privilege,

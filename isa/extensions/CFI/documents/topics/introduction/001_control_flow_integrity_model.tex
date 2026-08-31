@@ -1,0 +1,5 @@
+\subsection{Control-Flow Integrity Model}\label{section:cfi-model}
+Indirect JMP, CALL, and their conditional or far forms require the target record to begin with CFILAND when
+CFICTL.L is one. Direct PC-relative transfers do not perform this check. When CFICTL.S is one, every taken CALL
+pushes a 16-byte continuation-PC and code-segment pair through CFISS:CFISP, and RET or LRET compares its ordinary
+return target with the youngest shadow frame before transferring control.

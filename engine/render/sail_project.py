@@ -68,6 +68,11 @@ class SailProjectRenderer:
                 for semantics in program.instruction_semantics
             )
         ) + ("generated/dispatch.sail",)
+        provider = getattr(program, "execution_provider", None)
+        if provider is not None:
+            operation_sources += (
+                Path(os.path.relpath(provider.provider, root)).as_posix(),
+            )
         operation_requirements = [
             "registry", *(_module_name(unit) for unit in ordinary_units)
         ]

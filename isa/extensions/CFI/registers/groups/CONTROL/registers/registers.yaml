@@ -1,0 +1,4 @@
+registers:
+- CFICTL
+- CFISS
+- CFISP

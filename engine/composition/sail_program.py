@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..model import SailUnit
+from ..model import ExecutionProvider, SailUnit
 from ..project import InstructionBundle, IsaProject
 from .configuration import IsaConfiguration
 
@@ -37,6 +37,7 @@ class SailProgram:
     configuration: IsaConfiguration
     instruction_semantics: tuple[InstructionSemantics, ...]
     sail_units: tuple[SailUnit, ...]
+    execution_provider: ExecutionProvider | None
 
     @property
     def bundles(self) -> tuple[InstructionBundle, ...]:

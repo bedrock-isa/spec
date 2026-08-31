@@ -1,0 +1,7 @@
+id: CFI_DISCOVERY
+name: Control-Flow Integrity Discovery
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
