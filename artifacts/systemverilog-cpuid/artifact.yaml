@@ -5,5 +5,5 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_cpuid_pkg.sv
-- rtl/bedrock_cpuid_rom.sv
+  package: rtl/bedrock_cpuid_pkg.sv
+  rom: rtl/bedrock_cpuid_rom.sv

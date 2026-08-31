@@ -2,8 +2,6 @@ mnemonic: FFLOOR
 name: Floating-Point Floor
 summary: Rounds a floating-point source toward negative infinity in the selected format.
 route: fpu
-sail_entries:
-- execute_FFLOOR
 privileged: false
 repeat:
   type: rep

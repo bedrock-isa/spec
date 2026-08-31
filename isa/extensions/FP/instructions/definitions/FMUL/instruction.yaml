@@ -2,8 +2,6 @@ mnemonic: FMUL
 name: Floating-Point Multiply
 summary: Multiplies the source and destination values under the floating-point environment.
 route: fpu
-sail_entries:
-- execute_FMUL
 privileged: false
 repeat:
   type: rep

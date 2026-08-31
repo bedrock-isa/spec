@@ -2,8 +2,6 @@ mnemonic: VFADD
 name: Vector Floating-Point Add
 summary: Adds corresponding active floating-point vector elements.
 route: vector
-sail_entries:
-- execute_VFADD
 privileged: false
 operands:
   govern:

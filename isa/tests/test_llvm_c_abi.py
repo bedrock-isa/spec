@@ -7,6 +7,7 @@ import unittest
 
 from engine.generation import ArtifactDefinition, ArtifactGenerationContext
 from engine.project import IsaProject
+from engine.reference import Reference
 from engine.workspace import SpecWorkspace
 from engine.yaml_document import YamlDocumentLoader
 
@@ -17,8 +18,10 @@ ROOT = Path(__file__).resolve().parents[2]
 class LlvmCAbiArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa = IsaProject.load(ROOT / "isa")
-        cls.workspace = SpecWorkspace.from_isa(cls.isa)
+        cls.workspace = SpecWorkspace.load(ROOT)
+        cls.isa = cls.workspace.require_provider("isa")
+        if not isinstance(cls.isa, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
         cls.c_abi = cls.workspace.require_provider("abi.c")
         cls.namespace = cls.c_abi.namespaces["base"]
         cls.convention = cls.c_abi.calling_convention
@@ -79,37 +82,34 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
                     self.catalog,
                 )
 
-    def test_value_classes_locations_and_promotions_are_complete(self) -> None:
-        for reference in self.convention.value_classes:
-            item = self.c_abi.value_classes.resolve(reference)
-            self.assertIn(
-                f"BEDROCK_C_VALUE_CLASS({item.id})", self.catalog
+    def test_value_policy_sources_project_directly_to_llvm_catalog(self) -> None:
+        for reference, direction in (
+            ("base.value_classes.VECTOR_VALUE", "ARGUMENT"),
+            ("base.value_classes.PREDICATE_VALUE", "ARGUMENT"),
+            ("base.value_classes.AGGREGATE", "RESULT"),
+        ):
+            item = self.c_abi.value_classes.resolve(Reference.parse(reference))
+            policy = item.argument if direction == "ARGUMENT" else item.result
+            register_class = self.c_abi.register_classes.resolve(
+                policy.register_class
             )
-            for kind in item.kinds:
-                self.assertIn(
-                    f"BEDROCK_C_VALUE_KIND({item.id}, "
-                    f"{kind.upper()})",
-                    self.catalog,
-                )
-            self.assertIn(
-                f"BEDROCK_C_LOCATION_POLICY({item.id}, ARGUMENT,",
-                self.catalog,
+            self.assertEqual(
+                self._location_policy(item.id, direction),
+                (
+                    policy.mode.upper(),
+                    register_class.id,
+                    policy.units,
+                    policy.alignment_units,
+                    policy.direct_maximum_bytes or 0,
+                ),
             )
-            self.assertIn(
-                f"BEDROCK_C_LOCATION_POLICY({item.id}, RESULT,",
-                self.catalog,
-            )
-        for reference in self.convention.promotions:
-            promotion = self.c_abi.promotions.resolve(reference)
-            for source_kind in promotion.source_kinds:
-                self.assertIn(
-                    f"BEDROCK_C_PROMOTION({promotion.id}, "
-                    f"{source_kind.upper()}, {promotion.target_kind.upper()})",
-                    self.catalog,
-                )
+
+        promotion = self.c_abi.promotions.resolve(
+            Reference.parse("base.promotions.DEFAULT_FLOAT")
+        )
         self.assertIn(
-            "BEDROCK_C_LOCATION_POLICY(AGGREGATE, RESULT, "
-            "SIZE_DEPENDENT, GENERAL, 2, 1, 16, SRET)",
+            f"BEDROCK_C_PROMOTION({promotion.id}, F32, "
+            f"{promotion.target_kind.upper()})",
             self.catalog,
         )
 
@@ -141,13 +141,13 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
         )
 
     def test_tablegen_return_rules_cover_catalog_register_classes(self) -> None:
-        expected = {
-            "GENERAL": ("R0", "R1"),
-            "FLOATING": ("F0", "F1"),
-            "VECTOR": ("V0",),
-            "PREDICATE": ("P0",),
-        }
-        for registers in expected.values():
+        for reference in self.convention.register_classes:
+            register_class = self.c_abi.register_classes.resolve(reference)
+            registers = tuple(
+                register.local.element for register in register_class.results
+            )
+            if not registers:
+                continue
             self.assertIn(
                 "CCAssignToReg<[" + ", ".join(registers) + "]>", self.tablegen
             )
@@ -158,7 +158,7 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
     def test_runtime_helper_signatures_are_projected(self) -> None:
         for entity_id in self.namespace.runtime_helper_inventory.declared:
             helper = self.c_abi.runtime_helpers.resolve(
-                f"base.runtime_helpers.{entity_id}"
+                Reference.parse(f"base.runtime_helpers.{entity_id}")
             )
             self.assertIn(
                 f'BEDROCK_C_RUNTIME_HELPER({helper.id}, "{helper.symbol}", '
@@ -175,7 +175,7 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
     def test_memory_order_sequences_are_projected_without_inference(self) -> None:
         for entity_id in self.namespace.memory_order_inventory.declared:
             mapping = self.c_abi.memory_orders.resolve(
-                f"base.memory_orders.{entity_id}"
+                Reference.parse(f"base.memory_orders.{entity_id}")
             )
             self.assertIn(
                 f"BEDROCK_C_MEMORY_ORDER({mapping.id}, "
@@ -205,7 +205,7 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
     def test_atomic_lowerings_are_projected_completely(self) -> None:
         for entity_id in self.namespace.atomic_lowering_inventory.declared:
             lowering = self.c_abi.atomic_lowerings.resolve(
-                f"base.atomic_lowerings.{entity_id}"
+                Reference.parse(f"base.atomic_lowerings.{entity_id}")
             )
             self.assertIn(
                 f"BEDROCK_C_ATOMIC_LOWERING({lowering.id}, "
@@ -245,6 +245,24 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
         )
         self.assertIsNotNone(match)
         return tuple(re.findall(r"\b(?:R|F|V|P)\d+\b|CS|DS|SS|GS0|FSTATUS", match.group(1)))
+
+    def _location_policy(
+        self, value_class: str, direction: str
+    ) -> tuple[str, str, int, int, int]:
+        match = re.search(
+            rf"^BEDROCK_C_LOCATION_POLICY\({value_class}, {direction}, "
+            rf"([A-Z_]+), ([A-Z_]+), (\d+), (\d+), (\d+)\)$",
+            self.catalog,
+            flags=re.MULTILINE,
+        )
+        self.assertIsNotNone(match)
+        return (
+            match.group(1),
+            match.group(2),
+            int(match.group(3)),
+            int(match.group(4)),
+            int(match.group(5)),
+        )
 
 
 if __name__ == "__main__":

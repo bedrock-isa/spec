@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 from ..dependency import DependencyGraph
-from ..entity import EntityKind
+from ..entity import EntityKind, PublicTargetCatalog
 from ..semantic_text import SemanticText, TextOrigin
 from .document_fragment import DocumentFragmentPipeline
 from .vector_diagram import VectorDiagramPlacementRenderer
@@ -101,16 +101,25 @@ class LatexSourcePreprocessor:
         self.dependencies = dependencies or DependencyGraph()
         self.diagrams = diagrams or VectorDiagramPlacementRenderer()
 
-    def render(self, source: str | Path, project, owner=None) -> str:
+    def render(
+        self,
+        source: str | Path,
+        project,
+        public_targets: PublicTargetCatalog,
+        owner=None,
+    ) -> str:
         repository = project.root.parent.resolve()
         path = Path(source).resolve()
         self._require_source(path, repository, str(source))
-        return self._render(path, project, repository, (), owner).rstrip()
+        return self._render(
+            path, project, public_targets, repository, (), owner
+        ).rstrip()
 
     def _render(
         self,
         path: Path,
         project,
+        public_targets: PublicTargetCatalog,
         repository: Path,
         active: tuple[Path, ...],
         owner,
@@ -127,16 +136,16 @@ class LatexSourcePreprocessor:
                     f"{path}, offset {first}: registered terminology must use "
                     "(:term:...:) escapes"
                 )
-            entities = getattr(project, "entities", None)
-            if entities is not None:
-                migrated, replacements = rewrite_direct_entity_codes(text, entities)
-                if replacements:
-                    first = _first_difference(text, migrated)
-                    raise ValueError(
-                        f"{path}, offset {first}: registered entity mentions must use "
-                        "(:ref:...:) escapes"
-                    )
-            text = self.fragments.expand(text, project, path)
+            migrated, replacements = rewrite_direct_entity_codes(
+                text, project.entities
+            )
+            if replacements:
+                first = _first_difference(text, migrated)
+                raise ValueError(
+                    f"{path}, offset {first}: registered entity mentions must use "
+                    "(:ref:...:) escapes"
+                )
+            text = self.fragments.expand(text, project, public_targets, path)
             text = self.diagrams.expand(text, project, path, owner)
             semantic = SemanticText.parse(text, origin=TextOrigin(path))
             if owner is not None:
@@ -144,7 +153,7 @@ class LatexSourcePreprocessor:
             text = self.semantic.render(
                 semantic,
                 project.terminology,
-                entities=getattr(project, "entities", None),
+                public_targets=public_targets,
                 escape_literals=False,
             )
 
@@ -155,7 +164,12 @@ class LatexSourcePreprocessor:
                 included = included.with_suffix(".tex")
             self._require_source(included, repository, requested)
             content = self._render(
-                included, project, repository, (*active, path), owner
+                included,
+                project,
+                public_targets,
+                repository,
+                (*active, path),
+                owner,
             )
             if included.suffix == ".sty":
                 content = re.sub(r"(?m)^\\endinput\s*$", "", content).rstrip()

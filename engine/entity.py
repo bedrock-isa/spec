@@ -5,17 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TypeVar, cast
+import re
+from types import MappingProxyType
+from typing import Iterable, Mapping, TypeVar, cast
 
 from .reference import Reference, ReferenceIndex
-from .yaml_document import YamlDocumentLoader
-
-
 _T = TypeVar("_T")
 
 
 class EntityKind(StrEnum):
-    ARTIFACT = "artifact"
     TOPIC = "topic"
     INSTRUCTION = "instruction"
     EA_MODE = "ea-mode"
@@ -36,15 +34,19 @@ class EntityKind(StrEnum):
     ELF_TLS_MODEL = "elf-tls-model"
     ELF_CODE_MODEL = "elf-code-model"
     ELF_DEBUG_REGISTER = "elf-debug-register"
-    ELF_ENTRY_STATE = "elf-entry-state"
     C_ABI_TYPE = "c-abi-type"
-    C_CALLING_CONVENTION = "c-calling-convention"
     C_REGISTER_CLASS = "c-register-class"
     C_VALUE_CLASS = "c-value-class"
     C_PROMOTION = "c-promotion"
     C_RUNTIME_HELPER = "c-runtime-helper"
     C_MEMORY_ORDER = "c-memory-order"
     C_ATOMIC_LOWERING = "c-atomic-lowering"
+    INTERFACE_TYPE_GROUP = "interface-type-group"
+    INTERFACE_INTRINSIC_GROUP = "interface-intrinsic-group"
+    INTERFACE_UTILITY_GROUP = "interface-utility-group"
+    INTERFACE_TYPE = "interface-type"
+    INTERFACE_INTRINSIC = "interface-intrinsic"
+    INTERFACE_UTILITY = "interface-utility"
 
 
 class EntityDisplayStyle(StrEnum):
@@ -57,8 +59,8 @@ class Entity:
     reference: Reference["Entity"]
     kind: EntityKind
     display: str
+    source: Path
     value: object
-    latex_label: str | None = None
     display_style: EntityDisplayStyle = EntityDisplayStyle.TEXT
 
 
@@ -69,7 +71,6 @@ class EntityCatalog:
     @classmethod
     def build(
         cls,
-        root: Path,
         types,
         sources,
         cpuid,
@@ -84,42 +85,33 @@ class EntityCatalog:
             reference: Reference[_T],
             kind: EntityKind,
             display: str,
+            source: Path,
             value,
             *,
-            label: str | None = None,
             style: EntityDisplayStyle = EntityDisplayStyle.TEXT,
         ) -> None:
             normalized = cast(Reference[Entity], reference)
             index.register(
                 normalized,
-                Entity(normalized, kind, display, value, label, style),
+                Entity(normalized, kind, display, source, value, style),
             )
 
-        for path in sorted((root.parent / "artifacts").glob("*/artifact.yaml")):
-            raw = YamlDocumentLoader().mapping(path)
-            artifact_id = raw.get("id")
-            if not isinstance(artifact_id, str):
-                continue
-            reference: Reference[Entity] = Reference(
-                "base", ("artifacts",), artifact_id
-            )
-            add(reference, EntityKind.ARTIFACT, artifact_id, path)
         for topic in model.document_topics.values():
             reference = cast(Reference[Entity], topic.reference)
             add(
                 reference,
                 EntityKind.TOPIC,
                 _humanize(topic.id),
+                topic.source,
                 topic,
-                label=opaque_entity_label(len(index)),
             )
         for reference, bundle in sources.instructions.items():
             add(
                 reference,
                 EntityKind.INSTRUCTION,
                 bundle.instruction.mnemonic,
+                bundle.instruction.source,
                 bundle,
-                label=instruction_label(bundle.instruction.mnemonic),
                 style=EntityDisplayStyle.CODE,
             )
         for reference, mode in sources.ea_modes.items():
@@ -127,8 +119,8 @@ class EntityCatalog:
                 reference,
                 EntityKind.EA_MODE,
                 mode.id,
+                mode.source,
                 mode,
-                label=opaque_entity_label(len(index)),
                 style=EntityDisplayStyle.CODE,
             )
         for reference, definition in types.field_types.items():
@@ -136,8 +128,8 @@ class EntityCatalog:
                 reference,
                 EntityKind.FIELD_TYPE,
                 definition.id,
+                definition.source,
                 definition,
-                label=opaque_entity_label(len(index)),
                 style=EntityDisplayStyle.CODE,
             )
         for reference, definition in types.payload_types.items():
@@ -145,8 +137,8 @@ class EntityCatalog:
                 reference,
                 EntityKind.PAYLOAD_TYPE,
                 definition.id,
+                definition.source,
                 definition,
-                label=opaque_entity_label(len(index)),
                 style=EntityDisplayStyle.CODE,
             )
         for kind, typed_index in (
@@ -161,17 +153,6 @@ class EntityCatalog:
         ):
             for reference, value in typed_index.items():
                 display = getattr(value, "name", None) or getattr(value, "id", None)
-                label = None
-                if kind in {EntityKind.REGISTER_GROUP, EntityKind.REGISTER}:
-                    label = opaque_entity_label(len(index))
-                elif kind in {EntityKind.EVENT_CLASS, EntityKind.CPUID_CLASS}:
-                    if value.extends is None:
-                        label = opaque_entity_label(len(index))
-                elif kind in {EntityKind.EVENT, EntityKind.CPUID_LEAF}:
-                    if getattr(value, "extends", None) is None:
-                        label = opaque_entity_label(len(index))
-                elif kind in {EntityKind.CPUID_QUERY, EntityKind.CPUID_FIELD}:
-                    label = opaque_entity_label(len(index))
                 add(
                     reference,
                     kind,
@@ -187,8 +168,8 @@ class EntityCatalog:
                         }
                         else display
                     ),
+                    value.source,
                     value,
-                    label=label,
                     style=(
                         EntityDisplayStyle.CODE
                         if kind
@@ -207,16 +188,16 @@ class EntityCatalog:
                 reference,
                 EntityKind.TERM_GROUP,
                 group.title,
+                group.source,
                 group,
-                label=opaque_entity_label(len(index)),
             )
         for reference, term in terminology.references.terms.items():
             add(
                 reference,
                 EntityKind.TERM,
                 term.forms.canonical,
+                term.source,
                 term,
-                label=opaque_entity_label(len(index)),
             )
         return cls(index)
 
@@ -224,15 +205,57 @@ class EntityCatalog:
         return self.references.resolve(reference)
 
 
-def opaque_entity_label(ordinal: int) -> str:
-    """Return a deterministic opaque TeX anchor for a catalog position."""
+@dataclass(frozen=True, slots=True)
+class PublicTargetCatalog:
+    """The entity targets deliberately emitted by one public projector."""
 
-    return f"entity:{ordinal:08d}"
+    entities: EntityCatalog
+    labels: Mapping[Reference[Entity], str]
+
+    @classmethod
+    def create(
+        cls,
+        entities: EntityCatalog,
+        targets: Iterable[tuple[Reference[object], str]],
+    ) -> "PublicTargetCatalog":
+        labels: dict[Reference[Entity], str] = {}
+        owners: dict[str, Reference[Entity]] = {}
+        for reference, label in targets:
+            normalized = cast(Reference[Entity], reference)
+            entities.resolve(normalized)
+            previous = labels.get(normalized)
+            if previous is not None and previous != label:
+                raise ValueError(
+                    f"public entity target {normalized!r} has conflicting labels"
+                )
+            owner = owners.get(label)
+            if owner is not None and owner != normalized:
+                raise ValueError(
+                    f"public TeX label {label!r} is shared by distinct entities"
+                )
+            labels[normalized] = label
+            owners[label] = normalized
+        return cls(entities, MappingProxyType(labels))
+
+    def resolve(self, reference: Reference[Entity]) -> tuple[Entity, str]:
+        try:
+            label = self.labels[reference]
+        except KeyError as error:
+            raise ValueError(
+                f"entity {reference!r} has no target in this public projection"
+            ) from error
+        return self.entities.resolve(reference), label
+
+    def label(self, reference: Reference[object]) -> str:
+        normalized = cast(Reference[Entity], reference)
+        return self.resolve(normalized)[1]
+
+
+    def contains(self, reference: Reference[object]) -> bool:
+        return cast(Reference[Entity], reference) in self.labels
 
 
 def instruction_label(mnemonic: str) -> str:
-    import re
-
     slug = re.sub(r"[^a-z0-9]+", "-", mnemonic.lower()).strip("-")
     return f"instr:{slug}"
 

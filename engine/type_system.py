@@ -11,12 +11,8 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
-try:
-    from .extension import ExtensionSetCatalog
-    from .reference import Reference, ReferenceIndex
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from extension import ExtensionSetCatalog
-    from reference import Reference, ReferenceIndex
+from .extension import ExtensionSetCatalog
+from .reference import Reference, ReferenceIndex
 
 if TYPE_CHECKING:
     from .register import RegisterGroup

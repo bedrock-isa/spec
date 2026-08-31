@@ -1,8 +1,0 @@
-id: PROGRAM_LOADING
-title: Program Loading
-document: elf-abi.tex
-label: page:program-loading
-objects:
-- isa:base.registers.STATE.FLAGS
-- isa:FP.registers.STATE.FSTATUS
-- isa:FP.registers.STATE.FFLAGS

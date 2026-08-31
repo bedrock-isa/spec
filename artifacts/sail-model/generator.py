@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from pathlib import Path
-
 from engine.composition import IsaConfiguration, SailComposer
 from engine.render import (
     SailCatalogRenderer,
@@ -50,13 +47,11 @@ class SailModelArtifactGenerator(ArtifactGenerator):
         project = context.require_provider("isa")
         configuration = IsaConfiguration.resolve(project, extensions)
         program = self.composer.compose(project, configuration)
-        outputs = self.definition.data["outputs"]
-        if not isinstance(outputs, Mapping):
-            raise ValueError(f"{self.definition.source}: outputs must be a mapping")
-        registry_path = Path(str(outputs["registry"]))
-        catalog_path = Path(str(outputs["catalog"]))
-        dispatch_path = Path(str(outputs["dispatch"]))
-        project_path = Path(str(outputs["project"]))
+        outputs = self.definition.outputs
+        registry_path = outputs["registry"]
+        catalog_path = outputs["catalog"]
+        dispatch_path = outputs["dispatch"]
+        project_path = outputs["project"]
         return GeneratedArtifactSet(
             (
                 GeneratedArtifact(registry_path, self.registry.render(program)),

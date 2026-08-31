@@ -2,8 +2,6 @@ mnemonic: FGETEXP
 name: Floating-Point Get Exponent
 summary: Converts the source encoding's signed exponent to the selected floating-point format.
 route: fpu
-sail_entries:
-- execute_FGETEXP
 privileged: false
 repeat:
   type: rep

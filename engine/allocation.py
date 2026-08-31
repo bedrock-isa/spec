@@ -6,26 +6,15 @@ from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
 
-try:
-    from .encoding import EncodingForm
-    from .encoding_architecture import (
-        ENCODING_CLASSES,
-        EncodingClass,
-        encoding_class,
-        operator_space,
-    )
-    from .project import IsaProject, InstructionBundle
-    from .reference import Reference
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from encoding import EncodingForm
-    from encoding_architecture import (
-        ENCODING_CLASSES,
-        EncodingClass,
-        encoding_class,
-        operator_space,
-    )
-    from project import IsaProject, InstructionBundle
-    from reference import Reference
+from .encoding import EncodingForm
+from .encoding_architecture import (
+    ENCODING_CLASSES,
+    EncodingClass,
+    encoding_class,
+    operator_space,
+)
+from .project import IsaProject, InstructionBundle
+from .reference import Reference
 
 
 IMMEDIATE_EA_VALUES = frozenset(range(0x5B, 0x5F))

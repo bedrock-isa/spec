@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import cast
 
-from .reference import Reference
+from .reference import QualifiedReference, Reference
 from .semantic_text import EntityReferenceText, SemanticText, TermReferenceText
 from .entity import Entity
 
@@ -19,6 +19,15 @@ class DependencyEdge:
     kind: str
     source_path: Path
     offset: int
+
+
+@dataclass(frozen=True, slots=True)
+class EntityDependency:
+    """One provider-owned authored or structured relationship."""
+
+    source: Reference[object]
+    target: QualifiedReference[object]
+    kind: str
 
 
 class DependencyGraph:

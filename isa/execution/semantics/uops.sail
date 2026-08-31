@@ -1,22 +1,27 @@
-function uop_location_make_none() -> Uop_location = struct { kind = UopLocationNone, index = 0, immediate = 0x0000000000000000 }
-
-function uop_location_make_register(index : int) -> Uop_location = struct {
-    kind = UopLocationRegister,
+function uop_location_make_plain(
+    kind : Uop_location_kind, index : int, immediate : bits(64)
+) -> Uop_location = struct {
+    kind = kind,
     index = index,
-    immediate = 0x0000000000000000,
+    immediate = immediate,
+    update_difference = None(),
+    negative = false,
 }
 
-function uop_location_make_fp_register(index : int) -> Uop_location = struct {
-    kind = UopLocationFpRegister,
-    index = index,
-    immediate = 0x0000000000000000,
-}
+function uop_location_make_none() -> Uop_location =
+    uop_location_make_plain(UopLocationNone, 0, 0x0000000000000000)
 
-function uop_location_make_sp() -> Uop_location = struct { kind = UopLocationSp, index = 0, immediate = 0x0000000000000000 }
+function uop_location_make_register(index : int) -> Uop_location =
+    uop_location_make_plain(UopLocationRegister, index, 0x0000000000000000)
 
-function uop_location_make_segment(index : int) -> Uop_location = struct {
-    kind = UopLocationSegment, index = index, immediate = 0x0000000000000000
-}
+function uop_location_make_fp_register(index : int) -> Uop_location =
+    uop_location_make_plain(UopLocationFpRegister, index, 0x0000000000000000)
+
+function uop_location_make_sp() -> Uop_location =
+    uop_location_make_plain(UopLocationSp, 0, 0x0000000000000000)
+
+function uop_location_make_segment(index : int) -> Uop_location =
+    uop_location_make_plain(UopLocationSegment, index, 0x0000000000000000)
 
 function uop_segment_write_state(state : Cpu_state, index : int, value : bits(64)) -> Cpu_state = {
     var updated = state;
@@ -32,16 +37,23 @@ function uop_segment_write_state(state : Cpu_state, index : int, value : bits(64
     updated
 }
 
-function uop_location_make_immediate(value : bits(64)) -> Uop_location = struct {
-    kind = UopLocationImmediate,
-    index = 0,
-    immediate = value,
-}
+function uop_location_make_immediate(value : bits(64)) -> Uop_location =
+    uop_location_make_plain(UopLocationImmediate, 0, value)
 
-function uop_location_make_temporary(index : int) -> Uop_location = struct {
-    kind = UopLocationTemporary,
-    index = index,
-    immediate = 0x0000000000000000,
+function uop_location_make_temporary(index : int) -> Uop_location =
+    uop_location_make_plain(UopLocationTemporary, index, 0x0000000000000000)
+
+function uop_location_make_ea_update_amount(
+    difference : option(Ea_update_difference), width : int, negative : bool
+) -> Uop_location = match difference {
+    Some(selected) => struct {
+        kind = UopLocationEaUpdateAmount,
+        index = width,
+        immediate = 0x0000000000000000,
+        update_difference = Some(selected),
+        negative = negative,
+    },
+    None() => uop_location_make_none(),
 }
 
 function uop_value_empty() -> Uop_value = struct {
@@ -108,6 +120,14 @@ function uop_location_read(location : Uop_location, state : Cpu_state, values : 
                     Some(image_segment(state, location.index))
                 } else if location.kind == UopLocationImmediate then {
                     Some(location.immediate)
+                } else if location.kind == UopLocationEaUpdateAmount then {
+                    match location.update_difference {
+                        Some(difference) => {
+                            let amount = ea_update_amount(difference, state, location.index);
+                            Some(bits_from_int(if location.negative then 0 - amount else amount))
+                        },
+                        None() => None(),
+                    }
                 } else {
                     if location.kind == UopLocationTemporary then {
                         match uop_value_get(values, location.index) {

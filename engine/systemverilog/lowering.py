@@ -413,6 +413,7 @@ def reference_ea_descriptor(
             "register_name": canonical_form.register_name,
             "update_target": canonical_form.update_target,
             "update_mode": canonical_form.update_mode,
+            "update_difference": canonical_form.update_difference,
             **canonical_fields,
         },
         next_cursor,
@@ -538,6 +539,7 @@ class Names:
     ea_register: dict[str, str]
     update_target: dict[str, str]
     update_mode: dict[str, str]
+    update_difference: dict[str, str]
     ea_payload_width: dict[str, str]
 
 
@@ -703,6 +705,11 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
     ea_register = add("ea_register_e", "EA_REGISTER", _ordered(x.register_name for x in ea_forms))
     update_target = add("ea_update_target_e", "EA_UPDATE_TARGET", _ordered(x.update_target for x in ea_forms))
     update_mode = add("ea_update_mode_e", "EA_UPDATE_MODE", _ordered(x.update_mode for x in ea_forms))
+    update_difference = add(
+        "ea_update_difference_e",
+        "EA_UPDATE_DIFFERENCE",
+        _ordered(x.update_difference for x in ea_forms),
+    )
     ea_payload_width = add(
         "ea_payload_width_e",
         "EA_PAYLOAD_WIDTH",
@@ -721,7 +728,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
         opcode_class, form, operation, route, instruction_set, instruction_class,
         privilege, predicate, operand_type, access, ea_width, ea_profile, overlap_rule,
         observed_kind, ea_kind, ea_segment, ea_base, ea_register, update_target,
-        update_mode, ea_payload_width,
+        update_mode, update_difference, ea_payload_width,
     )
     enums.insert(
         0,
@@ -828,6 +835,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
     operand_ea_width_e operand_width;
     ea_update_target_e update_target;
     ea_update_mode_e update_mode;
+    ea_update_difference_e update_difference;
     ea_payload_width_e payload_width;
     logic payload_signed;
     logic direct_register_valid;
@@ -1210,6 +1218,7 @@ def _ea_static_assignments(
         f"{target}.register_name = {names.ea_register[form.register_name]};",
         f"{target}.update_target = {names.update_target[form.update_target]};",
         f"{target}.update_mode = {names.update_mode[form.update_mode]};",
+        f"{target}.update_difference = {names.update_difference[form.update_difference]};",
     ]
     for field in form.fields:
         value = _gather(raw_signal, field.positions)
@@ -1719,6 +1728,7 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
       merge_descriptor_ea.register_name = descriptor_ea.register_name;
       merge_descriptor_ea.update_target = descriptor_ea.update_target;
       merge_descriptor_ea.update_mode = descriptor_ea.update_mode;
+      merge_descriptor_ea.update_difference = descriptor_ea.update_difference;
       merge_descriptor_ea.direct_register_valid = descriptor_ea.direct_register_valid;
       merge_descriptor_ea.direct_register = descriptor_ea.direct_register;
       merge_descriptor_ea.base_register_valid = descriptor_ea.base_register_valid;

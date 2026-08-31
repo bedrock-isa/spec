@@ -3,8 +3,6 @@ name: Vector Bitwise Test Nonzero
 summary: Sets significant result bits where the governed element-wise AND is nonzero and clears all other
   bits.
 route: vector
-sail_entries:
-- execute_VTESTNZ
 privileged: false
 operands:
   govern:

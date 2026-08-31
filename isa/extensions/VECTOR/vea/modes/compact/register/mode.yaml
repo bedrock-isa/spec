@@ -1,0 +1,21 @@
+id: register
+name: Register memory
+kind: memory
+syntax: "[Rn(r) [+ displacement]]"
+fields:
+  r: {role: base, type: base.field_types.Rn}
+encodings:
+  - pattern: 000rrrr
+  - pattern: 001rrrr
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP8S}
+  - pattern: 010rrrr
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP16S}
+  - pattern: 011rrrr
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP32S}
+  - pattern: 100rrrr
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP64}
+pseudocode: offset = base + displacement

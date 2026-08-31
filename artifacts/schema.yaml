@@ -2,13 +2,11 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: bedrock://schemas/artifact
 title: Bedrock generated artifact definition
 type: object
-required: [id]
+required: [id, generator, outputs]
 additionalProperties: true
 properties:
   id:
     $ref: '#/$defs/id'
-  status:
-    enum: [implemented, planned]
   summary:
     type: string
     minLength: 1
@@ -24,34 +22,28 @@ properties:
     uniqueItems: true
     items:
       $ref: '#/$defs/id'
-  output:
-    $ref: '#/$defs/relative-path'
   source:
     $ref: '#/$defs/relative-path'
   outputs:
-    oneOf:
-    - type: array
-      minItems: 1
-      uniqueItems: true
-      items:
-        $ref: '#/$defs/relative-path'
-    - type: object
-      minProperties: 1
-      additionalProperties:
-        $ref: '#/$defs/relative-path'
+    type: object
+    minProperties: 1
+    propertyNames:
+      $ref: '#/$defs/id'
+    additionalProperties:
+      $ref: '#/$defs/relative-path'
+  derived-outputs:
+    type: object
+    minProperties: 1
+    propertyNames:
+      $ref: '#/$defs/id'
+    additionalProperties:
+      $ref: '#/$defs/relative-path'
 allOf:
-- anyOf:
-  - required: [output]
-  - required: [outputs]
-- if:
-    required: [status]
-    properties:
-      status:
-        const: planned
-  then:
-    required: [summary, outputs]
-  else:
-    required: [generator]
+- not:
+    anyOf:
+    - required: [output]
+    - required: [dependency-graph]
+    - required: [status]
 $defs:
   id:
     type: string
@@ -65,7 +57,10 @@ $defs:
     - pattern: \.py$
 x-interpretation-rules:
 - Every artifact directory owns one artifact.yaml and may own its generator implementation.
-- Implemented artifacts name a local generator.py entrypoint; planned artifacts reserve identity and outputs without executable code.
+- Every declared artifact names a local generator.py entrypoint and is directly generatable.
+- Outputs are the role-to-root mapping populated by the artifact's pure generator.
+- Derived outputs are artifact-owned validation or compilation results produced from the primary outputs. They share the artifact's owner and are visible to global output-collision validation.
+- An output root may name one generated file or a closed generated tree, and every emitted file belongs to exactly one root.
 - Inputs name workspace domain providers, while depends-on names generated artifacts.
 - Artifact-local generators validate their configuration and are pure projections.
 - Only ArtifactWriter mutates output trees.

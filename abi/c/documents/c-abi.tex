@@ -127,8 +127,8 @@ convention remains available.
 \paragraph{Long double.}
 \texttt{long double} is a distinct C type with the IEEE-754 binary64 object
 representation, 8-byte size, and 8-byte alignment. It uses the floating-point
-argument class and returns in \texttt{F0}, making its call representation
-ABI-compatible with \texttt{double}. In a variadic call it occupies one
+argument class and returns in \texttt{F0}. It therefore has the same call
+representation as \texttt{double}. In a variadic call it occupies one
 16-byte slot containing its 8-byte binary64 representation.
 
 \paragraph{Complex types.}
@@ -171,8 +171,8 @@ its base type.
 An externally visible bit-field base type shall be \texttt{\_Bool},
 \texttt{signed int}, \texttt{unsigned int}, or a typedef of one of those types.
 A plain \texttt{int} bit-field has the value range and representation of
-\texttt{signed int}. Other base types are target extensions and cross an
-external ABI boundary under a separately documented compatible extension ABI.
+\texttt{signed int}. The baseline ABI does not define an external calling or
+object-layout contract for bit-fields with any other base type.
 
 An unnamed nonzero-width field consumes space normally. A zero-width field
 closes the current unit and advances layout to the next boundary for its base
@@ -184,10 +184,9 @@ A flexible array member contributes zero element-storage bytes to \texttt{sizeof
 containing structure. Its offset is aligned for the element type, and that
 element alignment participates in the structure's alignment calculation.
 
-The baseline ABI uses the natural aggregate layout above. An extension may
-define packed aggregates, \texttt{\#pragma pack}, empty structures, or
-zero-length arrays, and types using those facilities cross external ABI
-boundaries under a separately documented compatible extension ABI.
+The baseline ABI uses the natural aggregate layout above. Packed aggregates,
+\texttt{\#pragma pack}, empty structures, and zero-length arrays have no
+external calling or object-layout contract in this ABI.
 
 \section{Register Convention}\label{page:register-convention}
 This section defines which architectural state survives an ordinary C call.
@@ -453,8 +452,7 @@ type. Modifications to the private copy remain isolated from the caller's
 source object. Baseline aggregates containing bit-fields and mixed
 integer/floating aggregates use the same INDIRECT rule; their member
 composition preserves the INDIRECT classification. An extension aggregate with
-packed or unaligned members crosses this external ABI boundary under a
-separate extension ABI.
+packed or unaligned members is outside this ABI contract.
 
 \subsection{Variadic Calls}
 Fixed named arguments use the ordinary assignment procedure. Every unnamed

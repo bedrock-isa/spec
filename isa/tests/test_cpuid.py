@@ -9,6 +9,7 @@ from engine.check import CpuidValidator
 from engine.cpuid import CpuidCatalog, compose_selector
 from engine.extension import ExtensionSetCatalog
 from engine.project import IsaProject
+from engine.reference import Reference
 
 
 class CpuidCatalogTest(unittest.TestCase):
@@ -17,23 +18,30 @@ class CpuidCatalogTest(unittest.TestCase):
         cls.isa_root = Path(__file__).parents[1]
         cls.project = IsaProject.load(cls.isa_root)
 
-    def test_loads_distributed_namespaces_and_canonical_references(self) -> None:
+    def test_loads_canonical_references(self) -> None:
         cpuid = self.project.cpuid
 
-        self.assertEqual(tuple(cpuid.namespaces), ("base", "FP", "FPTRANSA", "VECTOR"))
-        self.assertEqual(cpuid.references.classes["base.cpuid.BASE"].value, 0)
         self.assertEqual(
-            cpuid.references.leaves["VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS"].value,
+            cpuid.references.classes[Reference.parse("base.cpuid.BASE")].value, 0
+        )
+        self.assertEqual(
+            cpuid.references.leaves[
+                Reference.parse("VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS")
+            ].value,
             2,
         )
         self.assertEqual(
             cpuid.references.queries[
-                "FPTRANSA.cpuid.EXTENSIONS.FPTRANSA_ACCURACY.FLOG2A"
+                Reference.parse(
+                    "FPTRANSA.cpuid.EXTENSIONS.FPTRANSA_ACCURACY.FLOG2A"
+                )
             ].indexes.first,
             0x0043,
         )
         self.assertEqual(
-            cpuid.references.fields["FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP"].lsb,
+            cpuid.references.fields[
+                Reference.parse("FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP")
+            ].lsb,
             0,
         )
 
@@ -41,10 +49,22 @@ class CpuidCatalogTest(unittest.TestCase):
         self,
     ) -> None:
         cpuid = self.project.cpuid
-        self.assertEqual(cpuid.references.classes["base.cpuid.EXTENSIONS"].value, 1)
-        self.assertEqual(cpuid.references.classes["base.cpuid.IMPLEMENTATION"].value, 2)
         self.assertEqual(
-            cpuid.references.leaves["base.cpuid.IMPLEMENTATION.SAVE_AREA_LAYOUT"].value,
+            cpuid.references.classes[
+                Reference.parse("base.cpuid.EXTENSIONS")
+            ].value,
+            1,
+        )
+        self.assertEqual(
+            cpuid.references.classes[
+                Reference.parse("base.cpuid.IMPLEMENTATION")
+            ].value,
+            2,
+        )
+        self.assertEqual(
+            cpuid.references.leaves[
+                Reference.parse("base.cpuid.IMPLEMENTATION.SAVE_AREA_LAYOUT")
+            ].value,
             4,
         )
         self.assertEqual(
@@ -100,12 +120,11 @@ class CpuidCatalogTest(unittest.TestCase):
         for schema in ("cpuid-class.yaml", "cpuid-leaf.yaml"):
             shutil.copy2(self.isa_root / "schemas" / schema, root / "schemas" / schema)
         shutil.copytree(self.isa_root / "cpuid", root / "cpuid")
-        extension_ids = ("FP", "FPTRANSA", "VECTOR")
-        (root / "extensions/extensions.yaml").write_text(
-            yaml.safe_dump({"extensions": list(extension_ids)}, sort_keys=False),
-            encoding="utf-8",
+        shutil.copy2(
+            self.isa_root / "extensions/extensions.yaml",
+            root / "extensions/extensions.yaml",
         )
-        for extension_id in extension_ids:
+        for extension_id in ExtensionSetCatalog.load(self.isa_root).declared:
             destination = root / "extensions" / extension_id
             destination.mkdir()
             shutil.copytree(

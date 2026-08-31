@@ -2,8 +2,6 @@ mnemonic: VFCVTUH
 name: Vector Floating-Point Convert Unsigned to Half Precision
 summary: Converts active unsigned integer elements to half-precision floating point.
 route: vector
-sail_entries:
-- execute_VFCVTUH
 privileged: false
 operands:
   govern:

@@ -2,8 +2,6 @@ mnemonic: PAND
 name: Predicate Bitwise AND
 summary: AND corresponding bits of Ps and the old Pd into the complete Pd image.
 route: vector
-sail_entries:
-- execute_PAND
 privileged: false
 operands:
   src:

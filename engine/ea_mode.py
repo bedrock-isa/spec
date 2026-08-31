@@ -8,19 +8,25 @@ from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 import re
+from enum import StrEnum
 from typing import Any
 
 import yaml
 from jsonschema import Draft202012Validator
 
-try:
-    from .encoding_metasyntax import EncodingMetasyntax
-    from .reference import Reference, ReferenceError
-    from .type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from encoding_metasyntax import EncodingMetasyntax
-    from reference import Reference, ReferenceError
-    from type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
+from .encoding_metasyntax import EncodingMetasyntax
+from .reference import Reference, ReferenceError
+from .type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
+
+
+class EABaseSource(StrEnum):
+    """Typed source of the base term in one EA mode expression."""
+
+    NONE = "none"
+    ENCODED = "encoded"
+    STACK_POINTER = "SP"
+    PROGRAM_COUNTER = "PC"
+    ZERO = "zero"
 
 
 def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
@@ -68,7 +74,8 @@ class EAModeCatalog:
         if len(set(modes)) != len(modes):
             raise ValueError(f"{path}: modes must not contain duplicates")
         try:
-            for mode_id in modes or ("placeholder",):
+            Reference(owner, (profile, "modes"), mode_type)
+            for mode_id in modes:
                 Reference(owner, (profile, "modes", mode_type), mode_id)
         except ReferenceError as error:
             raise ValueError(f"{path}: invalid EA catalog identity: {error}") from error
@@ -329,6 +336,47 @@ class EAMode(MutableMapping[str, Any]):
         """Return the typed payload-type reference for one encoding payload."""
 
         return self._payload_type_references[encoding_index, payload_index]
+
+    @property
+    def base_source(self) -> EABaseSource:
+        """Return the structurally parsed base term used by this mode."""
+
+        if self._data["kind"] != "memory":
+            return EABaseSource.NONE
+        tree = ast.parse(self._data["pseudocode"], mode="exec")
+        assignment = tree.body[0]
+        assert isinstance(assignment, ast.Assign)
+        expression = assignment.value
+        names = {
+            node.id
+            for node in ast.walk(expression)
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+        }
+        field_roles = {
+            field["role"] for field in self._data.get("fields", {}).values()
+        }
+        candidates = []
+        if "base" in field_roles and "base" in names:
+            candidates.append(EABaseSource.ENCODED)
+        if "SP" in names:
+            candidates.append(EABaseSource.STACK_POINTER)
+        if "PC" in names:
+            candidates.append(EABaseSource.PROGRAM_COUNTER)
+        if any(
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, int)
+            and not isinstance(node.value, bool)
+            and node.value == 0
+            for node in ast.walk(expression)
+        ):
+            candidates.append(EABaseSource.ZERO)
+        if not candidates:
+            return EABaseSource.NONE
+        if len(candidates) != 1:
+            raise ValueError(
+                f"{self.source}: memory pseudocode identifies multiple base sources"
+            )
+        return candidates[0]
 
     def save(self, path: str | Path | None = None) -> None:
         """Validate and write the mode to ``path`` or back to its source."""

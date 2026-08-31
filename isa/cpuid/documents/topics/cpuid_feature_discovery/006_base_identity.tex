@@ -36,10 +36,10 @@ such selector. The base-identity (:term:base.terms.payload:) is:
 \texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies an implementation and
 \texttt{ARCHITECTURE\_ID} identifies the ISA contract it implements.
 
-\texttt{ARCHITECTURE\_REVISION} is a monotonically increasing unsigned 16-bit compatibility level within one
-\texttt{ARCHITECTURE\_ID}. A processor reporting revision \(N\) implements the base architectural behavior of every
-defined revision less than or equal to \(N\). Optional instruction groups, state, and parameterized contracts are
-selected from their CPUID leaves and feature bits. \texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned
+\texttt{ARCHITECTURE\_REVISION} is the unsigned 16-bit revision of the selected
+\texttt{ARCHITECTURE\_ID} contract; it does not imply the behavior of any other revision. Optional instruction groups,
+state, and parameterized contracts are selected from their CPUID leaves and feature bits.
+\texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned
 by the vendor and is compared only when both \texttt{VENDOR\_ID} and \texttt{IMPLEMENTATION\_ID} match.
 
 The name (:term:base.terms.field|plural:) are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies

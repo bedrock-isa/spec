@@ -2,7 +2,6 @@ mnemonic: FCVTUD
 name: Convert Unsigned and Double Precision
 summary: Converts between D and unsigned B/W/L/Q integers.
 route: fpu
-sail_entries: [execute_FCVTUD]
 privileged: false
 repeat: {type: rep}
 operands:

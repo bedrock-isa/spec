@@ -2,8 +2,6 @@ mnemonic: FSINCOSA
 name: Approximate Floating-Point Sine And Cosine
 summary: Atomically writes paired sine and cosine approximations over the reduced pi/4 interval.
 route: fpu_transcendental_approx
-sail_entries:
-- execute_FSINCOSA
 privileged: false
 repeat:
   type: rep

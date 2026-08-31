@@ -1,7 +1,10 @@
-"""Registry-backed LaTeX renderers for architectural-event references."""
+"""Explicit LaTeX projection of normative architectural-event code allocations."""
 
 from __future__ import annotations
 
+import re
+
+from ..reference import Reference
 from ..event import ArchitecturalEvent, ResolvedEvent
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 from .latex_document import tex_escape
@@ -21,39 +24,104 @@ def _code(resolved: ResolvedEvent) -> str:
     )
 
 
-def _payload(event: ArchitecturalEvent) -> str:
-    if not event.payload:
-        return "none"
-    return ", ".join(_identifier(item) for item in event.payload)
+_EVENT_CODE_DIRECTIVE_OPEN = "(:event-code:"
+_EVENT_CODE_DIRECTIVE_RE = re.compile(
+    r"(?m)^[ \t]*\(:event-code:([A-Za-z0-9_.-]+):\)[ \t]*$"
+)
 
 
 class EventReferenceRenderer(DocumentFragmentProvider):
-    """Render the event tables whose facts are wholly owned by EventCatalog."""
+    """Render class metadata and explicitly placed fixed event-code rows."""
 
-    PLACEHOLDERS = {
-        r"\BedrockGeneratedEventCodeReference": "render_code_reference",
-        r"\BedrockGeneratedArchitecturalEvents": "render_event_contracts",
-        r"\BedrockGeneratedArchitecturalEventIndex": "render_index",
-    }
+    CODE_REFERENCE_PLACEHOLDER = r"\BedrockGeneratedEventCodeReference"
+    EVENT_CODE_ROW_PLACEHOLDER = _EVENT_CODE_DIRECTIVE_OPEN
 
     @property
     def placeholders(self) -> frozenset[str]:
-        return frozenset(self.PLACEHOLDERS)
+        return frozenset(
+            (self.CODE_REFERENCE_PLACEHOLDER, self.EVENT_CODE_ROW_PLACEHOLDER)
+        )
 
     def expand(self, text: str, context: DocumentFragmentContext) -> str:
-        for placeholder, method_name in self.PLACEHOLDERS.items():
-            replacement = getattr(self, method_name)(context.project)
-            text = text.replace(placeholder, replacement)
-        return text
+        if self.CODE_REFERENCE_PLACEHOLDER in text:
+            text = text.replace(
+                self.CODE_REFERENCE_PLACEHOLDER,
+                self.render_code_reference(context.project, context.public_targets),
+            )
+        matches = tuple(_EVENT_CODE_DIRECTIVE_RE.finditer(text))
+        if text.count(_EVENT_CODE_DIRECTIVE_OPEN) != len(matches):
+            raise ValueError(
+                f"{context.source}: (:event-code:...:) must occupy a standalone line"
+            )
+        if not matches:
+            return text
+
+        resolved_by_reference = {
+            resolved.event.reference: resolved
+            for resolved in context.project.events.resolved_events()
+        }
+        placed: set[Reference[object]] = set()
+
+        def replacement(match: re.Match[str]) -> str:
+            reference = Reference.parse(match.group(1))
+            try:
+                resolved = resolved_by_reference[reference]
+            except KeyError as error:
+                raise ValueError(
+                    f"{context.source}: unknown architectural event {match.group(1)!r}"
+                ) from error
+            if resolved.code.value is None:
+                raise ValueError(
+                    f"{context.source}: event {reference} has an external selector, "
+                    "not a fixed event-code allocation"
+                )
+            if reference in placed:
+                raise ValueError(
+                    f"{context.source}: duplicate event-code placement {reference}"
+                )
+            placed.add(reference)
+            anchor = ""
+            if context.public_targets.contains(reference):
+                anchor = (
+                    rf"\phantomsection\label{{{context.public_targets.label(reference)}}}"
+                )
+            return f"{_code(resolved)}{anchor} & {_identifier(resolved.event.id)}\\\\"
+
+        return _EVENT_CODE_DIRECTIVE_RE.sub(replacement, text)
 
     @staticmethod
-    def _label(project, reference) -> str:
-        label = project.entities.resolve(reference).latex_label
-        if label is None:
-            raise ValueError("entity has no target in this LaTeX artifact")
-        return label
+    def event_target(event: ArchitecturalEvent) -> str:
+        """Return the label owned by one public normative event row."""
 
-    def render_code_reference(self, project) -> str:
+        return f"event:{event.id.lower().replace('_', '-')}"
+
+    @staticmethod
+    def public_targets(
+        project, referenced: frozenset[Reference[object]]
+    ) -> tuple[tuple[Reference[object], str], ...]:
+        """Declare targets owned by rows in the two normative event tables."""
+
+        targets: list[tuple[Reference[object], str]] = []
+        seen_classes = set()
+        for namespace in project.events.namespaces.values():
+            for event_class in namespace.classes.values():
+                root = project.events.root_class(event_class)
+                if root.reference in referenced and root.reference not in seen_classes:
+                    targets.append(
+                        (
+                            root.reference,
+                            f"event-class:{root.id.lower().replace('_', '-')}",
+                        )
+                    )
+                    seen_classes.add(root.reference)
+        targets.extend(
+            (resolved.event.reference, EventReferenceRenderer.event_target(resolved.event))
+            for resolved in project.events.resolved_events()
+            if resolved.event.reference in referenced
+        )
+        return tuple(targets)
+
+    def render_code_reference(self, project, public_targets) -> str:
         catalog = project.events
         classes = []
         seen = set()
@@ -64,9 +132,9 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                     continue
                 seen.add(root.reference)
                 assert root.value is not None and root.selector is not None
-                anchor = (
-                    rf"\phantomsection\label{{{self._label(project, root.reference)}}}"
-                )
+                anchor = ""
+                if public_targets.contains(root.reference):
+                    anchor = rf"\phantomsection\label{{{public_targets.label(root.reference)}}}"
                 classes.append(
                     rf"\texttt{{0x{root.value:02X}}}{anchor} & "
                     rf"{_identifier(root.id)} & "
@@ -93,82 +161,5 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 r"\end{BedrockTabular}",
                 "",
                 r"Class values not listed above are reserved. Fixed selectors are allocated by this specification; platform and source selectors are supplied by the corresponding event source.",
-            ]
-        )
-
-    def render_event_contracts(self, project) -> str:
-        catalog = project.events
-        rows: list[str] = []
-        for resolved in catalog.resolved_events():
-            event = resolved.event
-            anchor = (
-                rf"\phantomsection\label{{{self._label(project, event.reference)}}}"
-            )
-            rows.extend(
-                (
-                    f"{_code(resolved)}{anchor} & {_identifier(event.id)} & "
-                    f"{_identifier(event.family) if event.family else '--'} & "
-                    f"{_identifier(event.frame.upper())} & {_payload(event)}\\\\",
-                    r"\multicolumn{5}{@{}p{5.67in}@{}}{\scriptsize "
-                    + tex_escape(event.summary)
-                    + r"}\\[2pt]",
-                )
-            )
-        return "\n".join(
-            [
-                r"\begingroup\footnotesize",
-                r"\Needspace{1.25in}",
-                r"\BedrockTableCaption{Architectural Leaf Event Contracts}",
-                r"\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.35in}@{}}",
-                r"\toprule",
-                r"\rowcolor{BedrockHeaderFill}",
-                r"\textbf{Code} & \textbf{Event} & \textbf{Family} & \textbf{Frame} & \textbf{Payload}\\",
-                r"\midrule",
-                r"\endfirsthead",
-                r"\multicolumn{5}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
-                r"\toprule",
-                r"\rowcolor{BedrockHeaderFill}",
-                r"\textbf{Code} & \textbf{Event} & \textbf{Family} & \textbf{Frame} & \textbf{Payload}\\",
-                r"\midrule",
-                r"\endhead",
-                *rows,
-                r"\bottomrule",
-                r"\end{BedrockLongTable}",
-                r"\endgroup",
-            ]
-        )
-
-    def render_index(self, project) -> str:
-        catalog = project.events
-        rows = []
-        for resolved in catalog.resolved_events():
-            event = resolved.event
-            rows.append(
-                f"{_code(resolved)} & {_identifier(event.id)} & "
-                f"{_identifier(resolved.owner)} & "
-                f"{_identifier(event.family) if event.family else '--'} & "
-                f"{_identifier(event.frame.upper())} & "
-                rf"\hyperref[{self._label(project, event.reference)}]{{definition}} "
-                r"(p.~\pageref{section:event-code-and-sources})\\"
-            )
-        return "\n".join(
-            [
-                r"\enlargethispage{1.5\baselineskip}",
-                r"\BedrockTableCaption{Architectural Event Index}",
-                r"\begin{BedrockDenseLongTable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.80in}@{}}",
-                r"\toprule",
-                r"\rowcolor{BedrockHeaderFill}",
-                r"\textbf{Code} & \textbf{Event} & \textbf{Owner} & \textbf{Family} & \textbf{Frame} & \textbf{Definition}\\",
-                r"\midrule",
-                r"\endfirsthead",
-                r"\multicolumn{6}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
-                r"\toprule",
-                r"\rowcolor{BedrockHeaderFill}",
-                r"\textbf{Code} & \textbf{Event} & \textbf{Owner} & \textbf{Family} & \textbf{Frame} & \textbf{Definition}\\",
-                r"\midrule",
-                r"\endhead",
-                *rows,
-                r"\bottomrule",
-                r"\end{BedrockDenseLongTable}",
             ]
         )

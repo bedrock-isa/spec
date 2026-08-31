@@ -8,6 +8,13 @@ from types import MappingProxyType
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, TypeAlias, TypeVar, cast
 
+from engine.dependency import EntityDependency
+from engine.entity import (
+    Entity,
+    EntityCatalog,
+    EntityDisplayStyle,
+    EntityKind,
+)
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
@@ -78,7 +85,6 @@ class InterfaceUtility:
     id: str
     owner: str
     group: str
-    kind: str
     source: Path
     data: Mapping[str, object]
 
@@ -102,6 +108,7 @@ class CInterfaceProject:
     intrinsics: ReferenceIndex[InterfaceIntrinsic]
     utilities: ReferenceIndex[InterfaceUtility]
     collections: Mapping[str, InterfaceCollection]
+    entities: EntityCatalog
 
     @classmethod
     def load(cls, root: str | Path) -> "CInterfaceProject":
@@ -120,6 +127,14 @@ class CInterfaceProject:
         intrinsics = cast(ReferenceIndex[InterfaceIntrinsic], loaded_intrinsics)
         utilities = cast(ReferenceIndex[InterfaceUtility], loaded_utilities)
         collections = _load_collections(domain_root, intrinsic_groups)
+        entities = _build_entities(
+            type_groups,
+            intrinsic_groups,
+            utility_groups,
+            types,
+            intrinsics,
+            utilities,
+        )
         return cls(
             domain_root,
             extensions,
@@ -130,21 +145,55 @@ class CInterfaceProject:
             intrinsics,
             utilities,
             collections,
+            entities,
         )
 
     def resolve(self, reference: Reference[_T]) -> _T:
-        indexes: tuple[ReferenceIndex[object], ...] = (
-            cast(ReferenceIndex[object], self.type_groups),
-            cast(ReferenceIndex[object], self.intrinsic_groups),
-            cast(ReferenceIndex[object], self.utility_groups),
-            cast(ReferenceIndex[object], self.types),
-            cast(ReferenceIndex[object], self.intrinsics),
-            cast(ReferenceIndex[object], self.utilities),
-        )
-        for index in indexes:
-            if reference in index:
-                return cast(_T, index.resolve(cast(Reference[object], reference)))
-        raise ValueError("unknown interfaces.c reference")
+        entity = self.entities.resolve(cast(Reference[Entity], reference))
+        return cast(_T, entity.value)
+
+    def entity_dependencies(self) -> tuple[EntityDependency, ...]:
+        """Return target-interface relationships intentionally exposed to tooling."""
+
+        result: list[EntityDependency] = []
+        for definition in self.types.values():
+            source = cast(Reference[object], definition.reference)
+            if definition.enum_source is not None:
+                result.append(
+                    EntityDependency(
+                        source,
+                        cast(QualifiedReference[object], definition.enum_source),
+                        "enum-register-group",
+                    )
+                )
+            for target in definition.field_types:
+                if isinstance(target, QualifiedReference):
+                    result.append(
+                        EntityDependency(
+                            source,
+                            cast(QualifiedReference[object], target),
+                            "interface-field-type",
+                        )
+                    )
+        for definition in self.intrinsics.values():
+            source = cast(Reference[object], definition.reference)
+            result.append(
+                EntityDependency(
+                    source,
+                    cast(QualifiedReference[object], definition.operation),
+                    "intrinsic-instruction",
+                )
+            )
+            for target in (definition.result_type, *definition.parameter_types):
+                if isinstance(target, QualifiedReference):
+                    result.append(
+                        EntityDependency(
+                            source,
+                            cast(QualifiedReference[object], target),
+                            "signature-type",
+                        )
+                    )
+        return tuple(result)
 
     def validate(self, workspace: "SpecWorkspace") -> None:
         """Resolve every cross-domain and local entity reference."""
@@ -192,6 +241,60 @@ class CInterfaceProject:
             allowed.update(extension.requires_isa)
             pending.extend(extension.requires)
         return allowed
+
+
+def _build_entities(
+    type_groups: ReferenceIndex[InterfaceGroup],
+    intrinsic_groups: ReferenceIndex[InterfaceGroup],
+    utility_groups: ReferenceIndex[InterfaceGroup],
+    types: ReferenceIndex[InterfaceType],
+    intrinsics: ReferenceIndex[InterfaceIntrinsic],
+    utilities: ReferenceIndex[InterfaceUtility],
+) -> EntityCatalog:
+    index = ReferenceIndex[Entity]()
+    catalogs: tuple[tuple[EntityKind, ReferenceIndex[object], EntityDisplayStyle], ...] = (
+        (
+            EntityKind.INTERFACE_TYPE_GROUP,
+            cast(ReferenceIndex[object], type_groups),
+            EntityDisplayStyle.TEXT,
+        ),
+        (
+            EntityKind.INTERFACE_INTRINSIC_GROUP,
+            cast(ReferenceIndex[object], intrinsic_groups),
+            EntityDisplayStyle.TEXT,
+        ),
+        (
+            EntityKind.INTERFACE_UTILITY_GROUP,
+            cast(ReferenceIndex[object], utility_groups),
+            EntityDisplayStyle.TEXT,
+        ),
+        (
+            EntityKind.INTERFACE_TYPE,
+            cast(ReferenceIndex[object], types),
+            EntityDisplayStyle.CODE,
+        ),
+        (
+            EntityKind.INTERFACE_INTRINSIC,
+            cast(ReferenceIndex[object], intrinsics),
+            EntityDisplayStyle.CODE,
+        ),
+        (
+            EntityKind.INTERFACE_UTILITY,
+            cast(ReferenceIndex[object], utilities),
+            EntityDisplayStyle.CODE,
+        ),
+    )
+    for kind, values, style in catalogs:
+        for typed_reference, value in values.items():
+            reference = cast(Reference[Entity], typed_reference)
+            display = (
+                value.title if isinstance(value, InterfaceGroup) else value.id
+            )
+            index.register(
+                reference,
+                Entity(reference, kind, display, value.source, value, style),
+            )
+    return EntityCatalog(index)
 
 
 def _load_groups(
@@ -293,7 +396,6 @@ def _load_groups(
                     entity_id,
                     owner,
                     group_id,
-                    str(data["kind"]),
                     source,
                     MappingProxyType(data),
                 )

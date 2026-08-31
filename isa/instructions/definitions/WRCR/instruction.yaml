@@ -2,8 +2,6 @@ mnemonic: WRCR
 name: Write Control Register
 summary: Write a privileged control register from an Rn register.
 route: system_registers
-sail_entries:
-- execute_WRCR
 privileged: true
 operands:
   src:

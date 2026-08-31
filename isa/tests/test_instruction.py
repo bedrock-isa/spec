@@ -19,7 +19,6 @@ class InstructionTest(unittest.TestCase):
             "name": "Add",
             "summary": "Adds the source operand to the destination operand.",
             "route": "integer_alu",
-            "sail_entries": ["execute_ADD"],
             "privileged": False,
             "repeat": {"type": "repcc", "observed_value": "dst"},
             "operands": {

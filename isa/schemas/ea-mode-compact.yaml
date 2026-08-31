@@ -121,9 +121,9 @@ $defs:
       difference:
         oneOf:
           - type: integer
-            minimum: 1
+            const: 1
           - type: string
-            minLength: 1
+            enum: [scale, vlen_bytes, element_count]
   segment:
     oneOf:
       - type: object
@@ -152,7 +152,7 @@ x-interpretation-rules:
   - Field and payload type values are fully qualified logical references resolved through the common reference index.
   - An encoding variant's payloads are consumed in array order after the compact selector and every extended EA descriptor selected by the instruction.
   - Pseudocode may reference the union of payload roles declared by the mode's encoding variants; an absent displacement role has the implicit value zero.
-  - An extension mode resolves extension.id in the active profile's modes directory, falling back to isa/ea/modes, contributes extension.bytes descriptor bytes to the instruction-wide descriptor prefix, decodes them there, and consumes its payloads after that prefix.
+  - An extension mode resolves extension.id in the active profile's modes directory, contributes extension.bytes descriptor bytes to the instruction-wide descriptor prefix, decodes them there, and consumes its payloads after that prefix.
   - Omitting segment selects the consuming operation's implicit default segment.
   - A field-sourced segment role resolves to the unique field with that role.
   - autoupdate type predecrement subtracts the positive difference before evaluation; postincrement adds it after evaluation.

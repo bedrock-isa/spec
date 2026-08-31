@@ -1,11 +1,23 @@
-\subsection{Event Reset and Context State}
-\input{isa/registers/documents/fragments/reset_state_table.tex}
+\subsection{Event Reset and Context State}\label{section:event-reset-and-context-state}
+Warm RESET is supervisor-only and affects only the executing (:term:base.terms.logical_processor:). Before the reset-state
+transition commits, all earlier (:term:base.terms.memory_effect|plural:) and pending write-combining stores from that
+(:term:base.terms.logical_processor:) complete. Other (:term:base.terms.logical_processor|plural:) are unchanged.
 
-\Needspace{1.8in}
-Warm RESET applies the (:term:base.terms.processor_state_image:) shown in the preceding table to the executing (:term:base.terms.logical_processor:) only. Cold
-reset initializes BOOTPC and BOOTCFG before applying the same (:term:base.terms.processor_state_image:) to each (:term:base.terms.logical_processor:) selected
-by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V
-or entering user mode.
+The transition clears R0 through R15, SP, and FLAGS. It sets PC to BOOTPC and sets STATUS.PM to one while clearing
+every other STATUS bit. It clears CS, DS, SS, GS0 through GS5, PTCR, ASCR, ECR, EPC, ECS, EDS, the complete user
+context bank (UPC, USP, UCS, UDS, USS, UCTL, and UINFO), and the configured event stacks and segments (SSS, SSP,
+ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWALK. Clearing ECR clears its
+hardware-managed NMI\_P (:term:base.terms.field:) as part of the same transition.
+
+Warm RESET invalidates hidden repeat state, the load reservation, local translation and page-walk caches, decoded
+instruction state, and local prefetch state. It clears the hidden current DFA. Coherent data- and instruction-cache
+contents remain coherent. Instruction-fetch synchronization completes before the first instruction at BOOTPC is
+fetched, at which point the processor is running at BOOTPC.
+
+BOOTPC and BOOTCFG are (:term:base.terms.preserved:) by warm RESET. Cold reset initializes them from platform-supplied
+values before applying the same (:term:base.terms.processor_state_image:) to each (:term:base.terms.logical_processor:)
+selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops
+before setting ECR.V or entering user mode.
 
 ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, and the user context bank are
 per-logical-processor state. System software includes the applicable state when switching supervisor contexts.

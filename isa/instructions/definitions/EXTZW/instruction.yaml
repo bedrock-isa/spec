@@ -2,8 +2,6 @@ mnemonic: EXTZW
 name: Zero Extend To Word
 summary: Zero-extends a byte source to a word EA destination.
 route: integer_unary
-sail_entries:
-- execute_EXTZW
 privileged: false
 repeat:
   type: repcc

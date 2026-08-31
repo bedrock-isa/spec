@@ -8,7 +8,6 @@ mod platform;
 mod translation;
 pub use bus::SailBusExecutionError;
 
-const ABI_VERSION: u32 = 6;
 pub const MAX_INSTRUCTION_BYTES: usize = 18;
 pub const REGISTER_COUNT: usize = 16;
 pub const FLOATING_REGISTER_COUNT: usize = 16;
@@ -389,8 +388,6 @@ impl fmt::Debug for SailCore {
 impl SailCore {
     pub fn new() -> Result<Self, SailCoreCreateError> {
         let _runtime = runtime_lock();
-        let version = unsafe { ffi::bedrock_core_abi_version() };
-        assert_eq!(version, ABI_VERSION, "emulator-core ABI version mismatch");
         let state_size = unsafe { ffi::bedrock_core_state_size() };
         assert_eq!(
             state_size,
@@ -584,7 +581,6 @@ fn read_value(
 mod ffi {
     use std::ffi::c_void;
     unsafe extern "C" {
-        pub fn bedrock_core_abi_version() -> u32;
         pub fn bedrock_core_state_size() -> usize;
         pub fn bedrock_core_create() -> *mut c_void;
         pub fn bedrock_core_destroy(core: *mut c_void);

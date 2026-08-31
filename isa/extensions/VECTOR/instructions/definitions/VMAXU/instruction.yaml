@@ -2,8 +2,6 @@ mnemonic: VMAXU
 name: Vector Unsigned Maximum
 summary: Selects the greater unsigned value from each active destination/source element pair.
 route: vector
-sail_entries:
-- execute_VMAXU
 privileged: false
 operands:
   govern:

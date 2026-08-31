@@ -8,13 +8,8 @@ from dataclasses import dataclass
 import importlib.util
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING
-
 from ..yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
-from ..workspace import SpecWorkspace
-
-if TYPE_CHECKING:
-    from ..project import IsaProject
+from ..workspace import SpecWorkspace, SpecificationProvider
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,16 +18,23 @@ class GeneratedArtifact:
     content: str | bytes
 
     def __post_init__(self) -> None:
-        if self.relative_path.is_absolute() or ".." in self.relative_path.parts:
+        if (
+            not self.relative_path.parts
+            or self.relative_path == Path(".")
+            or self.relative_path.is_absolute()
+            or ".." in self.relative_path.parts
+        ):
             raise ValueError(f"generated artifact path escapes output root: {self.relative_path}")
 
 
 @dataclass(frozen=True, slots=True)
 class GeneratedArtifactSet:
     artifacts: tuple[GeneratedArtifact, ...]
-    artifact_id: str | None = None
+    artifact_id: str
 
     def __post_init__(self) -> None:
+        if not self.artifact_id:
+            raise ValueError("generated artifact set requires a non-empty artifact id")
         paths = [artifact.relative_path for artifact in self.artifacts]
         duplicates = sorted({path for path in paths if paths.count(path) > 1})
         if duplicates:
@@ -53,7 +55,6 @@ class ArtifactDefinition:
     id: str
     source: Path
     data: Mapping[str, object]
-    status: str = "implemented"
     summary: str | None = None
 
     @property
@@ -67,15 +68,87 @@ class ArtifactDefinition:
         return tuple(str(item) for item in raw)
 
     @property
-    def declared_outputs(self) -> tuple[Path, ...]:
-        if "output" in self.data:
-            values = [Path(str(self.data["output"]))]
-            if "dependency-graph" in self.data:
-                values.append(Path(str(self.data["dependency-graph"])))
-            return tuple(values)
-        raw = self.data.get("outputs", ())
-        values = raw.values() if isinstance(raw, Mapping) else raw
-        return tuple(Path(str(item)) for item in values)
+    def outputs(self) -> Mapping[str, Path]:
+        return self._output_mapping("outputs")
+
+    @property
+    def derived_outputs(self) -> Mapping[str, Path]:
+        return self._output_mapping("derived-outputs", required=False)
+
+    def _output_mapping(
+        self, key: str, *, required: bool = True
+    ) -> Mapping[str, Path]:
+        raw = self.data[key] if required else self.data.get(key, {})
+        if not isinstance(raw, Mapping):
+            raise ValueError(f"{self.source}: {key} must be a mapping")
+        outputs = {str(name): Path(str(path)) for name, path in raw.items()}
+        for name, path in outputs.items():
+            if (
+                not path.parts
+                or path == Path(".")
+                or path.is_absolute()
+                or ".." in path.parts
+            ):
+                raise ValueError(
+                    f"{self.source}: {key} root {name!r} escapes the output tree"
+                )
+        return MappingProxyType(outputs)
+
+    @property
+    def output_roots(self) -> tuple[Path, ...]:
+        return (*self.outputs.values(), *self.derived_outputs.values())
+
+    def validate_generated(self, artifacts: GeneratedArtifactSet) -> None:
+        """Require the generated set to populate exactly its declared roots."""
+
+        if artifacts.artifact_id != self.id:
+            raise ValueError(
+                f"{self.source}: generated owner {artifacts.artifact_id!r} does not "
+                f"match artifact id {self.id!r}"
+            )
+        roots = tuple(self.outputs.values())
+        self._validate_owned_paths(artifacts, roots)
+        populated = {
+            root
+            for root in roots
+            if any(
+                artifact.relative_path == root
+                or artifact.relative_path.is_relative_to(root)
+                for artifact in artifacts.artifacts
+            )
+        }
+        missing = tuple(root for root in roots if root not in populated)
+        if missing:
+            raise ValueError(
+                f"{self.source}: generated set does not populate output roots "
+                f"{[path.as_posix() for path in missing]}"
+            )
+
+    def validate_owned(self, artifacts: GeneratedArtifactSet) -> None:
+        """Require every published path to belong to this declared artifact."""
+
+        if artifacts.artifact_id != self.id:
+            raise ValueError(
+                f"{self.source}: generated owner {artifacts.artifact_id!r} does not "
+                f"match artifact id {self.id!r}"
+            )
+        self._validate_owned_paths(artifacts, self.output_roots)
+
+    def _validate_owned_paths(
+        self, artifacts: GeneratedArtifactSet, roots: tuple[Path, ...]
+    ) -> None:
+        for artifact in artifacts.artifacts:
+            owners = tuple(
+                root
+                for root in roots
+                if artifact.relative_path == root
+                or artifact.relative_path.is_relative_to(root)
+            )
+            if len(owners) != 1:
+                raise ValueError(
+                    f"{self.source}: generated path {artifact.relative_path} is "
+                    f"owned by {len(owners)} declared output roots"
+                )
 
     @classmethod
     def load(cls, path: str | Path, schema: Mapping[str, object]) -> "ArtifactDefinition":
@@ -85,7 +158,6 @@ class ArtifactDefinition:
             raw["id"],
             source,
             MappingProxyType(raw),
-            str(raw.get("status", "implemented")),
             str(raw["summary"]) if "summary" in raw else None,
         )
 
@@ -99,13 +171,11 @@ class ArtifactGenerationContext:
 
     @classmethod
     def create(
-        cls, workspace: SpecWorkspace | "IsaProject", output_root: str | Path
+        cls, workspace: SpecWorkspace, output_root: str | Path
     ) -> "ArtifactGenerationContext":
-        if not isinstance(workspace, SpecWorkspace):
-            workspace = SpecWorkspace.from_isa(workspace)
         return cls(workspace, Path(output_root).resolve())
 
-    def require_provider(self, name: str) -> object:
+    def require_provider(self, name: str) -> SpecificationProvider:
         return self.workspace.require_provider(name)
 
 class ArtifactGenerator(ABC):
@@ -118,22 +188,9 @@ class ArtifactGenerator(ABC):
     def artifact_id(self) -> str:
         return self.definition.id
 
-    @property
-    def status(self) -> str:
-        return self.definition.status
-
     @abstractmethod
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         """Render files without mutating the filesystem."""
-
-
-class PlannedArtifactGenerator(ArtifactGenerator):
-    """Visible registry placeholder for an intentionally unimplemented artifact."""
-
-    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
-        raise NotImplementedError(
-            f"artifact {self.artifact_id!r} is planned but not implemented"
-        )
 
 
 class ArtifactGeneratorRegistry:
@@ -152,10 +209,8 @@ class ArtifactGeneratorRegistry:
     @classmethod
     def discover(
         cls,
-        workspace: SpecWorkspace | "IsaProject",
+        workspace: SpecWorkspace,
     ) -> "ArtifactGeneratorRegistry":
-        if not isinstance(workspace, SpecWorkspace):
-            workspace = SpecWorkspace.from_isa(workspace)
         schema_path = workspace.root / "artifacts/schema.yaml"
         schema_raw = YamlDocumentLoader().mapping(schema_path)
         artifact_root = workspace.root / "artifacts"
@@ -168,9 +223,6 @@ class ArtifactGeneratorRegistry:
                 raise ValueError(
                     f"{path}: unavailable artifact inputs {missing_inputs}"
                 )
-            if definition.status == "planned":
-                generators.append(PlannedArtifactGenerator(definition))
-                continue
             generators.append(cls._load_generator(definition))
         return cls(tuple(generators))
 
@@ -201,14 +253,6 @@ class ArtifactGeneratorRegistry:
     def artifact_ids(self) -> tuple[str, ...]:
         return tuple(self._generators)
 
-    @property
-    def implemented_ids(self) -> tuple[str, ...]:
-        return tuple(
-            artifact_id
-            for artifact_id, generator in self._generators.items()
-            if generator.status == "implemented"
-        )
-
     def generator(self, artifact_id: str) -> ArtifactGenerator:
         try:
             return self._generators[artifact_id]
@@ -218,11 +262,14 @@ class ArtifactGeneratorRegistry:
     def generate(
         self,
         artifact_id: str,
-        workspace: SpecWorkspace | "IsaProject",
+        workspace: SpecWorkspace,
         output_root: str | Path,
     ) -> GeneratedArtifactSet:
         context = ArtifactGenerationContext.create(workspace, output_root)
-        return self.generator(artifact_id).generate(context)
+        generator = self.generator(artifact_id)
+        artifacts = generator.generate(context)
+        generator.definition.validate_generated(artifacts)
+        return artifacts
 
     def _validate_dependencies(self) -> None:
         active: list[str] = []
@@ -253,13 +300,17 @@ class ArtifactGeneratorRegistry:
             visit(artifact_id)
 
     def _validate_output_ownership(self) -> None:
-        owners: dict[Path, str] = {}
+        owners: list[tuple[Path, str]] = []
         for artifact_id, generator in self._generators.items():
-            for output in generator.definition.declared_outputs:
-                previous = owners.get(output)
-                if previous is not None:
-                    raise ValueError(
-                        f"artifact output {output} is declared by both {previous} "
-                        f"and {artifact_id}"
-                    )
-                owners[output] = artifact_id
+            for output in generator.definition.output_roots:
+                for previous, previous_id in owners:
+                    if (
+                        output == previous
+                        or output.is_relative_to(previous)
+                        or previous.is_relative_to(output)
+                    ):
+                        raise ValueError(
+                            f"artifact output root {output} owned by {artifact_id} "
+                            f"overlaps {previous} owned by {previous_id}"
+                        )
+                owners.append((output, artifact_id))

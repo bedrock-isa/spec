@@ -2,7 +2,6 @@ mnemonic: FCVTUS
 name: Convert Unsigned and Single Precision
 summary: Converts between S and unsigned B/W/L/Q integers.
 route: fpu
-sail_entries: [execute_FCVTUS]
 privileged: false
 repeat: {type: rep}
 operands:

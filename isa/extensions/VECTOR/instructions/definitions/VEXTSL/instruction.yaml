@@ -2,8 +2,6 @@ mnemonic: VEXTSL
 name: Vector Signed Extension to Long
 summary: Sign-extends B or W source elements to L destination elements.
 route: vector
-sail_entries:
-- execute_VEXTSL
 privileged: false
 operands:
   govern:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
 from typing import TypeAlias
 
@@ -25,7 +24,7 @@ class Generator(AuthoredTexArtifactGenerator):
         if not isinstance(project, CInterfaceProject):
             raise TypeError("interfaces.c provider must be a CInterfaceProject")
         source = context.workspace.root / str(self.definition.data["source"])
-        output = Path(str(self.definition.data["output"]))
+        output = self.definition.outputs["document"]
         content = source.read_text(encoding="utf-8")
         content = content.replace(
             r"\BedrockGeneratedHeaderFamilies{}", _render_header_families(project)

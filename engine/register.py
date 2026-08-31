@@ -8,14 +8,9 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, cast
 
-try:
-    from .extension import ExtensionSetCatalog
-    from .reference import Reference, ReferenceIndex
-    from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from extension import ExtensionSetCatalog
-    from reference import Reference, ReferenceIndex
-    from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .extension import ExtensionSetCatalog
+from .reference import Reference, ReferenceIndex
+from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +80,6 @@ class Register:
     id: str
     width: RegisterWidth
     encoding: int | None
-    role: str | None
     summary: str | None
     reset: ResetSpec | None
     layout: RegisterLayout | None
@@ -104,12 +98,11 @@ class RegisterInventory:
 
 
 @dataclass(frozen=True, slots=True)
-class RegisterDiagram:
-    """Document-facing placement and exceptional display policy for one namespace."""
+class RegisterSeries:
+    """One homogeneous, consecutively encoded register family."""
 
-    caption: str
-    columns: tuple[tuple[str, ...], tuple[str, ...]]
-    display: Mapping[str, str]
+    prefix: str
+    count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +118,7 @@ class RegisterGroup:
     summary: str | None
     reset: ResetSpec | None
     layout: RegisterLayout | None
+    series: RegisterSeries | None
     register_inventory: RegisterInventory | None
     registers: Mapping[str, Register]
 
@@ -137,7 +131,6 @@ class RegisterNamespace:
     root: Path
     group_inventory: RegisterInventory
     groups: Mapping[str, RegisterGroup]
-    diagram: RegisterDiagram | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,7 +205,6 @@ def _load_namespace(
 ) -> RegisterNamespace:
     groups_root = namespace_root / "registers/groups"
     inventory = _load_inventory(owner, "group", groups_root, "groups")
-    diagram = _load_diagram(inventory)
     groups: dict[str, RegisterGroup] = {}
     for group_id in inventory.declared:
         group_root = groups_root / group_id
@@ -221,9 +213,7 @@ def _load_namespace(
         group = _load_group(owner, group_root, schemas, references)
         references.groups.register(group.reference, group)
         groups[group_id] = group
-    return RegisterNamespace(
-        owner, namespace_root, inventory, MappingProxyType(groups), diagram
-    )
+    return RegisterNamespace(owner, namespace_root, inventory, MappingProxyType(groups))
 
 
 def _load_group(
@@ -254,11 +244,13 @@ def _load_group(
         )
 
     register_inventory: RegisterInventory | None = None
+    series_spec: RegisterSeries | None = None
     registers: dict[str, Register] = {}
     if has_series:
         series = raw["series"]
-        for encoding in range(series["count"]):
-            register_id = f"{series['prefix']}{encoding}"
+        series_spec = RegisterSeries(series["prefix"], series["count"])
+        for encoding in range(series_spec.count):
+            register_id = f"{series_spec.prefix}{encoding}"
             register = Register(
                 reference=Reference(owner, ("registers", group_id), register_id),
                 source=source,
@@ -268,7 +260,6 @@ def _load_group(
                 id=register_id,
                 width=width,
                 encoding=encoding,
-                role=None,
                 summary=None,
                 reset=reset,
                 layout=layout,
@@ -305,6 +296,7 @@ def _load_group(
         summary=raw.get("summary"),
         reset=reset,
         layout=layout,
+        series=series_spec,
         register_inventory=register_inventory,
         registers=MappingProxyType(registers),
     )
@@ -340,7 +332,6 @@ def _load_register(
         id=register_id,
         width=width,
         encoding=raw.get("encoding"),
-        role=raw.get("role"),
         summary=raw.get("summary"),
         reset=_decode_reset(raw["reset"]) if "reset" in raw else group_reset,
         layout=local_layout or group_layout,
@@ -394,74 +385,6 @@ def _load_inventory(owner: str, kind: str, root: Path, key: str) -> RegisterInve
         else ()
     )
     return RegisterInventory(owner, kind, source, root, declared, actual)
-
-
-def _load_diagram(inventory: RegisterInventory) -> RegisterDiagram | None:
-    if not inventory.declared:
-        return None
-    raw = _load_mapping(inventory.source)
-    diagram = raw.get("diagram")
-    if not isinstance(diagram, Mapping):
-        raise ValueError(f"{inventory.source}: expected a diagram mapping")
-    unknown_keys = set(diagram) - {"caption", "columns", "display"}
-    if unknown_keys:
-        raise ValueError(
-            f"{inventory.source}: unknown diagram keys {sorted(unknown_keys)}"
-        )
-    caption = diagram.get("caption")
-    if not isinstance(caption, str) or not caption.strip():
-        raise ValueError(f"{inventory.source}: diagram caption must be non-empty")
-    raw_columns = diagram.get("columns")
-    if (
-        not isinstance(raw_columns, list)
-        or len(raw_columns) != 2
-        or any(
-            not isinstance(column, list)
-            or any(not isinstance(group_id, str) for group_id in column)
-            for column in raw_columns
-        )
-    ):
-        raise ValueError(
-            f"{inventory.source}: diagram columns must contain exactly two group lists"
-        )
-    columns: tuple[tuple[str, ...], tuple[str, ...]] = (
-        tuple(cast(list[str], raw_columns[0])),
-        tuple(cast(list[str], raw_columns[1])),
-    )
-    placed = tuple(group_id for column in columns for group_id in column)
-    duplicates = sorted(
-        group_id for group_id in set(placed) if placed.count(group_id) > 1
-    )
-    missing = sorted(set(inventory.declared) - set(placed))
-    unknown = sorted(set(placed) - set(inventory.declared))
-    if duplicates or missing or unknown:
-        details = []
-        if duplicates:
-            details.append(f"duplicates {duplicates}")
-        if missing:
-            details.append(f"missing {missing}")
-        if unknown:
-            details.append(f"unknown {unknown}")
-        raise ValueError(
-            f"{inventory.source}: diagram group placement has " + ", ".join(details)
-        )
-    raw_display = diagram.get("display", {})
-    if not isinstance(raw_display, Mapping) or any(
-        not isinstance(group_id, str)
-        or mode not in {"all", "compact", "summary"}
-        for group_id, mode in raw_display.items()
-    ):
-        raise ValueError(
-            f"{inventory.source}: diagram display must map group IDs to "
-            "all, compact, or summary"
-        )
-    unknown_display = sorted(set(raw_display) - set(placed))
-    if unknown_display:
-        raise ValueError(
-            f"{inventory.source}: diagram display names unplaced groups "
-            f"{unknown_display}"
-        )
-    return RegisterDiagram(caption, columns, MappingProxyType(dict(raw_display)))
 
 
 def _decode_reset(raw: object) -> ResetSpec | None:

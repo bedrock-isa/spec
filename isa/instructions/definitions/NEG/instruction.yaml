@@ -2,8 +2,6 @@ mnemonic: NEG
 name: Negate
 summary: Writes the selected-width two's-complement negation of the destination.
 route: integer_unary
-sail_entries:
-- execute_NEG
 privileged: false
 repeat:
   type: repcc

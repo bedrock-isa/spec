@@ -2,8 +2,6 @@ mnemonic: INC
 name: Increment
 summary: Increments the selected-width destination modulo its width without changing FLAGS.
 route: integer_unary
-sail_entries:
-- execute_INC
 privileged: false
 repeat:
   type: repcc

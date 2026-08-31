@@ -2,8 +2,6 @@ mnemonic: MULHSU
 name: Signed By Unsigned Multiply High
 summary: Writes the high half of the signed-destination by unsigned-source 64-bit product.
 route: integer_mul_div
-sail_entries:
-- execute_MULHSU
 privileged: false
 repeat:
   type: repcc

@@ -2,8 +2,6 @@ mnemonic: EXTZQ
 name: Zero Extend To Quad
 summary: Zero-extends the selected source width to a quadword destination.
 route: integer_unary
-sail_entries:
-- execute_EXTZQ
 privileged: false
 repeat:
   type: repcc

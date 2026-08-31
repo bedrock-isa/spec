@@ -4,4 +4,4 @@ generator: generator.py
 inputs:
 - isa
 outputs:
-- BedrockGenISACatalog.td
+  catalog: BedrockGenISACatalog.td

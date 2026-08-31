@@ -2,8 +2,6 @@ mnemonic: FDIV
 name: Floating-Point Divide
 summary: Divides the destination value by the source under the floating-point environment.
 route: fpu
-sail_entries:
-- execute_FDIV
 privileged: false
 repeat:
   type: rep

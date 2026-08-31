@@ -2,8 +2,6 @@ mnemonic: PCOUNT
 name: Predicate Population Count
 summary: Count set significant positions for the selected element size.
 route: vector
-sail_entries:
-- execute_PCOUNT
 privileged: false
 operands:
   predicate:

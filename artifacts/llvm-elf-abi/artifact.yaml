@@ -5,5 +5,5 @@ inputs:
 - isa
 - abi.elf
 outputs:
-- ELFRelocs/Bedrock.def
-- BedrockGenELFABI.inc
+  relocations: ELFRelocs/Bedrock.def
+  catalog: BedrockGenELFABI.inc

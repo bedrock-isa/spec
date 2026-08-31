@@ -2,8 +2,6 @@ mnemonic: CLMUL
 name: Carryless Multiply
 summary: Writes the low selected-width half of the carryless source-by-destination product.
 route: integer_mul_div
-sail_entries:
-- execute_CLMUL
 privileged: false
 repeat:
   type: repcc

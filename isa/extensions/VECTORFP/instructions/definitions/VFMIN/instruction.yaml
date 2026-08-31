@@ -2,8 +2,6 @@ mnemonic: VFMIN
 name: Vector Floating-Point Minimum
 summary: Selects the floating-point minimum in each active lane.
 route: vector
-sail_entries:
-- execute_VFMIN
 privileged: false
 operands:
   govern:

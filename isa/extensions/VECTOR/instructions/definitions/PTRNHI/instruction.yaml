@@ -2,8 +2,6 @@ mnemonic: PTRNHI
 name: Predicate Odd-Lane Transpose
 summary: Interleave odd-position predicate lanes from two sources.
 route: vector
-sail_entries:
-- execute_PTRNHI
 privileged: false
 operands:
   lhs:

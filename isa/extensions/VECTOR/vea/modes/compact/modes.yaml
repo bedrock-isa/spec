@@ -1,2 +1,8 @@
 name: VECTOR VEA compact
-modes: []
+modes:
+  - register
+  - stack_pointer_displaced
+  - program_counter_displaced
+  - absolute
+  - ext1
+  - ext2

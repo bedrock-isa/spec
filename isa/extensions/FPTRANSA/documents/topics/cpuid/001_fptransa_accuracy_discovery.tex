@@ -4,9 +4,9 @@ It requires \texttt{FP} and is set when at least one approximate transcendental 
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
 16-bit accuracy-contract IDs. Index zero is the common (:term:base.terms.header:) and reports \texttt{MAX\_INDEX=0x0044}.
 A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
-and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a
-new ID, and a retired ID is not reused. The contracts defined here use \texttt{CONTRACT\_REVISION=1}. A weakened
-guarantee, changed domain, or changed error metric requires a new ID.
+and mathematical properties; it is independent of instruction encoding placement. A different tuple of those
+properties uses a different ID, and a retired ID is not reused. The contracts defined here use
+\texttt{CONTRACT\_REVISION=1}. A changed guarantee, domain, or error metric names a different contract ID.
 An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the
 same ID and revision.
 
@@ -47,13 +47,13 @@ actual contracts in each family begin at low nibble one.
 For a certified bound $K$, the (:term:base.terms.field:) value is $\lceil 256K\rceil$ and the advertised bound is the (:term:base.terms.field:) divided by
 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as \texttt{0x0080}, \texttt{0x0100}, \texttt{0x0180},
 \texttt{0x0200}, and \texttt{0x0400}. A present contract has both (:term:base.terms.field|plural:) in \texttt{0x0001..0x0400}.
-Software that does not recognize the returned revision uses its fallback path.
+An unrecognized returned revision does not satisfy the contracts defined here.
 
 Software first checks \texttt{FP} and \texttt{FPTRANSA} in \texttt{EXTENSION\_DIRECTORY}, then queries the intended
 contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \texttt{PRESENT} is set, the returned
 \texttt{CONTRACT\_REVISION} is 1, and the S or D bound required by the call site is no larger than its quality
 threshold; otherwise it
-uses a software fallback. For example, a D-format (:ref:FPTRANSA.instructions.FLOG2A:) path requiring at most 2 ULP accepts selector
+does not use the instruction under that accuracy contract. For example, a D-format (:ref:FPTRANSA.instructions.FLOG2A:) path requiring at most 2 ULP accepts selector
 \texttt{0x0000000100010043} only when the returned D (:term:base.terms.field:) is at most \texttt{0x0200}.
 
 The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}

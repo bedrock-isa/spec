@@ -11,6 +11,5 @@ signature:
     type: u8
 lowering:
   operation: isa:base.instructions.MOVNT
-  kind: direct
   operands:
     size: B

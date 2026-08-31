@@ -242,6 +242,7 @@ class EaFormIR:
     referenced_descriptor_family: str
     update_target: str
     update_mode: str
+    update_difference: str
 
 
 @dataclass(frozen=True)
@@ -286,8 +287,6 @@ class EaProfileIR:
 class EffectiveAddressIR:
     compact_width: int
     payloads: tuple[EaPayloadIR, ...]
-    compact_forms: tuple[EaFormIR, ...]
-    compact_entries: tuple[CompactEaEntryIR, ...]
     profiles: tuple[EaProfileIR, ...]
     descriptor_families: tuple[EaDescriptorFamilyIR, ...]
 
@@ -378,7 +377,7 @@ def _derive_limits(
         max_fixed_required_bytes=max(form.fixed_required_bytes for form in forms_ir),
         max_required_bytes=max(form.maximum_required_bytes for form in forms_ir),
         max_record_bytes=MAX_RECORD_BYTES,
-        compact_ea_values=len(effective_addresses.compact_entries),
+        compact_ea_values=1 << effective_addresses.compact_width,
         max_descriptor_bytes=max(
             family.descriptor_bytes
             for family in effective_addresses.descriptor_families
@@ -435,7 +434,6 @@ def _ea_form(
     encoding_index: int,
     *,
     family: str = "",
-    kind_override: str | None = None,
 ) -> EaFormIR:
     patterns = encoding["pattern"]
     chunks = (patterns,) if isinstance(patterns, str) else tuple(patterns)
@@ -490,28 +488,23 @@ def _ea_form(
         segment_name = segment["register"]
     else:
         segment_name = "explicit"
-    pseudocode = mode.to_dict().get("pseudocode", "")
-    if "SP" in pseudocode:
-        base = "SP"
-    elif "PC" in pseudocode:
-        base = "PC"
-    elif "base" in pseudocode:
-        base = ""
-    elif "0" in pseudocode:
-        base = "zero"
-    else:
-        base = ""
+    base_source = mode.base_source.value
+    base = "" if base_source in {"none", "encoded"} else base_source
     extension = mode.to_dict().get("extension", {})
     update = encoding.get("autoupdate") or {}
+    kind = "escape" if mode["kind"] == "extension" else mode["kind"]
+    profile = mode.catalog.profile
+    descriptor_identity = f"{profile}_{family.lower()}" if family else ""
+    referenced_family = str(extension.get("id", "")).lower()
     return EaFormIR(
         name=name,
-        member_of_descriptor_family=family.lower(),
+        member_of_descriptor_family=descriptor_identity,
         descriptor_bytes=len(chunks) if family else int(extension.get("bytes", 0)),
         patterns=tuple(_pattern_ir(chunk) for chunk in chunks),
         width=len(joined),
         value=value,
         mask=mask,
-        kind=kind_override or ("escape" if mode["kind"] == "extension" else mode["kind"]),
+        kind=kind,
         fields=tuple(fields_ir),
         segment=segment_name,
         payload_name=payload_name,
@@ -519,7 +512,9 @@ def _ea_form(
         payload_signed=_is_signed(payload_definition) if payload_definition else False,
         base=base,
         register_name="",
-        referenced_descriptor_family=str(extension.get("id", "")).lower(),
+        referenced_descriptor_family=(
+            f"{profile}_{referenced_family}" if referenced_family else ""
+        ),
         update_target=next(
             (
                 symbol
@@ -529,80 +524,69 @@ def _ea_form(
             "",
         ),
         update_mode=str(update.get("type", "")),
-    )
-
-
-def _load_mode_catalog(project: Any, catalog: Path) -> tuple[Any, ...]:
-    from ..ea_mode import EAMode
-    from ..yaml_document import YamlDocumentLoader
-
-    raw = YamlDocumentLoader().mapping(catalog)
-    return tuple(
-        EAMode.load(catalog.parent / name / "mode.yaml", project.root, project.types)
-        for name in raw.get("modes", ())
+        update_difference=(
+            f"constant_{update['difference']}"
+            if isinstance(update.get("difference"), int)
+            else str(update.get("difference", ""))
+        ),
     )
 
 
 def _effective_addresses(project: Any) -> EffectiveAddressIR:
-    base_root = project.root / "ea" / "modes"
-    compact_modes = _load_mode_catalog(project, base_root / "compact" / "modes.yaml")
-    family_modes = {
-        family: _load_mode_catalog(project, base_root / family / "modes.yaml")
-        for family in ("EXT1", "EXT2")
-    }
-    descriptor_families = tuple(
-        EaDescriptorFamilyIR(
-            family.lower(),
-            1 if family == "EXT1" else 2,
-            "memory",
-            tuple(
-                _ea_form(project, mode, encoding, index, family=family)
-                for mode in family_modes[family]
-                for index, encoding in enumerate(mode["encodings"])
-            ),
-        )
-        for family in ("EXT1", "EXT2")
-    )
+    modes_by_profile_type: dict[tuple[str, str], list[Any]] = {}
+    profile_order: list[str] = []
+    compact_widths: set[int] = set()
+    for definition in project.types.field_types.values():
+        if definition.kind.value == "effective_address":
+            assert definition.profile is not None
+            if definition.profile not in profile_order:
+                profile_order.append(definition.profile)
+            compact_widths.add(definition.bits)
+    if len(compact_widths) != 1:
+        raise ValueError(f"EA profiles declare inconsistent compact widths: {sorted(compact_widths)}")
+    for mode in project.catalog.ea_modes.values():
+        modes_by_profile_type.setdefault(
+            (mode.catalog.profile, mode.catalog.mode_type), []
+        ).append(mode)
 
-    scalar_forms = tuple(
-        _ea_form(project, mode, encoding, index)
-        for mode in compact_modes
-        for index, encoding in enumerate(mode["encodings"])
-    )
-    profile_overrides: dict[str, tuple[EaFormIR, ...]] = {"ea": ()}
-    extension_profiles = {
-        "fea": project.root / "extensions" / "FP" / "fea" / "modes" / "compact" / "modes.yaml",
-        "vea": project.root / "extensions" / "VECTOR" / "vea" / "modes" / "compact" / "modes.yaml",
-    }
-    for profile, catalog in extension_profiles.items():
-        modes = _load_mode_catalog(project, catalog)
-        profile_overrides[profile] = tuple(
-            _ea_form(
-                project,
-                mode,
-                encoding,
-                index,
-                kind_override="float_immediate" if profile == "fea" else None,
+    descriptor_families_list = []
+    for profile in profile_order:
+        mode_types = sorted(
+            mode_type
+            for candidate_profile, mode_type in modes_by_profile_type
+            if candidate_profile == profile and mode_type != "compact"
+        )
+        for family in mode_types:
+            forms = tuple(
+                _ea_form(project, mode, encoding, index, family=family)
+                for mode in modes_by_profile_type[profile, family]
+                for index, encoding in enumerate(mode["encodings"])
             )
-            for mode in modes
+            descriptor_bytes = {form.descriptor_bytes for form in forms}
+            kinds = {form.kind for form in forms}
+            if len(descriptor_bytes) != 1 or len(kinds) != 1:
+                raise ValueError(
+                    f"{profile}.{family}: descriptor members disagree on width or kind"
+                )
+            descriptor_families_list.append(
+                EaDescriptorFamilyIR(
+                    f"{profile}_{family.lower()}",
+                    descriptor_bytes.pop(),
+                    kinds.pop(),
+                    forms,
+                )
+            )
+    descriptor_families = tuple(descriptor_families_list)
+    profiles = []
+    for profile in profile_order:
+        forms = tuple(
+            _ea_form(project, mode, encoding, index)
+            for mode in modes_by_profile_type.get((profile, "compact"), ())
             for index, encoding in enumerate(mode["encodings"])
         )
-
-    profiles = []
-    for profile in ("ea", "fea", "vea"):
-        overrides = profile_overrides[profile]
-        forms = tuple(
-            form
-            for form in scalar_forms
-            if not (profile == "fea" and form.kind == "immediate")
-            and not (profile == "vea" and form.kind == "immediate")
-            and not (
-                profile in {"fea", "vea"}
-                and form.name == "stack_pointer_indirect"
-            )
-        ) + overrides
         entries = []
-        for raw in range(128):
+        compact_width = next(iter(compact_widths))
+        for raw in range(1 << compact_width):
             matches = [form for form in forms if raw & form.mask == form.value]
             if len(matches) == 1:
                 form = matches[0]
@@ -664,10 +648,8 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
         for definition in project.types.payload_types.values()
     )
     return EffectiveAddressIR(
-        7,
+        next(iter(compact_widths)),
         payloads,
-        scalar_forms,
-        profiles[0].compact_entries,
         tuple(profiles),
         descriptor_families,
     )

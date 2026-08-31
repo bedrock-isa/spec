@@ -9,9 +9,6 @@ hierarchy, parses authored
 relocation expressions with the ELF relocation metasyntax, and resolves ISA
 and ELF relationships. `documents/` contains normative prose. The `elf-abi`
 artifact derives its tables from the typed catalog.
-`documents/topics/topics.yaml` declares the reading order, and every
-`documents/topics/<ID>/topic.yaml` relates one section to its referenced
-objects.
 
 The `llvm-elf-abi` artifact projects the same typed catalog into LLVM/LLD
 inputs. It emits the standard `ELF_RELOC` definition file plus a reusable

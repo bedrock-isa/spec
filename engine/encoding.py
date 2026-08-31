@@ -7,18 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from .encoding_metasyntax import EncodingMetasyntax
-    from .instruction_metasyntax import InstructionMetasyntax
-    from .reference import Reference
-    from .type_system import FieldType, PayloadType, TypeSystem
-    from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from encoding_metasyntax import EncodingMetasyntax
-    from instruction_metasyntax import InstructionMetasyntax
-    from reference import Reference
-    from type_system import FieldType, PayloadType, TypeSystem
-    from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .encoding_metasyntax import EncodingMetasyntax
+from .instruction_metasyntax import InstructionMetasyntax
+from .reference import Reference
+from .type_system import FieldType, PayloadType, TypeSystem
+from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
 ConstraintValue = int | str

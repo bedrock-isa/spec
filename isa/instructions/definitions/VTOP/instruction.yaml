@@ -2,8 +2,6 @@ mnemonic: VTOP
 name: Virtual To Physical Query
 summary: Non-destructively queries the current translation of a linear address.
 route: tlb_and_context
-sail_entries:
-- execute_VTOP
 privileged: true
 operands:
   virt:

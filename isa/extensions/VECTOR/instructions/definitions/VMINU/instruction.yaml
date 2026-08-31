@@ -2,8 +2,6 @@ mnemonic: VMINU
 name: Vector Unsigned Minimum
 summary: Selects the lesser unsigned value from each active destination/source element pair.
 route: vector
-sail_entries:
-- execute_VMINU
 privileged: false
 operands:
   govern:

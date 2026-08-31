@@ -2,8 +2,6 @@ mnemonic: BSET
 name: Bit Set
 summary: Sets the indexed destination bit, sets Z when it was clear, and clears NCV.
 route: integer_bitfield
-sail_entries:
-- execute_BSET
 privileged: false
 repeat:
   type: repcc

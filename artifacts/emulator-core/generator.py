@@ -1,4 +1,4 @@
-"""Generate the Sail C core behind a stable host-facing ABI."""
+"""Generate the Sail C core and its host-facing C adapter."""
 
 from __future__ import annotations
 
@@ -21,8 +21,6 @@ from engine.generation import (
 from engine.yaml_document import YamlDocumentLoader
 
 
-_OUTPUT_ROOT = Path("emulator/core")
-_STAMP_PATH = _OUTPUT_ROOT / ".generation-stamp"
 _TEMPLATE_ROOT = Path(__file__).with_name("templates")
 _PRESERVED_FUNCTIONS = (
     "initial_cpu",
@@ -85,7 +83,7 @@ class SailCCompiler:
 
 
 class Generator(ArtifactGenerator):
-    """Compile the generated Sail model and attach the stable C shim."""
+    """Compile the generated Sail model and attach its C adapter."""
 
     def __init__(
         self,
@@ -96,6 +94,7 @@ class Generator(ArtifactGenerator):
         self.compiler = compiler or SailCCompiler()
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        outputs = self.definition.outputs
         # Sail project files do not quote paths. Keeping the temporary model
         # next to the ISA tree prevents repository names containing '-' from
         # appearing in generated relative paths without touching Cargo's
@@ -111,6 +110,7 @@ class Generator(ArtifactGenerator):
                 context.workspace, model_root
             )
             model_artifacts = model.generate(model_context)
+            model.definition.validate_generated(model_artifacts)
             ArtifactWriter().write(model_artifacts, model_root)
             compiler_cache_key = getattr(self.compiler, "cache_key", None)
             cacheable = callable(compiler_cache_key)
@@ -120,10 +120,9 @@ class Generator(ArtifactGenerator):
                 context.workspace.root / "isa",
             )
 
-            cached_root = context.output_root / _OUTPUT_ROOT
-            cached_c = cached_root / "bedrock_core.c"
-            cached_h = cached_root / "bedrock_core.h"
-            cached_stamp = cached_root / _STAMP_PATH.name
+            cached_c = context.output_root / outputs["implementation"]
+            cached_h = context.output_root / outputs["model-header"]
+            cached_stamp = context.output_root / outputs["generation-stamp"]
             cache_hit = (
                 cacheable
                 and cached_c.is_file()
@@ -136,25 +135,26 @@ class Generator(ArtifactGenerator):
                 generated_h = cached_h.read_text()
             else:
                 generated_c, generated_h = self.compiler.compile(
-                    model_root / "bedrock-model.sail_project", root / "bedrock_core"
+                    model_root / model.definition.outputs["project"],
+                    root / "bedrock_core",
                 )
                 generated_c = _supply_library_main(
                     generated_c, _template("model_main.c")
                 )
-                generated_c += "\n" + _template("bedrock_core_shim.c")
+                generated_c += "\n" + _template("bedrock_core_adapter.c")
 
         return GeneratedArtifactSet(
             (
                 GeneratedArtifact(
-                    _OUTPUT_ROOT / "bedrock_core.c",
+                    outputs["implementation"],
                     generated_c,
                 ),
-                GeneratedArtifact(_OUTPUT_ROOT / "bedrock_core.h", generated_h),
+                GeneratedArtifact(outputs["model-header"], generated_h),
                 GeneratedArtifact(
-                    _OUTPUT_ROOT / "bedrock_core_abi.h",
+                    outputs["abi-header"],
                     _template("bedrock_core_abi.h"),
                 ),
-                GeneratedArtifact(_STAMP_PATH, fingerprint),
+                GeneratedArtifact(outputs["generation-stamp"], fingerprint),
             ),
             self.artifact_id,
         )
@@ -174,7 +174,7 @@ def _generation_fingerprint(
     model: GeneratedArtifactSet, compiler_cache_key: str, sail_source_root: Path
 ) -> str:
     digest = hashlib.sha256()
-    digest.update(b"bedrock-emulator-core-generation-v1\0")
+    digest.update(b"bedrock-emulator-core-generation\0")
     digest.update(Path(__file__).read_bytes())
     digest.update(b"\0")
     digest.update(compiler_cache_key.encode())

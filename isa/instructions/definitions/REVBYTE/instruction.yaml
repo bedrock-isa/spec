@@ -2,8 +2,6 @@ mnemonic: REVBYTE
 name: Reverse Bytes
 summary: Reverses byte order within the selected operand width and writes the result.
 route: integer_alu
-sail_entries:
-- execute_REVBYTE
 privileged: false
 repeat:
   type: repcc

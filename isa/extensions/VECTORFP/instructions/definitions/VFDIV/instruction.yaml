@@ -2,8 +2,6 @@ mnemonic: VFDIV
 name: Vector Floating-Point Divide
 summary: Divides corresponding active floating-point elements.
 route: vector
-sail_entries:
-- execute_VFDIV
 privileged: false
 operands:
   govern:

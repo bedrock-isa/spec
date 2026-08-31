@@ -3,6 +3,3 @@ requires:
 - FP
 requires-isa:
 - FPTRANSA
-compiler-features:
-  clang:
-  - fptransa

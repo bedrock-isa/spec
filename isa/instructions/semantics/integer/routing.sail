@@ -93,5 +93,3 @@ function route_environment(
         awaiting_environment = true,
     }
 }
-
-// Legacy control routing removed; instruction-local uops own control assembly.

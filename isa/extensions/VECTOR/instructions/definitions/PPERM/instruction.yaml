@@ -2,8 +2,6 @@ mnemonic: PPERM
 name: Predicate Permute
 summary: Select predicate lanes using unsigned vector indices.
 route: vector
-sail_entries:
-- execute_PPERM
 privileged: false
 operands:
   index:

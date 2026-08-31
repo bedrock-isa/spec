@@ -11,4 +11,3 @@ signature:
     type: size
 lowering:
   operation: isa:base.instructions.WRBKDCACHE
-  kind: cache-range

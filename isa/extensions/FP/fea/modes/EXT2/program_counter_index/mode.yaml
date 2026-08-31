@@ -1,0 +1,14 @@
+id: program_counter_index
+name: Program-counter indexed
+kind: memory
+syntax: "[PC + update(Rn(i)) * scale + displacement]"
+fields:
+  i: {role: index, type: base.field_types.Rn}
+encodings:
+  - pattern: ["10001011", 0000iiii]
+    autoupdate: {target: index, type: postincrement, difference: 1}
+  - pattern: ["10001011", 0001iiii]
+    autoupdate: {target: index, type: predecrement, difference: 1}
+  - pattern: ["10001011", 0010iiii]
+segment: {source: fixed, register: CS}
+pseudocode: offset = PC + index * scale + displacement

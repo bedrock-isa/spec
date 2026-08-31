@@ -8,7 +8,6 @@
 extern "C" {
 #endif
 
-#define BEDROCK_CORE_ABI_VERSION 6u
 #define BEDROCK_CORE_MAX_INSTRUCTION_BYTES 18u
 #define BEDROCK_CORE_REGISTER_COUNT 16u
 #define BEDROCK_CORE_FLOATING_REGISTER_COUNT 16u
@@ -156,8 +155,7 @@ typedef struct bedrock_core_response {
   uint8_t present;
 } bedrock_core_response;
 
-/* The generated Sail runtime owns process-global state. Serialize all ABI calls. */
-uint32_t bedrock_core_abi_version(void);
+/* The generated Sail runtime owns process-global state. Serialize all calls. */
 size_t bedrock_core_state_size(void);
 bedrock_core *bedrock_core_create(void);
 void bedrock_core_destroy(bedrock_core *core);

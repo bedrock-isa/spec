@@ -31,5 +31,3 @@ function compound_stack_store(ordinal : int, state : Cpu_state, low_address : bi
 }
 
 function pair_first_index(pair_id : int) -> int = pair_id * 2
-
-// Legacy stack dispatch removed; typed stack uops own stack assembly.

@@ -2,8 +2,6 @@ mnemonic: PSLIDEDN
 name: Predicate Slide Down
 summary: Move predicate lanes toward lower indices and insert zero at the high end.
 route: vector
-sail_entries:
-- execute_PSLIDEDN
 privileged: false
 operands:
   count:

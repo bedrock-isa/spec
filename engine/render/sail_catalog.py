@@ -126,7 +126,8 @@ def _field_kind(definition: FieldType) -> str:
         FieldTypeKind.REGISTER_SELECTOR,
         FieldTypeKind.REGISTER_PAIR_SELECTOR,
     }:
-        return "FieldFreg" if definition.owner == "FP" else "FieldRn"
+        assert definition.register_group is not None
+        return "FieldFreg" if definition.register_group.element == "FPR" else "FieldRn"
     return "FieldBits"
 
 
@@ -478,6 +479,7 @@ class _EaVariant:
     descriptor: str | None
     update_target: str | None
     update_mode: str | None
+    update_difference: str | None
 
 
 def _payload_suffix(definition: PayloadType) -> str:
@@ -494,26 +496,33 @@ def _compact_name(mode_id: str, definition: PayloadType | None) -> str:
     if mode_id == "absolute":
         return f"absolute_{suffix}"
     if mode_id == "immediate":
-        return f"immediate_{suffix}"
+        identity = (
+            definition.id.lower().removeprefix("imm")
+            if definition is not None
+            else ""
+        )
+        return "immediate" if not identity else f"immediate_{identity}"
     return mode_id if not suffix else f"{mode_id}_disp{suffix}"
 
 
-def _mode_segment(raw: Mapping[str, object], mode_id: str) -> tuple[str | None, str | None]:
+def _mode_segment(mode, raw: Mapping[str, object]) -> tuple[str | None, str | None]:
     segment = raw.get("segment")
     if isinstance(segment, Mapping):
         if segment.get("source") == "field":
             return "explicit", None
         register = str(segment.get("register"))
-        return register, "SP" if register == "SS" else "PC"
+        return register, mode.base_source.value
     if raw.get("kind") == "memory":
-        return "default", "zero" if "zero_base" in mode_id else None
+        base = mode.base_source.value
+        return "default", None if base in {"none", "encoded"} else base
     return None, None
 
 
 def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
-    compact = []
-    descriptors = []
+    variants = []
     for mode in program.project.catalog.ea_modes.values():
+        if mode.catalog.owner not in program.configuration.owners:
+            continue
         raw = mode.to_dict()
         mode_type = mode.catalog.mode_type
         mode_id = str(raw["id"])
@@ -521,7 +530,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
         field_types = {
             marker: mode.field_type_reference(marker) for marker in fields
         }
-        segment, base = _mode_segment(raw, mode_id)
+        segment, base = _mode_segment(mode, raw)
         for encoding_index, encoding in enumerate(raw["encodings"]):
             patterns = encoding["pattern"]
             chunks = (patterns,) if isinstance(patterns, str) else tuple(patterns)
@@ -535,6 +544,14 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
             )
             autoupdate = encoding.get("autoupdate")
             update_mode = str(autoupdate["type"]) if autoupdate else None
+            update_difference = None
+            if autoupdate:
+                difference = autoupdate["difference"]
+                update_difference = (
+                    f"constant_{difference}"
+                    if isinstance(difference, int)
+                    else str(difference)
+                )
             update_role = str(autoupdate["target"]) if autoupdate else None
             update_target = None
             if update_role is not None:
@@ -544,13 +561,14 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
             if mode_type == "compact":
                 name = _compact_name(mode_id, payload_definition)
                 descriptor = raw.get("extension", {}).get("id")
-                variant = _EaVariant(
+                kind = str(raw["kind"])
+                variants.append(_EaVariant(
                     name,
-                    None,
+                    mode.catalog.profile,
                     None,
                     int(raw.get("extension", {}).get("bytes", 0)),
                     chunks,
-                    "escape" if raw["kind"] == "extension" else str(raw["kind"]),
+                    "escape" if raw["kind"] == "extension" else kind,
                     fields,
                     field_types,
                     segment,
@@ -566,14 +584,14 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                     str(descriptor).lower() if descriptor else None,
                     update_target,
                     update_mode,
-                )
-                compact.append(variant)
+                    update_difference,
+                ))
             else:
                 name = mode_id + (f"_{update_mode}" if update_mode else "")
-                descriptors.append(
+                variants.append(
                     _EaVariant(
                         name,
-                        None,
+                        mode.catalog.profile,
                         mode_type.lower(),
                         len(chunks),
                         chunks,
@@ -587,56 +605,10 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                         None,
                         update_target,
                         update_mode,
+                        update_difference,
                     )
                 )
-    profiled: list[_EaVariant] = []
-    for profile in ("ea", "fea", "vea"):
-        for variant in compact:
-            if profile in {"fea", "vea"} and variant.name == "stack_pointer_indirect":
-                continue
-            if variant.kind == "immediate":
-                if profile == "ea":
-                    pass
-                elif profile == "fea" and variant.payload_width in {32, 64}:
-                    variant = _EaVariant(
-                        "immediate_sf" if variant.payload_width == 32 else "immediate_df",
-                        variant.profile,
-                        variant.family,
-                        variant.descriptor_bytes,
-                        variant.patterns,
-                        "float_immediate",
-                        variant.fields,
-                        variant.field_types,
-                        variant.segment,
-                        variant.payload_width,
-                        variant.payload_signed,
-                        variant.base,
-                        variant.descriptor,
-                        variant.update_target,
-                        variant.update_mode,
-                    )
-                else:
-                    continue
-            profiled.append(
-                _EaVariant(
-                    variant.name,
-                    profile,
-                    variant.family,
-                    variant.descriptor_bytes,
-                    variant.patterns,
-                    variant.kind,
-                    variant.fields,
-                    variant.field_types,
-                    variant.segment,
-                    variant.payload_width,
-                    variant.payload_signed,
-                    variant.base,
-                    variant.descriptor,
-                    variant.update_target,
-                    variant.update_mode,
-                )
-            )
-    return tuple((*profiled, *descriptors))
+    return tuple(variants)
 
 
 def _render_ea_variant(program: SailProgram, variant: _EaVariant) -> str:
@@ -665,7 +637,8 @@ def _render_ea_variant(program: SailProgram, variant: _EaVariant) -> str:
         f"payload_width = {variant.payload_width}, payload_signed = {str(variant.payload_signed).lower()}, "
         f"base = {_option(variant.base, 'EaBase_')}, descriptor = {_option(variant.descriptor, 'EaDescriptor_')}, "
         f"update_target = {_option(variant.update_target, 'EaUpdateTarget_')}, "
-        f"update_mode = {_option(variant.update_mode, 'EaUpdateMode_')} }}"
+        f"update_mode = {_option(variant.update_mode, 'EaUpdateMode_')}, "
+        f"update_difference = {_option(variant.update_difference, 'EaUpdateDifference_')} }}"
     )
 
 
@@ -812,14 +785,33 @@ def catalog_id_declarations(program: SailProgram) -> list[str]:
         ("Operand_domain", [_constructor("OperandDomain_", item) for item in sorted(domains)]),
         ("Ea_role", [_constructor("EaRole_", item) for item in ("address", "base", "control_target", "index", "segment", "value")]),
         ("Ea_width", [_constructor("EaWidth_", item) for item in ("B", "L", "Q", "W", "operation_size", "predicate")]),
-        ("Ea_profile", [_constructor("EaProfile_", item) for item in ("ea", "fea", "vea")]),
+        (
+            "Ea_profile",
+            sorted(
+                {
+                    _constructor("EaProfile_", item.profile)
+                    for item in variants
+                    if item.profile is not None
+                }
+            ),
+        ),
         ("Ea_form_id", sorted({_constructor("EaForm_", item.name) for item in variants})),
         ("Ea_descriptor_family", [_constructor("EaDescriptor_", item) for item in ("ext1", "ext2")]),
-        ("Ea_kind", [_constructor("EaKind_", item) for item in ("escape", "float_immediate", "immediate", "memory")]),
+        ("Ea_kind", [_constructor("EaKind_", item) for item in ("escape", "immediate", "memory")]),
         ("Ea_segment", [_constructor("EaSegment_", item) for item in ("CS", "SS", "default", "explicit")]),
         ("Ea_base", [_constructor("EaBase_", item) for item in ("PC", "SP", "zero")]),
         ("Ea_update_target", [_constructor("EaUpdateTarget_", item) for item in ("b", "i")]),
         ("Ea_update_mode", [_constructor("EaUpdateMode_", item) for item in ("postincrement", "predecrement")]),
+        (
+            "Ea_update_difference",
+            sorted(
+                {
+                    _constructor("EaUpdateDifference_", item.update_difference)
+                    for item in variants
+                    if item.update_difference is not None
+                }
+            ),
+        ),
     )
     declarations = []
     for name, constructors in groups:

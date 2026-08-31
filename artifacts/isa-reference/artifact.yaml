@@ -2,8 +2,14 @@ id: isa-reference
 generator: generator.py
 inputs:
 - isa
-output: tex/isa-reference.tex
-dependency-graph: graphs/isa-reference-dependencies.json
+outputs:
+  document: tex/isa-reference.tex
+  dependencies: graphs/isa-reference-dependencies.json
+derived-outputs:
+  tex-validation: tex/isa-reference-validate.json
+  compiled-document: pdf/isa-reference.pdf
+  compile-log: pdf/isa-reference.log
+  pdf-validation: pdf/isa-reference-validate.json
 preamble: artifacts/isa-reference/document/fragments/document_preamble.tex
 title-page: artifacts/isa-reference/document/fragments/title_page.tex
 body:
@@ -24,16 +30,13 @@ body:
 - term-group: base.term_groups.architectural_exceptions
 - term-group: FP.term_groups.floating_point_and_exceptions
 - term-group: VECTOR.term_groups.vector_architectural_state
-- term-group: base.term_groups.compatibility
-- topic: base.manual.compatibility.contract
-- topic: base.manual.compatibility.reserved-fields
-- topic: base.encoding.instruction.compatibility.reserved-encodings
-- topic: base.cpuid.compatibility.contract
+- term-group: base.term_groups.normative_qualifiers
 - topic: base.registers.register-model.programming-model
 - topic: base.registers.register-model.register-model
 - topic: base.registers.state-register-format-diagrams.flags-and-status-registers
 - topic: FP.registers.floating-point-register-model
 - topic: FP.registers.fflags-and-fstatus-registers
+- topic: VECTOR.registers.vector-register-model
 - topic: base.registers.register-model.segment-registers
 - topic: base.registers.register-model.segment-register-operand-class
 - topic: base.registers.register-model.control-registers
@@ -45,6 +48,7 @@ body:
 - topic: base.encoding.instruction.instruction-word-formats.instruction-encoding
 - topic: base.encoding.instruction.instruction-word-formats.instruction-stream-and-record-boundary
 - topic: base.encoding.instruction.instruction-word-formats.instruction-header-formats
+- topic: base.encoding.instruction.reserved-encodings
 - topic: base.encoding.instruction.instruction-payload-ordering.instruction-payload-ordering
 - topic: base.encoding.instruction.representative-instruction-encodings.representative-encodings
 - topic: base.ea.effective-address-modes.effective-address-profiles
@@ -171,7 +175,5 @@ body:
     - VECTORFP.introduction.vector-floating-point-semantics
 - topic: base.indexes.reference-navigation.reference-indexes
 - topic: base.indexes.reference-navigation.canonical-field-names
-- topic: base.indexes.reference-navigation.architectural-state-index
-- topic: base.indexes.reference-navigation.architectural-event-index
 - topic: base.indexes.reference-navigation.implementation-defined-disclosures
 postamble: artifacts/isa-reference/document/fragments/document_end.tex

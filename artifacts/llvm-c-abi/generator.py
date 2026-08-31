@@ -340,8 +340,7 @@ def _location_line(
     return (
         f"BEDROCK_C_LOCATION_POLICY({value_class}, {direction}, "
         f"{_token(policy.mode)}, {register_class}, {policy.units or 0}, "
-        f"{policy.alignment_units}, {policy.direct_maximum_bytes or 0}, "
-        f"{_token(policy.fallback or 'none')})"
+        f"{policy.alignment_units}, {policy.direct_maximum_bytes or 0})"
     )
 
 

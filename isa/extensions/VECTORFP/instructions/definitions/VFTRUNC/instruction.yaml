@@ -2,8 +2,6 @@ mnemonic: VFTRUNC
 name: Vector Floating-Point Truncate to Integral
 summary: Rounds each active floating-point element toward zero to an integral value in the same format.
 route: vector
-sail_entries:
-- execute_VFTRUNC
 privileged: false
 operands:
   govern:

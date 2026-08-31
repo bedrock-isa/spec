@@ -9,4 +9,3 @@ signature:
     type: u16
 lowering:
   operation: isa:base.instructions.WRSTATUS
-  kind: direct

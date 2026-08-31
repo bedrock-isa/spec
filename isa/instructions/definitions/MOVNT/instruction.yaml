@@ -2,8 +2,6 @@ mnemonic: MOVNT
 name: Move Non-Temporal
 summary: Stores an Rn register value to memory with a non-temporal access hint.
 route: cache
-sail_entries:
-- execute_MOVNT
 privileged: false
 repeat:
   type: repcc

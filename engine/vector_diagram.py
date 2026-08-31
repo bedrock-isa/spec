@@ -12,14 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from .inventory import DirectoryInventory
-    from .reference import Reference, ReferenceIndex
-    from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from inventory import DirectoryInventory
-    from reference import Reference, ReferenceIndex
-    from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .inventory import DirectoryInventory
+from .reference import Reference, ReferenceIndex
+from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
 VISIBLE_BYTES = 16

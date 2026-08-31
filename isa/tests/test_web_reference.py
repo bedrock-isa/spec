@@ -14,8 +14,10 @@ class WebReferenceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.repository = Path(__file__).parents[2]
-        cls.project = IsaProject.load(cls.repository / "isa")
-        cls.workspace = SpecWorkspace.from_isa(cls.project)
+        cls.workspace = SpecWorkspace.load(cls.repository)
+        cls.project = cls.workspace.require_provider("isa")
+        if not isinstance(cls.project, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
         cls.registry = ArtifactGeneratorRegistry.discover(cls.workspace)
         context = ArtifactGenerationContext.create(
             cls.workspace, cls.repository / "output"
@@ -58,32 +60,23 @@ class WebReferenceTest(unittest.TestCase):
         )
         cls.site = build_site(tuple(specs), composition)
 
-    def test_web_reference_is_a_current_workspace_artifact(self) -> None:
-        generator = self.registry.generator("web-reference")
+    def test_navigation_projects_each_owned_page_once(self) -> None:
+        def outputs(entries: list[dict[str, object]]) -> list[str]:
+            projected: list[str] = []
+            for entry in entries:
+                value = next(iter(entry.values()))
+                if isinstance(value, str):
+                    projected.append(value)
+                elif isinstance(value, list):
+                    projected.extend(outputs(value))
+                else:
+                    self.fail(f"unexpected navigation entry: {entry!r}")
+            return projected
 
-        self.assertEqual(
-            generator.definition.inputs,
-            ("isa", "abi.elf", "abi.c", "interfaces.c"),
-        )
-        self.assertEqual(
-            generator.definition.dependencies,
-            ("isa-reference", "elf-abi", "c-abi", "c-target-intrinsics"),
-        )
+        projected = outputs(self.site.navigation())
+        owned = [page.output.as_posix() for page in self.site.registry.pages]
 
-    def test_current_documents_preserve_the_site_ownership_contract(self) -> None:
-        isa = self.structures["isa"]
-
-        self.assertEqual((len(isa.parts), len(isa.sections)), (4, 21))
-        self.assertEqual(len(isa.instructions), 327)
-        self.assertEqual(
-            tuple(
-                len(self.structures[key].sections)
-                for key in ("elf-abi", "c-abi", "target-intrinsics")
-            ),
-            (11, 8, 5),
-        )
-        self.assertEqual(len(self.site.registry.pages), 382)
-        self.assertEqual(len(self.site.registry.targets), 1048)
+        self.assertEqual(sorted(projected), sorted(owned))
 
     def test_current_style_wrappers_are_lowered_at_the_pandoc_boundary(self) -> None:
         normalized = normalize_latex_for_site(

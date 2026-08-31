@@ -9,4 +9,3 @@ signature:
     type: void_pointer
 lowering:
   operation: isa:base.instructions.SAVE
-  kind: direct

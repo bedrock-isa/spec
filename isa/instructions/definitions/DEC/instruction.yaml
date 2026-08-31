@@ -2,8 +2,6 @@ mnemonic: DEC
 name: Decrement
 summary: Decrements the selected-width destination modulo its width without changing FLAGS.
 route: integer_unary
-sail_entries:
-- execute_DEC
 privileged: false
 repeat:
   type: repcc

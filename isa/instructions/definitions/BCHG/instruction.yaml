@@ -2,8 +2,6 @@ mnemonic: BCHG
 name: Bit Change
 summary: Toggles the indexed destination bit, sets Z when it was clear, and clears NCV.
 route: integer_bitfield
-sail_entries:
-- execute_BCHG
 privileged: false
 repeat:
   type: repcc

@@ -2,8 +2,6 @@ mnemonic: PZIPLO
 name: Predicate Lower-Half Interleave
 summary: Interleave the lower halves of two predicate-lane sequences.
 route: vector
-sail_entries:
-- execute_PZIPLO
 privileged: false
 operands:
   lhs:

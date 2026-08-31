@@ -2,8 +2,6 @@ mnemonic: VFNMSUB
 name: Vector Floating-Point Fused Negative Multiply-Subtract
 summary: Performs fused negative multiply-subtract on corresponding active floating-point elements.
 route: vector
-sail_entries:
-- execute_VFNMSUB
 privileged: false
 operands:
   govern:

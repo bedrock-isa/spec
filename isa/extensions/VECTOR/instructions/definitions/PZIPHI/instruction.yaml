@@ -2,8 +2,6 @@ mnemonic: PZIPHI
 name: Predicate Upper-Half Interleave
 summary: Interleave the upper halves of two predicate-lane sequences.
 route: vector
-sail_entries:
-- execute_PZIPHI
 privileged: false
 operands:
   lhs:

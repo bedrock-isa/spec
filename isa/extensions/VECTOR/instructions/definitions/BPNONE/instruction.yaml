@@ -2,8 +2,6 @@ mnemonic: BPNONE
 name: Branch on No Predicate Bits
 summary: Branch if no bit is set.
 route: vector
-sail_entries:
-- execute_BPNONE
 privileged: false
 operands:
   predicate:

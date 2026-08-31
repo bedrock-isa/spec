@@ -7,7 +7,6 @@ signature:
   parameters: []
 lowering:
   operation: isa:base.instructions.RDSEG
-  kind: direct
   operands:
     source: CS
 wrapper:

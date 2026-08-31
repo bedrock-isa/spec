@@ -2,8 +2,6 @@ mnemonic: VCTZ
 name: Vector Count Trailing Zeros
 summary: Counts consecutive zero bits from the low end of each active element.
 route: vector
-sail_entries:
-- execute_VCTZ
 privileged: false
 operands:
   govern:

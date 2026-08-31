@@ -2,8 +2,6 @@ mnemonic: PUZIPLO
 name: Predicate Even-Lane Extraction
 summary: Concatenate even-position predicate lanes from two sources.
 route: vector
-sail_entries:
-- execute_PUZIPLO
 privileged: false
 operands:
   lhs:

@@ -2,8 +2,6 @@ mnemonic: VPOPCNT
 name: Vector Population Count
 summary: Counts the set bits in each active element.
 route: vector
-sail_entries:
-- execute_VPOPCNT
 privileged: false
 operands:
   govern:

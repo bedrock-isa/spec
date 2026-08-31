@@ -2,7 +2,5 @@ mnemonic: YIELD
 name: Yield
 summary: Hints that the current logical processor may be deprioritized.
 route: core_control
-sail_entries:
-- execute_YIELD
 privileged: false
 operands: {}

@@ -7,4 +7,3 @@ signature:
   parameters: []
 lowering:
   operation: isa:base.instructions.YIELD
-  kind: direct

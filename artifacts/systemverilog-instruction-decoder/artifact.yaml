@@ -5,5 +5,5 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_decode_d0.sv
-- rtl/bedrock_decode_d1.sv
+  d0-decoder: rtl/bedrock_decode_d0.sv
+  d1-decoder: rtl/bedrock_decode_d1.sv

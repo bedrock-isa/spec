@@ -10,6 +10,5 @@ signature:
     constant: true
 lowering:
   operation: isa:base.instructions.INVASID
-  kind: direct
 wrapper:
   kind: macro

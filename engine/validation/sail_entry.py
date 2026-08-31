@@ -5,12 +5,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-try:
-    from ..composition import InstructionSemantics
-    from ..project import InstructionBundle
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from composition import InstructionSemantics
-    from project import InstructionBundle
+from ..composition import InstructionSemantics
+from ..project import InstructionBundle
 
 if TYPE_CHECKING:
     from ..composition import SailProgram
@@ -19,25 +15,28 @@ if TYPE_CHECKING:
 class SailEntryValidator:
     def missing_semantics(
         self, semantics: "InstructionSemantics"
-    ) -> tuple[str, ...]:
+    ) -> str | None:
         source = semantics.source
         if not source.is_file():
-            return ()
+            return None
         text = source.read_text(encoding="utf-8")
-        return tuple(
-            entry
-            for entry in semantics.entries
-            if re.search(rf"(?m)^function\s+{re.escape(entry)}\s*\(", text) is None
+        return (
+            semantics.entry
+            if re.search(
+                rf"(?m)^function\s+{re.escape(semantics.entry)}\s*\(", text
+            )
+            is None
+            else None
         )
 
-    def missing(self, bundle: InstructionBundle) -> tuple[str, ...]:
+    def missing(self, bundle: InstructionBundle) -> str | None:
         return self.missing_semantics(InstructionSemantics(bundle))
 
     def require(self, program: "SailProgram") -> None:
         for semantics in program.instruction_semantics:
             missing = self.missing_semantics(semantics)
-            if missing:
+            if missing is not None:
                 raise ValueError(
-                    f"{semantics.bundle.instruction.source}: Sail entry {missing[0]} "
+                    f"{semantics.bundle.instruction.source}: Sail entry {missing} "
                     f"is not defined by {semantics.source}"
                 )

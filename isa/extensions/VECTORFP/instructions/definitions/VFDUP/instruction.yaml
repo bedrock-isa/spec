@@ -2,8 +2,6 @@ mnemonic: VFDUP
 name: Vector Floating-Point Duplicate
 summary: Broadcasts a floating-point scalar register to every vector lane.
 route: vector
-sail_entries:
-- execute_VFDUP
 privileged: false
 operands:
   src:

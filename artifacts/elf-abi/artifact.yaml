@@ -4,4 +4,5 @@ inputs:
 - isa
 - abi.elf
 source: abi/elf/documents/elf-abi.tex
-output: tex/bedrock-elf-abi.tex
+outputs:
+  document: tex/bedrock-elf-abi.tex

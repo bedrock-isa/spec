@@ -51,3 +51,8 @@ function vector_writable_operand(operands : list(Decoded_operand)) -> option(Dec
 
 function vector_fp_allowed_causes(operation : Semantic_operation) -> bits(5) =
     vector_semantics(operation).fp_allowed_causes
+function clause ea_update_amount(EaUpdateDifference_vlen_bytes, state, _) =
+    state.vector_length_bytes
+
+function clause ea_update_amount(EaUpdateDifference_element_count, state, width) =
+    tdiv_int(state.vector_length_bytes, width)

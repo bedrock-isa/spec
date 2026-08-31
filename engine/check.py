@@ -8,34 +8,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from .allocation import AllocationCube, forms_overlap, numeric_bounds
-    from .cpuid import CpuidCatalog, CpuidClass, CpuidLeaf, CpuidQuery
-    from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
-    from .encoding import OperandConstraint
-    from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH
-    from .event import EventCatalog, EventClass
-    from .project import IsaProject, InstructionBundle
-    from .reference import Reference, ReferenceError
-    from .register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
-    from .semantic_text import TermReferenceText
-    from .terminology import Term, TermCatalog, TerminologyInventory
-    from .type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
-    from .validation import SailEntryValidator
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from allocation import AllocationCube, forms_overlap, numeric_bounds
-    from cpuid import CpuidCatalog, CpuidClass, CpuidLeaf, CpuidQuery
-    from diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
-    from encoding import OperandConstraint
-    from encoding_architecture import ENCODING_CLASSES_BY_WIDTH
-    from event import EventCatalog, EventClass
-    from project import IsaProject, InstructionBundle
-    from reference import Reference, ReferenceError
-    from register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
-    from semantic_text import TermReferenceText
-    from terminology import Term, TermCatalog, TerminologyInventory
-    from type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
-    from validation import SailEntryValidator
+from .allocation import AllocationCube, forms_overlap, numeric_bounds
+from .cpuid import CpuidCatalog, CpuidClass, CpuidLeaf, CpuidQuery
+from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
+from .encoding import OperandConstraint
+from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH
+from .event import EventCatalog, EventClass
+from .project import IsaProject, InstructionBundle
+from .reference import Reference, ReferenceError
+from .register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
+from .semantic_text import TermReferenceText
+from .terminology import Term, TermCatalog, TerminologyInventory
+from .type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
+from .validation import SailEntryValidator
 
 
 def _error(
@@ -69,13 +54,14 @@ class BundleValidator:
                     f"{mnemonic} has no required {companion} artifact",
                 )
 
-        for entry in SailEntryValidator().missing(bundle):
+        missing_entry = SailEntryValidator().missing(bundle)
+        if missing_entry is not None:
             yield _error(
                 "sail.entry",
                 bundle.instruction.source,
-                f"declared Sail entry {entry!r} is not defined by "
+                f"instruction-owned Sail entry {missing_entry!r} is not defined by "
                 f"{bundle.artifacts.semantics}",
-                "sail_entries",
+                "mnemonic",
             )
 
         for form in bundle.encodings.forms:
@@ -1519,29 +1505,30 @@ class DocumentSourceValidationRule(ValidationRule):
         artifact_root = project.root.parent / "artifacts"
         if not artifact_root.is_dir() or not (artifact_root / "schema.yaml").is_file():
             return
-        try:
-            from .generation import (
-                ArtifactGenerationContext,
-                ArtifactGeneratorRegistry,
-            )
-        except ImportError:
-            from generation import ArtifactGenerationContext, ArtifactGeneratorRegistry
+        from .generation import (
+            ArtifactGenerationContext,
+            ArtifactGeneratorRegistry,
+        )
+        from .workspace import SpecWorkspace
 
         try:
-            registry = ArtifactGeneratorRegistry.discover(project)
+            workspace = SpecWorkspace.load(project.root.parent)
+            registry = ArtifactGeneratorRegistry.discover(workspace)
         except (OSError, RuntimeError, ValueError) as error:
             yield _error("document.source", artifact_root, str(error))
             return
-        context = ArtifactGenerationContext.create(project, project.root / ".check")
-        for artifact_id in registry.implemented_ids:
+        context = ArtifactGenerationContext.create(
+            workspace, project.root / ".check"
+        )
+        for artifact_id in registry.artifact_ids:
             generator = registry.generator(artifact_id)
             if not any(
                 output.suffix == ".tex"
-                for output in generator.definition.declared_outputs
+                for output in generator.definition.output_roots
             ):
                 continue
             try:
-                generator.generate(context)
+                registry.generate(artifact_id, workspace, context.output_root)
             except (OSError, RuntimeError, ValueError) as error:
                 yield _error(
                     "document.source", generator.definition.source, str(error)

@@ -2,8 +2,6 @@ mnemonic: VUZIPLO
 name: Vector Even-Lane Deinterleave
 summary: Gather even lanes from the old destination and source into separate result halves.
 route: vector
-sail_entries:
-- execute_VUZIPLO
 privileged: false
 operands:
   govern:

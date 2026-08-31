@@ -6,15 +6,23 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Callable, TypeVar, cast
+from typing import Protocol, TypeVar
 
+from .dependency import EntityDependency
+from .entity import EntityCatalog
 from .reference import QualifiedReference, Reference
 
-if TYPE_CHECKING:
-    from .project import IsaProject
-
-
 _T = TypeVar("_T")
+
+
+class SpecificationProvider(Protocol):
+    """One domain exposed through the workspace's uniform entity contract."""
+
+    entities: EntityCatalog
+
+    def resolve(self, reference: Reference[_T]) -> _T: ...
+
+    def entity_dependencies(self) -> tuple[EntityDependency, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,11 +30,11 @@ class SpecWorkspace:
     """Repository root and named domain providers available to generators."""
 
     root: Path
-    providers: Mapping[str, object]
+    providers: Mapping[str, SpecificationProvider]
 
     @classmethod
     def create(
-        cls, root: str | Path, providers: Mapping[str, object]
+        cls, root: str | Path, providers: Mapping[str, SpecificationProvider]
     ) -> "SpecWorkspace":
         return cls(
             Path(root).resolve(),
@@ -34,44 +42,35 @@ class SpecWorkspace:
         )
 
     @classmethod
-    def from_isa(cls, project: "IsaProject") -> "SpecWorkspace":
-        isa_root = project.root.resolve()
-        repository = isa_root.parent
-        providers: dict[str, object] = {"isa": project}
-        elf_root = repository / "abi/elf"
-        if elf_root.is_dir():
-            from abi.elf.model import ElfAbiProject
+    def load(cls, root: str | Path) -> "SpecWorkspace":
+        """Load the repository's declared, closed-world provider composition."""
 
-            providers["abi.elf"] = ElfAbiProject.load(elf_root, project)
-        c_abi_root = repository / "abi/c"
-        if c_abi_root.is_dir():
-            from abi.c.model import CAbiProject
+        from abi.c.model import CAbiProject
+        from abi.elf.model import ElfAbiProject
+        from interfaces.c.model import CInterfaceProject
 
-            providers["abi.c"] = CAbiProject.load(c_abi_root)
-        interface_root = repository / "interfaces/c"
-        if interface_root.is_dir():
-            from interfaces.c.model import CInterfaceProject
+        from .project import IsaProject
 
-            providers["interfaces.c"] = CInterfaceProject.load(interface_root)
-        workspace = cls.create(repository, providers)
-        elf = providers.get("abi.elf")
-        if elf is not None:
-            validate = getattr(elf, "validate", None)
-            if callable(validate):
-                validate(workspace)
-        c_abi = providers.get("abi.c")
-        if c_abi is not None:
-            validate = getattr(c_abi, "validate", None)
-            if callable(validate):
-                validate(workspace)
-        interface = providers.get("interfaces.c")
-        if interface is not None:
-            validate = getattr(interface, "validate", None)
-            if callable(validate):
-                validate(workspace)
+        repository = Path(root).resolve()
+        isa = IsaProject.load(repository / "isa")
+        elf = ElfAbiProject.load(repository / "abi/elf", isa)
+        c_abi = CAbiProject.load(repository / "abi/c")
+        interface = CInterfaceProject.load(repository / "interfaces/c")
+        workspace = cls.create(
+            repository,
+            {
+                "isa": isa,
+                "abi.elf": elf,
+                "abi.c": c_abi,
+                "interfaces.c": interface,
+            },
+        )
+        elf.validate(workspace)
+        c_abi.validate(workspace)
+        interface.validate(workspace)
         return workspace
 
-    def require_provider(self, name: str) -> object:
+    def require_provider(self, name: str) -> SpecificationProvider:
         try:
             return self.providers[name]
         except KeyError as error:
@@ -82,21 +81,10 @@ class SpecWorkspace:
 
     def resolve(
         self,
-        reference: QualifiedReference[_T],
+        reference: str | QualifiedReference[_T],
     ) -> _T:
         """Resolve a qualified reference through its owning provider."""
 
-        provider = self.require_provider(reference.domain)
-        resolver = getattr(provider, "resolve", None)
-        if callable(resolver):
-            typed_resolver = cast(
-                Callable[[Reference[_T]], _T], resolver
-            )
-            return typed_resolver(reference.local)
-        entities = getattr(provider, "entities", None)
-        if entities is not None and callable(getattr(entities, "resolve", None)):
-            entity = entities.resolve(reference.local)
-            return cast(_T, getattr(entity, "value", entity))
-        raise ValueError(
-            f"workspace provider {reference.domain!r} cannot resolve references"
-        )
+        qualified = QualifiedReference.parse(reference)
+        provider = self.require_provider(qualified.domain)
+        return provider.resolve(qualified.local)

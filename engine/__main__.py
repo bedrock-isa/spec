@@ -15,6 +15,7 @@ from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .document import DocumentBuilder
 from .generation import ArtifactGeneratorRegistry, ArtifactWriter
 from .project import IsaProject
+from .workspace import SpecWorkspace
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -68,9 +69,9 @@ def _parser() -> argparse.ArgumentParser:
     _add_format(holes)
 
     docs = subparsers.add_parser(
-        "docs", help="compare and compile reader-facing documents"
+        "docs", help="validate and compile reader-facing documents"
     )
-    docs.add_argument("action", choices=("compare", "build"))
+    docs.add_argument("action", choices=("validate", "build"))
     docs.add_argument(
         "--output-root",
         type=Path,
@@ -131,7 +132,11 @@ def _load_failure(root: Path, error: Exception) -> DiagnosticBag:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        project = IsaProject.load(args.isa_root)
+        workspace = SpecWorkspace.load(args.isa_root.resolve().parent)
+        provider = workspace.require_provider("isa")
+        if not isinstance(provider, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
+        project = provider
     except (OSError, ValueError) as error:
         diagnostics = _load_failure(args.isa_root, error)
         rendered = (
@@ -145,9 +150,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "alloc":
         return _run_allocation(args, project)
     if args.command == "docs":
-        return _run_docs(args, project)
+        return _run_docs(args, workspace)
     if args.command == "artifacts":
-        return _run_artifacts(args, project)
+        return _run_artifacts(args, workspace)
 
     try:
         diagnostics = CheckService().check(project, args.targets)
@@ -176,10 +181,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 1 if diagnostics.has_errors else 0
 
 
-def _run_docs(args: argparse.Namespace, project: IsaProject) -> int:
+def _run_docs(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
     try:
         result = DocumentBuilder().build(
-            project,
+            workspace,
             args.output_root,
             compile_pdf=args.action == "build",
             latexmk=args.latexmk,
@@ -196,21 +201,18 @@ def _run_docs(args: argparse.Namespace, project: IsaProject) -> int:
     return 0 if result.report.passed else 1
 
 
-def _run_artifacts(args: argparse.Namespace, project: IsaProject) -> int:
+def _run_artifacts(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
     try:
-        registry = ArtifactGeneratorRegistry.discover(project)
+        registry = ArtifactGeneratorRegistry.discover(workspace)
         if args.action == "list":
             for artifact_id in registry.artifact_ids:
                 generator = registry.generator(artifact_id)
-                print(
-                    f"{artifact_id}\t{generator.status}\t"
-                    f"{generator.definition.source}"
-                )
+                print(f"{artifact_id}\t{generator.definition.source}")
             return 0
-        selected = tuple(args.artifact_ids) or registry.implemented_ids
+        selected = tuple(args.artifact_ids) or registry.artifact_ids
         writer = ArtifactWriter()
         for artifact_id in selected:
-            artifacts = registry.generate(artifact_id, project, args.output_root)
+            artifacts = registry.generate(artifact_id, workspace, args.output_root)
             written = writer.write(artifacts, args.output_root)
             print(f"generated {artifact_id}:")
             for path in written:

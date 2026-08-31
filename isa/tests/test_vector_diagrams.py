@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 from jsonschema import Draft202012Validator
 
+from engine.composition import DocumentComposition
 from engine.project import IsaProject
 from engine.reference import Reference
 from engine.render.latex_document import LatexDocumentRenderer
@@ -23,6 +24,12 @@ class VectorDiagramTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.root = Path(__file__).parents[1]
         cls.project = IsaProject.load(cls.root)
+        cls.composition = DocumentComposition.load(
+            cls.root.parent / "artifacts/isa-reference/artifact.yaml", cls.project
+        )
+        cls.public_targets = LatexDocumentRenderer.public_targets(
+            cls.composition, cls.project
+        )
         cls.schema = yaml.safe_load(
             (cls.root / "schemas/vector-diagram.yaml").read_text(encoding="utf-8")
         )
@@ -138,7 +145,10 @@ class VectorDiagramTest(unittest.TestCase):
         sources = LatexDocumentRenderer().sources
         for bundle in self._diagram_bundles():
             rendered = sources.render(
-                bundle.artifacts.description, self.project, bundle.reference
+                bundle.artifacts.description,
+                self.project,
+                self.public_targets,
+                bundle.reference,
             )
             with self.subTest(instruction=bundle.instruction.mnemonic):
                 self.assertNotIn("(:diagram:", rendered)
@@ -180,13 +190,14 @@ class VectorDiagramTest(unittest.TestCase):
     def test_rejects_unknown_diagram_reference(self) -> None:
         bundle, reference, _directive, placements = self._placement_fixture()
         unknown = Reference(reference.owner, reference.path, "unknown")
-        with self.assertRaisesRegex(ValueError, "invalid VECTOR diagram reference"):
+        with self.assertRaises(ValueError) as raised:
             placements.expand(
                 f"(:diagram:{_reference_text(unknown)}:)",
                 self.project,
                 bundle.artifacts.description,
                 bundle.reference,
             )
+        self.assertIn(_reference_text(unknown), str(raised.exception))
 
     def test_rejects_diagram_owned_by_another_instruction(self) -> None:
         bundle, _reference, _directive, placements = self._placement_fixture()

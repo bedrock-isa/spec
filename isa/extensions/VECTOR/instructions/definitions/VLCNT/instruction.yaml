@@ -2,8 +2,6 @@ mnemonic: VLCNT
 name: Vector Lane Count
 summary: Write the number of lanes of the selected element width.
 route: vector
-sail_entries:
-- execute_VLCNT
 privileged: false
 operands:
   dst:

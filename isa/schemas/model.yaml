@@ -64,19 +64,13 @@ $defs:
         allOf:
         - $ref: '#/$defs/owner-source'
         - pattern: \.tex$
-      artifact:
-        type: string
-        pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
-      concept:
-        type: string
-        pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
 x-interpretation-rules:
-- model.yaml is owned by the directory containing it and contains two independent projections.
+- model.yaml is owned by the directory containing it and contains two independent catalogs.
 - Every declared base or extension namespace has a model.yaml; absence is an error rather than an empty namespace.
 - sail.units are executable dependency nodes; each owns one or more ordered Sail sources.
-- documents.topics are reader-ordered TeX sources; each file owns one subtopic in the compiled document.
+- documents.topics are owner-local TeX sources; each file owns one available subtopic.
 - Every document topic source contains exactly one sectioning command and is included without generated splitting.
-- artifact partitions independent compiled documents without coupling their topic order to Sail.
+- Reader-facing artifacts select and order topics explicitly in their own compositions.
 - Sail units and document topics have no cardinality or colocated-file constraint.
 - Base sources must remain outside extensions, and extension sources must remain below their owning extension root.
 - Sail unit dependencies form one explicit project graph across base and extension namespaces.

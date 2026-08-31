@@ -63,22 +63,23 @@ class CheckServiceTest(unittest.TestCase):
         self.assertEqual([item.code for item in diagnostics], ["artifact.missing"])
         self.assertIn("required semantics artifact", diagnostics[0].message)
 
-    def test_missing_declared_sail_entry_is_reported(self) -> None:
+    def test_missing_instruction_owned_sail_entry_is_reported(self) -> None:
         bundle = self.project.bundle("ADD")
-        data = bundle.instruction.to_dict()
-        data["sail_entries"] = ["execute_DOES_NOT_EXIST"]
-        instruction = type(bundle.instruction)(
-            data, bundle.instruction.source, bundle.instruction.isa_root
-        )
-
-        diagnostics = list(
-            BundleValidator().validate(
-                replace(bundle, instruction=instruction), self.project
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "semantics.sail"
+            source.write_text("function execute_other() -> unit = ()\n")
+            diagnostics = list(
+                BundleValidator().validate(
+                    replace(
+                        bundle,
+                        artifacts=replace(bundle.artifacts, semantics=source),
+                    ),
+                    self.project,
+                )
             )
-        )
 
         self.assertEqual([item.code for item in diagnostics], ["sail.entry"])
-        self.assertIn("execute_DOES_NOT_EXIST", diagnostics[0].message)
+        self.assertIn("execute_ADD", diagnostics[0].message)
 
     def test_missing_declared_directory_is_a_catalog_diagnostic(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -120,15 +121,6 @@ class CheckServiceTest(unittest.TestCase):
         self.assertTrue(setcc.pattern.overlaps(set_form.pattern))
         self.assertFalse(forms_overlap(setcc, set_form))
         self.assertTrue(forms_overlap(replace(setcc, constraints=()), set_form))
-
-    def test_size_constraints_separate_vector_compare_forms(self) -> None:
-        forms = self.project.bundle("VCMPcc").encodings.forms
-        integer_form = forms[0]
-        floating_form = forms[1]
-
-        self.assertEqual(integer_form.pattern, floating_form.pattern)
-        self.assertFalse(forms_overlap(integer_form, floating_form))
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,6 @@ mnemonic: CMP
 name: Compare
 summary: Computes a comparison result and updates condition codes without storing the temporary value.
 route: integer_alu
-sail_entries:
-- execute_CMP
 privileged: false
 repeat:
   type: repcc

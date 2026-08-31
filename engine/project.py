@@ -6,39 +6,27 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
+from typing import TypeVar, cast
 
-try:
-    from .cpuid import CpuidCatalog, CpuidField
-    from .disclosure import ImplementationDisclosureCatalog
-    from .ea_mode import EAMode, EAModeCatalog
-    from .encoding import EncodingCatalog
-    from .entity import EntityCatalog
-    from .event import EventCatalog
-    from .extension import ExtensionMetadata, ExtensionSetCatalog
-    from .instruction import Instruction
-    from .model import ModelCatalog
-    from .register import RegisterCatalog
-    from .reference import Reference, ReferenceIndex, UnknownReferenceError
-    from .terminology import TermCatalog
-    from .type_system import TypeNamespace, TypeSystem
-    from .vector_diagram import VectorDiagram, VectorDiagramCatalog
-    from .yaml_document import YamlDocumentLoader
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from cpuid import CpuidCatalog, CpuidField
-    from disclosure import ImplementationDisclosureCatalog
-    from ea_mode import EAMode, EAModeCatalog
-    from encoding import EncodingCatalog
-    from entity import EntityCatalog
-    from event import EventCatalog
-    from extension import ExtensionMetadata, ExtensionSetCatalog
-    from instruction import Instruction
-    from model import ModelCatalog
-    from register import RegisterCatalog
-    from reference import Reference, ReferenceIndex, UnknownReferenceError
-    from terminology import TermCatalog
-    from type_system import TypeNamespace, TypeSystem
-    from vector_diagram import VectorDiagram, VectorDiagramCatalog
-    from yaml_document import YamlDocumentLoader
+from .cpuid import CpuidCatalog, CpuidField
+from .dependency import EntityDependency
+from .disclosure import ImplementationDisclosureCatalog
+from .ea_mode import EAMode, EAModeCatalog
+from .encoding import EncodingCatalog
+from .entity import Entity, EntityCatalog
+from .event import EventCatalog
+from .extension import ExtensionMetadata, ExtensionSetCatalog
+from .instruction import Instruction
+from .model import ModelCatalog
+from .register import RegisterCatalog
+from .reference import QualifiedReference, Reference, ReferenceIndex, UnknownReferenceError
+from .terminology import TermCatalog
+from .type_system import TypeNamespace, TypeSystem
+from .vector_diagram import VectorDiagram, VectorDiagramCatalog
+from .yaml_document import YamlDocumentLoader
+
+
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -453,6 +441,129 @@ class IsaProject:
     def load(cls, root: str | Path) -> "IsaProject":
         return IsaProjectLoader().load(root)
 
+    def resolve(self, reference: Reference[_T]) -> _T:
+        """Resolve one provider-local entity through the ISA entity catalog."""
+
+        entity = self.entities.resolve(cast(Reference[Entity], reference))
+        return cast(_T, entity.value)
+
+    def entity_dependencies(
+        self,
+    ) -> tuple[EntityDependency, ...]:
+        """Return the ISA domain's authored and typed entity relationships."""
+
+        result: list[EntityDependency] = []
+
+        def local(reference: Reference[object]) -> QualifiedReference[object]:
+            return QualifiedReference("isa", reference)
+
+        def add(
+            source: Reference[object],
+            target: Reference[object],
+            kind: str,
+        ) -> None:
+            result.append(EntityDependency(source, local(target), kind))
+
+        for bundle in self.catalog.instructions.values():
+            source = cast(Reference[object], bundle.reference)
+            for field in bundle.required_cpuid_flags:
+                add(
+                    source,
+                    cast(Reference[object], field.reference),
+                    "requires-cpuid",
+                )
+            for form in bundle.encodings.forms:
+                for field in form.fields:
+                    add(
+                        source,
+                        cast(Reference[object], field.type),
+                        "instruction-field-type",
+                    )
+                for payload in form.payloads:
+                    add(
+                        source,
+                        cast(Reference[object], payload.type),
+                        "instruction-payload-type",
+                    )
+
+        profile_types = {
+            (definition.owner, definition.profile): definition.reference
+            for definition in self.types.field_types.values()
+            if definition.profile is not None
+        }
+        for mode in self.catalog.ea_modes.values():
+            source = cast(Reference[object], mode.reference)
+            profile_type = profile_types.get((mode.catalog.owner, mode.catalog.profile))
+            if profile_type is not None:
+                add(
+                    source,
+                    cast(Reference[object], profile_type),
+                    "ea-profile-type",
+                )
+            fields = mode.get("fields", {})
+            for symbol in fields:
+                add(
+                    source,
+                    cast(Reference[object], mode.field_type_reference(symbol)),
+                    "ea-field-type",
+                )
+            for encoding_index, encoding in enumerate(mode["encodings"]):
+                for payload_index, _ in enumerate(encoding.get("payloads", ())):
+                    add(
+                        source,
+                        cast(
+                            Reference[object],
+                            mode.payload_type_reference(encoding_index, payload_index),
+                        ),
+                        "ea-payload-type",
+                    )
+
+        for cpuid_class in self.cpuid.references.classes.values():
+            if cpuid_class.extends is not None:
+                add(
+                    cast(Reference[object], cpuid_class.reference),
+                    cast(Reference[object], cpuid_class.extends),
+                    "cpuid-class-overlay",
+                )
+        for leaf in self.cpuid.references.leaves.values():
+            if leaf.extends is not None:
+                add(
+                    cast(Reference[object], leaf.reference),
+                    cast(Reference[object], leaf.extends),
+                    "cpuid-leaf-overlay",
+                )
+        for event_class in self.events.references.classes.values():
+            if event_class.extends is not None:
+                add(
+                    cast(Reference[object], event_class.reference),
+                    cast(Reference[object], event_class.extends),
+                    "event-class-overlay",
+                )
+
+        for register in self.registers.references.registers.values():
+            if register.reset is not None and register.reset.source is not None:
+                add(
+                    cast(Reference[object], register.reference),
+                    cast(Reference[object], register.reset.source),
+                    "register-reset-source",
+                )
+
+        for term in self.terminology.references.terms.values():
+            source = cast(Reference[object], term.reference)
+            for target in term.relations.broader:
+                add(
+                    source,
+                    cast(Reference[object], target),
+                    "term-broader",
+                )
+            for target in term.relations.related:
+                add(
+                    source,
+                    cast(Reference[object], target),
+                    "term-related",
+                )
+        return tuple(result)
+
     def bundle(self, value: str | Reference[InstructionBundle] | Path) -> InstructionBundle:
         if isinstance(value, Reference):
             return self.catalog.instructions.resolve(value)
@@ -561,7 +672,6 @@ class IsaProjectLoader:
         )
         disclosures = ImplementationDisclosureCatalog.load(isa_root, extension_catalog)
         entities = EntityCatalog.build(
-            isa_root,
             types,
             catalog,
             cpuid,

@@ -2,13 +2,9 @@ id: cpuid
 owner: base
 description: >-
   User allowed; reads discovery state and not C memory.
-summary: Read architectural discovery state.
 signature:
   result: u64
   parameters:
   - {id: selector, type: u64}
 lowering:
   operation: isa:base.instructions.CPUID
-  kind: direct
-effects:
-  c-memory: none

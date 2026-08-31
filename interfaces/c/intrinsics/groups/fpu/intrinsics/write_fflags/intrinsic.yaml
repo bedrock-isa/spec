@@ -9,4 +9,3 @@ signature:
     type: u16
 lowering:
   operation: isa:FP.instructions.WRFFLAGS
-  kind: direct

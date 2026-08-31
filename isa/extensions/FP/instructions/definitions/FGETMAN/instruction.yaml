@@ -2,8 +2,6 @@ mnemonic: FGETMAN
 name: Floating-Point Get Mantissa
 summary: Produces the normalized significand view of a floating-point source.
 route: fpu
-sail_entries:
-- execute_FGETMAN
 privileged: false
 repeat:
   type: rep

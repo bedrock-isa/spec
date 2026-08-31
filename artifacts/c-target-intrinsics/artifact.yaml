@@ -5,4 +5,5 @@ inputs:
 - abi.c
 - interfaces.c
 source: interfaces/c/documents/target-intrinsics.tex
-output: tex/bedrock-target-intrinsics.tex
+outputs:
+  document: tex/bedrock-target-intrinsics.tex

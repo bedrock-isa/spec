@@ -3,6 +3,9 @@ generator: generator.py
 summary: Standalone Obsidian-style visualization of workspace entities and their relationships.
 inputs:
 - isa
+- abi.elf
+- abi.c
+- interfaces.c
 outputs:
   view: reference/graph.html
   data: reference/graph.json

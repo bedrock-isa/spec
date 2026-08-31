@@ -2,8 +2,6 @@ mnemonic: VADD
 name: Vector Add
 summary: Adds corresponding active integer vector elements.
 route: vector
-sail_entries:
-- execute_VADD
 privileged: false
 operands:
   govern:

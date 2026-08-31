@@ -2,8 +2,6 @@ mnemonic: RDFLAGS
 name: Read Flags
 summary: Read the integer condition-code flags into an Rn register.
 route: system_registers
-sail_entries:
-- execute_RDFLAGS
 privileged: false
 operands:
   dst:

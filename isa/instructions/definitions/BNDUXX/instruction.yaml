@@ -2,8 +2,6 @@ mnemonic: BNDUXX
 name: Unsigned Bounds Check Exclusive-Exclusive
 summary: Checks unsigned value membership in the exclusive-exclusive interval (lo, hi).
 route: bounds
-sail_entries:
-- execute_BNDUXX
 privileged: false
 repeat:
   type: repcc

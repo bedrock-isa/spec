@@ -13,9 +13,8 @@ from engine.entity import (
     EntityCatalog,
     EntityDisplayStyle,
     EntityKind,
-    opaque_entity_label,
 )
-from engine.document_topic import DomainDocumentCatalog, DomainDocumentTopic
+from engine.dependency import EntityDependency
 from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader
@@ -61,7 +60,6 @@ class LocationPolicy:
     units: int | None
     alignment_units: int
     direct_maximum_bytes: int | None
-    fallback: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,8 +202,6 @@ class CAbiProject:
     runtime_helpers: ReferenceIndex[RuntimeHelper]
     memory_orders: ReferenceIndex[MemoryOrderMapping]
     atomic_lowerings: ReferenceIndex[AtomicLowering]
-    document_catalog: DomainDocumentCatalog
-    document_topics: ReferenceIndex[DomainDocumentTopic]
     entities: EntityCatalog
 
     @classmethod
@@ -213,12 +209,7 @@ class CAbiProject:
         domain_root = Path(root).resolve()
         indexes = _Indexes.create()
         base = _load_namespace("base", domain_root, indexes)
-        document_catalog = DomainDocumentCatalog.load(
-            owner="base",
-            documents_root=domain_root / "documents",
-            schema=domain_root / "schemas/document-topic.yaml",
-        )
-        entities = _build_entities(indexes, document_catalog.topics)
+        entities = _build_entities(indexes)
         return cls(
             domain_root,
             MappingProxyType({"base": base}),
@@ -230,65 +221,81 @@ class CAbiProject:
             indexes.runtime_helpers,
             indexes.memory_orders,
             indexes.atomic_lowerings,
-            document_catalog,
-            document_catalog.topics,
             entities,
         )
 
     def resolve(self, reference: Reference[_T]) -> _T:
-        if reference in self.types:
-            return cast(_T, self.types.resolve(cast(Reference[CType], reference)))
-        if reference in self.register_classes:
-            return cast(
-                _T,
-                self.register_classes.resolve(
-                    cast(Reference[RegisterClass], reference)
-                ),
+        entity = self.entities.resolve(cast(Reference[Entity], reference))
+        return cast(_T, entity.value)
+
+    def entity_dependencies(self) -> tuple[EntityDependency, ...]:
+        """Return the C ABI relationships intentionally exposed to tooling."""
+
+        result: list[EntityDependency] = []
+
+        def add(
+            source: Reference[object],
+            target: QualifiedReference[object],
+            kind: str,
+        ) -> None:
+            result.append(EntityDependency(source, target, kind))
+
+        def local(reference: Reference[object]) -> QualifiedReference[object]:
+            return QualifiedReference("abi.c", reference)
+
+        for definition in self.register_classes.values():
+            source = cast(Reference[object], definition.reference)
+            for target in (*definition.arguments, *definition.results):
+                add(
+                    source,
+                    cast(QualifiedReference[object], target),
+                    "register-class-register",
+                )
+        for definition in self.value_classes.values():
+            source = cast(Reference[object], definition.reference)
+            for policy in (definition.argument, definition.result):
+                if policy.register_class is not None:
+                    add(
+                        source,
+                        local(cast(Reference[object], policy.register_class)),
+                        "value-class-register-class",
+                    )
+        for definition in self.runtime_helpers.values():
+            source = cast(Reference[object], definition.reference)
+            for target in (definition.result, *definition.parameters):
+                add(
+                    source,
+                    local(cast(Reference[object], target)),
+                    "runtime-helper-type",
+                )
+        for definition in self.memory_orders.values():
+            source = cast(Reference[object], definition.reference)
+            sequences = (
+                definition.load or (),
+                definition.store or (),
+                definition.thread_fence,
             )
-        if reference in self.value_classes:
-            return cast(
-                _T,
-                self.value_classes.resolve(cast(Reference[ValueClass], reference)),
-            )
-        if reference in self.promotions:
-            return cast(
-                _T, self.promotions.resolve(cast(Reference[Promotion], reference))
-            )
-        if reference in self.runtime_helpers:
-            return cast(
-                _T,
-                self.runtime_helpers.resolve(cast(Reference[RuntimeHelper], reference)),
-            )
-        if reference in self.memory_orders:
-            return cast(
-                _T,
-                self.memory_orders.resolve(
-                    cast(Reference[MemoryOrderMapping], reference)
-                ),
-            )
-        if reference in self.atomic_lowerings:
-            return cast(
-                _T,
-                self.atomic_lowerings.resolve(
-                    cast(Reference[AtomicLowering], reference)
-                ),
-            )
-        if reference in self.document_topics:
-            return cast(
-                _T,
-                self.document_topics.resolve(
-                    cast(Reference[DomainDocumentTopic], reference)
-                ),
-            )
-        return cast(
-            _T,
-            self.entities.resolve(cast(Reference[Entity], reference)),
-        )
+            for sequence in sequences:
+                for target in sequence:
+                    if isinstance(target, QualifiedReference):
+                        add(
+                            source,
+                            cast(QualifiedReference[object], target),
+                            "memory-order-instruction",
+                        )
+        for definition in self.atomic_lowerings.values():
+            source = cast(Reference[object], definition.reference)
+            for target in definition.instructions:
+                add(
+                    source,
+                    cast(QualifiedReference[object], target),
+                    "atomic-lowering-instruction",
+                )
+        return tuple(result)
 
     def validate(self, workspace) -> None:
         """Resolve every local and cross-domain relationship."""
 
-        self.document_catalog.validate(workspace)
         kind_owners: dict[str, ValueClass] = {}
         for c_type in self.types.values():
             if c_type.call_kind not in {
@@ -706,7 +713,6 @@ def _location_policy(raw: Mapping[str, object]) -> LocationPolicy:
         int(cast(int | str, raw["direct_maximum_bytes"]))
         if "direct_maximum_bytes" in raw
         else None,
-        str(raw["fallback"]) if "fallback" in raw else None,
     )
 
 
@@ -729,10 +735,7 @@ def _matching_id(source: Path, expected: str, raw: Mapping[str, object]) -> None
         )
 
 
-def _build_entities(
-    indexes: _Indexes,
-    document_topics: ReferenceIndex[DomainDocumentTopic],
-) -> EntityCatalog:
+def _build_entities(indexes: _Indexes) -> EntityCatalog:
     result = ReferenceIndex[Entity]()
     for kind, values in (
         (EntityKind.C_ABI_TYPE, indexes.types),
@@ -742,16 +745,9 @@ def _build_entities(
         (EntityKind.C_RUNTIME_HELPER, indexes.runtime_helpers),
         (EntityKind.C_MEMORY_ORDER, indexes.memory_orders),
         (EntityKind.C_ATOMIC_LOWERING, indexes.atomic_lowerings),
-        (EntityKind.TOPIC, document_topics),
     ):
         for reference, value in values.items():
-            display = (
-                value.symbol
-                if isinstance(value, RuntimeHelper)
-                else value.title
-                if isinstance(value, DomainDocumentTopic)
-                else value.id
-            )
+            display = value.symbol if isinstance(value, RuntimeHelper) else value.id
             entity_reference = cast(Reference[Entity], reference)
             result.register(
                 entity_reference,
@@ -759,11 +755,9 @@ def _build_entities(
                     entity_reference,
                     kind,
                     display,
+                    value.source,
                     value,
-                    opaque_entity_label(len(result)),
-                    EntityDisplayStyle.TEXT
-                    if isinstance(value, DomainDocumentTopic)
-                    else EntityDisplayStyle.CODE,
+                    EntityDisplayStyle.CODE,
                 ),
             )
     return EntityCatalog(result)

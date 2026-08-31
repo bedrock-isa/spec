@@ -9,4 +9,3 @@ signature:
     type: u64
 lowering:
   operation: isa:base.instructions.SWPT
-  kind: direct

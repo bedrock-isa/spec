@@ -2,8 +2,6 @@ mnemonic: FCVTS
 name: Convert to Single Precision
 summary: Converts between S and signed B/W/L/Q integer or H/D floating-point representations.
 route: fpu
-sail_entries:
-- execute_FCVTS
 privileged: false
 repeat:
   type: rep

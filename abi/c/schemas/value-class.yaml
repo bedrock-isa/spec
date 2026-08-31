@@ -26,7 +26,6 @@ $defs:
       units: {type: integer, minimum: 1}
       alignment_units: {type: integer, minimum: 1}
       direct_maximum_bytes: {type: integer, minimum: 1}
-      fallback: {enum: [stack, indirect, sret]}
     allOf:
     - if:
         properties: {mode: {enum: [value, copy_address, sret]}}
@@ -35,6 +34,4 @@ $defs:
     - if:
         properties: {mode: {const: size_dependent}}
       then:
-        required: [register_class, units, direct_maximum_bytes, fallback]
-        properties:
-          fallback: {const: sret}
+        required: [register_class, units, direct_maximum_bytes]

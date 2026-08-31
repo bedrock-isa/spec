@@ -1,3 +1,5 @@
 name: VECTOR VEA EXT1
 modes:
+  - explicit_segment_base
+  - explicit_segment_zero_base
   - default_segment_base

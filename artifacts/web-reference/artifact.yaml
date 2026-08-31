@@ -12,5 +12,4 @@ depends-on:
 - c-target-intrinsics
 summary: Browsable ISA reference site generated from the project model and authored topics.
 outputs:
-- site/index.html
-- site/assets/reference.json
+  publication: site

@@ -23,5 +23,3 @@ properties:
       type: object
   layout:
     type: object
-  binding:
-    type: object

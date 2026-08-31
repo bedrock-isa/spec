@@ -1,5 +1,6 @@
 \subsubsection{Floating-Point FEA Immediate Forms}
-FEA inherits the scalar memory and EXT encodings except that \texttt{0x58}, \texttt{0x5B}, and \texttt{0x5C} are
+FEA directly declares the register, SP-displaced, PC-displaced, absolute, EXT1, and EXT2 selectors defined for
+this profile. Selectors \texttt{0x58}, \texttt{0x5B}, and \texttt{0x5C} are
 (:term:base.terms.reserved:). Selectors \texttt{0x5D} and \texttt{0x5E} select \texttt{immsf} and \texttt{immdf}.
 The former appends four bytes and the latter eight bytes.
 
@@ -10,3 +11,6 @@ evaluation converts the immediate to the operation format under the architectura
 instruction operation. The conversion uses \texttt{FSTATUS.RM}; its floating-point exception causes are combined
 with the operation\textquotesingle{}s causes and are tested and committed atomically under the (:term:base.terms.ordinary:) precise floating-point fault
 rules. An FEA floating-point immediate is never a valid destination.
+
+\clearpage
+(:ea-diagram:FP.fea.modes.compact.immediate:)

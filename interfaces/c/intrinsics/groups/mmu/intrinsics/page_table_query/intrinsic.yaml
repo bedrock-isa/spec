@@ -12,6 +12,5 @@ signature:
     type: u64
 lowering:
   operation: isa:base.instructions.PTQUERY
-  kind: direct
 wrapper:
   kind: aggregate-result-macro

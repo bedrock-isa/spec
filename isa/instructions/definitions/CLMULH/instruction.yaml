@@ -2,8 +2,6 @@ mnemonic: CLMULH
 name: Carryless Multiply High
 summary: Writes the high selected-width half of the carryless source-by-destination product.
 route: integer_mul_div
-sail_entries:
-- execute_CLMULH
 privileged: false
 repeat:
   type: repcc

@@ -2,8 +2,6 @@ mnemonic: VFCVTUS
 name: Vector Floating-Point Convert Unsigned to Single Precision
 summary: Converts active unsigned integer elements to single-precision floating point.
 route: vector
-sail_entries:
-- execute_VFCVTUS
 privileged: false
 operands:
   govern:

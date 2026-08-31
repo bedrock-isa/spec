@@ -2,8 +2,6 @@ mnemonic: CALL
 name: Call
 summary: Pushes the continuation PC and atomically transfers control to the validated target.
 route: control_flow
-sail_entries:
-- execute_CALL
 privileged: false
 operands:
   target:

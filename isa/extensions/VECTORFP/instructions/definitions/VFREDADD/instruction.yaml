@@ -2,8 +2,6 @@ mnemonic: VFREDADD
 name: Vector Floating-Point Add Reduction
 summary: Reduces active floating-point elements to one scalar sum.
 route: vector
-sail_entries:
-- execute_VFREDADD
 privileged: false
 operands:
   govern:

@@ -14,9 +14,8 @@ from engine.entity import (
     EntityCatalog,
     EntityDisplayStyle,
     EntityKind,
-    opaque_entity_label,
 )
-from engine.document_topic import DomainDocumentCatalog, DomainDocumentTopic
+from engine.dependency import EntityDependency
 from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader
@@ -184,8 +183,6 @@ class ElfAbiProject:
     register_groups: ReferenceIndex[ElfRegisterGroup]
     dwarf_ranges: tuple[DwarfRegisterRange, ...]
     process_entry: EntryState
-    document_catalog: DomainDocumentCatalog
-    document_topics: ReferenceIndex[DomainDocumentTopic]
     entities: EntityCatalog
 
     @classmethod
@@ -209,18 +206,12 @@ class ElfAbiProject:
             isa,
         )
         namespaces = MappingProxyType({"base": base})
-        document_catalog = DomainDocumentCatalog.load(
-            owner="base",
-            documents_root=domain_root / "documents",
-            schema=schemas / "document-topic.yaml",
-        )
         entities = _build_entities(
             relocations,
             protocols,
             tls_models,
             code_models,
             register_groups,
-            document_catalog.topics,
         )
         return cls(
             domain_root,
@@ -236,53 +227,110 @@ class ElfAbiProject:
                 for item in group.dwarf
             ) + base.reserved_dwarf_ranges,
             base.process_entry,
-            document_catalog,
-            document_catalog.topics,
             entities,
         )
 
     def resolve(self, reference: Reference[_T]) -> _T:
-        if reference in self.relocations:
-            return cast(
-                _T, self.relocations.resolve(cast(Reference[Relocation], reference))
+        entity = self.entities.resolve(cast(Reference[Entity], reference))
+        return cast(_T, entity.value)
+
+    def entity_dependencies(self) -> tuple[EntityDependency, ...]:
+        """Return the ELF ABI relationships intentionally exposed to tooling."""
+
+        result: list[EntityDependency] = []
+
+        def add(
+            source: Reference[object],
+            target: QualifiedReference[object],
+            kind: str,
+        ) -> None:
+            result.append(EntityDependency(source, target, kind))
+
+        def local(reference: Reference[object]) -> QualifiedReference[object]:
+            return QualifiedReference("abi.elf", reference)
+
+        for definition in self.relocations.values():
+            source = cast(Reference[object], definition.reference)
+            if definition.field is not None:
+                add(
+                    source,
+                    cast(QualifiedReference[object], definition.field),
+                    "relocation-field-type",
+                )
+            for target in definition.relaxations:
+                add(
+                    source,
+                    local(cast(Reference[object], target)),
+                    "relaxation",
+                )
+        for definition in self.linkage_protocols.values():
+            source = cast(Reference[object], definition.reference)
+            for step in definition.steps:
+                add(
+                    source,
+                    cast(QualifiedReference[object], step.instruction),
+                    "linkage-instruction",
+                )
+                if step.relocation is not None:
+                    add(
+                        source,
+                        cast(QualifiedReference[object], step.relocation),
+                        "linkage-relocation",
+                    )
+            for state in definition.state:
+                for target in state.registers:
+                    add(
+                        source,
+                        cast(QualifiedReference[object], target),
+                        "linkage-register",
+                    )
+        for definition in self.tls_models.values():
+            source = cast(Reference[object], definition.reference)
+            if definition.base_register is not None:
+                add(
+                    source,
+                    cast(QualifiedReference[object], definition.base_register),
+                    "tls-base-register",
+                )
+            if definition.protocol is not None:
+                add(
+                    source,
+                    local(cast(Reference[object], definition.protocol)),
+                    "tls-protocol",
+                )
+            for target in definition.relocations:
+                add(
+                    source,
+                    local(cast(Reference[object], target)),
+                    "tls-relocation",
+                )
+        for definition in self.code_models.values():
+            source = cast(Reference[object], definition.reference)
+            for target in definition.default_relocations:
+                add(
+                    source,
+                    local(cast(Reference[object], target)),
+                    "code-model-relocation",
+                )
+        for definition in self.register_groups.values():
+            source = cast(Reference[object], definition.reference)
+            add(
+                source,
+                cast(QualifiedReference[object], definition.register_group),
+                "dwarf-register-group",
             )
-        if reference in self.linkage_protocols:
-            return cast(
-                _T,
-                self.linkage_protocols.resolve(
-                    cast(Reference[LinkageProtocol], reference)
-                ),
-            )
-        if reference in self.tls_models:
-            return cast(
-                _T, self.tls_models.resolve(cast(Reference[TlsModel], reference))
-            )
-        if reference in self.code_models:
-            return cast(
-                _T, self.code_models.resolve(cast(Reference[CodeModel], reference))
-            )
-        if reference in self.register_groups:
-            return cast(
-                _T,
-                self.register_groups.resolve(
-                    cast(Reference[ElfRegisterGroup], reference)
-                ),
-            )
-        if reference in self.document_topics:
-            return cast(
-                _T,
-                self.document_topics.resolve(
-                    cast(Reference[DomainDocumentTopic], reference)
-                ),
-            )
-        return cast(
-            _T, self.entities.resolve(cast(Reference[Entity], reference))
-        )
+            for item in definition.dwarf:
+                if item.register_group is not None:
+                    add(
+                        source,
+                        cast(QualifiedReference[object], item.register_group),
+                        "dwarf-register-group",
+                    )
+        return tuple(result)
 
     def validate(self, workspace) -> None:
         """Resolve structured ISA and ELF references."""
 
-        self.document_catalog.validate(workspace)
         for relocation_definition in self.relocations.values():
             if relocation_definition.field is not None:
                 workspace.resolve(relocation_definition.field)
@@ -718,7 +766,6 @@ def _build_entities(
     tls_models: ReferenceIndex[TlsModel],
     code_models: ReferenceIndex[CodeModel],
     register_groups: ReferenceIndex[ElfRegisterGroup],
-    document_topics: ReferenceIndex[DomainDocumentTopic],
 ) -> EntityCatalog:
     index = ReferenceIndex[Entity]()
     catalogs: tuple[tuple[EntityKind, ReferenceIndex[object]], ...] = (
@@ -727,16 +774,11 @@ def _build_entities(
         (EntityKind.ELF_TLS_MODEL, cast(ReferenceIndex[object], tls_models)),
         (EntityKind.ELF_CODE_MODEL, cast(ReferenceIndex[object], code_models)),
         (EntityKind.ELF_DEBUG_REGISTER, cast(ReferenceIndex[object], register_groups)),
-        (EntityKind.TOPIC, cast(ReferenceIndex[object], document_topics)),
     )
     for kind, values in catalogs:
         for typed_reference, value in values.items():
             reference = cast(Reference[Entity], typed_reference)
-            display = (
-                value.title
-                if isinstance(value, DomainDocumentTopic)
-                else getattr(value, "id", None)
-            )
+            display = getattr(value, "id", None)
             if not isinstance(display, str):
                 raise ValueError("ELF entity must provide a display identifier")
             index.register(
@@ -745,11 +787,9 @@ def _build_entities(
                     reference,
                     kind,
                     display,
+                    value.source,
                     value,
-                    opaque_entity_label(len(index)),
-                    EntityDisplayStyle.TEXT
-                    if isinstance(value, DomainDocumentTopic)
-                    else EntityDisplayStyle.CODE,
+                    EntityDisplayStyle.CODE,
                 ),
             )
     return EntityCatalog(index)

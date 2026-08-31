@@ -36,43 +36,29 @@ documents:
   topics:
   - id: registers.floating-point-register-model
     source: documents/topics/registers/001_floating_point_register_model.tex
-    concept: registers
   - id: registers.fflags-and-fstatus-registers
     source: documents/topics/registers/002_fflags_and_fstatus_registers.tex
-    concept: registers
   - id: data-formats.floating-point-data-formats
     source: documents/topics/data_formats/001_floating_point_data_formats.tex
-    concept: encoding
   - id: addressing.floating-point-fea-immediate-forms
     source: documents/topics/addressing/001_floating_point_fea_immediate_forms.tex
-    concept: ea
   - id: execution.floating-point-interactions
     source: documents/topics/execution/001_floating_point_interactions.tex
-    concept: execution
   - id: execution.floating-point-implicit-stack-operations
     source: documents/topics/execution/002_floating_point_implicit_stack_operations.tex
-    concept: execution
   - id: events.floating-point-exception-payload
     source: documents/topics/events/001_floating_point_exception_payload.tex
-    concept: events
   - id: cpuid.floating-point-discovery
     source: documents/topics/cpuid/001_floating_point_discovery.tex
-    concept: cpuid
   - id: state.floating-point-save-component
     source: documents/topics/state/001_floating_point_save_component.tex
-    concept: state
   - id: introduction.common-floating-point-semantics
     source: documents/topics/introduction/001_common_floating_point_semantics.tex
-    concept: fp
   - id: introduction.input-nan-rounding-and-result-order
     source: documents/topics/introduction/002_input_nan_rounding_and_result_order.tex
-    concept: fp
   - id: introduction.floating-point-exception-causes-and-commit
     source: documents/topics/introduction/003_floating_point_exception_causes_and_commit.tex
-    concept: fp
   - id: introduction.comparison-minimum-and-maximum
     source: documents/topics/introduction/004_comparison_minimum_and_maximum.tex
-    concept: fp
   - id: introduction.conversions
     source: documents/topics/introduction/005_conversions.tex
-    concept: fp

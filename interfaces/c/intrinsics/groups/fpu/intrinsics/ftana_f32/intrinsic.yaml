@@ -9,6 +9,5 @@ signature:
     type: f32
 lowering:
   operation: isa:FPTRANSA.instructions.FTANA
-  kind: direct
   operands:
     size: S

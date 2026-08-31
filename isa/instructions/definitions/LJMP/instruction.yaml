@@ -2,8 +2,6 @@ mnemonic: LJMP
 name: Long Jump
 summary: Atomically transfers control to a new CS:PC pair.
 route: control_flow
-sail_entries:
-- execute_LJMP
 privileged: false
 operands:
   new_cs:

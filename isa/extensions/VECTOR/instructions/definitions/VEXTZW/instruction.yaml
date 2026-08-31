@@ -2,8 +2,6 @@ mnemonic: VEXTZW
 name: Vector Zero Extension to Word
 summary: Zero-extends B source elements to W destination elements.
 route: vector
-sail_entries:
-- execute_VEXTZW
 privileged: false
 operands:
   govern:

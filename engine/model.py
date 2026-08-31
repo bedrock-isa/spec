@@ -1,4 +1,4 @@
-"""Typed manifests for executable Sail units and reader-ordered TeX topics."""
+"""Typed manifests for executable Sail units and owner-local TeX topics."""
 
 from __future__ import annotations
 
@@ -8,14 +8,9 @@ from pathlib import Path
 import re
 from types import MappingProxyType
 
-try:
-    from .extension import ExtensionMetadata, ExtensionSetCatalog
-    from .reference import Reference
-    from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from extension import ExtensionMetadata, ExtensionSetCatalog
-    from reference import Reference
-    from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .extension import ExtensionMetadata, ExtensionSetCatalog
+from .reference import Reference
+from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,15 +27,13 @@ class SailUnit:
 
 @dataclass(frozen=True, slots=True)
 class DocumentTopic:
-    """One authored TeX source representing one reader-facing subtopic."""
+    """One owner-local authored TeX source available to public composers."""
 
     owner: str
     id: str
     reference: Reference["DocumentTopic"]
     source: Path
     document: Path
-    artifact: str
-    concept: str | None
 
 
 
@@ -152,8 +145,6 @@ class ModelManifestLoader:
                     reference=Reference.parse(f"{owner}.{topic_id}"),
                     source=manifest_path,
                     document=document,
-                    artifact=raw.get("artifact", "isa-reference"),
-                    concept=raw.get("concept"),
                 )
             )
         return tuple(topics)
@@ -161,15 +152,13 @@ class ModelManifestLoader:
 
 @dataclass(frozen=True, slots=True)
 class ModelCatalog:
-    """Independent Sail dependency and TeX reading-order catalogs."""
+    """Independent Sail dependency and owner-local document catalogs."""
 
     base: ModelNamespace
     extensions: Mapping[str, ModelNamespace]
     sail_units: Mapping[Reference[SailUnit], SailUnit]
     sail_order: tuple[Reference[SailUnit], ...]
     document_topics: Mapping[Reference[DocumentTopic], DocumentTopic]
-    document_order: tuple[Reference[DocumentTopic], ...]
-    document_orders: Mapping[str, tuple[Reference[DocumentTopic], ...]]
 
     @classmethod
     def load(
@@ -179,21 +168,6 @@ class ModelCatalog:
         extensions: Mapping[str, ExtensionMetadata],
     ) -> "ModelCatalog":
         return ModelCatalogLoader().load(isa_root, extension_catalog, extensions)
-
-    def selected_document_topics(
-        self,
-        owners: set[str] | frozenset[str],
-        artifact: str = "isa-reference",
-    ) -> tuple[DocumentTopic, ...]:
-        """Return TeX topics in authored compile order for selected owners."""
-
-        return tuple(
-            self.document_topics[reference]
-            for reference in self.document_order
-            if self.document_topics[reference].owner in owners
-            and self.document_topics[reference].artifact == artifact
-        )
-
 
 class ModelCatalogLoader:
     """Coordinate manifest loading and resolve only executable dependencies."""
@@ -221,7 +195,7 @@ class ModelCatalogLoader:
 
 
 class ModelDependencyResolver:
-    """Resolve Sail dependencies while preserving authored document order."""
+    """Resolve Sail dependencies and index owner-local document topics."""
 
     def __init__(self, extensions: Mapping[str, ExtensionMetadata]) -> None:
         self.extensions = extensions
@@ -233,7 +207,6 @@ class ModelDependencyResolver:
     ) -> ModelCatalog:
         sail_units: dict[Reference[SailUnit], SailUnit] = {}
         topics: dict[Reference[DocumentTopic], DocumentTopic] = {}
-        topic_order: list[Reference[DocumentTopic]] = []
         for namespace in (base, *extensions.values()):
             for unit in namespace.sail_units:
                 if unit.reference in sail_units:
@@ -245,23 +218,14 @@ class ModelDependencyResolver:
                         f"duplicate document topic {topic.owner}.{topic.id}"
                     )
                 topics[topic.reference] = topic
-                topic_order.append(topic.reference)
 
         sail_order = self._resolve_sail_units(sail_units)
-        document_orders: dict[str, list[Reference[DocumentTopic]]] = {}
-        for reference in topic_order:
-            topic = topics[reference]
-            document_orders.setdefault(topic.artifact, []).append(reference)
         return ModelCatalog(
             base=base,
             extensions=MappingProxyType(dict(extensions)),
             sail_units=MappingProxyType(sail_units),
             sail_order=sail_order,
             document_topics=MappingProxyType(topics),
-            document_order=tuple(topic_order),
-            document_orders=MappingProxyType(
-                {key: tuple(value) for key, value in document_orders.items()}
-            ),
         )
 
     @staticmethod

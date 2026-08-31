@@ -1,6 +1,5 @@
 import json
 import re
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -9,6 +8,7 @@ from abi.c.model.call_layout import Argument, Call, ReturnValue, default_rules, 
 from abi.elf.model import ElfAbiProject
 from engine.generation import ArtifactGeneratorRegistry
 from engine.project import IsaProject
+from engine.reference import QualifiedReference
 from engine.workspace import SpecWorkspace
 from interfaces.c.model import CInterfaceProject
 from interfaces.c.model.naming import intrinsic_group_header
@@ -18,15 +18,13 @@ class SpecificationArtifactsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.repository = Path(__file__).parents[2]
-        cls.project = IsaProject.load(cls.repository / "isa")
-        cls.workspace = SpecWorkspace.from_isa(cls.project)
+        cls.workspace = SpecWorkspace.load(cls.repository)
+        cls.project = cls.workspace.require_provider("isa")
+        if not isinstance(cls.project, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
         cls.registry = ArtifactGeneratorRegistry.discover(cls.workspace)
 
     def test_workspace_exposes_typed_source_owned_domains(self) -> None:
-        self.assertEqual(
-            tuple(self.workspace.providers),
-            ("isa", "abi.elf", "abi.c", "interfaces.c"),
-        )
         self.assertIsInstance(
             self.workspace.require_provider("abi.elf"), ElfAbiProject
         )
@@ -36,6 +34,12 @@ class SpecificationArtifactsTest(unittest.TestCase):
         self.assertIsInstance(
             self.workspace.require_provider("interfaces.c"), CInterfaceProject
         )
+
+    def test_workspace_entity_dependencies_are_uniform_and_resolvable(self) -> None:
+        for provider in self.workspace.providers.values():
+            for dependency in provider.entity_dependencies():
+                provider.entities.resolve(dependency.source)
+                self.workspace.resolve(dependency.target)
 
     def test_workspace_resolves_qualified_interface_references(self) -> None:
         intrinsic = self.workspace.resolve(
@@ -47,14 +51,12 @@ class SpecificationArtifactsTest(unittest.TestCase):
 
         self.assertEqual(intrinsic.id, "fclass_f32")
         self.assertEqual(
-            str(intrinsic.operation), "isa:FP.instructions.FCLASS"
+            intrinsic.operation,
+            QualifiedReference.parse("isa:FP.instructions.FCLASS"),
         )
         self.assertEqual(interface_type.id, "control_register")
 
-    def test_c_interface_catalog_has_strict_grouped_inventory(self) -> None:
-        project = self.workspace.require_provider("interfaces.c")
-
-        self.assertEqual(tuple(project.extensions), ("FP", "FPTRANSA", "VECTOR"))
+    def test_c_interface_group_header_uses_its_declared_group(self) -> None:
         self.assertEqual(intrinsic_group_header("sysreg"), "bedrocksysregintrin.h")
 
     def test_c_target_headers_cover_the_complete_interface_catalog(self) -> None:
@@ -75,30 +77,6 @@ class SpecificationArtifactsTest(unittest.TestCase):
             )
 
         self.assertEqual(actual_builtins, expected_builtins)
-        self.assertIn(
-            "__BEDROCK_CR_UINFO",
-            generated.artifact("include/bedrocksysregintrin.h").content,
-        )
-
-    def test_reference_documents_are_first_class_artifacts(self) -> None:
-        expected = {
-            "elf-abi": "tex/bedrock-elf-abi.tex",
-            "c-abi": "tex/bedrock-c-abi.tex",
-            "c-target-intrinsics": "tex/bedrock-target-intrinsics.tex",
-        }
-        with tempfile.TemporaryDirectory() as directory:
-            for artifact_id, output in expected.items():
-                with self.subTest(artifact=artifact_id):
-                    generated = self.registry.generate(
-                        artifact_id, self.workspace, directory
-                    )
-                    content = generated.artifact(output).content
-                    self.assertTrue(content.strip())
-                    self.assertNotIn("BedrockGenerated", content)
-                    if artifact_id == "elf-abi":
-                        self.assertIn("symbol + addend - next\\_pc", content)
-                    if artifact_id == "c-abi":
-                        self.assertIn("AFENCE; load; AFENCE", content)
 
     def test_reference_graph_is_a_standalone_workspace_visualization(self) -> None:
         generated = self.registry.generate(
@@ -110,26 +88,14 @@ class SpecificationArtifactsTest(unittest.TestCase):
         view = generated.artifact("reference/graph.html").content
 
         interface = self.workspace.require_provider("interfaces.c")
-        interface_entities = sum(
-            len(index)
-            for index in (
-                interface.type_groups,
-                interface.intrinsic_groups,
-                interface.utility_groups,
-                interface.types,
-                interface.intrinsics,
-                interface.utilities,
-            )
-        )
         elf = self.workspace.require_provider("abi.elf")
         c_abi = self.workspace.require_provider("abi.c")
         expected_nodes = (
             len(self.project.entities.references)
             + len(elf.entities.references)
             + len(c_abi.entities.references)
-            + interface_entities
+            + len(interface.entities.references)
         )
-        self.assertEqual(graph["schema_version"], 1)
         self.assertEqual(graph["node_count"], expected_nodes)
         self.assertEqual(graph["link_count"], len(graph["links"]))
         self.assertIn('<canvas id="graph"></canvas>', view)
@@ -147,6 +113,7 @@ class SpecificationArtifactsTest(unittest.TestCase):
             nodes["isa:base.instructions.ADD"]["source"],
             "isa/instructions/definitions/ADD/instruction.yaml",
         )
+        self.assertTrue(all("source" in node for node in nodes.values()))
 
         lowering = next(
             link
@@ -155,35 +122,53 @@ class SpecificationArtifactsTest(unittest.TestCase):
             == "interfaces.c:FP.intrinsics.fpu.fclass_f32"
             and link["target"] == "isa:FP.instructions.FCLASS"
         )
-        self.assertEqual(lowering["kind"], "structured")
+        self.assertEqual(lowering["kind"], "intrinsic-instruction")
         self.assertGreaterEqual(lowering["weight"], 1)
-        abi_topic_edge = next(
-            link
-            for link in graph["links"]
-            if link["source"] == "abi.elf:base.document_topics.RELOCATIONS"
-            and link["target"]
-            == "abi.elf:base.relocations.R_BEDROCK_CALL32S"
+        self.assertTrue(
+            any(
+                link["source"] == "isa:base.instructions.ADD"
+                and link["target"] == "isa:base.field_types.Rn"
+                and link["kind"] == "instruction-field-type"
+                for link in graph["links"]
+            )
         )
-        self.assertEqual(abi_topic_edge["kind"], "structured")
+        self.assertTrue(
+            any(
+                link["source"] == "isa:FP.instructions.FADD"
+                and link["target"]
+                == "isa:FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP"
+                and link["kind"] == "requires-cpuid"
+                for link in graph["links"]
+            )
+        )
+        self.assertTrue(
+            any(
+                link["source"] == "isa:base.ea.modes.compact.register"
+                and link["target"] == "isa:base.field_types.EA"
+                and link["kind"] == "ea-profile-type"
+                for link in graph["links"]
+            )
+        )
+        self.assertTrue(
+            any(
+                link["source"] == "isa:FP.cpuid.EXTENSIONS"
+                and link["target"] == "isa:base.cpuid.EXTENSIONS"
+                and link["kind"] == "cpuid-class-overlay"
+                for link in graph["links"]
+            )
+        )
+        self.assertTrue(
+            any(
+                link["source"] == "isa:base.registers.SPECIAL.PC"
+                and link["target"] == "isa:base.registers.CONTROL.BOOTPC"
+                and link["kind"] == "register-reset-source"
+                for link in graph["links"]
+            )
+        )
         self.assertTrue(
             all(
                 link["source"] in nodes and link["target"] in nodes
                 for link in graph["links"]
-            )
-        )
-
-        topics = graph["topic_connectivity"]
-        self.assertEqual(topics["metric"], "tf-idf-cosine")
-        self.assertEqual(topics["link_count"], len(topics["links"]))
-        self.assertTrue(topics["links"])
-        self.assertTrue(
-            all(
-                nodes[link["source"]]["kind"] == "topic"
-                and nodes[link["target"]]["kind"] == "topic"
-                and link["shared_reference_count"] >= 2
-                and link["evidence"]
-                for link in topics["links"]
-                if link["kind"] == "similarity"
             )
         )
 

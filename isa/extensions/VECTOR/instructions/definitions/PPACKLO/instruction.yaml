@@ -2,8 +2,6 @@ mnemonic: PPACKLO
 name: Predicate Pack to Lower Half
 summary: Packs source predicate positions into the lower half of narrower destination positions.
 route: vector
-sail_entries:
-- execute_PPACKLO
 privileged: false
 operands:
   src:

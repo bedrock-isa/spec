@@ -9,6 +9,5 @@ signature:
     type: f64
 lowering:
   operation: isa:FP.instructions.FCLASS
-  kind: direct
   operands:
     size: D

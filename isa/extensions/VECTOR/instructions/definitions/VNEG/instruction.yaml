@@ -2,8 +2,6 @@ mnemonic: VNEG
 name: Vector Negate
 summary: Negates active integer elements.
 route: vector
-sail_entries:
-- execute_VNEG
 privileged: false
 operands:
   govern:

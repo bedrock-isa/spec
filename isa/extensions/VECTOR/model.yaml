@@ -28,28 +28,21 @@ documents:
   topics:
   - id: addressing.vector-vea-lane-addressing
     source: documents/topics/addressing/001_vector_vea_lane_addressing.tex
-    concept: ea
   - id: cpuid.vector-parameter-discovery
     source: documents/topics/cpuid/001_vector_parameter_discovery.tex
-    concept: cpuid
   - id: state.vector-save-component
     source: documents/topics/state/001_vector_save_component.tex
-    concept: state
+  - id: registers.vector-register-model
+    source: documents/topics/registers/001_vector_register_model.tex
   - id: introduction.element-types-and-assembly-spelling
     source: documents/topics/introduction/001_element_types_and_assembly_spelling.tex
-    concept: vector
   - id: introduction.predicates-and-destination-images
     source: documents/topics/introduction/002_predicates_and_destination_images.tex
-    concept: vector
   - id: introduction.lane-mapping-and-scalar-bridges
     source: documents/topics/introduction/003_lane_mapping_and_scalar_bridges.tex
-    concept: vector
   - id: introduction.vector-memory-operations
     source: documents/topics/introduction/004_vector_memory_operations.tex
-    concept: vector
   - id: introduction.resumable-gather-and-scatter
     source: documents/topics/introduction/005_resumable_gather_and_scatter.tex
-    concept: vector
   - id: introduction.execution-and-saved-state
     source: documents/topics/introduction/007_execution_and_saved_state.tex
-    concept: vector

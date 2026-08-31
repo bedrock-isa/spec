@@ -2,8 +2,6 @@ mnemonic: FMSUB
 name: Floating-Point Fused Multiply Subtract
 summary: Computes the source product minus the old destination as one fused operation and rounds once.
 route: fpu
-sail_entries:
-- execute_FMSUB
 privileged: false
 repeat:
   type: rep

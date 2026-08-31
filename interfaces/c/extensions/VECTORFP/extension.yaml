@@ -4,6 +4,3 @@ requires:
 - VECTOR
 requires-isa:
 - VECTORFP
-compiler-features:
-  clang:
-  - vectorfp

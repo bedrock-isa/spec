@@ -2,8 +2,6 @@ mnemonic: VCLR
 name: Vector Clear
 summary: Writes zero to every byte of the complete destination vector image.
 route: vector
-sail_entries:
-- execute_VCLR
 privileged: false
 operands:
   dst:

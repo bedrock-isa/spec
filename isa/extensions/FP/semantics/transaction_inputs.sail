@@ -65,7 +65,7 @@ function fp_operand_kind_for(
     } else {
         if operand.operand_type == OperandType_Rn then FpRaw64
         else if operand.operand_type == OperandType_FEA then match operand.ea {
-            Some(ea) => if ea.kind == EaKind_float_immediate then {
+            Some(ea) => if ea.kind == EaKind_immediate then {
                 if ea.payload_width == 32 then FpBits32 else FpBits64
             } else fp_float_kind_for_width(width),
             None() => fp_float_kind_for_width(width),
@@ -90,7 +90,7 @@ function fp_decoded_operand_image(
             } else {
                 if operand.operand_type == OperandType_FEA then {
                     match operand.ea {
-                        Some(ea) => if ea.kind == EaKind_float_immediate then {
+                        Some(ea) => if ea.kind == EaKind_immediate then {
                             ea.payload
                         } else {
                             operand.value
@@ -108,7 +108,7 @@ function fp_decoded_operand_image(
                operand.operand_type
             != OperandType_FEA
             |  (match operand.ea {
-                   Some(ea) => (ea.kind == EaKind_float_immediate),
+                   Some(ea) => (ea.kind == EaKind_immediate),
                    None() => false,
                }),
         kind = kind,

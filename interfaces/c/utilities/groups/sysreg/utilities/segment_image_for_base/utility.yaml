@@ -1,5 +1,4 @@
 id: segment_image_for_base
 owner: base
-kind: function-macro
 parameters: [base, exponent, mantissa, bounds_only]
 body: '__BEDROCK_SEGMENT_IMAGE((uint64_t)(base) >> 12, exponent, mantissa, bounds_only)'

@@ -90,7 +90,7 @@ function uop_operand_location(operand : Decoded_operand) -> Uop_location =
             } else {
                 if operand.operand_type == OperandType_EA then {
                     match operand.ea {
-                        Some(ea) => if ea.kind == EaKind_float_immediate then {
+                        Some(ea) => if ea.kind == EaKind_immediate then {
                             uop_location_make_immediate(ea.payload)
                         } else {
                             uop_location_make_immediate(ea_signed_payload(ea))
@@ -140,17 +140,11 @@ function uop_ea_update_program(operand : Decoded_operand, width : int, pre : boo
                 match uop_ea_update_location(ea) {
                     None() => [||],
                     Some(destination) => {
-                        let magnitude = if ea.update_target == Some(EaUpdateTarget_i) then { 1 } else { width };
-                        let amount = if pre then {
-                                bits_from_int(0 - magnitude)
-                            } else {
-                                bits_from_int(magnitude)
-                            };
                         [|
                             uop_make(
                                 UopIntegerAdd(),
                                 destination,
-                                uop_location_make_immediate(amount),
+                                uop_location_make_ea_update_amount(ea.update_difference, width, pre),
                                 destination,
                                 operand.name,
                                 8,

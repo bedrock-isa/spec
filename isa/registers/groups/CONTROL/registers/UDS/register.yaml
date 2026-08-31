@@ -1,4 +1,3 @@
 id: UDS
 encoding: 0x010b
-role: user_return
 summary: User-return data-segment image.

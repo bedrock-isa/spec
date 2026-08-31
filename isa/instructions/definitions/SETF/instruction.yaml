@@ -2,8 +2,6 @@ mnemonic: SETF
 name: Set Flags Image
 summary: Replaces integer FLAGS from an immediate bitmap.
 route: system_registers
-sail_entries:
-- execute_SETF
 privileged: false
 operands:
   mask:

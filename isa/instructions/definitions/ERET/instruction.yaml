@@ -2,7 +2,5 @@ mnemonic: ERET
 name: Event Return
 summary: Return through a staged user context or from an architectural event.
 route: core_control
-sail_entries:
-- execute_ERET
 privileged: true
 operands: {}

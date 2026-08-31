@@ -2,8 +2,6 @@ mnemonic: VEXTZQ
 name: Vector Zero Extension to Quad
 summary: Zero-extends B, W, or L source elements to Q destination elements.
 route: vector
-sail_entries:
-- execute_VEXTZQ
 privileged: false
 operands:
   govern:

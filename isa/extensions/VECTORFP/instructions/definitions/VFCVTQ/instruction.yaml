@@ -2,8 +2,6 @@ mnemonic: VFCVTQ
 name: Vector Floating-Point Convert to Signed Quadword
 summary: Converts active floating-point elements to signed quadwords.
 route: vector
-sail_entries:
-- execute_VFCVTQ
 privileged: false
 operands:
   govern:

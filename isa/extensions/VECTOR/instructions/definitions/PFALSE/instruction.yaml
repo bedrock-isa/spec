@@ -2,8 +2,6 @@ mnemonic: PFALSE
 name: Predicate Clear
 summary: Clear the complete predicate image.
 route: vector
-sail_entries:
-- execute_PFALSE
 privileged: false
 operands:
   dst:

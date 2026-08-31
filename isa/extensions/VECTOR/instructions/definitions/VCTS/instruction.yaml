@@ -2,8 +2,6 @@ mnemonic: VCTS
 name: Vector Count Trailing Ones
 summary: Counts consecutive one bits from the low end of each active element.
 route: vector
-sail_entries:
-- execute_VCTS
 privileged: false
 operands:
   govern:

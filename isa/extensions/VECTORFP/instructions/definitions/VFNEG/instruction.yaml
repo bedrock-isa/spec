@@ -2,8 +2,6 @@ mnemonic: VFNEG
 name: Vector Floating-Point Negate
 summary: Toggles the sign of active floating-point elements.
 route: vector
-sail_entries:
-- execute_VFNEG
 privileged: false
 operands:
   govern:

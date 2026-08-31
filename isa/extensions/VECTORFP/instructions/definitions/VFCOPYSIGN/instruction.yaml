@@ -2,8 +2,6 @@ mnemonic: VFCOPYSIGN
 name: Vector Floating-Point Copy Sign
 summary: Combines each active destination magnitude with the corresponding source sign bit.
 route: vector
-sail_entries:
-- execute_VFCOPYSIGN
 privileged: false
 operands:
   govern:

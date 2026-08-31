@@ -2,8 +2,6 @@ mnemonic: VEXTSW
 name: Vector Signed Extension to Word
 summary: Sign-extends B source elements to W destination elements.
 route: vector
-sail_entries:
-- execute_VEXTSW
 privileged: false
 operands:
   govern:

@@ -2,8 +2,6 @@ mnemonic: FCOPYSIGN
 name: Floating-Point Copy Sign
 summary: Combines a magnitude source with the sign bit of a separate floating-point source.
 route: fpu
-sail_entries:
-- execute_FCOPYSIGN
 privileged: false
 repeat:
   type: rep

@@ -2,8 +2,6 @@ mnemonic: CLS
 name: Count Leading Set Bits
 summary: Counts leading one bits in the selected-width source and writes the count.
 route: integer_bitfield
-sail_entries:
-- execute_CLS
 privileged: false
 repeat:
   type: repcc

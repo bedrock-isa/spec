@@ -1,17 +1,3 @@
-\label{section:vector-register-model}
-The scalable-vector extension provides 32 (:term:VECTOR.terms.vector_register|plural:), \texttt{V0}
-through \texttt{V31}, and 16 (:term:VECTOR.terms.predicate_register|plural:), \texttt{P0} through
-\texttt{P15}.  A (:term:VECTOR.terms.vector_register:) contains VLEN bits.  VLEN is an
-implementation-selected power of two from 128 through 2048 bits and remains
-stable until reset.  A (:term:VECTOR.terms.predicate_register:) contains one bit for each byte of a
-(:term:VECTOR.terms.vector_register:); its packed image therefore occupies VLEN/64 bytes.  Reset
-clears every vector and predicate bit.
-
-The \texttt{VECTOR} discovery predicate and the \texttt{VECTOR\_PARAMETERS}
-CPUID leaf report the extension and VLEN. Integer and raw-bit vector forms
-require \texttt{VECTOR}. Floating-point vector operations are provided by the
-separate \texttt{VECTORFP} extension.
-
 \subsection{Element Types and Assembly Spelling}
 
 A size-bearing VECTOR instruction has one suffix. The integer element

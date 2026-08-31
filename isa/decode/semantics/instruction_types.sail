@@ -22,6 +22,7 @@ struct Decoded_ea = {
   payload_signed : bool,
   update_target : option(Ea_update_target),
   update_mode : option(Ea_update_mode),
+  update_difference : option(Ea_update_difference),
 }
 
 struct Decoded_operand = {

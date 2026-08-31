@@ -2,8 +2,6 @@ mnemonic: VSLIDEUP
 name: Vector Slide Up
 summary: Move old destination lanes toward higher indices and zero vacated lanes.
 route: vector
-sail_entries:
-- execute_VSLIDEUP
 privileged: false
 operands:
   govern:

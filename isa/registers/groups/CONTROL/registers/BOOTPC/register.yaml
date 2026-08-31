@@ -1,5 +1,4 @@
 id: BOOTPC
 encoding: 0x1000
-role: boot
 summary: Warm-reset target supplied by the platform at cold reset.
 reset: {cold: platform, warm: preserve}

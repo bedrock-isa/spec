@@ -2,8 +2,6 @@ mnemonic: FINT
 name: Floating-Point Integral Value
 summary: Rounds a floating-point source to an integral value using FSTATUS.RM.
 route: fpu
-sail_entries:
-- execute_FINT
 privileged: false
 repeat:
   type: rep

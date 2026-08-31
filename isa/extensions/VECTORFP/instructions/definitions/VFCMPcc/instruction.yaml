@@ -2,8 +2,6 @@ mnemonic: VFCMPcc
 name: Vector Floating-Point Conditional Compare
 summary: Compares active floating-point lanes and writes a complete predicate image.
 route: vector
-sail_entries:
-- execute_VFCMPcc
 privileged: false
 operands:
   cc:

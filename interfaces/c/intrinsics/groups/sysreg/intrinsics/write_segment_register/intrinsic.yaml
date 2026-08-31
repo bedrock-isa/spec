@@ -12,6 +12,5 @@ signature:
     type: u64
 lowering:
   operation: isa:base.instructions.WRSEG
-  kind: direct
 wrapper:
   kind: macro

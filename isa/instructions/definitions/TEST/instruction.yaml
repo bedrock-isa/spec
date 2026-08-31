@@ -2,8 +2,6 @@ mnemonic: TEST
 name: Test
 summary: Computes a bitwise conjunction and updates condition codes without storing the temporary value.
 route: integer_alu
-sail_entries:
-- execute_TEST
 privileged: false
 repeat:
   type: repcc

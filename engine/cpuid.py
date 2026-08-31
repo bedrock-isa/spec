@@ -8,14 +8,9 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, cast
 
-try:
-    from .extension import ExtensionSetCatalog
-    from .reference import Reference, ReferenceIndex
-    from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from extension import ExtensionSetCatalog
-    from reference import Reference, ReferenceIndex
-    from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .extension import ExtensionSetCatalog
+from .reference import Reference, ReferenceIndex
+from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
 @dataclass(frozen=True, slots=True)

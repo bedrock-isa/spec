@@ -2,8 +2,6 @@ mnemonic: VMULHS
 name: Vector Signed Multiply High
 summary: Writes the high half of each active signed destination/source product.
 route: vector
-sail_entries:
-- execute_VMULHS
 privileged: false
 operands:
   govern:

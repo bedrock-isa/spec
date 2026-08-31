@@ -1,3 +1,9 @@
 name: FP FEA compact
 modes:
+  - register
+  - stack_pointer_displaced
+  - program_counter_displaced
+  - absolute
   - immediate
+  - ext1
+  - ext2

@@ -2,8 +2,6 @@ mnemonic: VCLS
 name: Vector Count Leading Ones
 summary: Counts consecutive one bits from the high end of each active element.
 route: vector
-sail_entries:
-- execute_VCLS
 privileged: false
 operands:
   govern:

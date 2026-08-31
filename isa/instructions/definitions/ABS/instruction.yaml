@@ -2,8 +2,6 @@ mnemonic: ABS
 name: Absolute Value
 summary: Replaces the destination with its selected-width two's-complement absolute value.
 route: integer_unary
-sail_entries:
-- execute_ABS
 privileged: false
 repeat:
   type: repcc

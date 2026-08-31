@@ -2,8 +2,6 @@ mnemonic: VAND
 name: Vector Bitwise AND
 summary: Applies bitwise AND to corresponding active vector elements.
 route: vector
-sail_entries:
-- execute_VAND
 privileged: false
 operands:
   govern:

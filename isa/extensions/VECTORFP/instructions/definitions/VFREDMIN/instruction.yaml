@@ -2,8 +2,6 @@ mnemonic: VFREDMIN
 name: Vector Floating-Point Minimum Reduction
 summary: Reduces active floating-point elements to one minimum value.
 route: vector
-sail_entries:
-- execute_VFREDMIN
 privileged: false
 operands:
   govern:

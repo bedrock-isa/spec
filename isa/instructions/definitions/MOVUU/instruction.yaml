@@ -2,8 +2,6 @@ mnemonic: MOVUU
 name: Move User To User
 summary: Copies from user-domain memory to user-domain memory.
 route: data_movement
-sail_entries:
-- execute_MOVUU
 privileged: true
 repeat:
   type: repcc

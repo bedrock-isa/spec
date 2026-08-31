@@ -2,8 +2,6 @@ mnemonic: CLR
 name: Clear
 summary: Writes zero to the selected-width destination.
 route: integer_unary
-sail_entries:
-- execute_CLR
 privileged: false
 repeat:
   type: repcc

@@ -1,4 +1,3 @@
 id: UCTL
 encoding: 0x010d
-role: user_return
 summary: User-return FLAGS, STATUS, and validity state.

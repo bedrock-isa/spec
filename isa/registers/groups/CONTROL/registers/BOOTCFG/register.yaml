@@ -1,5 +1,4 @@
 id: BOOTCFG
 encoding: 0x1001
-role: boot
 summary: Opaque platform boot configuration preserved by warm reset.
 reset: {cold: platform, warm: preserve}

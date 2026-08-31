@@ -2,8 +2,6 @@ mnemonic: PUZIPHI
 name: Predicate Odd-Lane Extraction
 summary: Concatenate odd-position predicate lanes from two sources.
 route: vector
-sail_entries:
-- execute_PUZIPHI
 privileged: false
 operands:
   lhs:

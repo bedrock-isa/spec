@@ -2,7 +2,6 @@ id: flush_dcache
 owner: base
 description: >-
   Supervisor; applies FLSHDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.
-summary: Flush each maintenance block intersecting an address range.
 signature:
   result: void
   parameters:
@@ -10,7 +9,3 @@ signature:
   - {id: length, type: size}
 lowering:
   operation: isa:base.instructions.FLSHDCACHE
-  kind: cache-range
-effects:
-  c-memory: read-write
-  scope: all

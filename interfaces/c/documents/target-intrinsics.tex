@@ -52,9 +52,8 @@ family header may also be included directly.
 \subsection{Common Compilation Rules}
 Family wrappers are static inline functions unless an encoded immediate or
 type operand requires a macro. Every builtin listed by an enabled profile must
-be recognized by the compiler. If a required optional feature is disabled and
-no fallback is specified here, compilation fails rather than emitting an
-unresolved call.
+be recognized by the compiler. If a required optional feature is disabled,
+compilation fails rather than emitting an unresolved call.
 
 An encoded immediate must be an integer constant expression in the stated
 range. Header inclusion neither suppresses nor emulates architectural

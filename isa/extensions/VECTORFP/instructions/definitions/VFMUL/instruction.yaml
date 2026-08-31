@@ -2,8 +2,6 @@ mnemonic: VFMUL
 name: Vector Floating-Point Multiply
 summary: Multiplies corresponding active floating-point elements.
 route: vector
-sail_entries:
-- execute_VFMUL
 privileged: false
 operands:
   govern:

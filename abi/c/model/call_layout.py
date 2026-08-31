@@ -256,7 +256,10 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
                 alignment=policy.alignment_units,
                 kind=effective_kind,
             )
-            if location is None and policy.fallback == "indirect":
+            if (
+                location is None
+                and register_class.definition.exhaustion == "indirect"
+            ):
                 mode = "copy-address"
                 location = allocate(general, units=1, alignment=1, kind="pointer")
             if location is None:
@@ -286,11 +289,10 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
 def default_rules() -> CallRules:
     """Load the repository's default C calling convention and its ISA objects."""
 
-    from engine.project import IsaProject
     from engine.workspace import SpecWorkspace
 
     repository = Path(__file__).resolve().parents[3]
-    workspace = SpecWorkspace.from_isa(IsaProject.load(repository / "isa"))
+    workspace = SpecWorkspace.load(repository)
     project = workspace.require_provider("abi.c")
     if not isinstance(project, CAbiProject):
         raise TypeError("abi.c provider must be a CAbiProject")

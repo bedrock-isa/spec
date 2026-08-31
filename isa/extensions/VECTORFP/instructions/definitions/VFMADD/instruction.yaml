@@ -2,8 +2,6 @@ mnemonic: VFMADD
 name: Vector Floating-Point Fused Multiply-Add
 summary: Performs fused multiply-add on corresponding active floating-point elements.
 route: vector
-sail_entries:
-- execute_VFMADD
 privileged: false
 operands:
   govern:

@@ -2,8 +2,6 @@ mnemonic: VSHL
 name: Vector Logical Shift Left
 summary: Logically shifts each active integer element left by its selected-width count.
 route: vector
-sail_entries:
-- execute_VSHL
 privileged: false
 operands:
   govern:

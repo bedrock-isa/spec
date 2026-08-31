@@ -2,8 +2,6 @@ mnemonic: VFSQRT
 name: Vector Floating-Point Square Root
 summary: Computes the square root of each active floating-point element.
 route: vector
-sail_entries:
-- execute_VFSQRT
 privileged: false
 operands:
   govern:

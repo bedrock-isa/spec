@@ -1,7 +1,0 @@
-\subsection{CPUID Compatibility}
-CPUID is the compatibility boundary for optional architectural behavior. Software must not use an optional
-instruction group, optional register state, or optional state image unless the corresponding CPUID bit or leaf
-reports support.
-
-Unknown selectors return zero. Software ignores (:term:base.terms.reserved:) CPUID result bits. CPUID is unprivileged. For a logical
-processor, CPUID results remain stable until that (:term:base.terms.logical_processor:) is reset.

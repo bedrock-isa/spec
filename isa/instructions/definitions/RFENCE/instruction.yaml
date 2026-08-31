@@ -2,7 +2,5 @@ mnemonic: RFENCE
 name: Read Fence
 summary: Order prior reads before later reads.
 route: core_control
-sail_entries:
-- execute_RFENCE
 privileged: false
 operands: {}

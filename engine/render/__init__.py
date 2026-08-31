@@ -5,7 +5,6 @@ from .document_fragment import (
     DocumentFragmentPipeline,
     DocumentFragmentProvider,
 )
-from .cpuid_reference import CpuidEntityReferenceRenderer
 from .ea_diagram import EaDiagramFragmentRenderer
 from .event_reference import EventReferenceRenderer
 from .implementation_disclosure import ImplementationDisclosureRenderer
@@ -25,16 +24,13 @@ from .sail_dispatch import SailDispatchRenderer
 from .sail_catalog import SailCatalogRenderer
 from .sail_project import SailProjectRenderer
 from .sail_registry import SailRegistryRenderer
-from .type_reference import EncodingTypeReferenceRenderer
 from .vector_diagram import VectorDiagramPlacementRenderer, VectorDiagramRenderer
 
 __all__ = [
     "DocumentFragmentContext",
     "DocumentFragmentPipeline",
     "DocumentFragmentProvider",
-    "CpuidEntityReferenceRenderer",
     "EaDiagramFragmentRenderer",
-    "EncodingTypeReferenceRenderer",
     "EventReferenceRenderer",
     "ImplementationDisclosureRenderer",
     "RegisterModelFigureRenderer",

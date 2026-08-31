@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ..dependency import DependencyGraph
 from ..entity import (
     Entity,
     EntityDisplayStyle,
+    PublicTargetCatalog,
     instruction_label,
 )
 from ..reference import Reference
@@ -25,6 +27,7 @@ from ..semantic_text import (
     SemanticText,
     TermForm,
     TermReferenceText,
+    TextOrigin,
 )
 from ..terminology import Term, TermCatalog, TermGroup
 from ..type_system import FieldTypeKind
@@ -62,12 +65,89 @@ def tex_code(value: object) -> str:
     return r"\texttt{" + tex_escape(value).replace("--", r"{-}{-}") + "}"
 
 
-def _entity_label(project, reference: Reference[object]) -> str:
-    entities = getattr(project, "entities", project)
-    label = entities.resolve(cast(Reference[Entity], reference)).latex_label
-    if label is None:
-        raise ValueError("entity has no target in this LaTeX artifact")
-    return label
+def _label_slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+
+
+_LOCAL_INPUT_RE = re.compile(r"\\input\{((?!/)(?![^}]*\.\.)[^}]+)\}")
+_SEMANTIC_REFERENCE_RE = re.compile(
+    r"\(:(?:ref|term)(?:\[[a-z]+\])?:[^:\n]+:\)"
+)
+
+
+def _authored_semantic_references(
+    composition: DocumentComposition, project
+) -> frozenset[Reference[object]]:
+    """Collect references actually authored into this document projection."""
+
+    references: set[Reference[object]] = set()
+    repository = project.root.parent.resolve()
+    visited: set[Path] = set()
+
+    def collect_semantic(semantic: SemanticText) -> None:
+        for part in semantic.parts:
+            if isinstance(part, (EntityReferenceText, TermReferenceText)):
+                references.add(part.reference)
+
+    def collect_source(source: Path) -> None:
+        path = source.resolve()
+        if path in visited:
+            return
+        visited.add(path)
+        text = path.read_text(encoding="utf-8")
+        if path.suffix != ".sty":
+            for match in _SEMANTIC_REFERENCE_RE.finditer(text):
+                collect_semantic(
+                    SemanticText.parse(match.group(0), origin=TextOrigin(path))
+                )
+        for match in _LOCAL_INPUT_RE.finditer(text):
+            included = (repository / match.group(1)).resolve()
+            if included.suffix == "":
+                included = included.with_suffix(".tex")
+            if not included.is_relative_to(repository) or not included.is_file():
+                raise RuntimeError(f"cannot inspect TeX source {match.group(1)!r}")
+            collect_source(included)
+
+    collect_source(composition.preamble)
+    collect_source(composition.title_page)
+    collect_source(composition.postamble)
+    for block in composition.blocks:
+        if isinstance(block, TopicBlock):
+            collect_source(block.topic.document)
+        elif isinstance(block, TermGroupBlock):
+            for term in block.group.terms.values():
+                collect_semantic(term.definition)
+        elif isinstance(block, InstructionSetBlock):
+            for topic in block.introduction:
+                collect_source(topic.document)
+            for bundle in block.instructions:
+                collect_source(bundle.artifacts.description)
+    return frozenset(references)
+
+
+def _document_public_targets(
+    composition: DocumentComposition, project
+) -> PublicTargetCatalog:
+    targets: list[tuple[Reference[object], str]] = []
+    referenced = _authored_semantic_references(composition, project)
+
+    for block in composition.blocks:
+        if isinstance(block, TermGroupBlock):
+            targets.extend(TermGroupRenderer.public_targets(block.group, referenced))
+        elif isinstance(block, InstructionSetBlock):
+            for bundle in block.instructions:
+                targets.append(
+                    (bundle.reference, instruction_label(bundle.instruction.mnemonic))
+                )
+
+    # Import locally because the event projector also uses TeX escaping from this
+    # module.  It owns its public row labels; this composer only supplies the
+    # references actually requested by authored prose.
+    from .event_reference import EventReferenceRenderer
+
+    targets.extend(EventReferenceRenderer.public_targets(project, referenced))
+
+    return PublicTargetCatalog.create(project.entities, targets)
 
 
 class LatexSemanticTextRenderer:
@@ -78,7 +158,7 @@ class LatexSemanticTextRenderer:
         text: SemanticText,
         catalog: TermCatalog,
         *,
-        entities=None,
+        public_targets: PublicTargetCatalog,
         escape_literals: bool = True,
     ) -> str:
         parts: list[str] = []
@@ -87,32 +167,19 @@ class LatexSemanticTextRenderer:
                 parts.append(tex_escape(part.value) if escape_literals else part.value)
                 continue
             if isinstance(part, EntityReferenceText):
-                if entities is None:
-                    raise ValueError(
-                        f"{text.origin.source}: no entity catalog is available"
-                    )
-                entity = entities.resolve(part.reference)
-                if entity.latex_label is None:
-                    raise ValueError(
-                        f"{text.origin.source}: entity has no target in this "
-                        "LaTeX artifact"
-                    )
+                entity, label = public_targets.resolve(part.reference)
                 display = (
                     tex_code(entity.display)
                     if entity.display_style is EntityDisplayStyle.CODE
                     else tex_escape(entity.display)
                 )
-                parts.append(rf"\hyperref[{entity.latex_label}]{{{display}}}")
+                parts.append(rf"\hyperref[{label}]{{{display}}}")
                 continue
             assert isinstance(part, TermReferenceText)
             term = catalog.references.terms.resolve(part.reference)
-            if entities is None:
-                raise ValueError(
-                    f"{text.origin.source}: no entity catalog is available"
-                )
             display = self._term_form(term, part.form)
             parts.append(
-                rf"\hyperref[{_entity_label(entities, term.reference)}]"
+                rf"\hyperref[{public_targets.label(term.reference)}]"
                 rf"{{{tex_escape(display)}}}"
             )
         return "".join(parts)
@@ -141,20 +208,50 @@ class TermGroupRenderer:
     def __init__(self, semantic: LatexSemanticTextRenderer | None = None) -> None:
         self.semantic = semantic or LatexSemanticTextRenderer()
 
-    def render(self, group: TermGroup, project, dependencies=None) -> str:
+    @staticmethod
+    def public_targets(
+        group: TermGroup, referenced: frozenset[Reference[object]]
+    ) -> tuple[tuple[Reference[object], str], ...]:
+        """Declare only terminology entries targeted by authored prose."""
+
+        targets: list[tuple[Reference[object], str]] = []
+        if group.reference in referenced:
+            targets.append((group.reference, f"term-group:{_label_slug(group.id)}"))
+        targets.extend(
+            (term.reference, f"term:{_label_slug(term.id)}")
+            for term in group.terms.values()
+            if term.reference in referenced
+        )
+        return tuple(targets)
+
+    def render(
+        self,
+        group: TermGroup,
+        project,
+        public_targets: PublicTargetCatalog,
+        dependencies=None,
+    ) -> str:
         catalog = project.terminology
+        heading = rf"\subsection{{{tex_escape(group.title)}}}"
+        if public_targets.contains(group.reference):
+            heading += rf"\label{{{public_targets.label(group.reference)}}}"
         return "\n\n".join(
             (
-                rf"\subsection{{{tex_escape(group.title)}}}"
-                rf"\label{{{_entity_label(project, group.reference)}}}",
+                heading,
                 *(
-                    self._term(term, project, dependencies)
+                    self._term(term, project, public_targets, dependencies)
                     for term in group.terms.values()
                 ),
             )
         )
 
-    def _term(self, term: Term, project, dependencies=None) -> str:
+    def _term(
+        self,
+        term: Term,
+        project,
+        public_targets: PublicTargetCatalog,
+        dependencies=None,
+    ) -> str:
         display = term.forms.canonical
         if term.abbreviation is not None:
             display += f" ({term.abbreviation.canonical})"
@@ -168,12 +265,15 @@ class TermGroupRenderer:
         definition = self.semantic.render(
             term.definition,
             project.terminology,
-            entities=project.entities,
+            public_targets=public_targets,
         )
-        return (
-            rf"\phantomsection\label{{{_entity_label(project, term.reference)}}}" + "\n"
-            + f"{subject} is {definition}"
-        )
+        anchor = ""
+        if public_targets.contains(term.reference):
+            anchor = (
+                rf"\phantomsection\label{{{public_targets.label(term.reference)}}}"
+                + "\n"
+            )
+        return anchor + f"{subject} is {definition}"
 
 
 class InstructionEntryRenderer:
@@ -578,28 +678,44 @@ class LatexDocumentRenderer:
             self.fragments, self.terms.semantic, self.dependencies
         )
 
+    @staticmethod
+    def public_targets(
+        composition: DocumentComposition, project
+    ) -> PublicTargetCatalog:
+        return _document_public_targets(composition, project)
+
     def render(self, composition: DocumentComposition, project) -> str:
         self.dependencies.clear()
+        public_targets = self.public_targets(composition, project)
         artifact: Reference[Entity] = Reference(
             "base", ("artifacts",), composition.artifact
         )
         parts = [
-            self.sources.render(composition.preamble, project, artifact),
-            self.sources.render(composition.title_page, project, artifact),
+            self.sources.render(
+                composition.preamble, project, public_targets, artifact
+            ),
+            self.sources.render(
+                composition.title_page, project, public_targets, artifact
+            ),
         ]
         for block in composition.blocks:
             if isinstance(block, TopicBlock):
                 parts.extend(
                     [
                         f"% topic: {block.topic.id}",
-                        self._topic(block.topic, project),
+                        self._topic(block.topic, project, public_targets),
                     ]
                 )
             elif isinstance(block, TermGroupBlock):
                 parts.extend(
                     [
                         f"% term-group: {block.group.id}",
-                        self.terms.render(block.group, project, self.dependencies),
+                        self.terms.render(
+                            block.group,
+                            project,
+                            public_targets,
+                            self.dependencies,
+                        ),
                     ]
                 )
             elif isinstance(block, InstructionSetBlock):
@@ -615,7 +731,7 @@ class LatexDocumentRenderer:
                             for topic in block.introduction
                             for item in (
                                 f"% topic: {topic.id}",
-                                self._topic(topic, project),
+                                self._topic(topic, project, public_targets),
                             )
                         ),
                         *(
@@ -625,6 +741,7 @@ class LatexDocumentRenderer:
                                 self.sources.render(
                                     bundle.artifacts.description,
                                     project,
+                                    public_targets,
                                     bundle.reference,
                                 ),
                             )
@@ -632,15 +749,16 @@ class LatexDocumentRenderer:
                         ),
                     ]
                 )
-        parts.append(self.sources.render(composition.postamble, project, artifact))
+        parts.append(
+            self.sources.render(
+                composition.postamble, project, public_targets, artifact
+            )
+        )
         return "\n\n".join(parts) + "\n"
 
-    def _topic(self, topic, project) -> str:
-        reference = topic.reference
-        rendered = self.sources.render(topic.document, project, reference)
-        anchor = rf"\phantomsection\label{{{_entity_label(project, reference)}}}"
-        heading = re.compile(
-            r"(\\(?:part|chapter|section|subsection|subsubsection)\*?\{[^{}]*\}"
-            r"(?:\\label\{[^{}]*\})*)"
+    def _topic(
+        self, topic, project, public_targets: PublicTargetCatalog
+    ) -> str:
+        return self.sources.render(
+            topic.document, project, public_targets, topic.reference
         )
-        return heading.sub(lambda match: match.group(1) + anchor, rendered, count=1)

@@ -2,8 +2,6 @@ mnemonic: LEA
 name: Load Effective Address
 summary: Computes the source effective address without reading memory and writes it to the destination.
 route: ea_utility
-sail_entries:
-- execute_LEA
 privileged: false
 repeat:
   type: repcc

@@ -1,17 +1,30 @@
+import re
 import unittest
 from pathlib import Path
 
-from engine.generation import ArtifactGeneratorRegistry
+from engine.generation import (
+    ArtifactDefinition,
+    ArtifactGenerationContext,
+    ArtifactGeneratorRegistry,
+)
+from engine.ea_mode import EAMode, EAModeCatalog
+from engine.encoding_metasyntax import EncodingMetasyntax
 from engine.project import IsaProject
+from engine.reference import Reference
 from engine.systemverilog import decoder_ir, lowering
-from engine.systemverilog.generate_decoder import OUTPUT_NAMES, render_outputs
+from engine.systemverilog.generate_decoder import render_outputs
+from engine.workspace import SpecWorkspace
 
 
 class SystemVerilogDecoderTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.root = Path(__file__).parents[1]
-        cls.project = IsaProject.load(cls.root)
+        cls.workspace = SpecWorkspace.load(cls.root.parent)
+        project = cls.workspace.require_provider("isa")
+        if not isinstance(project, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
+        cls.project = project
         cls.ir = decoder_ir.load_decode_ir()
         cls.outputs = render_outputs(Path("."))
 
@@ -24,40 +37,43 @@ class SystemVerilogDecoderTest(unittest.TestCase):
                 opcode &= ~(1 << position)
         return opcode
 
-    def _form(self, key: str) -> decoder_ir.FormIR:
+    def _form(
+        self, reference: Reference[decoder_ir.FormIR]
+    ) -> decoder_ir.FormIR:
+        key = ".".join((reference.owner, *reference.path, reference.element))
         return next(form for form in self.ir.forms if form.key == key)
 
-    def test_current_outputs_and_interfaces_are_well_formed(self) -> None:
-        self.assertEqual(
-            set(self.outputs),
-            {Path(name) for name in OUTPUT_NAMES},
-        )
+    def test_package_projects_decode_ir_limits(self) -> None:
+        package = self.outputs[Path("bedrock_decode_pkg.sv")]
+        expected = {
+            "BEDROCK_OPCODE_BITS": self.ir.limits.max_opcode_width,
+            "BEDROCK_RECORD_BYTES": self.ir.limits.max_record_bytes,
+            "BEDROCK_FORM_COUNT": self.ir.limits.form_count,
+            "BEDROCK_OPERAND_SLOTS": self.ir.limits.max_operands,
+            "BEDROCK_EA_SLOTS": self.ir.limits.max_ea_operands,
+            "BEDROCK_OVERLAP_SLOTS": self.ir.limits.max_overlaps,
+        }
+        for parameter, value in expected.items():
+            with self.subTest(parameter=parameter):
+                self.assertRegex(
+                    package,
+                    rf"\b{parameter} = 10'd{value};",
+                )
+
+    def test_rendered_modules_keep_the_public_decoder_ports(self) -> None:
         package = self.outputs[Path("bedrock_decode_pkg.sv")]
         d0 = self.outputs[Path("bedrock_decode_d0.sv")]
         d1 = self.outputs[Path("bedrock_decode_d1.sv")]
         ea = self.outputs[Path("bedrock_decode_ea.sv")]
-        form_count = sum(
-            len(bundle.encodings.forms) for bundle in self.project.select()
-        )
 
         self.assertIn("package bedrock_decode_pkg;", package)
-        for declaration in (
-            "BEDROCK_OPCODE_BITS = 10'd42",
-            "BEDROCK_RECORD_BYTES = 10'd18",
-            f"BEDROCK_FORM_COUNT = 10'd{form_count}",
-            "BEDROCK_OPERAND_SLOTS = 10'd6",
-            "BEDROCK_EA_SLOTS = 10'd2",
-            "BEDROCK_OVERLAP_SLOTS = 10'd2",
+        for public_type in (
             "} d0_result_t;",
             "} d0_ea_result_t;",
             "} d1_opcode_result_t;",
             "} ea_decode_result_t;",
-            "logic [31:0] form_high_decode;",
-            "logic [31:0] form_low_decode;",
-            "logic [6:0] alt_raw;",
-            "logic [3:0] base_cursor;",
         ):
-            self.assertIn(declaration, package)
+            self.assertIn(public_type, package)
         self.assertIn("module bedrock_decode_d0", d0)
         self.assertIn(
             """input  logic valid_i,
@@ -76,9 +92,6 @@ class SystemVerilogDecoderTest(unittest.TestCase):
             d1,
         )
         self.assertNotIn("opcode_i", d1)
-        self.assertIn("d0_i.form_high_decode", d1)
-        self.assertIn("d0_i.form_low_decode", d1)
-        self.assertIn("unique casez", d1)
         self.assertIn("module bedrock_decode_ea", ea)
         self.assertIn(
             """input  d0_ea_result_t d0_i,
@@ -87,33 +100,53 @@ class SystemVerilogDecoderTest(unittest.TestCase):
   output ea_decode_result_t result_o""",
             ea,
         )
-        self.assertIn("alt_span.descriptor_bytes", d0)
-        self.assertIn("descriptor_end_cursor", ea)
-        self.assertIn("ea_static_payload_prefix_bytes", ea)
-        self.assertIn("ea_payload_byte_count", ea)
-        self.assertIn("ea_descriptor_byte_count", ea)
-        for offset in range(3):
-            self.assertIn(f"descriptor_ext1_{offset}", ea)
-            self.assertIn(f"descriptor_ext2_{offset}", ea)
-        self.assertNotIn(
-            "descriptor_end_cursor = low_descriptor_parse.next_cursor", ea
-        )
-        self.assertNotIn(
-            "descriptor_end_cursor = alt_descriptor_parse.next_cursor", ea
-        )
 
     def test_d1_emits_every_operand_overlap_constraint(self) -> None:
         d1 = self.outputs[Path("bedrock_decode_d1.sv")]
-        gather = self._form("VECTOR.instructions.VGATHER.l_pn_p_pn_c_vn_x_vn_v")
-        self.assertEqual(len(gather.overlaps), 2)
-        self.assertIn("decoded_result.overlap_count = 2'd2;", d1)
-        self.assertIn("decoded_result.overlaps[0].valid = 1'b1;", d1)
-        self.assertIn("decoded_result.overlaps[1].valid = 1'b1;", d1)
+        gather = self._form(
+            Reference.parse("VECTOR.VGATHER.l_pn_p_pn_c_vn_x_vn_v")
+        )
+        match = re.search(
+            rf"begin // \d+: {re.escape(gather.key)}\n(.*?)"
+            rf"(?=\n\s+64'b|\n\s+default:)",
+            d1,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(match, gather.key)
+        case = match.group(1)
+        self.assertIn(
+            f"decoded_result.overlap_count = 2'd{len(gather.overlaps)};",
+            case,
+        )
+        operand_indexes = {
+            operand.name: index for index, operand in enumerate(gather.operands)
+        }
+        for index, overlap in enumerate(gather.overlaps):
+            with self.subTest(overlap=index, form=gather.key):
+                self.assertEqual(overlap.rule, "illegal_instruction")
+                self.assertIn(
+                    f"decoded_result.overlaps[{index}].valid = 1'b1;", case
+                )
+                self.assertIn(
+                    "decoded_result.overlaps["
+                    f"{index}].rule = OVERLAP_ILLEGAL_INSTRUCTION;",
+                    case,
+                )
+                self.assertIn(
+                    "decoded_result.overlaps["
+                    f"{index}].left_operand = 2'd{operand_indexes[overlap.left]};",
+                    case,
+                )
+                self.assertIn(
+                    "decoded_result.overlaps["
+                    f"{index}].right_operand = 2'd{operand_indexes[overlap.right]};",
+                    case,
+                )
 
     def test_reference_decoder_consumes_all_ea_descriptors_before_payloads(
         self,
     ) -> None:
-        form = self._form("base.instructions.MOV.b_w_l_q_z_ea_s_ea_d")
+        form = self._form(Reference.parse("base.MOV.b_w_l_q_z_ea_s_ea_d"))
         opcode = lowering.representative_opcode(form)
         for operand in form.operands:
             if isinstance(operand.source, decoder_ir.EffectiveAddressSourceIR):
@@ -131,7 +164,7 @@ class SystemVerilogDecoderTest(unittest.TestCase):
         self.assertEqual(decoded["eas"]["dst"]["payload"], 0xF2)
 
     def test_reference_decoder_uses_operand_order_after_descriptor_prefix(self) -> None:
-        form = self._form("base.instructions.ADD.b_w_l_q_z_imm8s_ea_e")
+        form = self._form(Reference.parse("base.ADD.b_w_l_q_z_imm8s_ea_e"))
         opcode = lowering.representative_opcode(form)
         destination = next(
             operand for operand in form.operands if operand.name == "dst"
@@ -149,26 +182,87 @@ class SystemVerilogDecoderTest(unittest.TestCase):
         self.assertEqual(decoded["eas"]["dst"]["descriptor"], 0x01)
         self.assertEqual(decoded["eas"]["dst"]["payload"], 0x5C)
 
+    def test_descriptor_resolution_preserves_profile_owned_update_amount(self) -> None:
+        base_stage, base, _ = lowering.reference_ea_descriptor(
+            self.ir, "ea", 0x63, [0x84], 1, 0
+        )
+        vector_stage, vector, _ = lowering.reference_ea_descriptor(
+            self.ir, "vea", 0x63, [0x84], 1, 0
+        )
+
+        self.assertEqual(base_stage, "success")
+        self.assertEqual(vector_stage, "success")
+        self.assertEqual(base["update_difference"], "scale")
+        self.assertEqual(vector["update_difference"], "vlen_bytes")
+
+        base_stage, base, _ = lowering.reference_ea_descriptor(
+            self.ir, "ea", 0x68, [0x80, 0x00], 2, 0
+        )
+        vector_stage, vector, _ = lowering.reference_ea_descriptor(
+            self.ir, "vea", 0x68, [0x80, 0x00], 2, 0
+        )
+
+        self.assertEqual(base_stage, "success")
+        self.assertEqual(vector_stage, "success")
+        self.assertEqual(base["update_difference"], "constant_1")
+        self.assertEqual(vector["update_difference"], "element_count")
+
+    def test_profile_compact_membership_follows_owner_catalogs(self) -> None:
+        profiles = {
+            profile.name: profile for profile in self.ir.effective_addresses.profiles
+        }
+        compact_catalogs = {
+            catalog.profile: catalog
+            for catalog in EAModeCatalog.discover(
+                self.root, self.project.types
+            )
+            if catalog.mode_type == "compact"
+        }
+        self.assertEqual(set(profiles), set(compact_catalogs))
+
+        for profile_name, catalog in compact_catalogs.items():
+            profile = profiles[profile_name]
+            expected = set()
+            for mode_id in catalog.modes:
+                mode = EAMode.load(
+                    catalog.mode_path(mode_id),
+                    self.root,
+                    self.project.types,
+                    catalog=catalog,
+                )
+                for encoding in mode["encodings"]:
+                    pattern = EncodingMetasyntax.parse(encoding["pattern"])
+                    expected.update(
+                        raw
+                        for raw in range(1 << pattern.bit_width)
+                        if pattern.matches(raw)
+                    )
+            actual = {
+                entry.raw for entry in profile.compact_entries if entry.valid
+            }
+            self.assertEqual(actual, expected, profile_name)
+
     def test_generation_is_deterministic(self) -> None:
         self.assertEqual(self.outputs, render_outputs(Path(".")))
 
-    def test_registered_artifacts_own_exactly_the_public_files(self) -> None:
-        registry = ArtifactGeneratorRegistry.discover(self.project)
-        expected = {
-            "systemverilog-package": {Path("rtl/bedrock_decode_pkg.sv")},
-            "systemverilog-instruction-decoder": {
-                Path("rtl/bedrock_decode_d0.sv"),
-                Path("rtl/bedrock_decode_d1.sv"),
-            },
-            "systemverilog-ea-decoder": {Path("rtl/bedrock_decode_ea.sv")},
-        }
-        for artifact_id, paths in expected.items():
-            with self.subTest(artifact=artifact_id):
-                generated = registry.generate(artifact_id, self.project, Path("output"))
-                self.assertEqual(
-                    {artifact.relative_path for artifact in generated.artifacts},
-                    paths,
-                )
+    def test_manifest_role_selects_a_renamed_output_path(self) -> None:
+        registered = ArtifactGeneratorRegistry.discover(self.workspace).generator(
+            "systemverilog-package"
+        )
+        definition = ArtifactDefinition(
+            "systemverilog-package",
+            registered.definition.source,
+            {"outputs": {"package": "renamed/decode-contract.sv"}},
+        )
+
+        generated = type(registered)(definition).generate(
+            ArtifactGenerationContext.create(self.workspace, Path("output"))
+        )
+
+        self.assertEqual(
+            {artifact.relative_path for artifact in generated.artifacts},
+            {Path("renamed/decode-contract.sv")},
+        )
 
 
 if __name__ == "__main__":

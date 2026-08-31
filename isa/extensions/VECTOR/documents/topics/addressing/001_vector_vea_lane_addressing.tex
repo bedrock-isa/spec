@@ -1,6 +1,7 @@
 \subsubsection{Vector VEA Lane Addressing}
-VEA inherits the scalar memory and EXT encodings except that \texttt{0x58} and \texttt{0x5B} through \texttt{0x5E}
-are (:term:base.terms.reserved:).
+VEA directly declares the register, SP-displaced, PC-displaced, absolute, EXT1, and EXT2 selectors defined for
+this profile. Selectors \texttt{0x58} and \texttt{0x5B} through \texttt{0x5E} are
+(:term:base.terms.reserved:).
 
 For an (:term:base.terms.ordinary:) compact or EXT VEA memory form, address calculation first produces one scalar anchor using the
 shared base, scalar Rn index, scale, displacement, segment, and auto-update grammar. If $E$ is the vector element
@@ -11,5 +12,21 @@ For a VEA auto-update form, a base-register update changes the base by \(\pm\)VL
 changes the index by \(\pm\)the instruction\textquotesingle{}s number of elements before the element-size scale is
 applied. Predicate activity does not change either update quantity. Descriptor encodings and update ordering otherwise
 follow the base extended-EA rules.
+
+\clearpage
+\paragraph{VEA EXT1 Mode}\mbox{}\par
+(:ea-diagram:VECTOR.vea.modes.EXT1.default_segment_base:)
+
+\clearpage
+\paragraph{VEA EXT2 Modes}\mbox{}\par
+(:ea-diagram:VECTOR.vea.modes.EXT2.explicit_segment_index:)
+\clearpage
+(:ea-diagram:VECTOR.vea.modes.EXT2.explicit_segment_base:)
+\clearpage
+(:ea-diagram:VECTOR.vea.modes.EXT2.explicit_segment_zero_base_index:)
+\clearpage
+(:ea-diagram:VECTOR.vea.modes.EXT2.stack_pointer_index:)
+\clearpage
+(:ea-diagram:VECTOR.vea.modes.EXT2.program_counter_index:)
 
 \clearpage

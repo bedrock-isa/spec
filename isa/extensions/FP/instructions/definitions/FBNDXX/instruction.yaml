@@ -2,8 +2,6 @@ mnemonic: FBNDXX
 name: Floating-Point Bounds Check Exclusive-Exclusive
 summary: Checks floating-point value membership in the exclusive-exclusive interval (lo, hi).
 route: fpu
-sail_entries:
-- execute_FBNDXX
 privileged: false
 repeat:
   type: rep

@@ -2,8 +2,6 @@ mnemonic: VREDOR
 name: Vector Bitwise OR Reduction
 summary: Reduces selected integer lanes with bitwise OR and writes the scalar result to Rn.
 route: vector
-sail_entries:
-- execute_VREDOR
 privileged: false
 operands:
   govern:

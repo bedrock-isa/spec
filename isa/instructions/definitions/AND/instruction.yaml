@@ -2,8 +2,6 @@ mnemonic: AND
 name: Bitwise And
 summary: Computes the bitwise AND of the source and destination operands.
 route: integer_alu
-sail_entries:
-- execute_AND
 privileged: false
 repeat:
   type: repcc

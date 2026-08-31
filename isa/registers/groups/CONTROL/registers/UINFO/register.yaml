@@ -1,4 +1,3 @@
 id: UINFO
 encoding: 0x010e
-role: user_return
 summary: User-origin outer-event code.

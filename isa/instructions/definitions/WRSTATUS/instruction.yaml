@@ -2,8 +2,6 @@ mnemonic: WRSTATUS
 name: Write Status
 summary: Write the processor STATUS register from an Rn register.
 route: system_registers
-sail_entries:
-- execute_WRSTATUS
 privileged: true
 operands:
   src:

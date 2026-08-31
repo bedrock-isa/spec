@@ -2,7 +2,7 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: bedrock://interfaces/c/schemas/utility
 type: object
 additionalProperties: false
-required: [id, owner, kind, body]
+required: [id, owner, body]
 properties:
   id:
     type: string
@@ -10,8 +10,6 @@ properties:
   owner:
     type: string
     pattern: ^(?:base|[A-Z][A-Z0-9_]*)$
-  kind:
-    enum: [object-macro, function-macro]
   parameters:
     type: array
     items:

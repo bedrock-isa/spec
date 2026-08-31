@@ -2,8 +2,6 @@ mnemonic: POR
 name: Predicate Bitwise OR
 summary: OR corresponding bits of Ps and the old Pd into the complete Pd image.
 route: vector
-sail_entries:
-- execute_POR
 privileged: false
 operands:
   src:

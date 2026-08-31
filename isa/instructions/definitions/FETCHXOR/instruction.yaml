@@ -2,8 +2,6 @@ mnemonic: FETCHXOR
 name: Atomic Fetch Xor
 summary: Atomically XORs source with memory and returns the old memory value in the source register.
 route: atomics
-sail_entries:
-- execute_FETCHXOR
 privileged: false
 operands:
   order:

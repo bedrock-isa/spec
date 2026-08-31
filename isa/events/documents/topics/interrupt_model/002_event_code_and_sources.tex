@@ -4,7 +4,64 @@ class\textquotesingle{}s namespace.
 
 \BedrockGeneratedEventCodeReference
 
-\BedrockGeneratedArchitecturalEvents
+The following fixed event codes are allocated by this specification. Each row answers only which symbolic event is
+assigned to a fixed code; the event's behavior, frame, and (:term:base.terms.payload:) are defined by the topic that owns that behavior.
+
+\BedrockTableCaption{Fixed Architectural Event-Code Allocations}
+\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{4.55in}@{}}
+\toprule
+\rowcolor{BedrockHeaderFill}
+\textbf{Code} & \textbf{Event}\\
+\midrule
+\endfirsthead
+\multicolumn{2}{@{}l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\
+\toprule
+\rowcolor{BedrockHeaderFill}
+\textbf{Code} & \textbf{Event}\\
+\midrule
+\endhead
+(:event-code:base.events.EXCEPTION.DEBUG_TRACE:)
+(:event-code:base.events.EXCEPTION.BREAKPOINT:)
+(:event-code:base.events.EXCEPTION.PRIVILEGE_VIOLATION:)
+(:event-code:base.events.EXCEPTION.SYSTEM_CALL:)
+(:event-code:base.events.EXCEPTION.DIVIDE_BY_ZERO:)
+(:event-code:base.events.EXCEPTION.SIGNED_DIVIDE_OVERFLOW:)
+(:event-code:base.events.EXCEPTION.INVALID_OPCODE:)
+(:event-code:base.events.EXCEPTION.INVALID_ADDRESSING_FORM:)
+(:event-code:base.events.EXCEPTION.RESERVED_INSTRUCTION_ENCODING:)
+(:event-code:base.events.EXCEPTION.UNAVAILABLE_INSTRUCTION_EXTENSION:)
+(:event-code:base.events.EXCEPTION.EXPLICIT_ILLEGAL_INSTRUCTION:)
+(:event-code:base.events.EXCEPTION.TRUNCATED_INSTRUCTION:)
+(:event-code:base.events.EXCEPTION.INVALID_OPERAND_RELATION:)
+(:event-code:base.events.EXCEPTION.PAGE_NOT_PRESENT:)
+(:event-code:base.events.EXCEPTION.PAGE_PERMISSION_VIOLATION:)
+(:event-code:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:)
+(:event-code:base.events.EXCEPTION.NONCANONICAL_ADDRESS:)
+(:event-code:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:)
+(:event-code:base.events.EXCEPTION.ATOMIC_ALIGNMENT_FAULT:)
+(:event-code:base.events.EXCEPTION.MEMORY_TYPE_FAULT:)
+(:event-code:base.events.EXCEPTION.PHYSICAL_ADDRESS_FAULT:)
+(:event-code:base.events.EXCEPTION.MMIO_ALIGNMENT_FAULT:)
+(:event-code:base.events.EXCEPTION.UNSUPPORTED_MMIO_OPERATION:)
+(:event-code:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:)
+(:event-code:base.events.EXCEPTION.RESERVED_CONTROL_BITS:)
+(:event-code:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:)
+(:event-code:base.events.EXCEPTION.INVALID_CONTROL_TRANSITION:)
+(:event-code:VECTOR.events.EXCEPTION.VECTOR_LOOP_OFFSET_OUT_OF_RANGE:)
+(:event-code:VECTOR.events.EXCEPTION.VECTOR_LANE_INDEX_OUT_OF_RANGE:)
+(:event-code:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:)
+(:event-code:base.events.EXCEPTION.BUS_NO_RESPONDER:)
+(:event-code:base.events.EXCEPTION.BUS_ACCESS_DENIED:)
+(:event-code:base.events.EXCEPTION.BUS_TIMEOUT:)
+(:event-code:base.events.EXCEPTION.BUS_DATA_ERROR:)
+(:event-code:base.events.EXCEPTION.BUS_OTHER_ERROR:)
+(:event-code:base.events.EXCEPTION.EVENT_ENTRY_STATE_FAILURE:)
+(:event-code:base.events.EXCEPTION.EVENT_STACK_STATE_FAILURE:)
+(:event-code:base.events.EXCEPTION.EVENT_FRAME_ADDRESS_FAILURE:)
+(:event-code:base.events.EXCEPTION.EVENT_FRAME_STORE_FAILURE:)
+(:event-code:base.events.EXCEPTION.MACHINE_CHECK:)
+\bottomrule
+\end{BedrockLongTable}
 
 Unassigned base-profile exception IDs are (:term:base.terms.reserved:). External interrupt IDs do not share a namespace with exception
 IDs. Interrupt-controller routing,

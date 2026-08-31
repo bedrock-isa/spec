@@ -11,4 +11,3 @@ signature:
     type: size
 lowering:
   operation: isa:base.instructions.INVDCACHE
-  kind: cache-range

@@ -5,5 +5,5 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_vector_geometry_pkg.sv
-- rtl/bedrock_vector_permute.sv
+  package: rtl/bedrock_vector_geometry_pkg.sv
+  permuter: rtl/bedrock_vector_permute.sv

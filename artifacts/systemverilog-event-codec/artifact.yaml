@@ -5,6 +5,6 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_event_pkg.sv
-- rtl/bedrock_event_codec.sv
-- rtl/bedrock_event_frame.sv
+  package: rtl/bedrock_event_pkg.sv
+  codec: rtl/bedrock_event_codec.sv
+  frame: rtl/bedrock_event_frame.sv

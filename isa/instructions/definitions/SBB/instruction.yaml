@@ -2,8 +2,6 @@ mnemonic: SBB
 name: Subtract With Borrow
 summary: Subtracts source and C borrow from destination, writes the modular difference, and updates ZNCV.
 route: integer_alu
-sail_entries:
-- execute_SBB
 privileged: false
 repeat:
   type: repcc

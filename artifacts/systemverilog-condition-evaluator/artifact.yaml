@@ -5,4 +5,4 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_condition_eval.sv
+  evaluator: rtl/bedrock_condition_eval.sv

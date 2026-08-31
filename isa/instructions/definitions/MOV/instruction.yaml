@@ -2,8 +2,6 @@ mnemonic: MOV
 name: Move
 summary: Copies the source operand to the destination operand.
 route: data_movement
-sail_entries:
-- execute_MOV
 privileged: false
 repeat:
   type: repcc

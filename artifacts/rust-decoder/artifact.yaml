@@ -1,7 +1,0 @@
-id: rust-decoder
-status: planned
-summary: Rust instruction and effective-address decoder projection for tooling and disassembly.
-outputs:
-- rust/decoder/generated_instruction.rs
-- rust/decoder/generated_ea.rs
-- rust/decoder/generated_tables.rs

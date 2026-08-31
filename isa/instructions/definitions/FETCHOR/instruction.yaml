@@ -2,8 +2,6 @@ mnemonic: FETCHOR
 name: Atomic Fetch Or
 summary: Atomically ORs source with memory and returns the old memory value in the source register.
 route: atomics
-sail_entries:
-- execute_FETCHOR
 privileged: false
 operands:
   order:

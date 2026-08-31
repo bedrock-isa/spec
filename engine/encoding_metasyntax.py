@@ -6,10 +6,7 @@ from dataclasses import dataclass
 import re
 from typing import Sequence
 
-try:
-    from .metasyntax import Metasyntax, MetasyntaxError
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from metasyntax import Metasyntax, MetasyntaxError
+from .metasyntax import Metasyntax, MetasyntaxError
 
 
 _PATTERN_RE = re.compile(r"[01a-z]+")

@@ -2,8 +2,6 @@ mnemonic: CMPXCHG
 name: Compare And Exchange
 summary: Atomically compares memory with the expected register, conditionally stores, and returns the observed value.
 route: atomics
-sail_entries:
-- execute_CMPXCHG
 privileged: false
 operands:
   order:

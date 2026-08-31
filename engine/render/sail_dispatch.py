@@ -12,23 +12,14 @@ class SailDispatchRenderer:
             "  -> Execution_result = match instruction.form.operation {",
         ]
         for semantics in program.instruction_semantics:
-            fallback = (
+            rejection = (
                 "faulted(state, instruction.form.operation, IllegalInstruction, "
                 '"local operation entry rejected its owning form")'
             )
-            if len(semantics.entries) == 1:
-                entry = semantics.entries[0]
-                execution = (
-                    f"match {entry}(instruction, state) {{ Some(result) => result, "
-                    f"None() => {fallback} }}"
-                )
-            else:
-                execution = fallback
-                for entry in reversed(semantics.entries):
-                    execution = (
-                        f"match {entry}(instruction, state) {{ Some(result) => result, "
-                        f"None() => {execution} }}"
-                    )
+            execution = (
+                f"match {semantics.entry}(instruction, state) "
+                f"{{ Some(result) => result, None() => {rejection} }}"
+            )
             lines.append(f"  {semantics.operation} => {execution},")
         lines.extend(["}", ""])
         return "\n".join(lines)

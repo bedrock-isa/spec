@@ -1,0 +1,19 @@
+id: stack_pointer_displaced
+name: Stack-pointer displaced memory
+kind: memory
+syntax: "[SP + displacement]"
+encodings:
+  - pattern: "1010000"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP8S}
+  - pattern: "1010001"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP16S}
+  - pattern: "1010010"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP32S}
+  - pattern: "1010011"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP64}
+segment: {source: fixed, register: SS}
+pseudocode: offset = SP + displacement

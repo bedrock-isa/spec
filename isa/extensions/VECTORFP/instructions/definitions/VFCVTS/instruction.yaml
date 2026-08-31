@@ -2,8 +2,6 @@ mnemonic: VFCVTS
 name: Vector Floating-Point Convert to Single Precision
 summary: Converts active half-precision, double-precision, or signed integer elements to single precision.
 route: vector
-sail_entries:
-- execute_VFCVTS
 privileged: false
 operands:
   govern:

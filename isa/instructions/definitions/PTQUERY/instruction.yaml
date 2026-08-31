@@ -2,8 +2,6 @@ mnemonic: PTQUERY
 name: Page Table Query
 summary: Non-destructively reads the selected raw page-table descriptor.
 route: tlb_and_context
-sail_entries:
-- execute_PTQUERY
 privileged: true
 operands:
   level:

@@ -2,8 +2,6 @@ mnemonic: Jcc
 name: Jump Conditional
 summary: Transfers control when the encoded condition is true.
 route: control_flow
-sail_entries:
-- execute_Jcc
 privileged: false
 operands:
   cc:

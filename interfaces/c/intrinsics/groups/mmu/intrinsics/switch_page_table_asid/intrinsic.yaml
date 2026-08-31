@@ -11,4 +11,3 @@ signature:
     type: u16
 lowering:
   operation: isa:base.instructions.SWPTA
-  kind: direct

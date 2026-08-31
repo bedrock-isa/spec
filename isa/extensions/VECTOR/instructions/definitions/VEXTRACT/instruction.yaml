@@ -2,8 +2,6 @@ mnemonic: VEXTRACT
 name: Vector Lane Extract
 summary: Copies one indexed integer vector lane to an integer scalar register.
 route: vector
-sail_entries:
-- execute_VEXTRACT
 privileged: false
 operands:
   src:

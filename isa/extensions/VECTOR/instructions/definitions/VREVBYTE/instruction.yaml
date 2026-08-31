@@ -2,8 +2,6 @@ mnemonic: VREVBYTE
 name: Vector Byte-Order Reverse
 summary: Reverses the byte order within each active element.
 route: vector
-sail_entries:
-- execute_VREVBYTE
 privileged: false
 operands:
   govern:

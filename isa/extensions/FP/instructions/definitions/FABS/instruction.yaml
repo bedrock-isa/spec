@@ -2,8 +2,6 @@ mnemonic: FABS
 name: Floating-Point Absolute Value
 summary: Clears the selected floating-point source sign and writes its magnitude.
 route: fpu
-sail_entries:
-- execute_FABS
 privileged: false
 repeat:
   type: rep

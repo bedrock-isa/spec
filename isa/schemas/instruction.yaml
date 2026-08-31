@@ -3,7 +3,7 @@ $id: bedrock://schemas/instruction
 title: Bedrock instruction
 type: object
 additionalProperties: false
-required: [mnemonic, name, summary, route, sail_entries, privileged, operands]
+required: [mnemonic, name, summary, route, privileged, operands]
 properties:
   mnemonic:
     type: string
@@ -32,13 +32,6 @@ properties:
       - system_registers
       - tlb_and_context
       - vector
-  sail_entries:
-    type: array
-    minItems: 1
-    uniqueItems: true
-    items:
-      type: string
-      pattern: ^execute_[A-Za-z][A-Za-z0-9_]*$
   privileged:
     type: boolean
   assembly:
@@ -106,7 +99,7 @@ $defs:
 x-interpretation-rules:
   - The instruction directory name must equal mnemonic.
   - route selects the shared execution protocol used by this instruction; extension-specific route constructors are generated only when their owning extension is active.
-  - sail_entries lists the ordered entry functions exported by semantics.sail; dispatch tries each entry until one accepts the decoded form.
+  - semantics.sail exports the instruction-owned execute_<mnemonic> entry consumed by dispatch.
   - privileged true means the instruction requires supervisor privilege; false means it does not.
   - assembly.width_suffix_aliases permits the width-equivalent H, S, and D spellings for W, L, and Q encodings without changing the selected value domain.
   - Omitting repeat means that the instruction is not eligible for repetition.

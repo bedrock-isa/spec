@@ -2,8 +2,6 @@ mnemonic: VGATHER
 name: Resumable Vector Gather
 summary: Gather governed vector lanes while journaling completed lanes in a predicate.
 route: vector
-sail_entries:
-- execute_VGATHER
 privileged: false
 operands:
   govern:

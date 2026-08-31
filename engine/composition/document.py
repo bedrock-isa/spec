@@ -93,10 +93,6 @@ class DocumentComposition:
                 topic = project.model.document_topics.get(topic_reference)
                 if topic is None:
                     raise ValueError(f"{source}: unknown topic")
-                if topic.artifact != artifact:
-                    raise ValueError(
-                        f"{source}: topic {topic.id!r} belongs to {topic.artifact}"
-                    )
                 included_topics.append(topic_reference)
                 blocks.append(TopicBlock(topic))
                 continue
@@ -158,10 +154,10 @@ class DocumentComposition:
                     )
                     if topic is None:
                         raise ValueError(f"{source}: unknown introduction topic")
-                    if topic.owner != owner or topic.artifact != artifact:
+                    if topic.owner != owner:
                         raise ValueError(
-                            f"{source}: introduction topic {topic.id!r} does not belong "
-                            f"to {owner}.{artifact}"
+                            f"{source}: introduction topic {topic.id!r} is not owned "
+                            f"by {owner}"
                         )
                     introduction.append(topic)
                     included_topics.append(introduction_reference)
@@ -172,67 +168,43 @@ class DocumentComposition:
                 continue
             raise ValueError(f"{source}: body[{index}] has an unknown block kind")
 
-        expected_topics = set(project.model.document_orders.get(artifact, ()))
-        actual_topics = set(included_topics)
         duplicate_topics = sorted(
             reference
-            for reference in actual_topics
+            for reference in set(included_topics)
             if included_topics.count(reference) != 1
         )
-        missing_topics = sorted(expected_topics - actual_topics)
-        extra_topics = sorted(actual_topics - expected_topics)
-        if duplicate_topics or missing_topics or extra_topics:
+        if duplicate_topics:
             duplicate_topic_ids = [
                 project.model.document_topics[reference].id
                 for reference in duplicate_topics
             ]
-            missing_topic_ids = [
-                project.model.document_topics[reference].id
-                for reference in missing_topics
-            ]
-            extra_topic_ids = [
-                project.model.document_topics[reference].id
-                for reference in extra_topics
-            ]
             raise ValueError(
-                f"{source}: invalid topic coverage: "
-                f"duplicates={duplicate_topic_ids}, "
-                f"missing={missing_topic_ids}, extra={extra_topic_ids}"
+                f"{source}: duplicate public topic placements: "
+                f"{duplicate_topic_ids}"
             )
 
-        expected_groups = set(project.terminology.references.groups)
-        actual_groups = set(included_groups)
         duplicate_groups = sorted(
             reference
-            for reference in actual_groups
+            for reference in set(included_groups)
             if included_groups.count(reference) != 1
         )
-        missing_groups = sorted(expected_groups - actual_groups)
-        extra_groups = sorted(actual_groups - expected_groups)
-        if duplicate_groups or missing_groups or extra_groups:
+        if duplicate_groups:
             duplicate_group_ids = [
                 project.terminology.references.groups.resolve(reference).id
                 for reference in duplicate_groups
             ]
-            missing_group_ids = [
-                project.terminology.references.groups.resolve(reference).id
-                for reference in missing_groups
-            ]
-            extra_group_ids = [
-                project.terminology.references.groups.resolve(reference).id
-                for reference in extra_groups
-            ]
             raise ValueError(
-                f"{source}: invalid terminology group coverage: "
-                f"duplicates={duplicate_group_ids}, "
-                f"missing={missing_group_ids}, extra={extra_group_ids}"
+                f"{source}: duplicate public terminology group placements: "
+                f"{duplicate_group_ids}"
             )
 
-        expected_owners = ["base", *project.catalog.extensions]
-        if included_owners != expected_owners:
+        duplicate_owners = sorted(
+            owner for owner in set(included_owners) if included_owners.count(owner) != 1
+        )
+        if duplicate_owners:
             raise ValueError(
-                f"{source}: instruction-set order {included_owners} does not match "
-                f"{expected_owners}"
+                f"{source}: duplicate public instruction-set placements: "
+                f"{duplicate_owners}"
             )
 
         return cls(

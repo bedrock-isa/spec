@@ -2,8 +2,6 @@ mnemonic: VTRUNCB
 name: Vector Truncation to Byte
 summary: Copies the low B field from each W, L, or Q source container.
 route: vector
-sail_entries:
-- execute_VTRUNCB
 privileged: false
 operands:
   govern:

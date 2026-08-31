@@ -9,9 +9,10 @@ metasyntax parsers rather than a parallel consumer-specific model.
 
 The source tree groups executable Sail and explanatory TeX under their owning
 architectural domains. A base or extension `model.yaml` independently declares
-Sail dependency units and reader-ordered TeX topics. The manifest records
-composition; it does not replace either source language with a second
-description of architectural behavior.
+Sail dependency units and owner-local TeX topic sources. Reader-facing
+artifacts own composition and order separately; the owner manifest does not
+turn its topic inventory into a public projection or replace either source
+language with a second description of architectural behavior.
 
 Primitive operation families follow the same ownership boundary. Base integer
 families are declared under `isa/execution/semantics/primitives/`; an extension's
@@ -191,7 +192,6 @@ classDiagram
         +Mapping~str, SailUnit~ sail_units
         +tuple~str~ sail_order
         +Mapping~str, DocumentTopic~ document_topics
-        +tuple~str~ document_order
         +load(isa_root, extensions) ModelCatalog
     }
 
@@ -214,8 +214,6 @@ classDiagram
         +str owner
         +str id
         +Path document
-        +str artifact
-        +str concept
     }
 
     class Instruction {
@@ -589,28 +587,24 @@ extension directories.
 artifacts.  The bundle does not copy values out of `Instruction` or
 `EncodingCatalog`.
 
-Each instruction declares its shared execution `route` and ordered
-`sail_entries`. These properties are semantic input rather than facts recovered
-from function names or Sail text. The entry list permits one source to expose
-multiple form-specific implementations; generated dispatch tries them in the
-authored order until one accepts the decoded form.
+Each instruction declares its shared execution `route`. Its owned
+`semantics.sail` exports the single canonical `execute_<mnemonic>` entry;
+generated dispatch invokes that entry directly and treats rejection as an
+illegal instruction.
 
 `ModelNamespace` owns the `model.yaml` beside the base ISA or one extension.
-The manifest contains two independent projections. A `SailUnit` is one
-executable dependency node and owns one or more ordered Sail sources. A
-`DocumentTopic` owns exactly one authored TeX source representing one
-reader-facing subtopic. Its `artifact` selects an independently compiled
-document such as the ISA reference, C ABI, or ELF ABI. Per-artifact topic order
-is compile order; it is not derived from
-the Sail dependency graph. Sail units and document topics have no cardinality,
-basename, or directory-pairing constraint.
+The manifest contains two independent catalogs. A `SailUnit` is one executable
+dependency node and owns one or more ordered Sail sources. A `DocumentTopic`
+owns exactly one authored TeX source that a public artifact may select. It does
+not name an artifact, concept role, or public position. Sail units and document
+topics have no cardinality, basename, or directory-pairing constraint.
 
 `ModelManifestLoader` validates one owner-local manifest and resolves its source
-paths. `ModelDependencyResolver` combines the resulting namespaces into one
-explicit project graph, rejects missing Sail units and cycles, and preserves
-document topics in authored manifest and extension order. `ModelCatalog`
-publishes the two immutable indexes and orders independently. Dependencies may
-cross base and extension namespaces when they are declared explicitly.
+paths. `ModelDependencyResolver` combines the resulting namespaces, rejects
+missing Sail units and cycles, and indexes document topics by owner-local
+identity. `ModelCatalog` publishes the Sail dependency order and document topic
+index independently. Dependencies may cross base and extension namespaces when
+they are declared explicitly.
 
 Every declared namespace owns a required `model.yaml`. Declared sources are
 required and must remain below the declaring owner root. Base entries cannot
@@ -623,11 +617,12 @@ requirements. `SailComposer` projects that configuration from `IsaProject` into
 an immutable `SailProgram` containing selected `InstructionSemantics`
 contributions and Sail units. Each contribution keeps one instruction bundle,
 its authored `semantics.sail` source, generated operation constructor, and
-ordered entry declarations together. Dispatch validation and Sail project
+canonical entry together. Dispatch validation and Sail project
 assembly consume that same contribution; the bundle list and semantic source
 list are projections rather than independently stored composition state.
-Document topics remain independently available from `ModelCatalog` for the TeX
-compiler. These objects do not render text or write files.
+Document topics remain independently available from `ModelCatalog` for an
+explicit public composer. These objects do not render text, choose placement,
+or write files.
 
 `IsaProject` is an immutable lookup facade. `IsaProjectLoader` owns construction
 order and joins the independently loaded type, CPUID, event, register, source,
@@ -642,12 +637,14 @@ validated mappings into their own typed objects; they no longer duplicate YAML
 decoding and first-error formatting.
 
 `DocumentComposition` is the separate global reading-order projection loaded
-from `artifacts/isa-reference/artifact.yaml`. Owner-local manifests continue to own topic
-sources; the composition references those topics and interleaves them with
-generated base and extension instruction-set blocks. An instruction-set block
-may contain introduction topics owned by the same extension. Loading requires
-exactly-once coverage of every topic in the selected artifact and exactly one
-instruction group for base and every declared extension.
+from `artifacts/isa-reference/artifact.yaml`. Owner-local manifests continue to
+own topic sources; the composition explicitly selects those that are public and
+interleaves them with selected instruction-set blocks. An instruction-set block
+may contain introduction topics owned by the same extension. Loading resolves
+each explicit selection, checks owner boundaries, and rejects duplicate public
+placements. It does not compare the body with the complete topic, terminology,
+or extension inventory, so adding an internal member cannot change the public
+document by implication.
 
 `LatexDocumentRenderer` expands authored topics without rewriting them and
 delegates instruction pages to `InstructionEntryRenderer`. The instruction
@@ -660,8 +657,36 @@ Generated islands inside authored topics are supplied by independent
 `DocumentFragmentProvider` objects. `DocumentFragmentPipeline` applies the
 registered providers in deterministic order using one typed
 `DocumentFragmentContext`; the document renderer does not know about event or
-implementation-disclosure placeholders. New reference tables can therefore be
-added without modifying the monolithic document renderer.
+implementation-disclosure placeholders. A provider may publish content only at
+an explicit placeholder owned by the surrounding topic. Catalog membership,
+internal identity, and loader visibility do not authorize a provider to add a
+reader-facing row, label, anchor, or section.
+
+Every generated table or section answers one reader question at one ownership
+scope, with one row grain and one public ordering rule. Parent context stays in
+the owning heading, caption, or prose instead of being repeated as columns or
+mixed with child rows. EA diagrams and register figures use explicit
+owner-local directives for this reason: adding an internal mode or register
+group cannot silently change public composition. Exhaustive catalog and
+dependency projections belong to machine-facing artifacts unless collection
+membership itself is the documented public contract.
+
+`EntityCatalog` provides internal lookup identity. Public targets are created
+only by the projector that emits the corresponding reader-facing content, and
+references derive their labels from that explicit target contract. There is no
+catalog-wide pass that manufactures destinations for internal-only entities.
+The document composer first identifies semantic references actually authored
+into the selected sources. Instruction entries own their explicit instruction
+targets; terminology and event projectors emit targets only for referenced rows
+that those projectors publicly own. Topic membership never creates a hidden
+anchor.
+
+Each source provider's `entity_dependencies()` reports only relationships
+declared by that source domain. It never loads or renders a reader-facing
+artifact to discover additional edges. The ISA reference renderer separately
+owns its authored reference graph, while the standalone machine graph composes
+the uniform provider relationships. Thus changing a manual composition cannot
+change an internal provider's dependency contract.
 
 Event consumers use `ResolvedEvent`, which joins the owner-local leaf and class
 overlay with its numeric root class and `EventCode`. LaTeX and Sail projections
@@ -669,20 +694,30 @@ therefore consume the same resolved view instead of independently walking the
 overlay hierarchy and recomposing event codes.
 
 Document validation is TeX-first. `TexValidator` checks the generated document
-against the current model's topic and form counts, document boundaries, and
-placeholder closure. `DocumentBuilder` coordinates generation, validation,
-`LatexCompiler`, and `PdfArtifactValidator`. It invokes `latexmk` only after the
-TeX gate passes; the compiler owns the external process while the validator owns
-PDF structure, embedded fonts, and forbidden log diagnostics.
+against the current public composition contract, including topic and form
+counts, document boundaries, placeholder closure, and emitted reference
+targets. It does not require every internal entity to appear in the document.
+`DocumentBuilder` coordinates generation, validation, `LatexCompiler`, and
+`PdfArtifactValidator`. It invokes `latexmk` only after the TeX gate passes; the
+compiler owns the external process while the validator owns PDF structure,
+embedded fonts, and forbidden log diagnostics. The primary TeX and dependency
+graph plus the derived validation report, PDF, compile log, and PDF report are
+published as one `isa-reference` ownership snapshot. A validation or compiler
+failure therefore removes a compiled document left by an earlier successful
+snapshot instead of preserving it as an apparent current result.
 
 Every immediate artifact directory below `artifacts/` owns one `artifact.yaml`
 validated by `artifacts/schema.yaml`. `ArtifactGeneratorRegistry` discovers these definitions
-and loads each implemented artifact's adjacent `generator.py`; there is no
+and loads each artifact's adjacent `generator.py`; there is no
 central `kind`-to-generator mapping. The abstract generator contract accepts
 only an immutable `ArtifactGenerationContext` and returns an
-immutable `GeneratedArtifactSet`; it neither compiles external tools nor writes
-files. The set carries its producing artifact ID and rejects duplicate output
-paths. `ArtifactWriter` remains the sole filesystem mutation boundary.
+immutable `GeneratedArtifactSet`; generators may stage external tools in temporary
+directories but never write the shared output tree. The set carries its producing artifact ID and rejects duplicate output
+paths. `ArtifactWriter` remains the sole filesystem mutation boundary. It keeps
+an ownership manifest per artifact, replaces individual files atomically, rejects
+unowned existing destinations, and removes only stale files previously owned by
+that same artifact, so a shorter generation cannot leave legacy pages behind or
+erase another artifact's output.
 
 `ArtifactGenerationContext` carries a domain-neutral `SpecWorkspace`. Artifacts
 declare named `inputs` such as `isa`, and their local generator requires only
@@ -690,12 +725,15 @@ the providers it consumes. This permits a later ABI or combined reference
 artifact to consume ISA and ABI providers without making either source domain
 own the output.
 
-An artifact may be registered with `status: planned` before its renderer exists.
-`PlannedArtifactGenerator` keeps its identity, dependency edges, and output
-ownership visible, but rejects explicit generation rather than returning an
-empty successful result. Registry loading rejects unknown or cyclic artifact
-dependencies and duplicate declared output paths. Generating without explicit
-IDs selects implemented artifacts only.
+Every registered artifact is directly generatable and declares named primary
+output roots. An artifact may separately declare derived output roots for its
+validation or compilation results. Primary and derived roots share one artifact
+owner and both participate in global collision checks, while pure-generator
+completeness applies only to the primary roots. Every emitted or published file
+must belong to exactly one declared root. Registry loading rejects missing
+generators, unknown or cyclic dependencies, and overlapping output roots.
+Generating without explicit IDs selects every declared artifact; speculative
+artifacts do not reserve identities or paths.
 
 `artifacts/isa-reference/generator.py` loads its `DocumentComposition` and projects the
 manual to LaTeX. `artifacts/sail-model/generator.py` resolves the declared extension
@@ -703,8 +741,8 @@ configuration, composes a `SailProgram`, and delegates to
 `SailRegistryRenderer`, `SailDispatchRenderer`, and `SailProjectRenderer`.
 Instruction-local Sail remains in its owning instruction directory and is
 listed as a composition input instead of being copied into a generated
-aggregate file. The same generator boundary is intended for later emulator,
-SystemVerilog decoder/package, formal-property, test-vector, and web artifacts.
+aggregate file. Emulator, SystemVerilog, formal-property, and web projections use
+the same generator boundary.
 
 ```text
 artifacts/<id>/artifact.yaml + generator.py
@@ -758,7 +796,7 @@ all other selector or bit overlap is diagnosed.
 `EventValidator` resolves event-class overlays, validates the closed-world
 class and event inventories, and checks class values, fixed leaf selectors,
 externally selected classes, globally unique event IDs, and payload/frame
-compatibility. Extension-owned events participate in their base class's numeric
+agreement. Extension-owned events participate in their base class's numeric
 allocation without moving their source outside the extension directory.
 
 Validation returns diagnostics instead of raising on the first authoring
@@ -817,7 +855,7 @@ engine.__main__.main
   alloc entries -> AllocationAnalyzer.entries
   alloc check   -> AllocationAnalyzer.check_candidate
   alloc holes   -> AllocationAnalyzer.holes
-  docs compare  -> DocumentBuilder (TeX gate only)
+  docs validate -> DocumentBuilder (TeX gate only)
   docs build    -> DocumentBuilder (TeX gate, then PDF)
   new     -> ScaffoldService
   fmt     -> FormatService

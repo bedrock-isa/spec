@@ -2,7 +2,7 @@
 A query selector identifies a discovery class, leaf, and optional result index. The selector is a Q-sized value held
 in the selected (:term:base.terms.rn_register:).
 
-CPUID is unprivileged under the base compatibility rules. For a (:term:base.terms.logical_processor:), CPUID results remain stable until
+CPUID is unprivileged. For a (:term:base.terms.logical_processor:), CPUID results remain stable until
 that (:term:base.terms.logical_processor:) is reset. A discovery result applies to execution on the (:term:base.terms.logical_processor:) that returned it.
 Software associates cached discovery state with that (:term:base.terms.logical_processor:) and uses results obtained on each logical
 processor before selecting its optional architectural behavior.
@@ -62,16 +62,13 @@ any class, leaf 1 or greater, index 0 & (:term:base.terms.reserved:), zero & (:t
 \texttt{MAX\_CLASS} is the greatest class recognized by the implementation, \texttt{MAX\_LEAF} is the greatest leaf
 recognized within the selected class, and \texttt{MAX\_INDEX} is the greatest index recognized within the selected
 leaf. Each (:term:base.terms.field:) gives the greatest recognized selector value. A leaf may be sparse below \texttt{MAX\_INDEX}. Software
-ignores (:term:base.terms.reserved:) bits in every returned value, so a later
-revision can assign them without invalidating existing discovery code.
+ignores (:term:base.terms.reserved:) bits in every returned value.
 
 CPUID bit (:term:base.terms.field|plural:) are feature predicates unless the leaf description says they encode a numeric value. Reserved
 result bits are (:term:base.terms.ignored:) by software.
 
 A set feature bit only permits software to use the corresponding architectural behavior; the instruction\textquotesingle{}s normal
-privilege, operand, and compatibility checks still apply.
+privilege, operand, and availability checks still apply.
 
 Numeric (:term:base.terms.field|plural:) use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
 \texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.
-
-\BedrockGeneratedCPUIDEntityRegistry

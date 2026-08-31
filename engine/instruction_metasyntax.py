@@ -5,10 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import re
 
-try:
-    from .metasyntax import Metasyntax, MetasyntaxError
-except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from metasyntax import Metasyntax, MetasyntaxError
+from .metasyntax import Metasyntax, MetasyntaxError
 
 
 class InstructionMetasyntaxError(MetasyntaxError):

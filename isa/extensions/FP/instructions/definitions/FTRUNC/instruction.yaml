@@ -2,8 +2,6 @@ mnemonic: FTRUNC
 name: Floating-Point Truncate
 summary: Rounds a floating-point source toward zero in the same format.
 route: fpu
-sail_entries:
-- execute_FTRUNC
 privileged: false
 repeat:
   type: rep

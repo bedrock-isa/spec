@@ -10,4 +10,3 @@ result:
   register_class: base.register_classes.GENERAL
   units: 2
   direct_maximum_bytes: 16
-  fallback: sret

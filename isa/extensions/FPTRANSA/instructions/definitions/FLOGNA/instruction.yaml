@@ -2,8 +2,6 @@ mnemonic: FLOGNA
 name: Approximate Floating-Point Natural Log
 summary: Approximates natural logarithm for positive values, with zero as the divide-by-zero boundary.
 route: fpu_transcendental_approx
-sail_entries:
-- execute_FLOGNA
 privileged: false
 repeat:
   type: rep

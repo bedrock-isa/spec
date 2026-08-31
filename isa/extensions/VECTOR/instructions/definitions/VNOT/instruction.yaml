@@ -2,8 +2,6 @@ mnemonic: VNOT
 name: Vector Bitwise NOT
 summary: Complements every bit of each active element.
 route: vector
-sail_entries:
-- execute_VNOT
 privileged: false
 operands:
   govern:

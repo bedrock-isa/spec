@@ -2,8 +2,6 @@ mnemonic: SHR
 name: Shift Right
 summary: Logical-right-shifts the destination by the count modulo its selected width without changing FLAGS.
 route: integer_bitfield
-sail_entries:
-- execute_SHR
 privileged: false
 repeat:
   type: repcc

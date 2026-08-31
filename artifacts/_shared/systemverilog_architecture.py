@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 
 from engine.generation import (
-    ArtifactDefinition,
     ArtifactGenerationContext,
     ArtifactGenerator,
     GeneratedArtifact,
@@ -33,34 +32,23 @@ def _generated(body: str) -> str:
 
 
 class _Generator(ArtifactGenerator):
-    expected_id: str
-
-    def __init__(self, definition: ArtifactDefinition) -> None:
-        super().__init__(definition)
-        if definition.id != self.expected_id:
-            raise ValueError(
-                f"{definition.source}: expected artifact id {self.expected_id!r}"
-            )
-
     def _outputs(self, contents: dict[str, str]) -> GeneratedArtifactSet:
-        declared = {path.name: path for path in self.definition.declared_outputs}
+        declared = self.definition.outputs
         if set(declared) != set(contents):
             raise ValueError(
-                f"{self.definition.source}: declared outputs {sorted(declared)} do not "
-                f"match rendered outputs {sorted(contents)}"
+                f"{self.definition.source}: declared output roles {sorted(declared)} do not "
+                f"match rendered output roles {sorted(contents)}"
             )
         return GeneratedArtifactSet(
             tuple(
-                GeneratedArtifact(declared[name], _generated(content))
-                for name, content in contents.items()
+                GeneratedArtifact(declared[role], _generated(content))
+                for role, content in contents.items()
             ),
             self.artifact_id,
         )
 
 
 class ConditionEvaluatorGenerator(_Generator):
-    expected_id = "systemverilog-condition-evaluator"
-
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         context.require_provider("isa")
         body = """module bedrock_condition_eval (
@@ -98,7 +86,7 @@ class ConditionEvaluatorGenerator(_Generator):
     endcase
   end
 endmodule"""
-        return self._outputs({"bedrock_condition_eval.sv": body})
+        return self._outputs({"evaluator": body})
 
 
 def _resolve_cpuid_class(catalog, item):
@@ -124,8 +112,6 @@ def _resolve_cpuid_leaf(catalog, item):
 
 
 class CpuidGenerator(_Generator):
-    expected_id = "systemverilog-cpuid"
-
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("isa")
         constants: list[str] = []
@@ -198,9 +184,7 @@ class CpuidGenerator(_Generator):
     end
   end
 endmodule"""
-        return self._outputs(
-            {"bedrock_cpuid_pkg.sv": package, "bedrock_cpuid_rom.sv": rom}
-        )
+        return self._outputs({"package": package, "rom": rom})
 
 
 _FRAME_VALUES = {
@@ -212,8 +196,6 @@ _FRAME_VALUES = {
 
 
 class EventCodecGenerator(_Generator):
-    expected_id = "systemverilog-event-codec"
-
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("isa")
         resolved = project.events.resolved_events()
@@ -340,9 +322,9 @@ endmodule"""
 endmodule"""
         return self._outputs(
             {
-                "bedrock_event_pkg.sv": package,
-                "bedrock_event_codec.sv": codec,
-                "bedrock_event_frame.sv": frame,
+                "package": package,
+                "codec": codec,
+                "frame": frame,
             }
         )
 
@@ -358,8 +340,6 @@ def _register_width_kind(width: object) -> int:
 
 
 class RegisterContractsGenerator(_Generator):
-    expected_id = "systemverilog-register-contracts"
-
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("isa")
         groups: list[tuple[str, object]] = []
@@ -448,15 +428,13 @@ endpackage"""
 endmodule"""
         return self._outputs(
             {
-                "bedrock_register_pkg.sv": package,
-                "bedrock_register_contracts.sv": contracts,
+                "package": package,
+                "contracts": contracts,
             }
         )
 
 
 class VectorGeometryGenerator(_Generator):
-    expected_id = "systemverilog-vector-geometry"
-
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("isa")
         vector_namespace = project.registers.namespaces.get("VECTOR")
@@ -569,15 +547,13 @@ endpackage"""
 endmodule"""
         return self._outputs(
             {
-                "bedrock_vector_geometry_pkg.sv": package,
-                "bedrock_vector_permute.sv": permute,
+                "package": package,
+                "permuter": permute,
             }
         )
 
 
 class AssertionsGenerator(_Generator):
-    expected_id = "systemverilog-assertions"
-
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         context.require_provider("isa")
         decode = """module bedrock_decode_assertions
@@ -627,7 +603,7 @@ endmodule"""
 endmodule"""
         return self._outputs(
             {
-                "bedrock_decode_assertions.sv": decode,
-                "bedrock_architecture_assertions.sv": architecture,
+                "decode": decode,
+                "architecture": architecture,
             }
         )

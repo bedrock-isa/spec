@@ -2,8 +2,6 @@ mnemonic: PTRNLO
 name: Predicate Even-Lane Transpose
 summary: Interleave even-position predicate lanes from two sources.
 route: vector
-sail_entries:
-- execute_PTRNLO
 privileged: false
 operands:
   lhs:

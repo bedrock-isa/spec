@@ -2,8 +2,6 @@ mnemonic: VFCVTUL
 name: Vector Floating-Point Convert to Unsigned Longword
 summary: Converts active floating-point elements to unsigned longwords.
 route: vector
-sail_entries:
-- execute_VFCVTUL
 privileged: false
 operands:
   govern:

@@ -1,8 +1,9 @@
-"""Catalog-backed architectural register-model figure renderer."""
+"""Owner-local architectural register-model figure renderer."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from ..register import RegisterGroup, RegisterNamespace
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
@@ -15,7 +16,13 @@ BLOCK_GAP = 0.30
 BAND_GAP = 0.41
 REGISTER_WIDTH = 1.70
 COLUMN_X = (0.0, 3.45)
-SUMMARY_HEIGHT = 0.65
+
+_DIRECTIVE_OPEN = "(:register-figure:"
+_DIRECTIVE_RE = re.compile(
+    r"(?m)^[ \t]*\(:register-figure:"
+    r"(base|[A-Z][A-Z0-9_]*):"
+    r"([A-Z][A-Z0-9_]*(?:,[A-Z][A-Z0-9_]*)*):\)[ \t]*$"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,7 +30,6 @@ class _Block:
     group: RegisterGroup
     rows: tuple[object | None, ...]
     height: float
-    summary: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,35 +48,66 @@ class _Band:
 
 
 class RegisterModelFigureRenderer(DocumentFragmentProvider):
-    """Expand the register-model figure from the loaded register catalog."""
+    """Expand explicitly selected register groups in their owning topic."""
 
-    PLACEHOLDER = r"\BedrockGeneratedRegisterModelFigure"
+    PLACEHOLDER = _DIRECTIVE_OPEN
 
     @property
     def placeholders(self) -> frozenset[str]:
         return frozenset((self.PLACEHOLDER,))
 
     def expand(self, text: str, context: DocumentFragmentContext) -> str:
-        if self.PLACEHOLDER not in text:
+        matches = tuple(_DIRECTIVE_RE.finditer(text))
+        if text.count(_DIRECTIVE_OPEN) != len(matches):
+            raise ValueError(
+                f"{context.source}: (:register-figure:owner:groups:) must occupy "
+                "a standalone line"
+            )
+        if not matches:
             return text
-        return text.replace(self.PLACEHOLDER, self.render(context.project.registers))
 
-    def render(self, catalog) -> str:
-        namespaces = tuple(
-            namespace
-            for namespace in catalog.namespaces.values()
-            if namespace.groups
+        source = context.source.resolve() if context.source is not None else None
+        topics = tuple(
+            topic
+            for topic in context.project.model.document_topics.values()
+            if source is not None and topic.document.resolve() == source
         )
-        lines: list[str] = []
-        for namespace in namespaces:
-            lines.extend(_render_figure(namespace))
-        return "\n".join(lines)
+        if len(topics) != 1:
+            raise ValueError(
+                f"{context.source}: register figure placement requires one topic owner"
+            )
+        topic = topics[0]
+
+        def replacement(match: re.Match[str]) -> str:
+            owner = match.group(1)
+            if owner != topic.owner:
+                raise ValueError(
+                    f"{context.source}: register owner {owner!r} does not match "
+                    f"topic owner {topic.owner!r}"
+                )
+            namespace = context.project.registers.namespace(owner)
+            group_ids = tuple(match.group(2).split(","))
+            duplicates = sorted(
+                group_id
+                for group_id in set(group_ids)
+                if group_ids.count(group_id) > 1
+            )
+            unknown = sorted(set(group_ids) - set(namespace.groups))
+            if duplicates or unknown:
+                raise ValueError(
+                    f"{context.source}: invalid register figure groups; "
+                    f"duplicates={duplicates}, unknown={unknown}"
+                )
+            groups = tuple(namespace.groups[group_id] for group_id in group_ids)
+            return "\n".join(_render_figure(namespace, groups))
+
+        return _DIRECTIVE_RE.sub(replacement, text)
 
 
-def _render_figure(namespace: RegisterNamespace) -> list[str]:
-    band = _layout_band(namespace, 0.0)
-    if namespace.diagram is None:
-        raise ValueError(f"{namespace.owner}: register namespace has no diagram layout")
+def _render_figure(
+    namespace: RegisterNamespace, groups: tuple[RegisterGroup, ...]
+) -> list[str]:
+    band = _layout_band(namespace, groups, 0.0)
 
     lines = [
         r"\begin{center}",
@@ -84,7 +121,7 @@ def _render_figure(namespace: RegisterNamespace) -> list[str]:
         (
             r"\end{tikzpicture}",
             "}",
-            rf"\BedrockFigureCaption{{{_tex(namespace.diagram.caption)}}}",
+            rf"\BedrockFigureCaption{{{_tex(_owner_name(namespace.owner))} Register Model}}",
             r"\end{minipage}",
             r"\end{center}",
         )
@@ -99,11 +136,9 @@ def _compact_rows(group: RegisterGroup) -> tuple[object | None, ...]:
     return (*registers[:3], None, registers[-1])
 
 
-def _block(group: RegisterGroup, mode: str) -> _Block:
-    if mode == "summary":
-        return _Block(group, (), SUMMARY_HEIGHT, summary=True)
+def _block(group: RegisterGroup) -> _Block:
     registers = tuple(group.registers.values())
-    rows = _compact_rows(group) if mode == "compact" else registers
+    rows = _compact_rows(group) if group.series is not None else registers
     rows_height = (len(rows) - 1) * ROW_PITCH + ROW_HEIGHT
     return _Block(group, rows, HEADER_HEIGHT + rows_height)
 
@@ -114,31 +149,21 @@ def _column_height(blocks: list[_Block]) -> float:
     return sum(block.height for block in blocks) + BLOCK_GAP * (len(blocks) - 1)
 
 
-def _layout_band(namespace: RegisterNamespace, top: float) -> _Band:
-    diagram = namespace.diagram
-    if diagram is None:
-        raise ValueError(
-            f"{namespace.group_inventory.source}: register namespace with groups "
-            "has no diagram layout"
-        )
+def _layout_band(
+    namespace: RegisterNamespace,
+    groups: tuple[RegisterGroup, ...],
+    top: float,
+) -> _Band:
     columns: tuple[list[_Block], list[_Block]] = ([], [])
-    for column_index, group_ids in enumerate(diagram.columns):
-        for group_id in group_ids:
-            group = namespace.groups[group_id]
-            default = "compact" if group.register_inventory is None else "all"
-            columns[column_index].append(
-                _block(group, diagram.display.get(group_id, default))
-            )
+    split = (len(groups) + 1) // 2
+    columns[0].extend(_block(group) for group in groups[:split])
+    columns[1].extend(_block(group) for group in groups[split:])
 
     heights = tuple(_column_height(column) for column in columns)
     content_height = max(heights, default=0.0)
     placed: list[_PlacedBlock] = []
     for column_index, column in enumerate(columns):
-        center_offset = (
-            (content_height - heights[column_index]) / 2
-            if namespace.owner != "base"
-            else 0
-        )
+        center_offset = (content_height - heights[column_index]) / 2
         cursor = top + center_offset
         for block in column:
             placed.append(_PlacedBlock(block, column_index, cursor))
@@ -153,6 +178,10 @@ def _layout_band(namespace: RegisterNamespace, top: float) -> _Band:
 
 def _tex(value: str) -> str:
     return value.replace("_", r"\_")
+
+
+def _owner_name(owner: str) -> str:
+    return owner.capitalize() if owner.islower() else owner
 
 
 def _fmt(value: float) -> str:
@@ -230,24 +259,6 @@ def _render_block(placed: _PlacedBlock) -> list[str]:
     block = placed.block
     group = block.group
     x = COLUMN_X[placed.column]
-    if block.summary:
-        bottom = placed.top + block.height
-        bracket_left = x + 2.28
-        bracket_right = x + 2.42
-        return [
-            rf"\draw ({_fmt(x)},{_y(placed.top)}) rectangle "
-            rf"({_fmt(x + REGISTER_WIDTH)},{_y(bottom)});",
-            rf"\node[align=center] at ({_fmt(x + REGISTER_WIDTH / 2)},"
-            rf"{_y((placed.top + bottom) / 2)}) "
-            rf"{{{len(group.registers)} named\\registers}};",
-            rf"\draw ({_fmt(bracket_left)},{_y(placed.top)}) -- "
-            rf"({_fmt(bracket_right)},{_y(placed.top)}) -- "
-            rf"({_fmt(bracket_right)},{_y(bottom)}) -- "
-            rf"({_fmt(bracket_left)},{_y(bottom)});",
-            rf"\node[anchor=west] at ({_fmt(x + 2.60)},"
-            rf"{_y((placed.top + bottom) / 2)}) {{{_group_label(group)}}};",
-        ]
-
     first_row_top = placed.top + HEADER_HEIGHT
     lines = _bit_labels(group, x, first_row_top)
     for index, register in enumerate(block.rows):

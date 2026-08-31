@@ -5,5 +5,5 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_register_pkg.sv
-- rtl/bedrock_register_contracts.sv
+  package: rtl/bedrock_register_pkg.sv
+  contracts: rtl/bedrock_register_contracts.sv

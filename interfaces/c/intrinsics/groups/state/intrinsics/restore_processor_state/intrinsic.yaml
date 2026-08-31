@@ -9,4 +9,3 @@ signature:
     type: const_void_pointer
 lowering:
   operation: isa:base.instructions.RESTORE
-  kind: direct

@@ -2,8 +2,6 @@ mnemonic: VROR
 name: Vector Rotate Right
 summary: Rotates each active integer element right by its selected-width count.
 route: vector
-sail_entries:
-- execute_VROR
 privileged: false
 operands:
   govern:

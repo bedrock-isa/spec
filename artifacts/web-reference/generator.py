@@ -23,22 +23,19 @@ from engine.site.build import SiteDocument, render_site_output
 _DOCUMENTS = (
     (
         "isa-reference",
-        "tex/isa-reference.tex",
         "isa",
         "Programmer's Reference Manual",
         "isa_reference.pdf",
     ),
     (
         "elf-abi",
-        "tex/bedrock-elf-abi.tex",
         "elf-abi",
         "ELF ABI",
         "bedrock-elf-abi.pdf",
     ),
-    ("c-abi", "tex/bedrock-c-abi.tex", "c-abi", "C ABI", "bedrock-c-abi.pdf"),
+    ("c-abi", "c-abi", "C ABI", "bedrock-c-abi.pdf"),
     (
         "c-target-intrinsics",
-        "tex/bedrock-target-intrinsics.tex",
         "target-intrinsics",
         "Target Intrinsics",
         "bedrock-target-intrinsics.pdf",
@@ -71,10 +68,12 @@ class Generator(ArtifactGenerator):
             sources.mkdir()
             pdfs.mkdir()
             documents = []
-            for artifact_id, output, site_id, title, pdf_name in _DOCUMENTS:
-                artifact = (
-                    registry.generator(artifact_id).generate(context).artifact(output)
-                )
+            for artifact_id, site_id, title, pdf_name in _DOCUMENTS:
+                document_generator = registry.generator(artifact_id)
+                output = document_generator.definition.outputs["document"]
+                artifact = registry.generate(
+                    artifact_id, context.workspace, context.output_root
+                ).artifact(output)
                 if not isinstance(artifact.content, str):
                     raise TypeError(f"{artifact_id}: TeX artifact must be text")
                 source = sources / Path(output).name
@@ -103,7 +102,6 @@ class Generator(ArtifactGenerator):
                 environment=environment,
             )
             reference = {
-                "schemaVersion": 1,
                 "documents": [item[2] for item in _DOCUMENTS],
                 "metrics": asdict(metrics),
             }

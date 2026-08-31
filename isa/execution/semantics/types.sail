@@ -393,12 +393,15 @@ enum Uop_location_kind = {
     UopLocationSegment,
     UopLocationImmediate,
     UopLocationTemporary,
+    UopLocationEaUpdateAmount,
 }
 
 struct Uop_location = {
   kind : Uop_location_kind,
   index : int,
   immediate : bits(64),
+  update_difference : option(Ea_update_difference),
+  negative : bool,
 }
 
 struct Uop = {

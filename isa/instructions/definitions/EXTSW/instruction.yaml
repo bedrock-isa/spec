@@ -2,8 +2,6 @@ mnemonic: EXTSW
 name: Sign Extend To Word
 summary: Sign-extends a byte source to a word EA destination.
 route: integer_unary
-sail_entries:
-- execute_EXTSW
 privileged: false
 repeat:
   type: repcc

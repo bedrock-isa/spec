@@ -1,0 +1,11 @@
+id: explicit_segment_base
+name: Explicit segment with base
+kind: memory
+syntax: "[SEG(s):Rn(b) + displacement]"
+fields:
+  s: {role: segment, type: base.field_types.SREG}
+  b: {role: base, type: base.field_types.Rn}
+encodings:
+  - pattern: [0sssbbbb]
+segment: {source: field, role: segment}
+pseudocode: offset = base + displacement

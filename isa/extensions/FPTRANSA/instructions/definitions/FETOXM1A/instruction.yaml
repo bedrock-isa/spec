@@ -2,8 +2,6 @@ mnemonic: FETOXM1A
 name: Approximate Floating-Point e To x Minus One
 summary: Approximates e raised to the source minus one without an intermediate rounded exponential.
 route: fpu_transcendental_approx
-sail_entries:
-- execute_FETOXM1A
 privileged: false
 repeat:
   type: rep

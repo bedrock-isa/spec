@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from ..document_pipeline import TexInputExpander
 from .artifact import (
     ArtifactDefinition,
@@ -27,11 +25,9 @@ class AuthoredTexArtifactGenerator(ArtifactGenerator):
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         raw_source = self.definition.data.get("source")
-        raw_output = self.definition.data.get("output")
+        output = self.definition.outputs["document"]
         if not isinstance(raw_source, str):
             raise ValueError(f"{self.definition.source}: source must be a TeX path")
-        if not isinstance(raw_output, str):
-            raise ValueError(f"{self.definition.source}: output must be a TeX path")
         source = (context.workspace.root / raw_source).resolve()
         if (
             not source.is_relative_to(context.workspace.root)
@@ -42,6 +38,6 @@ class AuthoredTexArtifactGenerator(ArtifactGenerator):
         content = source.read_text(encoding="utf-8")
         self.expander.expand(content, context.workspace.root)
         return GeneratedArtifactSet(
-            (GeneratedArtifact(Path(raw_output), content),),
+            (GeneratedArtifact(output, content),),
             artifact_id=self.artifact_id,
         )

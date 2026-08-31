@@ -11,6 +11,5 @@ signature:
     type: u64
 lowering:
   operation: isa:base.instructions.CLMUL
-  kind: direct
   operands:
     size: Q

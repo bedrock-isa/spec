@@ -2,6 +2,3 @@ id: FP
 requires: []
 requires-isa:
 - FP
-compiler-features:
-  clang:
-  - fpu

@@ -121,331 +121,211 @@ documents:
   topics:
   - id: manual.part.architectural-foundations
     source: artifacts/isa-reference/document/topics/001_architectural_foundations.tex
-    concept: manual.structure
   - id: architecture.overview.section
     source: artifacts/isa-reference/document/topics/overview/001_section.tex
-    concept: architecture.overview
   - id: architecture.overview.contract-position
     source: artifacts/isa-reference/document/topics/overview/002_contract_position.tex
-    concept: architecture.overview
   - id: architecture.overview.manual-scope
     source: artifacts/isa-reference/document/topics/overview/003_manual_scope.tex
-    concept: architecture.overview
   - id: architecture.overview.profile
     source: artifacts/isa-reference/document/topics/overview/004_architectural_profile.tex
-    concept: architecture.overview
   - id: manual.about.normative-material
     source: artifacts/isa-reference/document/topics/about/001_normative_material.tex
-    concept: manual.about
   - id: architecture.terminology.section
     source: artifacts/isa-reference/document/topics/terminology/001_section.tex
-    concept: architecture.terminology
-  - id: manual.compatibility.contract
-    source: artifacts/isa-reference/document/topics/compatibility/002_compatibility_contract.tex
-    concept: manual.compatibility
-  - id: manual.compatibility.reserved-fields
-    source: artifacts/isa-reference/document/topics/compatibility/003_reserved_fields.tex
-    concept: manual.compatibility
-  - id: encoding.instruction.compatibility.reserved-encodings
-    source: encoding/documents/instruction/topics/compatibility/001_reserved_encodings.tex
-    concept: encoding
-  - id: cpuid.compatibility.contract
-    source: cpuid/documents/topics/compatibility/001_cpuid_compatibility.tex
-    concept: cpuid
   - id: registers.register-model.programming-model
     source: registers/documents/topics/register_model/001_programming_model.tex
-    concept: registers
   - id: registers.register-model.register-model
     source: registers/documents/topics/register_model/002_register_model.tex
-    concept: registers
   - id: registers.state-register-format-diagrams.flags-and-status-registers
     source: registers/documents/topics/state_register_format_diagrams/001_flags_and_status_registers.tex
-    concept: registers
   - id: registers.register-model.segment-registers
     source: registers/documents/topics/register_model/003_segment_registers.tex
-    concept: registers
   - id: registers.register-model.segment-register-operand-class
     source: registers/documents/topics/register_model/004_segment_register_operand_class.tex
-    concept: registers
   - id: registers.register-model.control-registers
     source: registers/documents/topics/register_model/005_control_registers.tex
-    concept: registers
   - id: encoding.data.data-formats.data-formats
     source: encoding/documents/data/topics/data_formats/001_data_formats.tex
-    concept: encoding
   - id: encoding.data.data-formats.integer-data-sizes
     source: encoding/documents/data/topics/data_formats/002_integer_data_sizes.tex
-    concept: encoding
   - id: encoding.data.data-formats.little-endian-memory-organization
     source: encoding/documents/data/topics/data_formats/003_little_endian_memory_organization.tex
-    concept: encoding
   - id: manual.part.encoding-addressing-and-execution
     source: artifacts/isa-reference/document/topics/002_encoding_addressing_and_execution.tex
-    concept: manual.structure
   - id: encoding.instruction.instruction-word-formats.instruction-encoding
     source: encoding/documents/instruction/topics/instruction_word_formats/001_instruction_encoding.tex
-    concept: encoding
   - id: encoding.instruction.instruction-word-formats.instruction-stream-and-record-boundary
     source: encoding/documents/instruction/topics/instruction_word_formats/002_instruction_stream_and_record_boundary.tex
-    concept: encoding
   - id: encoding.instruction.instruction-word-formats.instruction-header-formats
     source: encoding/documents/instruction/topics/instruction_word_formats/003_instruction_header_formats.tex
-    concept: encoding
+  - id: encoding.instruction.reserved-encodings
+    source: encoding/documents/instruction/topics/reserved_encodings/001_reserved_encodings.tex
   - id: encoding.instruction.instruction-payload-ordering.instruction-payload-ordering
     source: encoding/documents/instruction/topics/instruction_payload_ordering/001_instruction_payload_ordering.tex
-    concept: encoding
   - id: encoding.instruction.representative-instruction-encodings.representative-encodings
     source: encoding/documents/instruction/topics/representative_instruction_encodings/001_representative_encodings.tex
-    concept: encoding
   - id: ea.effective-address-modes.effective-address-profiles
     source: ea/documents/topics/effective_address_modes/001_effective_address_profiles.tex
-    concept: ea
   - id: ea.effective-address-modes.compact-profile-encodings
     source: ea/documents/topics/effective_address_modes/002_compact_profile_encodings.tex
-    concept: ea
   - id: ea.effective-address-modes.shared-extended-descriptor
     source: ea/documents/topics/effective_address_modes/005_shared_extended_descriptor.tex
-    concept: ea
   - id: ea.effective-address-modes.extended-ea-addressing-modes
     source: ea/documents/topics/effective_address_modes/006_extended_ea_addressing_modes.tex
-    concept: ea
   - id: memory.translation.memory-address-translation.memory-address-translation
     source: memory/translation/documents/topics/memory_address_translation/001_memory_address_translation.tex
-    concept: memory
   - id: memory.translation.memory-address-translation.segment-pre-translation
     source: memory/translation/documents/topics/memory_address_translation/002_segment_pre_translation.tex
-    concept: memory
   - id: memory.translation.page-walk-reference.paging-stage
     source: memory/translation/documents/topics/page_walk_reference/001_paging_stage.tex
-    concept: memory
   - id: memory.translation.page-walk-reference.la48-four-level-paging
     source: memory/translation/documents/topics/page_walk_reference/002_la48_four_level_paging.tex
-    concept: memory
   - id: memory.translation.page-walk-reference.la57-five-level-paging
     source: memory/translation/documents/topics/page_walk_reference/003_la57_five_level_paging.tex
-    concept: memory
   - id: memory.translation.page-table-entry-reference.page-table-entry-format
     source: memory/translation/documents/topics/page_table_entry_reference/001_page_table_entry_format.tex
-    concept: memory
   - id: memory.translation.memory-address-translation.translation-cache-identity-and-invalidation
     source: memory/translation/documents/topics/memory_address_translation/003_translation_cache_identity_and_invalidation.tex
-    concept: memory
   - id: memory.translation.memory-address-translation.leaf-byte-addresses-and-access-ranges
     source: memory/translation/documents/topics/memory_address_translation/004_leaf_byte_addresses_and_access_ranges.tex
-    concept: memory
   - id: memory.translation.memory-address-translation.physical-class-and-mmio-accesses
     source: memory/translation/documents/topics/memory_address_translation/005_physical_class_and_mmio_accesses.tex
-    concept: memory
   - id: memory.translation.memory-address-translation.multi-page-accesses
     source: memory/translation/documents/topics/memory_address_translation/006_multi_page_accesses.tex
-    concept: memory
   - id: execution.execution-model.instruction-execution-model
     source: execution/documents/topics/execution_model/001_instruction_execution_model.tex
-    concept: execution
   - id: execution.execution-model.architectural-result-priority
     source: execution/documents/topics/execution_model/002_architectural_result_priority.tex
-    concept: execution
   - id: execution.execution-model.implicit-stack-operations
     source: execution/documents/topics/execution_model/003_implicit_stack_operations.tex
-    concept: execution
   - id: execution.execution-model.operand-evaluation-and-ea-defaults
     source: execution/documents/topics/execution_model/004_operand_evaluation_and_ea_defaults.tex
-    concept: execution
   - id: execution.execution-model.shared-side-effect-rules
     source: execution/documents/topics/execution_model/005_shared_side_effect_rules.tex
-    concept: execution
   - id: execution.condition-codes.flags-and-condition-codes
     source: execution/documents/topics/condition_codes/001_flags_and_condition_codes.tex
-    concept: execution
   - id: execution.condition-codes.condition-encoding
     source: execution/documents/topics/condition_codes/002_condition_encoding.tex
-    concept: execution
   - id: execution.condition-code-computation.flag-meanings
     source: execution/documents/topics/condition_code_computation/001_flag_meanings.tex
-    concept: execution
   - id: execution.condition-code-computation.conditional-consumers
     source: execution/documents/topics/condition_code_computation/002_conditional_consumers.tex
-    concept: execution
   - id: memory.ordering.memory-model.memory-model
     source: memory/ordering/documents/topics/memory_model/001_memory_model.tex
-    concept: memory
   - id: memory.ordering.memory-model.baseline-ordering
     source: memory/ordering/documents/topics/memory_model/002_baseline_ordering.tex
-    concept: memory
   - id: memory.ordering.memory-model.ordinary-load-values-and-preserved-order
     source: memory/ordering/documents/topics/memory_model/003_ordinary_load_values_and_preserved_order.tex
-    concept: memory
   - id: memory.ordering.memory-model.pte-cache-policies
     source: memory/ordering/documents/topics/memory_model/004_pte_cache_policies.tex
-    concept: memory
   - id: memory.ordering.memory-model.access-atomicity-and-alignment
     source: memory/ordering/documents/topics/memory_model/005_access_atomicity_and_alignment.tex
-    concept: memory
   - id: memory.ordering.memory-model.cache-maintenance-blocks
     source: memory/ordering/documents/topics/memory_model/006_cache_maintenance_blocks.tex
-    concept: memory
   - id: memory.ordering.memory-model.atomic-memory-order-selectors
     source: memory/ordering/documents/topics/memory_model/007_atomic_memory_order_selectors.tex
-    concept: memory
   - id: memory.ordering.memory-model.fence-instructions
     source: memory/ordering/documents/topics/memory_model/008_fence_instructions.tex
-    concept: memory
   - id: memory.ordering.memory-model.global-sequentially-consistent-order
     source: memory/ordering/documents/topics/memory_model/009_global_sequentially_consistent_order.tex
-    concept: memory
   - id: repeat.streaming-execution-model.repeated-scalar-execution
     source: repeat/documents/topics/streaming_execution_model/001_repeated_scalar_execution.tex
-    concept: repeat
   - id: manual.part.system-programming
     source: artifacts/isa-reference/document/topics/003_system_programming.tex
-    concept: manual.structure
   - id: privilege.privileged-programming-model.privileged-execution-model
     source: privilege/documents/topics/privileged_programming_model/001_privileged_execution_model.tex
-    concept: privilege
   - id: privilege.privileged-programming-model.privilege-and-event-state
     source: privilege/documents/topics/privileged_programming_model/002_privilege_and_event_state.tex
-    concept: privilege
   - id: privilege.privileged-programming-model.user-context-bank
     source: privilege/documents/topics/privileged_programming_model/003_user_context_bank.tex
-    concept: privilege
   - id: privilege.privileged-programming-model.initial-event-stacks-and-payloads
     source: privilege/documents/topics/privileged_programming_model/004_initial_event_stacks_and_payloads.tex
-    concept: privilege
   - id: privilege.privileged-programming-model.event-entry-and-failure
     source: privilege/documents/topics/privileged_programming_model/005_event_entry_and_failure.tex
-    concept: privilege
   - id: privilege.privileged-programming-model.eret-routing-and-atomicity
     source: privilege/documents/topics/privileged_programming_model/006_eret_routing_and_atomicity.tex
-    concept: privilege
   - id: events.interrupt-model.architectural-event-processing-model
     source: events/documents/topics/interrupt_model/001_architectural_event_processing_model.tex
-    concept: events
   - id: events.interrupt-model.event-code-and-sources
     source: events/documents/topics/interrupt_model/002_event_code_and_sources.tex
-    concept: events
   - id: events.interrupt-model.event-priority-and-debug-trace
     source: events/documents/topics/interrupt_model/003_event_priority_and_debug_trace.tex
-    concept: events
   - id: events.interrupt-model.entry-admission-and-event-depth
     source: events/documents/topics/interrupt_model/004_entry_admission_and_event_depth.tex
-    concept: events
   - id: events.interrupt-model.supervisor-event-stacks-and-nesting
     source: events/documents/topics/interrupt_model/005_supervisor_event_stacks_and_nesting.tex
-    concept: events
   - id: events.interrupt-model.event-entry-state
     source: events/documents/topics/interrupt_model/006_event_entry_state.tex
-    concept: events
   - id: events.interrupt-model.architectural-event-frame
     source: events/documents/topics/interrupt_model/007_architectural_event_frame.tex
-    concept: events
   - id: events.interrupt-model.event-payloads
     source: events/documents/topics/interrupt_model/008_event_payloads.tex
-    concept: events
   - id: events.event-error-codes.address-context-error-code
     source: events/documents/topics/event_error_codes/001_address_context_error_code.tex
-    concept: events
   - id: events.event-error-codes.other-exception-error-codes
     source: events/documents/topics/event_error_codes/002_other_exception_error_codes.tex
-    concept: events
   - id: events.event-auxiliary-payloads.auxiliary-payloads
     source: events/documents/topics/event_auxiliary_payloads/001_auxiliary_payloads.tex
-    concept: events
   - id: events.interrupt-model.machine-check-and-bus-error-continuation
     source: events/documents/topics/interrupt_model/009_machine_check_and_bus_error_continuation.tex
-    concept: events
   - id: events.interrupt-model.delivery-failure-and-shutdown
     source: events/documents/topics/interrupt_model/010_delivery_failure_and_shutdown.tex
-    concept: events
   - id: events.interrupt-model.event-reset-and-context-state
     source: events/documents/topics/interrupt_model/011_event_reset_and_context_state.tex
-    concept: events
   - id: cpuid.cpuid-feature-discovery.cpuid-feature-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/001_cpuid_feature_discovery.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.overview
     source: cpuid/documents/topics/cpuid_feature_discovery/002_overview.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.query-model
     source: cpuid/documents/topics/cpuid_feature_discovery/003_query_model.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.discovery-classes
     source: cpuid/documents/topics/cpuid_feature_discovery/004_discovery_classes.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.leaf-directory
     source: cpuid/documents/topics/cpuid_feature_discovery/005_leaf_directory.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.base-identity
     source: cpuid/documents/topics/cpuid_feature_discovery/006_base_identity.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.optional-extension-directory
     source: cpuid/documents/topics/cpuid_feature_discovery/007_optional_extension_directory.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.implementation-class-directory
     source: cpuid/documents/topics/cpuid_feature_discovery/010_implementation_class_directory.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.cache-topology-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/011_cache_topology_discovery.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.performance-counter-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/012_performance_counter_discovery.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.address-width-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/013_address_width_discovery.tex
-    concept: cpuid
   - id: cpuid.cpuid-feature-discovery.save-area-layout-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/014_save_area_layout_discovery.tex
-    concept: cpuid
   - id: state.save-restore-area.processor-state-save-and-restore
     source: state/documents/topics/save_restore_area/001_processor_state_save_and_restore.tex
-    concept: state
   - id: state.save-restore-area.save-area-layout
     source: state/documents/topics/save_restore_area/002_save_area_layout.tex
-    concept: state
   - id: state.save-restore-area.fixed-architectural-state
     source: state/documents/topics/save_restore_area/003_fixed_architectural_state.tex
-    concept: state
   - id: state.save-restore-area.extension-components-and-clean-state
     source: state/documents/topics/save_restore_area/004_extension_components_and_clean_state.tex
-    concept: state
   - id: state.save-restore-area.save-responsibilities
     source: state/documents/topics/save_restore_area/005_save_responsibilities.tex
-    concept: state
   - id: state.save-restore-area.restore-responsibilities
     source: state/documents/topics/save_restore_area/006_restore_responsibilities.tex
-    concept: state
   - id: manual.part.instruction-set-reference
     source: artifacts/isa-reference/document/topics/004_instruction_set_reference.tex
-    concept: manual.structure
   - id: instructions.instruction-description-intro.reading-an-instruction-description
     source: instructions/documents/topics/instruction_description_intro/001_reading_an_instruction_description.tex
-    concept: instructions
   - id: instructions.instruction-description-intro.entry-organization
     source: instructions/documents/topics/instruction_description_intro/002_entry_organization.tex
-    concept: instructions
   - id: instructions.instruction-description-intro.assembler-source-grammar
     source: instructions/documents/topics/instruction_description_intro/003_assembler_source_grammar.tex
-    concept: instructions
   - id: instructions.instruction-description-intro.mnemonics-and-suffixes
     source: instructions/documents/topics/instruction_description_intro/004_mnemonics_and_suffixes.tex
-    concept: instructions
   - id: instructions.instruction-description-intro.operand-and-status-notation
     source: instructions/documents/topics/instruction_description_intro/005_operand_and_status_notation.tex
-    concept: instructions
   - id: instructions.instruction-description-intro.encodings
     source: instructions/documents/topics/instruction_description_intro/006_encodings.tex
-    concept: instructions
   - id: indexes.reference-navigation.reference-indexes
     source: indexes/documents/topics/reference_navigation/001_reference_indexes.tex
-    concept: indexes
   - id: indexes.reference-navigation.canonical-field-names
     source: indexes/documents/topics/reference_navigation/002_canonical_field_names.tex
-    concept: indexes
-  - id: indexes.reference-navigation.architectural-state-index
-    source: indexes/documents/topics/reference_navigation/003_architectural_state_index.tex
-    concept: indexes
-  - id: indexes.reference-navigation.architectural-event-index
-    source: indexes/documents/topics/reference_navigation/004_architectural_event_index.tex
-    concept: indexes
   - id: indexes.reference-navigation.implementation-defined-disclosures
     source: indexes/documents/topics/reference_navigation/005_implementation_defined_disclosures.tex
-    concept: indexes

@@ -2,8 +2,6 @@ mnemonic: VFCLASS
 name: Vector Floating-Point Classify
 summary: Writes a floating-point classification bitmap for each active element.
 route: vector
-sail_entries:
-- execute_VFCLASS
 privileged: false
 operands:
   govern:

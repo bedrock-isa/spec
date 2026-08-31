@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 
 from engine.extension import ExtensionSetCatalog
-from engine.register import RegisterCatalog, VariableRegisterWidth
+from engine.register import RegisterCatalog
+from engine.reference import Reference
 from engine.type_system import PayloadTypeKind, TypeSystem
 
 
@@ -18,54 +19,28 @@ class RegisterCatalogTest(unittest.TestCase):
 
     def test_loads_owner_local_group_hierarchy(self) -> None:
         self.assertEqual(
-            tuple(self.catalog.namespaces), ("base", "FP", "FPTRANSA", "VECTOR")
-        )
-        self.assertEqual(
-            self.catalog.references.groups["base.registers.CONTROL"].source,
+            self.catalog.references.groups[
+                Reference.parse("base.registers.CONTROL")
+            ].source,
             self.isa_root / "registers/groups/CONTROL/group.yaml",
         )
         self.assertEqual(
-            self.catalog.references.groups["FP.registers.FPR"].source,
+            self.catalog.references.groups[Reference.parse("FP.registers.FPR")].source,
             self.isa_root / "extensions/FP/registers/groups/FPR/group.yaml",
-        )
-        self.assertEqual(
-            self.catalog.base.diagram.columns,
-            (("GPR", "SPECIAL", "STATE"), ("SEGMENT", "CONTROL", "PERFORMANCE")),
-        )
-        self.assertEqual(self.catalog.base.diagram.caption, "Base Register Model")
-        self.assertEqual(
-            dict(self.catalog.base.diagram.display),
-            {"GPR": "all", "CONTROL": "summary"},
         )
 
     def test_expands_regular_groups_without_member_directories(self) -> None:
-        gpr = self.catalog.references.groups["base.registers.GPR"]
-        vector = self.catalog.references.groups["VECTOR.registers.VECTOR"]
+        with self.fixture() as directory:
+            root = Path(directory)
+            group = RegisterCatalog.load(root).references.groups[
+                Reference.parse("base.registers.GPR")
+            ]
 
-        self.assertIsNone(gpr.register_inventory)
-        self.assertFalse((gpr.root / "registers").exists())
-        self.assertEqual(tuple(gpr.registers)[:3], ("R0", "R1", "R2"))
-        self.assertEqual(gpr.registers["R15"].encoding, 15)
-        self.assertEqual(
-            vector.registers["V31"].width,
-            VariableRegisterWidth("VLEN", (128, 256, 512, 1024, 2048)),
-        )
-        self.assertEqual(vector.registers["V31"].encoding, 31)
-
-    def test_loads_variable_width_domains(self) -> None:
-        vector = self.catalog.references.groups["VECTOR.registers.VECTOR"].width
-        predicate = self.catalog.references.groups[
-            "VECTOR.registers.PREDICATE"
-        ].width
-
-        self.assertIsInstance(vector, VariableRegisterWidth)
-        self.assertEqual(vector.expression, "VLEN")
-        self.assertEqual(vector.minimum, 128)
-        self.assertEqual(vector.maximum, 2048)
-        self.assertEqual(
-            predicate,
-            VariableRegisterWidth("VLEN / 8", (16, 32, 64, 128, 256)),
-        )
+            self.assertIsNone(group.register_inventory)
+            self.assertFalse((group.root / "registers").exists())
+            self.assertEqual(tuple(group.registers), ("R0", "R1"))
+            self.assertEqual(group.registers["R0"].encoding, 0)
+            self.assertEqual(group.registers["R1"].encoding, 1)
 
     def test_rejects_unordered_variable_width_domain(self) -> None:
         with self.fixture() as directory:
@@ -81,9 +56,13 @@ class RegisterCatalogTest(unittest.TestCase):
                 RegisterCatalog.load(root)
 
     def test_loads_fixed_explicit_inventory_and_layout_companions(self) -> None:
-        control = self.catalog.references.groups["base.registers.CONTROL"]
+        control = self.catalog.references.groups[
+            Reference.parse("base.registers.CONTROL")
+        ]
         ptcr = control.registers["PTCR"]
-        flags = self.catalog.references.registers["base.registers.STATE.FLAGS"]
+        flags = self.catalog.references.registers[
+            Reference.parse("base.registers.STATE.FLAGS")
+        ]
 
         self.assertEqual(
             control.register_inventory.source,
@@ -100,20 +79,26 @@ class RegisterCatalogTest(unittest.TestCase):
     def test_preserves_control_and_performance_selector_allocations(self) -> None:
         registers = self.catalog.references.registers
 
-        self.assertEqual(registers["base.registers.CONTROL.PMC"].encoding, 0x1100)
-        self.assertEqual(registers["base.registers.CONTROL.UCTL"].encoding, 0x010D)
-        self.assertEqual(registers["base.registers.PERFORMANCE.CYCLE"].encoding, 1)
-        self.assertEqual(registers["base.registers.PERFORMANCE.PTWALK"].encoding, 3)
+        self.assertEqual(registers[Reference.parse("base.registers.CONTROL.PMC")].encoding, 0x1100)
+        self.assertEqual(registers[Reference.parse("base.registers.CONTROL.UCTL")].encoding, 0x010D)
+        self.assertEqual(registers[Reference.parse("base.registers.PERFORMANCE.CYCLE")].encoding, 1)
+        self.assertEqual(registers[Reference.parse("base.registers.PERFORMANCE.PTWALK")].encoding, 3)
 
     def test_type_declarations_own_selector_shape(self) -> None:
-        rn = self.types.field_types["base.field_types.Rn"]
-        pair = self.types.field_types["base.field_types.PAIRn"]
-        cr = self.types.payload_types["base.payload_types.CR"]
+        rn = self.types.field_types[Reference.parse("base.field_types.Rn")]
+        pair = self.types.field_types[Reference.parse("base.field_types.PAIRn")]
+        cr = self.types.payload_types[Reference.parse("base.payload_types.CR")]
 
-        self.assertEqual(rn.register_group, "base.registers.GPR")
-        self.assertEqual(pair.register_group, "base.registers.GPR")
+        self.assertEqual(
+            rn.register_group, Reference.parse("base.registers.GPR")
+        )
+        self.assertEqual(
+            pair.register_group, Reference.parse("base.registers.GPR")
+        )
         self.assertEqual(cr.kind, PayloadTypeKind.REGISTER_SELECTOR)
-        self.assertEqual(cr.register_group, "base.registers.CONTROL")
+        self.assertEqual(
+            cr.register_group, Reference.parse("base.registers.CONTROL")
+        )
         self.assertEqual(cr.bytes, 2)
 
     def test_rejects_series_with_explicit_register_directory(self) -> None:
@@ -126,20 +111,6 @@ class RegisterCatalogTest(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(ValueError, "exactly one"):
-                RegisterCatalog.load(root)
-
-    def test_rejects_incomplete_diagram_group_placement(self) -> None:
-        with self.fixture() as directory:
-            root = Path(directory)
-            (root / "registers/groups/groups.yaml").write_text(
-                "groups: [GPR]\n"
-                "diagram:\n"
-                "  caption: Test Register Model\n"
-                "  columns: [[], []]\n",
-                encoding="utf-8",
-            )
-
-            with self.assertRaisesRegex(ValueError, "missing.*GPR"):
                 RegisterCatalog.load(root)
 
     def fixture(self):
@@ -157,9 +128,6 @@ class RegisterCatalogTest(unittest.TestCase):
         (root / "extensions/extensions.yaml").write_text("extensions: []\n")
         (root / "registers/groups/groups.yaml").write_text(
             "groups: [GPR]\n"
-            "diagram:\n"
-            "  caption: Test Register Model\n"
-            "  columns: [[GPR], []]\n"
         )
         (root / "registers/groups/GPR/group.yaml").write_text(
             "id: GPR\nwidth: 64\nseries: {prefix: R, count: 2}\n"

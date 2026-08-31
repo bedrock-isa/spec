@@ -2,8 +2,6 @@ mnemonic: FBNDII
 name: Floating-Point Bounds Check Inclusive-Inclusive
 summary: Checks floating-point value membership in the inclusive-inclusive interval [lo, hi].
 route: fpu
-sail_entries:
-- execute_FBNDII
 privileged: false
 repeat:
   type: rep

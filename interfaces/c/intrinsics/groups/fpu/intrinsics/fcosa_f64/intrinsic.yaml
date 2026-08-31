@@ -9,6 +9,5 @@ signature:
     type: f64
 lowering:
   operation: isa:FPTRANSA.instructions.FCOSA
-  kind: direct
   operands:
     size: D

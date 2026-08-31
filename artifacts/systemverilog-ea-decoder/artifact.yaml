@@ -5,4 +5,4 @@ inputs:
 depends-on:
 - systemverilog-package
 outputs:
-- rtl/bedrock_decode_ea.sv
+  decoder: rtl/bedrock_decode_ea.sv

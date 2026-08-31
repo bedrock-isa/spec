@@ -2,8 +2,6 @@ mnemonic: VREDADD
 name: Vector Add Reduction
 summary: Reduces active integer elements to one scalar sum.
 route: vector
-sail_entries:
-- execute_VREDADD
 privileged: false
 operands:
   govern:

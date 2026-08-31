@@ -2,8 +2,6 @@ mnemonic: VMUL
 name: Vector Multiply
 summary: Multiplies corresponding active integer elements.
 route: vector
-sail_entries:
-- execute_VMUL
 privileged: false
 operands:
   govern:

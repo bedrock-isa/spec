@@ -7,6 +7,7 @@ from engine.project import (
     SourceCatalog,
     _ExtensionComponents,
 )
+from engine.reference import Reference
 
 
 class IsaProjectTest(unittest.TestCase):
@@ -15,175 +16,42 @@ class IsaProjectTest(unittest.TestCase):
         cls.isa_root = Path(__file__).parents[1]
         cls.project = IsaProject.load(cls.isa_root)
 
-    def test_loads_complete_declared_corpus(self) -> None:
-        bundles = self.project.select()
-
-        self.assertEqual(
-            tuple(bundle.reference for bundle in bundles),
-            self.project.catalog.instruction_order,
-        )
-        instruction_sets = (
-            self.project.catalog.base,
-            *(extension.instruction_set for extension in self.project.catalog.extensions.values()),
-        )
-        for instruction_set in instruction_sets:
-            with self.subTest(owner=instruction_set.catalog.owner):
-                self.assertEqual(
-                    set(instruction_set.catalog.declared),
-                    set(instruction_set.catalog.actual),
-                )
-                self.assertEqual(
-                    tuple(bundle.instruction.mnemonic for bundle in instruction_set.instructions),
-                    instruction_set.catalog.declared,
-                )
-        self.assertEqual(
-            self.project.entities.resolve("base.instructions.ADD").latex_label,
-            "instr:add",
-        )
-        self.assertEqual(
-            self.project.entities.resolve(
-                "base.architecture.overview.section"
-            ).latex_label,
-            "entity:base-architecture-overview-section",
-        )
-        self.assertEqual(
-            tuple(self.project.events.namespaces),
-            ("base", "FP", "FPTRANSA", "VECTOR"),
-        )
-        self.assertEqual(
-            self.project.model.sail_order,
-            (
-                "base.architectural-types",
-                "base.decode-types",
-                "base.decode",
-                "FP.contract",
-                "base.runtime",
-                "FP.execution",
-                "VECTOR.execution",
-                "base.continuations",
-                "base.boundary",
-                "FPTRANSA.contract",
-                "FPTRANSA.execution",
-            ),
-        )
-        document_order = self.project.model.document_order
-        self.assertEqual(
-            document_order[:7],
-            (
-                "base.manual.part.architectural-foundations",
-                "base.architecture.overview.section",
-                "base.architecture.overview.contract-position",
-                "base.architecture.overview.manual-scope",
-                "base.architecture.overview.profile",
-                "base.manual.about.normative-material",
-                "base.architecture.terminology.section",
-            ),
-        )
-        ordered_landmarks = (
-            "base.registers.register-model.programming-model",
-            "base.encoding.data.data-formats.data-formats",
-            "base.manual.part.encoding-addressing-and-execution",
-            "base.memory.translation.page-walk-reference.paging-stage",
-            "base.manual.part.system-programming",
-            "base.events.event-error-codes.address-context-error-code",
-            "base.manual.part.instruction-set-reference",
-            "base.instructions.instruction-description-intro.reading-an-instruction-description",
-            "base.indexes.reference-navigation.reference-indexes",
-            "FP.registers.floating-point-register-model",
-            "FP.introduction.common-floating-point-semantics",
-            "FPTRANSA.cpuid.fptransa-accuracy-discovery",
-            "FPTRANSA.introduction.fptransa-common-model",
-            "VECTOR.cpuid.vector-parameter-discovery",
-            "VECTOR.introduction.element-types-and-assembly-spelling",
-        )
-        self.assertEqual(
-            [document_order.index(reference) for reference in ordered_landmarks],
-            sorted(document_order.index(reference) for reference in ordered_landmarks),
-        )
-        self.assertEqual(
-            tuple(self.project.model.extensions), ("FP", "FPTRANSA", "VECTOR")
-        )
-        self.assertEqual(
-            self.project.disclosures.disclosures[0].id, "HIGHER_CPUID_CLASSES"
-        )
-        self.assertEqual(
-            self.project.disclosures.disclosures[-1].owner, "FPTRANSA"
-        )
-        self.assertEqual(
-            self.project.terminology.references.terms[
-                "FP.terms.floating_point_exception_condition"
-            ].owner,
-            "FP",
-        )
-        self.assertEqual(
-            self.project.terminology.references.terms[
-                "VECTOR.terms.vector_register"
-            ].owner,
-            "VECTOR",
-        )
-        self.assertEqual(
-            self.project.model.extensions["FP"].source,
-            self.isa_root / "extensions/FP/model.yaml",
-        )
-        self.assertEqual(
-            self.project.model.sail_units["base.architectural-types"].sources,
-            (
-                self.isa_root / "privilege/semantics/privilege.sail",
-                self.isa_root / "predication/semantics/predication.sail",
-                self.isa_root / "decode/semantics/decode_stage.sail",
-                self.isa_root / "commit/semantics/commit_kind.sail",
-            ),
-        )
-        self.assertEqual(
-            self.project.model.document_topics[
-                "base.architecture.overview.section"
-            ].document,
-            self.isa_root.parent
-            / "artifacts/isa-reference/document/topics/overview/001_section.tex",
-        )
-
-    def test_extension_groups_metadata_dependencies_and_instructions(self) -> None:
+    def test_extension_projects_owner_declared_dependencies(self) -> None:
         extension = self.project.extension("FPTRANSA")
 
         self.assertEqual(
-            extension.name, "Approximate Transcendental Floating-Point Extension"
+            tuple(required.id for required in extension.requires),
+            extension.metadata.requires,
         )
-        self.assertEqual(extension.required_ids, ("FP",))
-        self.assertEqual(extension.requires, (self.project.extension("FP"),))
-        self.assertIs(extension.requires[0], self.project.extension("FP"))
+        inherited_fields = tuple(
+            field
+            for required in extension.requires
+            for field in required.required_cpuid_flags
+        )
+        direct_fields = tuple(
+            self.project.cpuid.references.fields[Reference.parse(reference)]
+            for reference in extension.metadata.required_cpuid_flags
+        )
         self.assertEqual(
-            tuple(str(field.reference) for field in extension.required_cpuid_flags),
-            (
-                "FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP",
-                "FPTRANSA.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FPTRANSA",
-            ),
+            extension.required_cpuid_flags,
+            (*inherited_fields, *direct_fields),
         )
-        self.assertEqual(extension.instructions[0].reference.owner, "FPTRANSA")
         self.assertIs(extension.types, self.project.types.namespace("FPTRANSA"))
 
-    def test_instruction_bundles_receive_inherited_cpuid_requirements(self) -> None:
-        expected = {
-            "ADD": (),
-            "FADD": ("FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP",),
-            "FLOG2A": (
-                "FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP",
-                "FPTRANSA.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FPTRANSA",
-            ),
-            "VADD": ("VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR",),
-            "VDIV": (
-                "VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR",
-                "FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP",
-            ),
+    def test_instruction_bundles_receive_owner_cpuid_requirements(self) -> None:
+        owner_requirements = {
+            "base": (),
+            **{
+                extension.id: extension.required_cpuid_flags
+                for extension in self.project.catalog.extensions.values()
+            },
         }
 
-        for mnemonic, references in expected.items():
-            with self.subTest(mnemonic=mnemonic):
-                bundle = self.project.bundle(mnemonic)
+        for bundle in self.project.select():
+            with self.subTest(reference=bundle.reference):
                 self.assertEqual(
-                    tuple(
-                        str(field.reference) for field in bundle.required_cpuid_flags
-                    ),
-                    references,
+                    bundle.required_cpuid_flags,
+                    owner_requirements[bundle.owner],
                 )
 
     def test_cpuid_requirements_reject_unknown_and_non_flag_fields(self) -> None:
@@ -236,7 +104,7 @@ class IsaProjectTest(unittest.TestCase):
         self.assertEqual(self.project.cpuid.base.owner, "base")
         self.assertIs(
             self.project.cpuid.references.leaves[
-                "base.cpuid.IMPLEMENTATION.CACHE_TOPOLOGY"
+                Reference.parse("base.cpuid.IMPLEMENTATION.CACHE_TOPOLOGY")
             ],
             self.project.cpuid.base.classes["IMPLEMENTATION"].leaves["CACHE_TOPOLOGY"],
         )

@@ -8,6 +8,7 @@ import yaml
 from engine.check import EventValidator
 from engine.event import EventCatalog, compose_event_code
 from engine.extension import ExtensionSetCatalog
+from engine.reference import Reference
 
 
 class EventCatalogTest(unittest.TestCase):
@@ -18,12 +19,11 @@ class EventCatalogTest(unittest.TestCase):
             cls.isa_root, ExtensionSetCatalog.load(cls.isa_root)
         )
 
-    def test_loads_hierarchical_base_and_extension_namespaces(self) -> None:
+    def test_loads_canonical_page_event(self) -> None:
         events = self.events
 
-        self.assertEqual(tuple(events.namespaces), ("base", "FP", "FPTRANSA", "VECTOR"))
         page = events.references.events[
-            "base.events.EXCEPTION.PAGE_PERMISSION_VIOLATION"
+            Reference.parse("base.events.EXCEPTION.PAGE_PERMISSION_VIOLATION")
         ]
         self.assertEqual(page.code, 0x21)
         self.assertEqual(page.family, "ADDRESS_TRANSLATION")
@@ -32,17 +32,19 @@ class EventCatalogTest(unittest.TestCase):
 
     def test_extension_events_overlay_the_base_exception_class(self) -> None:
         events = self.events
-        fp_class = events.references.classes["FP.events.EXCEPTION"]
-        vector_class = events.references.classes["VECTOR.events.EXCEPTION"]
+        fp_class = events.references.classes[Reference.parse("FP.events.EXCEPTION")]
+        vector_class = events.references.classes[
+            Reference.parse("VECTOR.events.EXCEPTION")
+        ]
 
         self.assertIs(
             events.root_class(fp_class),
-            events.references.classes["base.events.EXCEPTION"],
+            events.references.classes[Reference.parse("base.events.EXCEPTION")],
         )
         self.assertIs(events.root_class(vector_class), events.root_class(fp_class))
         self.assertEqual(
             events.references.events[
-                "FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION"
+                Reference.parse("FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION")
             ].payload,
             ("FP_EXCEPTION_FLAGS",),
         )
@@ -59,9 +61,11 @@ class EventCatalogTest(unittest.TestCase):
         )
 
         self.assertEqual(resolved.owner, "FP")
-        self.assertEqual(str(resolved.event_class.reference), "FP.events.EXCEPTION")
         self.assertEqual(
-            str(resolved.root_class.reference), "base.events.EXCEPTION"
+            resolved.event_class.reference, Reference.parse("FP.events.EXCEPTION")
+        )
+        self.assertEqual(
+            resolved.root_class.reference, Reference.parse("base.events.EXCEPTION")
         )
         self.assertEqual(resolved.code.class_value, 0)
         self.assertEqual(resolved.code.event_selector, resolved.event.code)
@@ -111,12 +115,11 @@ class EventCatalogTest(unittest.TestCase):
         for schema in ("event-class.yaml", "event.yaml"):
             shutil.copy2(self.isa_root / "schemas" / schema, root / "schemas" / schema)
         shutil.copytree(self.isa_root / "events", root / "events")
-        extension_ids = ("FP", "FPTRANSA", "VECTOR")
-        (root / "extensions/extensions.yaml").write_text(
-            yaml.safe_dump({"extensions": list(extension_ids)}, sort_keys=False),
-            encoding="utf-8",
+        shutil.copy2(
+            self.isa_root / "extensions/extensions.yaml",
+            root / "extensions/extensions.yaml",
         )
-        for extension_id in extension_ids:
+        for extension_id in ExtensionSetCatalog.load(self.isa_root).declared:
             destination = root / "extensions" / extension_id
             destination.mkdir()
             source = self.isa_root / "extensions" / extension_id / "events"

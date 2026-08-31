@@ -19,8 +19,10 @@ ROOT = Path(__file__).resolve().parents[2]
 class LlvmElfAbiArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa = IsaProject.load(ROOT / "isa")
-        cls.workspace = SpecWorkspace.from_isa(cls.isa)
+        cls.workspace = SpecWorkspace.load(ROOT)
+        cls.isa = cls.workspace.require_provider("isa")
+        if not isinstance(cls.isa, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
         cls.elf = cls.workspace.require_provider("abi.elf")
         schema = YamlDocumentLoader().mapping(ROOT / "artifacts/schema.yaml")
         definition = ArtifactDefinition.load(

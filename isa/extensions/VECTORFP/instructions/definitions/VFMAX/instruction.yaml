@@ -2,8 +2,6 @@ mnemonic: VFMAX
 name: Vector Floating-Point Maximum
 summary: Selects the floating-point maximum in each active lane.
 route: vector
-sail_entries:
-- execute_VFMAX
 privileged: false
 operands:
   govern:

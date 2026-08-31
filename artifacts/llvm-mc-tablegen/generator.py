@@ -221,7 +221,7 @@ class Generator(ArtifactGenerator):
                         ),
                     )
                 )
-                if owner in {"VECTOR", "VECTORFP"}:
+                if bundle.instruction.route == "vector":
                     vector_forms.append(
                         _render_vector_form(
                             project, bundle, form, identifier, used_names

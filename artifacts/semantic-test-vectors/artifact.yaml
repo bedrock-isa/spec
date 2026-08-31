@@ -1,8 +1,0 @@
-id: semantic-test-vectors
-status: planned
-summary: Sail-authoritative architectural state, effect, event, and environment-response traces.
-depends-on:
-- sail-model
-outputs:
-- verification/semantic-vectors.json
-- verification/reference-traces.json

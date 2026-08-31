@@ -2,8 +2,6 @@ mnemonic: FTENTOXA
 name: Approximate Floating-Point 10 To x
 summary: Approximates ten raised to the source for finite values and signed infinity.
 route: fpu_transcendental_approx
-sail_entries:
-- execute_FTENTOXA
 privileged: false
 repeat:
   type: rep

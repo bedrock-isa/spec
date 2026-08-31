@@ -2,8 +2,6 @@ mnemonic: CALLcc
 name: Call Conditional
 summary: Performs a call when the condition is true.
 route: control_flow
-sail_entries:
-- execute_CALLcc
 privileged: false
 operands:
   cc:

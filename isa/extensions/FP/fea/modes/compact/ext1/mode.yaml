@@ -1,0 +1,18 @@
+id: ext1
+name: EXT1
+kind: extension
+extension: {id: EXT1, bytes: 1}
+encodings:
+  - pattern: "1011111"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP8S}
+  - pattern: "1100000"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP16S}
+  - pattern: "1100001"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP32S}
+  - pattern: "1100010"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP64}
+  - pattern: "1100011"

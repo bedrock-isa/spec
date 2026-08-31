@@ -3,4 +3,4 @@ generator: generator.py
 inputs:
 - isa
 outputs:
-- rtl/bedrock_decode_pkg.sv
+  package: rtl/bedrock_decode_pkg.sv

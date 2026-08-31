@@ -5,7 +5,6 @@ argument:
   mode: value
   register_class: base.register_classes.PREDICATE
   units: 1
-  fallback: indirect
 result:
   mode: value
   register_class: base.register_classes.PREDICATE

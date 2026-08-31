@@ -3,7 +3,7 @@ generator: generator.py
 depends-on:
 - sail-model
 outputs:
-- emulator/core/bedrock_core.c
-- emulator/core/bedrock_core.h
-- emulator/core/bedrock_core_abi.h
-- emulator/core/.generation-stamp
+  implementation: emulator/core/bedrock_core.c
+  model-header: emulator/core/bedrock_core.h
+  abi-header: emulator/core/bedrock_core_abi.h
+  generation-stamp: emulator/core/.generation-stamp

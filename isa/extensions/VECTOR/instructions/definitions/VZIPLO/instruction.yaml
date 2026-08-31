@@ -2,8 +2,6 @@ mnemonic: VZIPLO
 name: Vector Lower-Half Interleave
 summary: Interleave the lower halves of the old destination and source.
 route: vector
-sail_entries:
-- execute_VZIPLO
 privileged: false
 operands:
   govern:

@@ -26,14 +26,16 @@ function find_compact_ea(profile : Ea_profile, raw : bits(16), forms : list(Ea_f
                   else find_compact_ea(profile, raw, tail),
 }
 
-function find_extended_ea(family : Ea_descriptor_family, bytes : list(bits(8)), cursor : int,
+function find_extended_ea(profile : Ea_profile, family : Ea_descriptor_family,
+                          bytes : list(bits(8)), cursor : int,
                           forms : list(Ea_form)) -> option(Ea_form) =
   match forms {
     [||] => None(),
     form :: tail =>
-      if (form.descriptor_family == Some(family)) & ea_patterns_match(form.patterns, bytes, cursor)
+      if (form.profile == Some(profile)) & (form.descriptor_family == Some(family))
+         & ea_patterns_match(form.patterns, bytes, cursor)
       then Some(form)
-      else find_extended_ea(family, bytes, cursor, tail),
+      else find_extended_ea(profile, family, bytes, cursor, tail),
   }
 
 val extracted_ea_field : (bits(64), list(range(0, 15)), int) -> int
@@ -80,7 +82,7 @@ function parse_one_ea_descriptor(operand_name : Operand_id, operand_width : opti
       let descriptor_cursor = cursor;
       let descriptor_bytes = compact.descriptor_bytes;
       let descriptor : option(Ea_form) = if descriptor_bytes > 0 then match compact.descriptor {
-        Some(family) => find_extended_ea(family, bytes, descriptor_cursor,
+        Some(family) => find_extended_ea(profile, family, bytes, descriptor_cursor,
                                          effective_address_catalog()),
         None() => None(),
       } else None();
@@ -102,6 +104,9 @@ function parse_one_ea_descriptor(operand_name : Operand_id, operand_width : opti
         };
         let update_mode : option(Ea_update_mode) = match descriptor {
           Some(form) => form.update_mode, None() => None()
+        };
+        let update_difference : option(Ea_update_difference) = match descriptor {
+          Some(form) => form.update_difference, None() => None()
         };
         let resolved_kind : Ea_kind = match descriptor {
           Some(form) => form.kind, None() => compact.kind
@@ -132,7 +137,8 @@ function parse_one_ea_descriptor(operand_name : Operand_id, operand_width : opti
             payload_width = compact.payload_width,
             payload_signed = compact.payload_signed,
             update_target = update_target,
-            update_mode = update_mode
+            update_mode = update_mode,
+            update_difference = update_difference
           }
         }, cursor + descriptor_bytes))
       }
@@ -177,7 +183,8 @@ function ea_failure_stage(operands : list(Catalog_operand), fields : list(Decode
           if descriptor_bytes < 0 | byte_count(bytes) < cursor + descriptor_bytes then DecodeEaDescriptor
           else {
             let descriptor : option(Ea_form) = if descriptor_bytes > 0 then match compact.descriptor {
-              Some(family) => find_extended_ea(family, bytes, cursor, effective_address_catalog()),
+              Some(family) => find_extended_ea(profile, family, bytes, cursor,
+                                                effective_address_catalog()),
               None() => None(),
             } else None();
             let descriptor_valid = if descriptor_bytes == 0 then true else match descriptor {

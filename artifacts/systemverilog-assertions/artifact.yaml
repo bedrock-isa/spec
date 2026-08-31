@@ -8,5 +8,5 @@ depends-on:
 - systemverilog-register-contracts
 - systemverilog-event-codec
 outputs:
-- formal/bedrock_decode_assertions.sv
-- formal/bedrock_architecture_assertions.sv
+  decode: formal/bedrock_decode_assertions.sv
+  architecture: formal/bedrock_architecture_assertions.sv

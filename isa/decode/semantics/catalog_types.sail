@@ -91,6 +91,7 @@ struct Ea_form = {
   descriptor : option(Ea_descriptor_family),
   update_target : option(Ea_update_target),
   update_mode : option(Ea_update_mode),
+  update_difference : option(Ea_update_difference),
 }
 
 struct Representative_record = {

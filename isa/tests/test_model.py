@@ -4,6 +4,7 @@ from pathlib import Path
 
 from engine.extension import ExtensionMetadata, ExtensionSetCatalog
 from engine.model import ModelCatalog
+from engine.reference import Reference
 
 
 SCHEMA = Path(__file__).parents[1] / "schemas/model.yaml"
@@ -57,7 +58,7 @@ class ModelCatalogTest(unittest.TestCase):
             self.root, ExtensionSetCatalog.load(self.root), self.extensions
         )
 
-    def test_sail_dependencies_and_document_order_are_independent(self) -> None:
+    def test_sail_dependencies_and_document_topic_identity_are_independent(self) -> None:
         self._source("base", "execution/semantics/types.sail")
         self._source("base", "execution/semantics/dispatch.sail")
         self._source("base", "execution/documents/overview.tex")
@@ -75,8 +76,7 @@ class ModelCatalogTest(unittest.TestCase):
             "  - id: execution.overview\n"
             "    source: execution/documents/overview.tex\n"
             "  - id: execution.dispatch\n"
-            "    source: execution/documents/dispatch.tex\n"
-            "    concept: execution.dispatch\n",
+            "    source: execution/documents/dispatch.tex\n",
         )
         self._source("FP", "environment/semantics/environment.sail")
         self._source("FP", "environment/documents/environment.tex")
@@ -96,32 +96,28 @@ class ModelCatalogTest(unittest.TestCase):
         catalog = self._load()
 
         self.assertEqual(
-            catalog.sail_order, ("base.execution.dispatch", "FP.environment")
-        )
-        self.assertEqual(
-            catalog.document_order,
+            catalog.sail_order,
             (
-                "base.execution.overview",
-                "base.execution.dispatch",
-                "FP.environment",
+                Reference.parse("base.execution.dispatch"),
+                Reference.parse("FP.environment"),
             ),
         )
         self.assertEqual(
-            tuple(path.name for path in catalog.sail_units["base.execution.dispatch"].sources),
-            ("types.sail", "dispatch.sail"),
-        )
-        self.assertEqual(
-            catalog.document_topics["base.execution.dispatch"].concept,
-            "execution.dispatch",
+            set(catalog.document_topics),
+            {
+                Reference.parse("base.execution.overview"),
+                Reference.parse("base.execution.dispatch"),
+                Reference.parse("FP.environment"),
+            },
         )
         self.assertEqual(
             tuple(
-                topic.reference
-                for topic in catalog.selected_document_topics(
-                    frozenset({"base", "FP"})
-                )
+                path.name
+                for path in catalog.sail_units[
+                    Reference.parse("base.execution.dispatch")
+                ].sources
             ),
-            catalog.document_order,
+            ("types.sail", "dispatch.sail"),
         )
 
     def test_accepts_sail_only_and_document_only_manifests(self) -> None:
@@ -140,8 +136,10 @@ class ModelCatalogTest(unittest.TestCase):
 
         catalog = self._load()
 
-        self.assertEqual(catalog.sail_order, ("base.state",))
-        self.assertEqual(catalog.document_order, ("FP.overview",))
+        self.assertEqual(catalog.sail_order, (Reference.parse("base.state"),))
+        self.assertEqual(
+            set(catalog.document_topics), {Reference.parse("FP.overview")}
+        )
 
     def test_requires_every_owner_model_manifest(self) -> None:
         (self.root / "extensions/FP/model.yaml").unlink()
@@ -205,7 +203,10 @@ class ModelCatalogTest(unittest.TestCase):
 
         self.assertEqual(
             self._load().sail_order,
-            ("FPTRANSA.approximation", "FP.environment"),
+            (
+                Reference.parse("FPTRANSA.approximation"),
+                Reference.parse("FP.environment"),
+            ),
         )
 
     def test_base_composition_unit_may_depend_on_an_extension(self) -> None:
@@ -225,7 +226,13 @@ class ModelCatalogTest(unittest.TestCase):
 
         catalog = self._load()
 
-        self.assertEqual(catalog.sail_order, ("FP.environment", "base.execution"))
+        self.assertEqual(
+            catalog.sail_order,
+            (
+                Reference.parse("FP.environment"),
+                Reference.parse("base.execution"),
+            ),
+        )
 
     def test_rejects_sail_dependency_cycle(self) -> None:
         self._source("FP", "semantics/left.sail")
@@ -241,7 +248,7 @@ class ModelCatalogTest(unittest.TestCase):
             "    requires: [FP.left]\n",
         )
 
-        with self.assertRaisesRegex(ValueError, "FP.left -> FP.right -> FP.left"):
+        with self.assertRaisesRegex(ValueError, "circular Sail dependency"):
             self._load()
 
 

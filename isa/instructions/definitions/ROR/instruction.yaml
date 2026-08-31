@@ -2,8 +2,6 @@ mnemonic: ROR
 name: Rotate Right
 summary: Rotates the destination right by the count modulo the selected width without changing FLAGS.
 route: integer_bitfield
-sail_entries:
-- execute_ROR
 privileged: false
 repeat:
   type: repcc

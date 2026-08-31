@@ -21,7 +21,5 @@ documents:
   topics:
   - id: cpuid.fptransa-accuracy-discovery
     source: documents/topics/cpuid/001_fptransa_accuracy_discovery.tex
-    concept: cpuid
   - id: introduction.fptransa-common-model
     source: documents/topics/introduction/001_fptransa_common_model.tex
-    concept: fptransa

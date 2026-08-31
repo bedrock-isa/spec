@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ..entity import PublicTargetCatalog
     from ..project import IsaProject
 
 
@@ -16,6 +17,7 @@ class DocumentFragmentContext:
     """Typed source-model context shared by topic fragment providers."""
 
     project: "IsaProject"
+    public_targets: "PublicTargetCatalog"
     source: Path | None = None
 
 
@@ -50,30 +52,28 @@ class DocumentFragmentPipeline:
 
     @classmethod
     def default(cls) -> "DocumentFragmentPipeline":
-        from .cpuid_reference import CpuidEntityReferenceRenderer
         from .ea_diagram import EaDiagramFragmentRenderer
         from .event_reference import EventReferenceRenderer
         from .implementation_disclosure import ImplementationDisclosureRenderer
         from .register_model_figure import RegisterModelFigureRenderer
-        from .registry_anchor import RegistryAnchorRenderer
-        from .type_reference import EncodingTypeReferenceRenderer
 
         return cls(
             (
-                CpuidEntityReferenceRenderer(),
-                EncodingTypeReferenceRenderer(),
                 EaDiagramFragmentRenderer(),
                 EventReferenceRenderer(),
                 ImplementationDisclosureRenderer(),
                 RegisterModelFigureRenderer(),
-                RegistryAnchorRenderer(),
             )
         )
 
     def expand(
-        self, text: str, project: "IsaProject", source: Path | None = None
+        self,
+        text: str,
+        project: "IsaProject",
+        public_targets: "PublicTargetCatalog",
+        source: Path | None = None,
     ) -> str:
-        context = DocumentFragmentContext(project, source)
+        context = DocumentFragmentContext(project, public_targets, source)
         for provider in self.providers:
             text = provider.expand(text, context)
         return text

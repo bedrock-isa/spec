@@ -2,8 +2,6 @@ mnemonic: VABS
 name: Vector Absolute Value
 summary: Computes the absolute value of active integer elements.
 route: vector
-sail_entries:
-- execute_VABS
 privileged: false
 operands:
   govern:

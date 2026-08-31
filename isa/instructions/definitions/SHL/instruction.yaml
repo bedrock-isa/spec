@@ -2,8 +2,6 @@ mnemonic: SHL
 name: Shift Left
 summary: Left-shifts the destination by the count modulo its selected width without changing FLAGS.
 route: integer_bitfield
-sail_entries:
-- execute_SHL
 privileged: false
 repeat:
   type: repcc

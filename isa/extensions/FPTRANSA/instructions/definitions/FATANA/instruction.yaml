@@ -2,8 +2,6 @@ mnemonic: FATANA
 name: Approximate Floating-Point Arc Tangent
 summary: Approximates arctangent in radians for finite values and signed infinity.
 route: fpu_transcendental_approx
-sail_entries:
-- execute_FATANA
 privileged: false
 repeat:
   type: rep

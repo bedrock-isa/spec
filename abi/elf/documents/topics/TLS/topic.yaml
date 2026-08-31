@@ -1,8 +1,0 @@
-id: TLS
-title: Thread-Local Storage
-document: elf-abi.tex
-label: page:thread-local-storage
-objects:
-- abi.elf:base.tls_models.LOCAL_EXEC
-- abi.elf:base.tls_models.TLSDESC
-- abi.elf:base.linkage_protocols.TLSDESC_CALL

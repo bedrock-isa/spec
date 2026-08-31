@@ -2,8 +2,6 @@ mnemonic: VREDMAXS
 name: Vector Signed Maximum Reduction
 summary: Finds the signed maximum of selected integer lanes and writes the scalar result to Rn.
 route: vector
-sail_entries:
-- execute_VREDMAXS
 privileged: false
 operands:
   govern:

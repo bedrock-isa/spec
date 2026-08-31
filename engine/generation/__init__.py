@@ -7,7 +7,6 @@ from .artifact import (
     ArtifactGeneratorRegistry,
     GeneratedArtifact,
     GeneratedArtifactSet,
-    PlannedArtifactGenerator,
 )
 from .authored_tex import AuthoredTexArtifactGenerator
 from .writer import ArtifactWriter
@@ -21,5 +20,4 @@ __all__ = [
     "ArtifactWriter",
     "GeneratedArtifact",
     "GeneratedArtifactSet",
-    "PlannedArtifactGenerator",
 ]

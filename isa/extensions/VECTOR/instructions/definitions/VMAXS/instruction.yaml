@@ -2,8 +2,6 @@ mnemonic: VMAXS
 name: Vector Signed Maximum
 summary: Selects the greater signed value from each active destination/source element pair.
 route: vector
-sail_entries:
-- execute_VMAXS
 privileged: false
 operands:
   govern:

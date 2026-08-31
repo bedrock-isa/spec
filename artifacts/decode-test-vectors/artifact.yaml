@@ -1,6 +1,0 @@
-id: decode-test-vectors
-status: planned
-summary: Exhaustive representative instruction and effective-address decode fixtures.
-outputs:
-- verification/decode-vectors.json
-- verification/ea-vectors.json

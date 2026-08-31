@@ -2,7 +2,6 @@ mnemonic: FCVTUH
 name: Convert Unsigned and Half Precision
 summary: Converts between H and unsigned B/W/L/Q integers.
 route: fpu
-sail_entries: [execute_FCVTUH]
 privileged: false
 repeat: {type: rep}
 operands:

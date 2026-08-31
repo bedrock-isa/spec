@@ -2,8 +2,6 @@ mnemonic: PHEAD
 name: Predicate Head
 summary: Sets predicate positions from the count remainder through the final lane.
 route: vector
-sail_entries:
-- execute_PHEAD
 privileged: false
 operands:
   count:

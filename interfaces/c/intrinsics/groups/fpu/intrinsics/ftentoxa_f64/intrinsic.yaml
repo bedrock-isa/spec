@@ -9,6 +9,5 @@ signature:
     type: f64
 lowering:
   operation: isa:FPTRANSA.instructions.FTENTOXA
-  kind: direct
   operands:
     size: D

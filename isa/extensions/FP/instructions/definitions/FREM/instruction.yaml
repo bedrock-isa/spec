@@ -2,8 +2,6 @@ mnemonic: FREM
 name: Floating-Point Remainder
 summary: Computes the destination remainder using a nearest-even integral quotient.
 route: fpu
-sail_entries:
-- execute_FREM
 privileged: false
 repeat:
   type: rep

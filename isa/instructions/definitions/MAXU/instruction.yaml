@@ -2,8 +2,6 @@ mnemonic: MAXU
 name: Unsigned Maximum
 summary: Writes the unsigned greater of source and destination to the destination.
 route: integer_alu
-sail_entries:
-- execute_MAXU
 privileged: false
 repeat:
   type: repcc

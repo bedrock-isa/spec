@@ -27,7 +27,6 @@ class InstructionSchemaTest(unittest.TestCase):
                 "name": "No Operation",
                 "summary": "Performs no operation.",
                 "route": "core_control",
-                "sail_entries": ["execute_NOP"],
                 "privileged": False,
                 "operands": {},
             }
@@ -40,7 +39,6 @@ class InstructionSchemaTest(unittest.TestCase):
                 "name": "Floating Multiply",
                 "summary": "Multiplies two floating-point values.",
                 "route": "fpu",
-                "sail_entries": ["execute_FMUL"],
                 "privileged": False,
                 "repeat": {"type": "rep"},
                 "operands": {
@@ -60,7 +58,6 @@ class InstructionSchemaTest(unittest.TestCase):
                 "name": "Add",
                 "summary": "Adds the source operand to the destination operand.",
                 "route": "integer_alu",
-                "sail_entries": ["execute_ADD"],
                 "privileged": False,
                 "repeat": {"type": "repcc", "observed_value": "dst"},
                 "operands": {
@@ -84,7 +81,6 @@ class InstructionSchemaTest(unittest.TestCase):
             "name": "Add",
             "summary": "Adds values.",
             "route": "integer_alu",
-            "sail_entries": ["execute_ADD"],
             "privileged": False,
             "operands": {},
         }
@@ -97,7 +93,6 @@ class InstructionSchemaTest(unittest.TestCase):
             "name": "Add",
             "summary": "Adds values.",
             "route": "integer_alu",
-            "sail_entries": ["execute_ADD"],
             "privileged": False,
             "operands": {},
         }

@@ -2,8 +2,6 @@ mnemonic: DIVU
 name: Unsigned Divide
 summary: Divides the unsigned destination by source and writes the quotient.
 route: integer_mul_div
-sail_entries:
-- execute_DIVU
 privileged: false
 repeat:
   type: repcc

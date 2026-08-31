@@ -1,0 +1,10 @@
+id: explicit_segment_zero_base
+name: Explicit segment with zero base
+kind: memory
+syntax: "[SEG(s):0 + displacement]"
+fields:
+  s: {role: segment, type: base.field_types.SREG}
+encodings:
+  - pattern: [1sss0011]
+segment: {source: field, role: segment}
+pseudocode: offset = 0 + displacement

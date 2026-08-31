@@ -2,8 +2,6 @@ mnemonic: VFCVTH
 name: Vector Floating-Point Convert to Half Precision
 summary: Converts active single-precision, double-precision, or signed integer elements to half precision.
 route: vector
-sail_entries:
-- execute_VFCVTH
 privileged: false
 operands:
   govern:

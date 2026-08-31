@@ -2,8 +2,6 @@ mnemonic: VSUB
 name: Vector Subtract
 summary: Subtracts corresponding active integer vector elements.
 route: vector
-sail_entries:
-- execute_VSUB
 privileged: false
 operands:
   govern:

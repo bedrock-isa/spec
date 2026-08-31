@@ -2,8 +2,6 @@ mnemonic: BNDSXI
 name: Signed Bounds Check Exclusive-Inclusive
 summary: Checks signed value membership in the exclusive-inclusive interval (lo, hi].
 route: bounds
-sail_entries:
-- execute_BNDSXI
 privileged: false
 repeat:
   type: repcc

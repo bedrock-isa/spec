@@ -2,8 +2,6 @@ mnemonic: VDUP
 name: Vector Duplicate
 summary: Broadcasts an integer scalar register or immediate value to every vector lane.
 route: vector
-sail_entries:
-- execute_VDUP
 privileged: false
 operands:
   src:

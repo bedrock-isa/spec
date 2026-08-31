@@ -2,8 +2,6 @@ mnemonic: EXTRACT
 name: Extract From Register Pair
 summary: Extracts a selected-width value from a concatenated pair of Rn registers.
 route: integer_bitfield
-sail_entries:
-- execute_EXTRACT
 privileged: false
 repeat:
   type: repcc

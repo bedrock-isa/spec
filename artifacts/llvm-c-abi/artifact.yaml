@@ -5,5 +5,5 @@ inputs:
 - isa
 - abi.c
 outputs:
-- BedrockGenCallingConv.td
-- BedrockGenCABI.inc
+  calling-convention: BedrockGenCallingConv.td
+  catalog: BedrockGenCABI.inc

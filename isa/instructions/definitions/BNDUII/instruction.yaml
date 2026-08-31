@@ -2,8 +2,6 @@ mnemonic: BNDUII
 name: Unsigned Bounds Check Inclusive-Inclusive
 summary: Checks unsigned value membership in the inclusive-inclusive interval [lo, hi].
 route: bounds
-sail_entries:
-- execute_BNDUII
 privileged: false
 repeat:
   type: repcc

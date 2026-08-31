@@ -2,8 +2,6 @@ mnemonic: MULHS
 name: Signed Multiply High
 summary: Writes the high half of the signed 64-bit source-by-destination product.
 route: integer_mul_div
-sail_entries:
-- execute_MULHS
 privileged: false
 repeat:
   type: repcc

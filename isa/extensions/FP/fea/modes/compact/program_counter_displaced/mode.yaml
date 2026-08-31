@@ -1,0 +1,19 @@
+id: program_counter_displaced
+name: Program-counter displaced memory
+kind: memory
+syntax: "[PC + displacement]"
+encodings:
+  - pattern: "1010100"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP8S}
+  - pattern: "1010101"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP16S}
+  - pattern: "1010110"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP32S}
+  - pattern: "1010111"
+    payloads:
+      - {role: displacement, type: base.payload_types.DISP64}
+segment: {source: fixed, register: CS}
+pseudocode: offset = PC + displacement

@@ -2,8 +2,6 @@ mnemonic: VFCVTD
 name: Vector Floating-Point Convert to Double Precision
 summary: Converts active half-precision, single-precision, or signed integer elements to double precision.
 route: vector
-sail_entries:
-- execute_VFCVTD
 privileged: false
 operands:
   govern:

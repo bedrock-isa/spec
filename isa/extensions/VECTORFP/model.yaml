@@ -19,7 +19,5 @@ documents:
   topics:
   - id: cpuid.vector-floating-point-discovery
     source: documents/topics/cpuid/001_vector_floating_point_discovery.tex
-    concept: cpuid
   - id: introduction.vector-floating-point-semantics
     source: documents/topics/introduction/001_floating_point_exceptions_conversions_and_reductions.tex
-    concept: vectorfp

@@ -7,4 +7,4 @@ groups:
 - tracing
 - architectural_state
 - architectural_exceptions
-- compatibility
+- normative_qualifiers

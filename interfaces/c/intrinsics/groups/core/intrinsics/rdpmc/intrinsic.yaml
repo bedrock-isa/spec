@@ -2,7 +2,6 @@ id: rdpmc
 owner: base
 description: >-
   Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with \texttt{INVALID\_SELECTOR}.
-summary: Read an architectural performance counter.
 signature:
   result: u64
   parameters:
@@ -11,9 +10,5 @@ signature:
     constant: true
 lowering:
   operation: isa:base.instructions.RDPMC
-  kind: direct
-effects:
-  c-memory: none
-  side-effect: true
 wrapper:
   kind: macro

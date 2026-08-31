@@ -3,8 +3,6 @@ name: Vector Floating-Point Round to Integral
 summary: Rounds each active floating-point element to an integral value in the same format using the current
   rounding mode.
 route: vector
-sail_entries:
-- execute_VFROUND
 privileged: false
 operands:
   govern:

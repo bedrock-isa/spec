@@ -2,8 +2,6 @@ mnemonic: RDSEG
 name: Read Segment Register
 summary: Read an SREG or the current CS image into an Rn register.
 route: system_registers
-sail_entries:
-- execute_RDSEG
 privileged: false
 operands:
   seg:

@@ -13,6 +13,5 @@ signature:
     type: f32_pointer
 lowering:
   operation: isa:FPTRANSA.instructions.FSINCOSA
-  kind: direct
   operands:
     size: S

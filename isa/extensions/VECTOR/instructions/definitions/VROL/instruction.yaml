@@ -2,8 +2,6 @@ mnemonic: VROL
 name: Vector Rotate Left
 summary: Rotates each active integer element left by its selected-width count.
 route: vector
-sail_entries:
-- execute_VROL
 privileged: false
 operands:
   govern:

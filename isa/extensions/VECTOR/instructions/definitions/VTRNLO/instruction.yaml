@@ -2,8 +2,6 @@ mnemonic: VTRNLO
 name: Vector Even-Lane Transpose
 summary: Interleave even lanes from the old destination and source by adjacent result pairs.
 route: vector
-sail_entries:
-- execute_VTRNLO
 privileged: false
 operands:
   govern:

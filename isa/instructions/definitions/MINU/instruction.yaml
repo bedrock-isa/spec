@@ -2,8 +2,6 @@ mnemonic: MINU
 name: Unsigned Minimum
 summary: Writes the unsigned lesser of source and destination to the destination.
 route: integer_alu
-sail_entries:
-- execute_MINU
 privileged: false
 repeat:
   type: repcc

@@ -2,8 +2,6 @@ mnemonic: PUSH
 name: Push
 summary: Pushes one Rn register value, SREG image, or the current CS image onto the stack.
 route: data_movement
-sail_entries:
-- execute_PUSH
 privileged: false
 repeat:
   type: repcc

@@ -2,8 +2,6 @@ mnemonic: WRSEG
 name: Write Segment Register
 summary: Write an SREG segment image from an Rn register.
 route: system_registers
-sail_entries:
-- execute_WRSEG
 privileged: false
 operands:
   src:

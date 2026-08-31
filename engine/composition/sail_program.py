@@ -25,8 +25,8 @@ class InstructionSemantics:
         return self.bundle.artifacts.semantics
 
     @property
-    def entries(self) -> tuple[str, ...]:
-        return tuple(self.bundle.instruction.sail_entries)
+    def entry(self) -> str:
+        return f"execute_{self.bundle.instruction.mnemonic}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,9 +43,3 @@ class SailProgram:
         """Instruction projection shared by non-semantic Sail renderers."""
 
         return tuple(semantics.bundle for semantics in self.instruction_semantics)
-
-    @property
-    def semantic_sources(self) -> tuple[Path, ...]:
-        """Compatibility projection of instruction-owned Sail sources."""
-
-        return tuple(semantics.source for semantics in self.instruction_semantics)

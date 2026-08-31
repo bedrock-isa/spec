@@ -2,8 +2,6 @@ mnemonic: IJcc
 name: Increment And Jump Conditional
 summary: Increments the index and branches only when it differs from the bound and the condition is true.
 route: control_flow
-sail_entries:
-- execute_IJcc
 privileged: false
 operands:
   cc:

@@ -121,9 +121,9 @@ $defs:
       difference:
         oneOf:
           - type: integer
-            minimum: 1
+            const: 1
           - type: string
-            minLength: 1
+            enum: [scale, vlen_bytes, element_count]
   segment:
     oneOf:
       - type: object
@@ -141,7 +141,7 @@ $defs:
           source: {const: field}
           role: {const: segment}
 x-interpretation-rules:
-  - The parent extension directory temporarily supplies the extension ID; it will later be declared by that directory's modes.yaml.
+  - The containing mode-type directory and its modes.yaml declare the descriptor family and closed-world membership.
   - Each encodings entry is one wire encoding variant of the same semantic mode; listing the mode in a catalog activates all of its variants.
   - Each encoding pattern is an ordered sequence of one or two descriptor bytes, each written most-significant bit first.
   - Each encoding pattern length must equal the descriptor width registered for the containing extension ID.
@@ -153,11 +153,11 @@ x-interpretation-rules:
   - Field roles are unique within a mode, and payload roles are unique within each encoding variant.
   - Field and payload type values are fully qualified logical references resolved through the common reference index.
   - An encoding variant's payloads are consumed in array order after every extended EA descriptor selected by the instruction.
-  - An extended mode inherits payload roles from its selecting compact extension mode; an omitted displacement role has the implicit value zero.
+  - The selecting compact extension form supplies the payload roles; an omitted displacement role has the implicit value zero.
   - Omitting segment selects the consuming operation's implicit default segment.
   - A field-sourced segment role resolves to the unique field with that role.
   - autoupdate type predecrement subtracts the positive difference before evaluation; postincrement adds it after evaluation.
   - autoupdate target resolves to the unique field with the named role.
-  - pseudocode may use field roles, payload roles inherited from the selecting compact extension mode, scale, and explicit architectural register names as identifiers.
+  - pseudocode may use field roles, payload roles supplied by the selecting compact extension form, scale, vlen_bytes, element_count, and explicit architectural register names as identifiers.
   - memory modes assign one expression to offset; immediate modes assign one expression to value; extension modes do not declare pseudocode.
   - The active catalog location selects the EA profile; profile identity is not repeated in the mode.

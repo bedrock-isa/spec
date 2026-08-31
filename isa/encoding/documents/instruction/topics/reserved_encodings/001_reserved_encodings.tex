@@ -1,0 +1,6 @@
+\subsection{Unavailable and Unallocated Encodings}
+An unallocated encoding or an encoding marked (:term:base.terms.reserved:) does not define alternative
+architectural behavior. Instruction (:term:base.terms.opcode|plural:), extension
+(:term:base.terms.opcode|plural:), and effective-address forms with that designation, together with encodings
+for an optional instruction group whose CPUID feature bit is clear, raise
+(:ref:base.events.EXCEPTION.UNAVAILABLE_INSTRUCTION_EXTENSION:) during decode.

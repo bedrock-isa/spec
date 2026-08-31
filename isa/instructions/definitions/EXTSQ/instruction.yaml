@@ -2,8 +2,6 @@ mnemonic: EXTSQ
 name: Sign Extend To Quad
 summary: Sign-extends the selected source width to a quadword destination.
 route: integer_unary
-sail_entries:
-- execute_EXTSQ
 privileged: false
 repeat:
   type: repcc

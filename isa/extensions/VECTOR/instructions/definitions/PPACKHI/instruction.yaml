@@ -2,8 +2,6 @@ mnemonic: PPACKHI
 name: Predicate Pack to Upper Half
 summary: Packs source predicate positions into the upper half of narrower destination positions.
 route: vector
-sail_entries:
-- execute_PPACKHI
 privileged: false
 operands:
   src:
