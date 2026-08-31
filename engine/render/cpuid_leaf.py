@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from ..cpuid import CpuidField, CpuidLeaf
+from ..cpuid import CpuidField, CpuidLeaf, compose_selector
 from ..reference import Reference, ReferenceError, UnknownReferenceError
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 from .latex_document import tex_escape
@@ -33,7 +33,14 @@ class CpuidLeafProjection:
     """The owner-local public contract selected by one root CPUID leaf."""
 
     leaf: CpuidLeaf
+    class_value: int
+    leaf_value: int
     queries: tuple[ProjectedCpuidQuery, ...]
+
+    def selector(self, index: int) -> int:
+        """Compose one query selector for this projected leaf."""
+
+        return compose_selector(self.class_value, self.leaf_value, index)
 
     @classmethod
     def create(cls, catalog, leaf: CpuidLeaf) -> "CpuidLeafProjection":
@@ -69,7 +76,8 @@ class CpuidLeafProjection:
                 key=lambda item: (item[0][1], item[0][2], item[0][3], item[0][0]),
             )
         )
-        return cls(leaf, queries)
+        class_value, leaf_value = catalog.leaf_allocation(leaf)
+        return cls(leaf, class_value, leaf_value, queries)
 
 
 def _identifier(value: object) -> str:
@@ -226,7 +234,8 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
 
     @staticmethod
     def render(catalog, leaf: CpuidLeaf) -> str:
-        queries = CpuidLeafProjection.create(catalog, leaf).queries
+        projection = CpuidLeafProjection.create(catalog, leaf)
+        queries = projection.queries
         labels = {query: _diagram_labels(query.fields) for query in queries}
         rows = [
             f"{_identifier(_index(query.first, query.last, query.stride))} & "
@@ -245,8 +254,16 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
             )
 
         caption = tex_escape(leaf.name)
+        class_value = f"0x{projection.class_value:08X}"
+        leaf_value = f"0x{projection.leaf_value:04X}"
+        selector_base = f"0x{projection.selector(0):016X}"
         return "\n".join(
             (
+                rf"Class {_identifier(class_value)}, leaf {_identifier(leaf_value)} uses "
+                rf"the 64-bit query selector {_identifier(selector_base)} "
+                rf"$\mathbin{{|}}\,\mathit{{index}}$, where $\mathit{{index}}$ is "
+                r"the 16-bit query index below.",
+                "",
                 rf"\BedrockTableCaption{{{caption} CPUID Query Allocations}}",
                 r"\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{4.10in}@{}}",
                 r"\toprule",

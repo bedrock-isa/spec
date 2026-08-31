@@ -172,6 +172,57 @@ class CpuidCatalog:
         except KeyError as error:
             raise ValueError(f"unknown CPUID namespace {owner!r}") from error
 
+    def root_class(self, cpuid_class: CpuidClass) -> CpuidClass:
+        """Resolve a CPUID class overlay to its numeric class definition."""
+
+        active: list[Reference[CpuidClass]] = []
+        current = cpuid_class
+        while current.extends is not None:
+            if current.reference in active:
+                raise ValueError("circular CPUID class overlay")
+            active.append(current.reference)
+            current = self.references.classes.resolve(current.extends)
+        if current.value is None:
+            raise ValueError(f"incomplete CPUID class definition {current.id!r}")
+        return current
+
+    def leaf_allocation(self, leaf: CpuidLeaf) -> tuple[int, int]:
+        """Return the effective numeric class and leaf allocation."""
+
+        active: list[Reference[CpuidLeaf]] = []
+
+        def resolve(current: CpuidLeaf) -> tuple[int, int]:
+            if current.reference in active:
+                raise ValueError("circular CPUID leaf overlay")
+            if (
+                current.reference.path[:1] != ("cpuid",)
+                or len(current.reference.path) != 2
+            ):
+                raise ValueError(f"invalid CPUID leaf reference {current.reference!r}")
+            cpuid_class = self.references.classes.resolve(
+                Reference(
+                    current.reference.owner,
+                    ("cpuid",),
+                    current.reference.path[1],
+                )
+            )
+            root_class = self.root_class(cpuid_class)
+            assert root_class.value is not None
+            if current.value is not None:
+                return root_class.value, current.value
+
+            assert current.extends is not None
+            active.append(current.reference)
+            allocation = resolve(self.references.leaves.resolve(current.extends))
+            active.pop()
+            if allocation[0] != root_class.value:
+                raise ValueError(
+                    f"CPUID leaf overlay {current.id!r} crosses numeric classes"
+                )
+            return allocation
+
+        return resolve(leaf)
+
     def resolve_flag(self, raw_reference: str, source: Path) -> CpuidField:
         """Resolve one fixed-index, one-bit CPUID availability field."""
 
