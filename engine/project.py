@@ -15,6 +15,7 @@ from .dependency import EntityDependency
 from .disclosure import ImplementationDisclosureCatalog
 from .ea_mode import EAMode, EAModeCatalog
 from .encoding import EncodingCatalog, EncodingForm
+from .encoding_reservation import EncodingReservationCatalog
 from .entity import Entity, EntityCatalog
 from .event import EventCatalog
 from .extension import ExtensionMetadata, ExtensionSetCatalog
@@ -498,6 +499,7 @@ class IsaProject:
 
     root: Path
     types: TypeSystem
+    encoding_reservations: EncodingReservationCatalog
     catalog: SourceCatalog
     cpuid: CpuidCatalog
     events: EventCatalog
@@ -750,6 +752,7 @@ class IsaProjectLoader:
         isa_root = Path(root).resolve()
         extension_catalog = ExtensionSetCatalog.load(isa_root)
         types = TypeSystem.load(isa_root, extension_catalog)
+        encoding_reservations = EncodingReservationCatalog.load(isa_root)
         cpuid = CpuidCatalog.load(isa_root, extension_catalog)
         events = EventCatalog.load(isa_root, extension_catalog)
         registers = RegisterCatalog.load(isa_root, extension_catalog)
@@ -778,6 +781,7 @@ class IsaProjectLoader:
         return IsaProject(
             isa_root,
             types,
+            encoding_reservations,
             catalog,
             cpuid,
             events,

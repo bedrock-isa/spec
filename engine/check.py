@@ -8,12 +8,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .allocation import AllocationCube, forms_overlap, numeric_bounds
+from .allocation import AllocationCube, forms_overlap, numeric_bounds, reservation_cube
 from .cpuid import CpuidCatalog, CpuidLeaf, CpuidQuery, CpuidResolutionError
 from .control_register import ControlRegister, ControlRegisterCatalog
 from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
 from .encoding import OperandConstraint
-from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH
+from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH, encoding_class
+from .encoding_reservation import (
+    EncodingReservation,
+    EncodingReservationCatalog,
+    EncodingReservationRegion,
+)
 from .event import EventCatalog, EventClass
 from .project import IsaProject, InstructionBundle
 from .reference import Reference, ReferenceError
@@ -89,6 +94,31 @@ class BundleValidator:
                         *base,
                         "pattern",
                     )
+                for reservation in project.encoding_reservations.reservations.values():
+                    for region_index, region in enumerate(reservation.regions):
+                        if region.encoding_class != owner.name:
+                            continue
+                        try:
+                            reserved_cube = reservation_cube(region)
+                        except ValueError:
+                            continue
+                        if not raw_cube.overlaps(reserved_cube):
+                            continue
+                        yield _error(
+                            "allocation.reserved",
+                            source,
+                            f"{mnemonic}.{form.id} overlaps opcode reservation "
+                            f"{reservation.id}",
+                            *base,
+                            "pattern",
+                            related=(
+                                RelatedLocation(
+                                    reservation.source,
+                                    reservation.summary,
+                                    ("regions", region_index, "prefix"),
+                                ),
+                            ),
+                        )
             if form.syntax.mnemonic != mnemonic:
                 yield _error(
                     "syntax.mnemonic",
@@ -413,6 +443,110 @@ class CatalogValidator:
                     left.id,
                     "pattern",
                     related=related,
+                )
+
+
+class EncodingReservationValidator:
+    """Validate the closed reservation inventory and its allocation relations."""
+
+    def validate(
+        self, catalog: EncodingReservationCatalog
+    ) -> Iterator[Diagnostic]:
+        inventory = catalog.inventory
+        declared = set(inventory.declared)
+        actual = set(inventory.actual)
+        for missing in sorted(declared - actual):
+            yield _error(
+                "encoding-reservation.missing-directory",
+                inventory.source,
+                f"declared reservation {missing!r} has no directory",
+            )
+        for undeclared in sorted(actual - declared):
+            yield _error(
+                "encoding-reservation.undeclared-directory",
+                inventory.root / undeclared,
+                f"reservation directory {undeclared!r} is not in "
+                f"{inventory.source.name}",
+            )
+        duplicates = sorted(
+            reservation_id
+            for reservation_id in declared
+            if inventory.declared.count(reservation_id) > 1
+        )
+        for duplicate in duplicates:
+            yield _error(
+                "encoding-reservation.duplicate",
+                inventory.source,
+                f"reservation {duplicate!r} is listed more than once",
+            )
+
+        resolved: list[
+            tuple[
+                EncodingReservation,
+                int,
+                EncodingReservationRegion,
+                AllocationCube,
+            ]
+        ] = []
+        for reservation in catalog.reservations.values():
+            for region_index, region in enumerate(reservation.regions):
+                base = ("regions", region_index)
+                try:
+                    owner = encoding_class(region.encoding_class)
+                except ValueError:
+                    yield _error(
+                        "encoding-reservation.class",
+                        reservation.source,
+                        f"unknown encoding class {region.encoding_class!r}",
+                        *base,
+                        "encoding_class",
+                    )
+                    continue
+                try:
+                    cube = reservation_cube(region)
+                except ValueError as error:
+                    yield _error(
+                        "encoding-reservation.prefix",
+                        reservation.source,
+                        str(error),
+                        *base,
+                        "prefix",
+                    )
+                    continue
+                namespaces = tuple(
+                    AllocationCube.parse(pattern) for pattern in owner.namespace
+                )
+                if not any(namespace.contains(cube) for namespace in namespaces):
+                    yield _error(
+                        "encoding-reservation.namespace",
+                        reservation.source,
+                        f"prefix is outside the {owner.name} namespace",
+                        *base,
+                        "prefix",
+                    )
+                    continue
+                resolved.append((reservation, region_index, region, cube))
+
+        for index, (left, left_index, left_region, left_cube) in enumerate(resolved):
+            for right, right_index, right_region, right_cube in resolved[index + 1 :]:
+                if not left_cube.overlaps(right_cube):
+                    continue
+                yield _error(
+                    "encoding-reservation.overlap",
+                    left.source,
+                    f"{left_region.encoding_class} region in reservation {left.id} "
+                    f"overlaps {right_region.encoding_class} region in reservation "
+                    f"{right.id}",
+                    "regions",
+                    left_index,
+                    "prefix",
+                    related=(
+                        RelatedLocation(
+                            right.source,
+                            f"conflicting reservation {right.id}",
+                            ("regions", right_index, "prefix"),
+                        ),
+                    ),
                 )
 
 
@@ -1369,6 +1503,17 @@ class CatalogValidationRule(ValidationRule):
         )
 
 
+class EncodingReservationValidationRule(ValidationRule):
+    def __init__(
+        self, validator: EncodingReservationValidator | None = None
+    ) -> None:
+        self.validator = validator or EncodingReservationValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if scope.complete:
+            yield from self.validator.validate(scope.project.encoding_reservations)
+
+
 class CpuidValidationRule(ValidationRule):
     def __init__(self, validator: CpuidValidator | None = None) -> None:
         self.validator = validator or CpuidValidator()
@@ -1465,6 +1610,7 @@ class CheckService:
         self.rules = rules or (
             BundleValidationRule(),
             CatalogValidationRule(),
+            EncodingReservationValidationRule(),
             CpuidValidationRule(),
             EventValidationRule(),
             RegisterValidationRule(),

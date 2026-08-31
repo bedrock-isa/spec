@@ -1,0 +1,7 @@
+id: CUSTOM_EXTENSIONS
+summary: Reserved for custom extensions.
+regions:
+- encoding_class: extralong
+  prefix: "11111110"
+- encoding_class: xxlong
+  prefix: "1111111110"

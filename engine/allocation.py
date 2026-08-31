@@ -13,6 +13,7 @@ from .encoding_architecture import (
     encoding_class,
     operator_space,
 )
+from .encoding_reservation import EncodingReservation, EncodingReservationRegion
 from .project import IsaProject, InstructionBundle
 from .reference import Reference
 
@@ -171,6 +172,7 @@ class AllocationSummary:
     namespace_slots: int
     allocated_slots: int
     reclaimed_slots: int
+    reserved_slots: int
     clean_free_slots: int
     remaining_slots: int
 
@@ -195,9 +197,11 @@ class CandidateCheck:
     slots: int
     allocated_slots: int
     reclaimed_slots: int
+    reserved_slots: int
     clean_free_slots: int
     allocated_entries: tuple[AllocationEntry, ...]
     reclaimed_entries: tuple[AllocationEntry, ...]
+    reservations: tuple[EncodingReservation, ...]
 
     @property
     def state(self) -> str:
@@ -206,6 +210,8 @@ class CandidateCheck:
             states.append("allocated")
         if self.reclaimed_slots:
             states.append("reclaimed")
+        if self.reserved_slots:
+            states.append("reserved")
         if self.clean_free_slots:
             states.append("clean-free")
         return "+".join(states)
@@ -279,9 +285,11 @@ class AllocationAnalyzer:
             )
             raw = tuple(cube for entry in selected for cube in entry.raw_cubes)
             legal = tuple(cube for entry in selected for cube in entry.legal_cubes)
+            reserved = reservation_cubes(project, owner.name)
             namespace_slots = sum(region.slots for region in regions)
             raw_slots = covered_slots(regions, raw)
             allocated_slots = covered_slots(regions, legal)
+            unavailable_slots = covered_slots(regions, (*raw, *reserved))
             result.append(
                 AllocationSummary(
                     owner.name,
@@ -290,8 +298,12 @@ class AllocationAnalyzer:
                     namespace_slots,
                     allocated_slots,
                     raw_slots - allocated_slots,
-                    namespace_slots - raw_slots,
-                    namespace_slots - allocated_slots,
+                    unavailable_slots - raw_slots,
+                    namespace_slots - unavailable_slots,
+                    raw_slots
+                    - allocated_slots
+                    + namespace_slots
+                    - unavailable_slots,
                 )
             )
         return tuple(result)
@@ -318,7 +330,11 @@ class AllocationAnalyzer:
         owner = encoding_class(class_name)
         regions = search_regions(owner, space=space, leading=leading)
         entries = self.entries(project, owner.name, space=space, leading=leading)
-        unavailable = unavailable_cubes(entries, include_reclaimed=include_reclaimed)
+        unavailable = unavailable_cubes(
+            entries,
+            include_reclaimed=include_reclaimed,
+            reservations=reservation_cubes(project, owner.name),
+        )
         cubes = [cube for region in regions for cube in _uncovered(region, unavailable)]
         if max_slots is not None:
             cubes = [piece for cube in cubes for piece in _cap_cube(cube, max_slots)]
@@ -351,8 +367,25 @@ class AllocationAnalyzer:
         entries = self.entries(project, owner.name, space=space)
         legal = tuple(cube for entry in entries for cube in entry.legal_cubes)
         raw = tuple(cube for entry in entries for cube in entry.raw_cubes)
+        reservation_entries = tuple(
+            reservation
+            for reservation in project.encoding_reservations.reservations.values()
+            if any(
+                region.encoding_class == owner.name
+                and candidate.overlaps(reservation_cube(region))
+                for region in reservation.regions
+            )
+        )
+        reserved = tuple(
+            reservation_cube(region)
+            for reservation in reservation_entries
+            for region in reservation.regions
+            if region.encoding_class == owner.name
+            and candidate.overlaps(reservation_cube(region))
+        )
         allocated_slots = covered_slots((candidate,), legal)
         raw_slots = covered_slots((candidate,), raw)
+        unavailable_slots = covered_slots((candidate,), (*raw, *reserved))
         allocated_entries = tuple(
             entry
             for entry in entries
@@ -370,9 +403,11 @@ class AllocationAnalyzer:
             candidate.slots,
             allocated_slots,
             raw_slots - allocated_slots,
-            candidate.slots - raw_slots,
+            unavailable_slots - raw_slots,
+            candidate.slots - unavailable_slots,
             allocated_entries,
             reclaimed_entries,
+            reservation_entries,
         )
 
     @staticmethod
@@ -393,13 +428,35 @@ def unavailable_cubes(
     entries: tuple[AllocationEntry, ...],
     *,
     include_reclaimed: bool,
+    reservations: tuple[AllocationCube, ...] = (),
 ) -> tuple[AllocationCube, ...]:
     """Return the occupied cubes under the requested allocation policy."""
 
-    return tuple(
+    assigned = tuple(
         cube
         for entry in entries
         for cube in (entry.legal_cubes if include_reclaimed else entry.raw_cubes)
+    )
+    return (*assigned, *reservations)
+
+
+def reservation_cube(region: EncodingReservationRegion) -> AllocationCube:
+    """Lower one authored reservation prefix into its encoding-class cube."""
+
+    owner = encoding_class(region.encoding_class)
+    return AllocationCube.parse(region.prefix, owner.allocation_bits)
+
+
+def reservation_cubes(
+    project: IsaProject, class_name: str
+) -> tuple[AllocationCube, ...]:
+    """Return authored reservation cubes in one encoding class."""
+
+    return tuple(
+        reservation_cube(region)
+        for reservation in project.encoding_reservations.reservations.values()
+        for region in reservation.regions
+        if region.encoding_class == class_name
     )
 
 

@@ -1,0 +1,5 @@
+id: EXTENSION_SPACE
+summary: Reserved for extension-space allocation.
+regions:
+- encoding_class: xxlong
+  prefix: "1111111111"

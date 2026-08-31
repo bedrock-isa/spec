@@ -245,6 +245,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                                 "namespace": item.namespace_slots,
                                 "allocated": item.allocated_slots,
                                 "reclaimed": item.reclaimed_slots,
+                                "reserved": item.reserved_slots,
                                 "clean_free": item.clean_free_slots,
                                 "remaining": item.remaining_slots,
                             }
@@ -254,12 +255,13 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                     )
                 )
             else:
-                print("class       bits  forms       namespace       allocated       reclaimed      clean-free       remaining")
+                print("class       bits  forms       namespace       allocated       reclaimed        reserved      clean-free       remaining")
                 for item in summaries:
                     print(
                         f"{item.encoding_class:<11}{item.width:>4}{item.forms:>7}"
                         f"{item.namespace_slots:>16,}{item.allocated_slots:>16,}"
-                        f"{item.reclaimed_slots:>16,}{item.clean_free_slots:>16,}"
+                        f"{item.reclaimed_slots:>16,}{item.reserved_slots:>16,}"
+                        f"{item.clean_free_slots:>16,}"
                         f"{item.remaining_slots:>16,}"
                     )
             return 0
@@ -316,12 +318,16 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                             "slots": result.slots,
                             "allocated": result.allocated_slots,
                             "reclaimed": result.reclaimed_slots,
+                            "reserved": result.reserved_slots,
                             "clean_free": result.clean_free_slots,
                             "allocated_entries": [
                                 entry.name for entry in result.allocated_entries
                             ],
                             "reclaimed_entries": [
                                 entry.name for entry in result.reclaimed_entries
+                            ],
+                            "reservations": [
+                                reservation.id for reservation in result.reservations
                             ],
                         },
                         indent=2,
@@ -334,6 +340,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                 print(f"slots:      {result.slots:,}")
                 print(f"allocated:  {result.allocated_slots:,}")
                 print(f"reclaimed:  {result.reclaimed_slots:,}")
+                print(f"reserved:   {result.reserved_slots:,}")
                 print(f"clean-free: {result.clean_free_slots:,}")
                 if result.allocated_entries:
                     print("allocated overlaps:")
@@ -343,7 +350,11 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                     print("reclaimed overlaps:")
                     for entry in result.reclaimed_entries:
                         print(f"  {entry.name}  {entry.pattern}")
-            return 1 if result.allocated_slots else 0
+                if result.reservations:
+                    print("reservation overlaps:")
+                    for reservation in result.reservations:
+                        print(f"  {reservation.id}  {reservation.summary}")
+            return 1 if result.allocated_slots or result.reserved_slots else 0
 
         holes = analyzer.holes(
             project,

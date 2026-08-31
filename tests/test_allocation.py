@@ -65,7 +65,7 @@ class AllocationAnalyzerTest(unittest.TestCase):
         self.assertEqual(len(allocation.entries), form_count)
         self.assertEqual(allocation.collisions, ())
 
-    def test_summary_separates_allocated_reclaimed_and_clean_free(self) -> None:
+    def test_summary_partitions_allocated_reclaimed_reserved_and_free(self) -> None:
         summaries = self.analyzer.summaries(self.project)
 
         by_class = {item.encoding_class: item for item in summaries}
@@ -73,7 +73,10 @@ class AllocationAnalyzerTest(unittest.TestCase):
         for item in summaries:
             self.assertEqual(
                 item.namespace_slots,
-                item.allocated_slots + item.reclaimed_slots + item.clean_free_slots,
+                item.allocated_slots
+                + item.reclaimed_slots
+                + item.reserved_slots
+                + item.clean_free_slots,
             )
             self.assertEqual(
                 item.remaining_slots,
