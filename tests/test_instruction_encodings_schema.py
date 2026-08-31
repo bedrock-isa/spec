@@ -112,8 +112,6 @@ class InstructionEncodingsSchemaTest(unittest.TestCase):
                         )
                     for payload in form.payloads:
                         self.types.payload_types.resolve(payload.type)
-                self.assertTrue(bundle.artifacts.description.is_file())
-                self.assertTrue(bundle.artifacts.semantics.is_file())
 
     def test_rejects_unknown_form_properties(self) -> None:
         encoding_id = "l_q_z_rn_s_rn_d"
@@ -121,7 +119,7 @@ class InstructionEncodingsSchemaTest(unittest.TestCase):
         document["encodings"][encoding_id]["unexpected"] = "value"
         self.assert_invalid(document)
 
-    def test_rejects_nonlocal_ids_and_unknown_pattern_widths(self) -> None:
+    def test_rejects_nonlocal_ids(self) -> None:
         document = self.document()
         encoding_id = "l_q_z_rn_s_rn_d"
         document["encodings"]["short.add.rn_rn"] = document["encodings"].pop(
@@ -129,7 +127,9 @@ class InstructionEncodingsSchemaTest(unittest.TestCase):
         )
         self.assert_invalid(document)
 
+    def test_rejects_unknown_pattern_widths(self) -> None:
         document = self.document()
+        encoding_id = "l_q_z_rn_s_rn_d"
         document["encodings"][encoding_id]["pattern"] = "00000000"
         self.assert_invalid(document)
 

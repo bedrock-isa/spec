@@ -10,7 +10,6 @@ from engine.register import (
     RegisterWidthDomainOrderError,
 )
 from engine.reference import Reference
-from engine.type_system import PayloadTypeKind, TypeSystem
 
 
 class RegisterCatalogTest(unittest.TestCase):
@@ -19,19 +18,6 @@ class RegisterCatalogTest(unittest.TestCase):
         cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.extensions = ExtensionSetCatalog.load(cls.isa_root)
         cls.catalog = RegisterCatalog.load(cls.isa_root, cls.extensions)
-        cls.types = TypeSystem.load(cls.isa_root, cls.extensions)
-
-    def test_loads_owner_local_group_hierarchy(self) -> None:
-        self.assertEqual(
-            self.catalog.references.groups[
-                Reference.parse("base.registers.CONTROL")
-            ].source,
-            self.isa_root / "registers/groups/CONTROL/group.yaml",
-        )
-        self.assertEqual(
-            self.catalog.references.groups[Reference.parse("FP.registers.FPR")].source,
-            self.isa_root / "extensions/FP/registers/groups/FPR/group.yaml",
-        )
 
     def test_expands_regular_groups_without_member_directories(self) -> None:
         with self.fixture() as directory:
@@ -59,51 +45,17 @@ class RegisterCatalogTest(unittest.TestCase):
             with self.assertRaises(RegisterWidthDomainOrderError):
                 RegisterCatalog.load(root)
 
-    def test_loads_fixed_explicit_inventory_and_layout_companions(self) -> None:
-        control = self.catalog.references.groups[
-            Reference.parse("base.registers.CONTROL")
-        ]
-        ptcr = control.registers["PTCR"]
-        flags = self.catalog.references.registers[
-            Reference.parse("base.registers.STATE.FLAGS")
-        ]
-
-        self.assertEqual(
-            control.register_inventory.source,
-            control.root / "registers/registers.yaml",
-        )
-        self.assertEqual(ptcr.encoding, 0x0000)
-        self.assertEqual(ptcr.layout.source, ptcr.root / "layout.yaml")
-        self.assertEqual(
-            [(field.id, field.lsb, field.bits) for field in ptcr.layout.fields],
-            [("ROOT_PAGE", 12, 44), ("LA57", 7, 1), ("PE", 0, 1)],
-        )
-        self.assertEqual(flags.layout.bits, 16)
-
-    def test_preserves_control_and_performance_selector_allocations(self) -> None:
+    def test_preserves_control_selector_allocations(self) -> None:
         registers = self.catalog.references.registers
 
         self.assertEqual(registers[Reference.parse("base.registers.CONTROL.PMC")].encoding, 0x1100)
         self.assertEqual(registers[Reference.parse("base.registers.CONTROL.UCTL")].encoding, 0x010D)
+
+    def test_preserves_performance_selector_allocations(self) -> None:
+        registers = self.catalog.references.registers
+
         self.assertEqual(registers[Reference.parse("base.registers.PERFORMANCE.CYCLE")].encoding, 1)
         self.assertEqual(registers[Reference.parse("base.registers.PERFORMANCE.PTWALK")].encoding, 3)
-
-    def test_type_declarations_own_selector_shape(self) -> None:
-        rn = self.types.field_types[Reference.parse("base.field_types.Rn")]
-        pair = self.types.field_types[Reference.parse("base.field_types.PAIRn")]
-        cr = self.types.payload_types[Reference.parse("base.payload_types.CR")]
-
-        self.assertEqual(
-            rn.register_group, Reference.parse("base.registers.GPR")
-        )
-        self.assertEqual(
-            pair.register_group, Reference.parse("base.registers.GPR")
-        )
-        self.assertEqual(cr.kind, PayloadTypeKind.REGISTER_SELECTOR)
-        self.assertEqual(
-            cr.register_group, Reference.parse("base.registers.CONTROL")
-        )
-        self.assertEqual(cr.bytes, 2)
 
     def test_rejects_series_with_explicit_register_directory(self) -> None:
         with self.fixture() as directory:

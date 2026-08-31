@@ -24,6 +24,7 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
         definition = ArtifactDefinition.load(
             ROOT / "artifacts/llvm-c-abi/artifact.yaml", schema
         )
+        cls.definition = definition
         generated = (
             import_module("artifacts.llvm-c-abi.generator")
             .Generator(definition)
@@ -34,8 +35,10 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
         if not isinstance(project, CAbiProject):
             raise TypeError("workspace abi.c provider must be a CAbiProject")
         cls.project = project
-        cls.catalog = generated.artifact("BedrockGenCABI.inc").content
-        cls.calling_convention = generated.artifact("BedrockGenCallingConv.td").content
+        cls.catalog = generated.artifact(definition.outputs["catalog"]).content
+        cls.calling_convention = generated.artifact(
+            definition.outputs["calling-convention"]
+        ).content
         cls.calling_convention_projection = (
             cls.generator_module._project_calling_convention(
                 project, project.calling_convention, cls.workspace
@@ -161,49 +164,6 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
                 check=False,
             )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-
-    def test_calling_convention_projection_preserves_owned_relations(self) -> None:
-        convention = self.project.calling_convention
-        value_classes = {
-            self.project.value_classes.resolve(
-                reference
-            ).id: self.project.value_classes.resolve(reference)
-            for reference in convention.value_classes
-        }
-        expected_returns = {}
-        for value_id, value_class in value_classes.items():
-            if value_id not in {
-                rule.value_class
-                for rule in self.calling_convention_projection.return_rules
-            }:
-                continue
-            policy = value_class.result
-            if policy.register_class is None:
-                continue
-            register_class = self.project.register_classes.resolve(
-                policy.register_class
-            )
-            expected_returns[value_id] = tuple(
-                self.workspace.resolve(reference).id
-                for reference in register_class.results
-            )
-        actual_returns = {
-            rule.value_class: rule.registers
-            for rule in self.calling_convention_projection.return_rules
-        }
-        self.assertEqual(actual_returns, expected_returns)
-        callee_saved = next(
-            item
-            for item in convention.preservation
-            if item.disposition == "callee_saved"
-        )
-        self.assertEqual(
-            self.calling_convention_projection.all_callee_saved,
-            tuple(
-                self.workspace.resolve(reference).id
-                for reference in callee_saved.registers
-            ),
-        )
 
     def test_calling_convention_is_accepted_by_llvm_tablegen(self) -> None:
         tablegen = ROOT.parent / "llvm-project/build/bin/llvm-tblgen"

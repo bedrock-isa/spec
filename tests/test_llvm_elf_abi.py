@@ -34,8 +34,8 @@ class LlvmElfAbiArtifactTests(unittest.TestCase):
         generated = cls.generator_module.Generator(definition).generate(
             ArtifactGenerationContext.create(cls.workspace, ROOT)
         )
-        cls.relocations = generated.artifact("ELFRelocs/Bedrock.def").content
-        cls.catalog = generated.artifact("BedrockGenELFABI.inc").content
+        cls.relocations = generated.artifact(definition.outputs["relocations"]).content
+        cls.catalog = generated.artifact(definition.outputs["catalog"]).content
 
     def _compile(self, source: str) -> None:
         compiler = shutil.which("clang++") or shutil.which("c++")

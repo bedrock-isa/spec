@@ -15,6 +15,7 @@ from engine.encoding_architecture import (
     operator_space,
 )
 from engine.project import IsaProject
+from engine.reference import Reference
 
 
 class EncodingArchitectureTest(unittest.TestCase):
@@ -103,7 +104,7 @@ class AllocationAnalyzerTest(unittest.TestCase):
         raw = AllocationCube.parse("10??")
         legal = AllocationCube.parse("100?")
         entry = AllocationEntry(
-            self.project.select()[0].reference,
+            Reference.parse("base.instructions.SYNTHETIC"),
             "base",
             "SYNTHETIC",
             "fixture",
@@ -130,7 +131,11 @@ class AllocationAnalyzerTest(unittest.TestCase):
             min_slots=16,
             limit=5,
         )
-        scope = AllocationCube.parse("1111111100", 42)
+        space = operator_space("xxlong", "vector")
+        scope = AllocationCube.parse(
+            space.prefix,
+            encoding_class(space.encoding_class).allocation_bits,
+        )
         raw = tuple(
             cube
             for entry in self.entries

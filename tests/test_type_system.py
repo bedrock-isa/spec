@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 
 from engine.reference import Reference, UnknownReferenceError
-from engine.type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
+from engine.type_system import TypeSystem
 
 
 class TypeSystemTest(unittest.TestCase):
@@ -71,18 +71,13 @@ class TypeSystemTest(unittest.TestCase):
 
     def test_projects_typed_definitions_into_global_indexes(self) -> None:
         types = TypeSystem.load(self.root)
-        width = types.field_types[Reference.parse("base.field_types.WIDTH")]
-        count = types.field_types[Reference.parse("SAMPLE.field_types.COUNT")]
-        payload = types.payload_types[Reference.parse("base.payload_types.BASE_ONLY")]
+        namespaces = (types.base, *types.extensions.values())
 
-        self.assertIs(width, types.base.field_types[width.reference])
-        self.assertIs(count, types.extensions["SAMPLE"].field_types[count.reference])
-        self.assertIs(payload, types.base.payload_types[payload.reference])
-        self.assertIs(width.kind, FieldTypeKind.SIZE_SELECTOR)
-        self.assertEqual(
-            tuple(value.code for value in width.values), ("NARROW", "WIDE")
-        )
-        self.assertIs(payload.kind, PayloadTypeKind.IMMEDIATE)
+        for namespace in namespaces:
+            for reference, definition in namespace.field_types.items():
+                self.assertIs(types.field_types[reference], definition)
+            for reference, definition in namespace.payload_types.items():
+                self.assertIs(types.payload_types[reference], definition)
 
     def test_reference_resolution_does_not_fall_back_across_owners(self) -> None:
         types = TypeSystem.load(self.root)

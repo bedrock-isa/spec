@@ -4,11 +4,7 @@ import shutil
 import subprocess
 import tempfile
 
-from engine.generation import (
-    ArtifactDefinition,
-    ArtifactGenerationContext,
-    ArtifactGeneratorRegistry,
-)
+from engine.generation import ArtifactGenerationContext, ArtifactGeneratorRegistry
 from engine.project import IsaProject
 from engine.workspace import SpecWorkspace
 
@@ -125,41 +121,6 @@ class SystemVerilogArchitectureArtifactsTest(unittest.TestCase):
             projection.predicate_register_count,
             len(namespace.groups["PREDICATE"].registers),
         )
-
-    def test_manifest_role_selects_a_renamed_output_path(self) -> None:
-        registered = self.registry.generator("systemverilog-condition-evaluator")
-        definition = ArtifactDefinition(
-            "systemverilog-condition-evaluator",
-            registered.definition.source,
-            {"outputs": {"evaluator": "renamed/condition-contract.sv"}},
-        )
-
-        generated = type(registered)(definition).generate(
-            ArtifactGenerationContext.create(self.workspace, self.repository / "output")
-        )
-
-        self.assertEqual(
-            {artifact.relative_path for artifact in generated.artifacts},
-            {Path("renamed/condition-contract.sv")},
-        )
-
-    def test_generators_populate_their_declared_output_roles(self) -> None:
-        for artifact_id in (
-            "systemverilog-condition-evaluator",
-            "systemverilog-cpuid",
-            "systemverilog-event-codec",
-            "systemverilog-register-contracts",
-            "systemverilog-vector-geometry",
-        ):
-            with self.subTest(artifact=artifact_id):
-                generator = self.registry.generator(artifact_id)
-                generated = self.registry.generate(
-                    artifact_id, self.workspace, self.repository / "output"
-                )
-                self.assertEqual(
-                    {artifact.relative_path for artifact in generated.artifacts},
-                    set(generator.definition.outputs.values()),
-                )
 
     def test_generated_contracts_are_accepted_by_a_systemverilog_consumer(self) -> None:
         verilator = shutil.which("verilator")

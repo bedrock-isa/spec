@@ -1,65 +1,35 @@
 import unittest
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 
-from engine.composition import DocumentComposition
-from engine.generation import ArtifactGenerationContext, ArtifactGeneratorRegistry
-from engine.project import IsaProject
-from engine.site.model import DocumentSiteSpec, build_site
-from engine.site.structure import parse_latex_structure
-from engine.workspace import SpecWorkspace
+from engine.site.model import ROOT_PAGE_KEY, SiteModel
+from engine.site.navigation import NavigationGroup, PageRegistry, PageSpec
 
 
 class WebReferenceTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.repository = Path(__file__).parents[1]
-        cls.workspace = SpecWorkspace.load(cls.repository)
-        cls.project = cls.workspace.require_provider("isa")
-        if not isinstance(cls.project, IsaProject):
-            raise TypeError("workspace isa provider must be an IsaProject")
-        cls.registry = ArtifactGeneratorRegistry.discover(cls.workspace)
-        context = ArtifactGenerationContext.create(
-            cls.workspace, cls.repository / "output"
-        )
-        documents = (
-            ("isa-reference", "tex/isa-reference.tex", "isa", "ISA"),
-            ("elf-abi", "tex/bedrock-elf-abi.tex", "elf-abi", "ELF ABI"),
-            ("c-abi", "tex/bedrock-c-abi.tex", "c-abi", "C ABI"),
-            (
-                "c-target-intrinsics",
-                "tex/bedrock-target-intrinsics.tex",
-                "target-intrinsics",
-                "Target Intrinsics",
-            ),
-        )
-        specs = []
-        cls.structures = {}
-        for artifact_id, output, document_id, title in documents:
-            content = (
-                cls.registry.generator(artifact_id)
-                .generate(context)
-                .artifact(output)
-                .content
-            )
-            if not isinstance(content, str):
-                raise TypeError(f"{artifact_id}: expected text document")
-            structure = parse_latex_structure(content)
-            cls.structures[document_id] = structure
-            specs.append(
-                DocumentSiteSpec(
-                    document_id,
-                    title,
-                    PurePosixPath("downloads") / f"{document_id}.pdf",
-                    structure,
-                )
-            )
-        composition = DocumentComposition.load(
-            cls.registry.generator("isa-reference").definition.source,
-            cls.project,
-        )
-        cls.site = build_site(tuple(specs), composition)
-
     def test_navigation_projects_each_owned_page_once(self) -> None:
+        registry = PageRegistry()
+        registry.add_page(
+            PageSpec(ROOT_PAGE_KEY, "Home", PurePosixPath("index.md"))
+        )
+        registry.add_page(
+            PageSpec(
+                "guide:landing",
+                "Guide",
+                PurePosixPath("guide/index.md"),
+                group="guide",
+            )
+        )
+        registry.add_page(
+            PageSpec(
+                "guide:topic",
+                "Topic",
+                PurePosixPath("guide/topic.md"),
+                group="guide",
+                parent="guide:landing",
+            )
+        )
+        site = SiteModel(registry, (NavigationGroup("guide", "Guide"),))
+
         def outputs(entries: list[dict[str, object]]) -> list[str]:
             projected: list[str] = []
             for entry in entries:
@@ -72,8 +42,8 @@ class WebReferenceTest(unittest.TestCase):
                     self.fail(f"unexpected navigation entry: {entry!r}")
             return projected
 
-        projected = outputs(self.site.navigation())
-        owned = [page.output.as_posix() for page in self.site.registry.pages]
+        projected = outputs(site.navigation())
+        owned = [page.output.as_posix() for page in registry.pages]
 
         self.assertEqual(sorted(projected), sorted(owned))
 

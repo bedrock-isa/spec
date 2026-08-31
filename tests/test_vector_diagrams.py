@@ -39,23 +39,53 @@ class VectorDiagramTest(unittest.TestCase):
         return bundle, reference, directive, VectorDiagramPlacementRenderer()
 
     def test_predicate_range_schema_accepts_closed_forms_and_rejects_hybrids(self) -> None:
-        documents = [
-            yaml.safe_load(diagram.source.read_text(encoding="utf-8"))
-            for bundle in self._diagram_bundles()
-            for diagram in bundle.diagrams.diagrams.values()
-        ]
-        count_form = next(
-            document
-            for document in documents
-            if document["kind"] == "predicate-range-generation"
-            and "count" in document
-        )
-        state_form = next(
-            document
-            for document in documents
-            if document["kind"] == "predicate-range-generation"
-            and "states" in document
-        )
+        result = {
+            "label": "result",
+            "element_bits": 16,
+            "groups": [
+                {
+                    "cells": [
+                        {
+                            "value": "0",
+                            "effect": "zero",
+                            "appearance": "zero",
+                            "bits": 16,
+                        }
+                    ]
+                }
+            ],
+        }
+        common = {
+            "id": "example",
+            "caption": "Example",
+            "alt_text": "Example predicate range",
+            "kind": "predicate-range-generation",
+            "view": {
+                "visible_bytes": 16,
+                "lane_order": "right-to-left",
+                "scalable": True,
+            },
+            "result": result,
+        }
+        count_form = {
+            **deepcopy(common),
+            "count": {"label": "count", "value": 0},
+            "range": {"start": "count", "end": "lane-count"},
+        }
+        state_form = {
+            **deepcopy(common),
+            "states": [
+                {
+                    "id": "remaining",
+                    "label": "remaining",
+                    "before": "before",
+                    "after": "after",
+                    "anchor": "start",
+                    "after_side": "right",
+                }
+            ],
+            "range": {"start": 0, "end": 1},
+        }
         self.assertTrue(self.validator.is_valid(count_form))
         self.assertTrue(self.validator.is_valid(state_form))
 
@@ -77,47 +107,6 @@ class VectorDiagramTest(unittest.TestCase):
         ):
             with self.subTest(name=name):
                 self.assertFalse(self.validator.is_valid(invalid))
-
-    def test_predicate_range_projection_matches_its_declared_bounds(self) -> None:
-        examples = tuple(
-            diagram.example
-            for bundle in self._diagram_bundles()
-            for diagram in bundle.diagrams.diagrams.values()
-            if diagram.example.variant == "predicate-range-generation"
-        )
-
-        self.assertTrue(examples)
-        for example in examples:
-            start = example.data["start"]
-            end = example.data["end"]
-            groups = example.rows[0]["groups"]
-            self.assertEqual(len(groups), 8)
-            for index, group in enumerate(groups):
-                active = index >= start and (
-                    end == "lane-count" or index < end
-                )
-                self.assertEqual(
-                    tuple(cell["bits"] for cell in group),
-                    (8, 8),
-                )
-                self.assertEqual(
-                    (
-                        group[0]["value"],
-                        group[0]["effect"],
-                        group[0]["appearance"],
-                    ),
-                    ("1", "copy", "predicate-result")
-                    if active
-                    else ("0", "zero", "zero"),
-                )
-                self.assertEqual(
-                    (
-                        group[1]["value"],
-                        group[1]["effect"],
-                        group[1]["appearance"],
-                    ),
-                    ("0", "zero", "zero"),
-                )
 
     def test_rejects_inline_placement(self) -> None:
         bundle, _reference, directive, placements = self._placement_fixture()

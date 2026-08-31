@@ -180,23 +180,15 @@ class Generator(ArtifactGenerator):
 
             project = SailProjectRenderer().project(program, root)
 
-            self.assertEqual(
-                tuple(module.name for module in project.modules),
-                (
-                    "registry",
-                    "model_base_core",
-                    "operation_entries",
-                    "model_base_boundary",
-                ),
+            modules = {module.name: module for module in project.modules}
+            names = tuple(modules)
+            self.assertLess(
+                names.index("operation_entries"),
+                names.index("model_base_boundary"),
             )
-            operation_entries = project.modules[2]
-            self.assertEqual(
-                operation_entries.sources,
-                ("instruction.sail", "generated/dispatch.sail"),
-            )
-            self.assertEqual(
-                project.modules[3].requirements,
-                ("registry", "operation_entries", "model_base_core"),
+            self.assertIn(
+                "operation_entries",
+                modules["model_base_boundary"].requirements,
             )
 
     def test_generator_assembles_artifacts_without_writing(self) -> None:

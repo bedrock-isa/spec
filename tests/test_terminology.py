@@ -20,39 +20,67 @@ class TermCatalogTest(unittest.TestCase):
             cls.isa_root, ExtensionSetCatalog.load(cls.isa_root)
         )
 
-    def test_loads_owner_local_groups_and_terms_into_shared_indexes(self) -> None:
+    def test_projects_owner_local_terms_into_shared_reference_index(self) -> None:
         with self.fixture() as directory:
             root = Path(directory)
-            terms_root = root / "terminology/groups/sample/terms"
-            self.write_yaml(terms_root / "terms.yaml", {"terms": ["address"]})
-            self.write_yaml(
-                terms_root / "address/term.yaml",
-                {
-                    "id": "address",
-                    "display": {"canonical": "sample address"},
-                    "abbreviation": {"canonical": "SA"},
-                    "definition": "A sample address.",
-                },
-            )
-
+            self.write_sample_term(root)
             catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
 
         group = catalog.references.groups[Reference.parse("base.term_groups.sample")]
         term = catalog.references.terms[Reference.parse("base.terms.address")]
         self.assertEqual(set(group.terms), {"address"})
+        self.assertIs(group.terms["address"], term)
+
+    def test_projects_term_content_into_semantic_and_spelling_indexes(self) -> None:
+        with self.fixture() as directory:
+            root = Path(directory)
+            self.write_sample_term(root)
+            catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
+
+        term = catalog.references.terms[Reference.parse("base.terms.address")]
         self.assertIsInstance(term.definition, SemanticText)
         self.assertEqual(term.abbreviation.canonical, "SA")
         self.assertEqual(
             catalog.spellings["sample address"][0].reference, term.reference
         )
 
-    def test_validator_reports_inventory_and_unknown_definition_references(
-        self,
-    ) -> None:
+    def write_sample_term(self, root: Path) -> None:
+        terms_root = root / "terminology/groups/sample/terms"
+        self.write_yaml(terms_root / "terms.yaml", {"terms": ["address"]})
+        self.write_yaml(
+            terms_root / "address/term.yaml",
+            {
+                "id": "address",
+                "display": {"canonical": "sample address"},
+                "abbreviation": {"canonical": "SA"},
+                "definition": "A sample address.",
+            },
+        )
+
+    def test_validator_reports_missing_inventory_member(self) -> None:
         with self.fixture() as directory:
             root = Path(directory)
             terms_root = root / "terminology/groups/sample/terms"
             self.write_yaml(terms_root / "terms.yaml", {"terms": ["known", "missing"]})
+            self.write_yaml(
+                terms_root / "known/term.yaml",
+                {
+                    "id": "known",
+                    "display": {"canonical": "known term"},
+                    "definition": "A known term.",
+                },
+            )
+
+            catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
+            codes = [item.code for item in TerminologyValidator().validate(catalog)]
+
+        self.assertEqual(codes, ["terminology.term.missing-directory"])
+
+    def test_validator_reports_unknown_definition_reference(self) -> None:
+        with self.fixture() as directory:
+            root = Path(directory)
+            terms_root = root / "terminology/groups/sample/terms"
+            self.write_yaml(terms_root / "terms.yaml", {"terms": ["known"]})
             self.write_yaml(
                 terms_root / "known/term.yaml",
                 {
@@ -65,20 +93,14 @@ class TermCatalogTest(unittest.TestCase):
             catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
             codes = [item.code for item in TerminologyValidator().validate(catalog)]
 
-        self.assertCountEqual(
-            codes,
-            (
-                "terminology.term.missing-directory",
-                "terminology.definition.unknown-term",
-            ),
-        )
+        self.assertEqual(codes, ["terminology.definition.unknown-term"])
 
-    def test_validator_reports_spelling_conflicts_and_broader_cycles(self) -> None:
+    def test_validator_reports_spelling_conflict(self) -> None:
         with self.fixture() as directory:
             root = Path(directory)
             terms_root = root / "terminology/groups/sample/terms"
             self.write_yaml(terms_root / "terms.yaml", {"terms": ["first", "second"]})
-            for term_id, broader in (("first", "second"), ("second", "first")):
+            for term_id in ("first", "second"):
                 self.write_yaml(
                     terms_root / term_id / "term.yaml",
                     {
@@ -89,6 +111,26 @@ class TermCatalogTest(unittest.TestCase):
                             )
                         },
                         "definition": f"The {term_id} term.",
+                    },
+                )
+
+            catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
+            codes = [item.code for item in TerminologyValidator().validate(catalog)]
+
+        self.assertEqual(codes, ["terminology.spelling.conflict"])
+
+    def test_validator_reports_broader_cycle(self) -> None:
+        with self.fixture() as directory:
+            root = Path(directory)
+            terms_root = root / "terminology/groups/sample/terms"
+            self.write_yaml(terms_root / "terms.yaml", {"terms": ["first", "second"]})
+            for term_id, broader in (("first", "second"), ("second", "first")):
+                self.write_yaml(
+                    terms_root / term_id / "term.yaml",
+                    {
+                        "id": term_id,
+                        "display": {"canonical": f"{term_id} term"},
+                        "definition": f"The {term_id} term.",
                         "relations": {"broader": [f"base.terms.{broader}"]},
                     },
                 )
@@ -96,13 +138,7 @@ class TermCatalogTest(unittest.TestCase):
             catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
             codes = [item.code for item in TerminologyValidator().validate(catalog)]
 
-        self.assertCountEqual(
-            codes,
-            (
-                "terminology.spelling.conflict",
-                "terminology.relation.broader-cycle",
-            ),
-        )
+        self.assertEqual(codes, ["terminology.relation.broader-cycle"])
 
     def fixture(self):
         temporary = tempfile.TemporaryDirectory()

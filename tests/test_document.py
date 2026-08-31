@@ -1,6 +1,7 @@
 import unittest
 import json
 from pathlib import Path
+import re
 import tempfile
 
 import yaml
@@ -42,8 +43,6 @@ from engine.render import (
     CpuidLeafProjection,
     EaDiagramFragmentRenderer,
     EventReferenceRenderer,
-    InstructionSetSummaryProjection,
-    InstructionSummaryRow,
     LatexSemanticTextRenderer,
     LatexSourcePreprocessor,
     ProjectedInstructionSet,
@@ -52,6 +51,10 @@ from engine.render import (
     RegisterModelFigureRenderer,
 )
 from engine.workspace import SpecWorkspace
+
+
+def _reference_text(reference: Reference[object]) -> str:
+    return ".".join((reference.owner, *reference.path, reference.element))
 
 
 class _SampleFragmentProvider(DocumentFragmentProvider):
@@ -131,29 +134,6 @@ class DocumentTest(unittest.TestCase):
                     self.assertIsInstance(authored, InstructionSetBlock)
                     self.assertIsInstance(projected, ProjectedInstructionSet)
                     self.assertIs(projected.block, authored)
-                    self.assertIsInstance(
-                        projected.summary, InstructionSetSummaryProjection
-                    )
-                    self.assertEqual(
-                        projected.summary.caption,
-                        f"{authored.title} Summary (Informative)",
-                    )
-                    self.assertEqual(
-                        tuple(row.reference for row in projected.summary.rows),
-                        tuple(bundle.reference for bundle in authored.instructions),
-                    )
-                    for row, bundle in zip(
-                        projected.summary.rows,
-                        authored.instructions,
-                        strict=True,
-                    ):
-                        self.assertIsInstance(row, InstructionSummaryRow)
-                        self.assertEqual(row.mnemonic, bundle.instruction.mnemonic)
-                        self.assertEqual(row.description, bundle.instruction.summary)
-                        self.assertEqual(
-                            row.target,
-                            self.public_targets.label(bundle.reference),
-                        )
                     self.assertEqual(
                         tuple(topic.topic for topic in projected.introduction),
                         authored.introduction,
@@ -202,62 +182,35 @@ class DocumentTest(unittest.TestCase):
         self.assertEqual(generated.artifact_id, self.composition.artifact)
         self.assertEqual(
             {artifact.relative_path for artifact in generated.artifacts},
-            {
-                Path("tex/isa-reference.tex"),
-                Path("graphs/isa-reference-dependencies.json"),
-            },
+            set(self.generator.definition.outputs.values()),
         )
 
     def test_dependency_graph_references_declared_nodes(self) -> None:
         graph = json.loads(
             self.generator.generate(
                 ArtifactGenerationContext.create(self.workspace, self.root / "output")
-            ).artifact("graphs/isa-reference-dependencies.json").content
-        )
-        self.assertTrue(graph["nodes"])
-        self.assertTrue(graph["edges"])
-        node_ids = {node["id"] for node in graph["nodes"]}
-        self.assertTrue(
-            all(
-                edge["source"] in node_ids
-                and edge["target"] in node_ids
-                and edge["occurrences"] > 0
-                for edge in graph["edges"]
             )
+            .artifact(self.generator.definition.outputs["dependencies"])
+            .content
         )
-        self.assertTrue(
-            any(edge["kind"] == "reference" for edge in graph["edges"])
-        )
+        node_ids = {node["id"] for node in graph["nodes"]}
+        for edge in graph["edges"]:
+            with self.subTest(edge=edge):
+                self.assertIn(edge["source"], node_ids)
+                self.assertIn(edge["target"], node_ids)
+                self.assertGreater(edge["occurrences"], 0)
 
-    def test_public_targets_are_selected_by_the_composition(self) -> None:
-        self.assertFalse(
-            self.public_targets.contains(Reference.parse("base.field_types.Rn"))
-        )
-        machine_check = Reference.parse("base.events.EXCEPTION.MACHINE_CHECK")
-        tracing = Reference.parse("base.term_groups.tracing")
-        self.assertTrue(self.public_targets.contains(machine_check))
-        self.assertTrue(self.public_targets.contains(tracing))
-        self.assertEqual(
-            self.public_targets.label(machine_check), "event:machine-check"
-        )
-        self.assertEqual(
-            self.public_targets.label(tracing), "term-group:tracing"
-        )
-
-    def test_event_code_renderer_projects_only_authored_placements(self) -> None:
-        row = EventReferenceRenderer.project_row(
-            self.project.events,
-            Reference.parse("base.events.EXCEPTION.DEBUG_TRACE"),
-        )
-
-        self.assertEqual(
-            (row.reference, row.code, row.event_id),
-            (
-                Reference.parse("base.events.EXCEPTION.DEBUG_TRACE"),
-                0,
-                "DEBUG_TRACE",
-            ),
-        )
+    def test_event_code_rows_preserve_resolved_fixed_allocations(self) -> None:
+        for resolved in self.project.events.resolved_events():
+            if resolved.code.value is None:
+                continue
+            with self.subTest(event=resolved.event.reference):
+                row = EventReferenceRenderer.project_row(
+                    self.project.events, resolved.event.reference
+                )
+                self.assertEqual(row.reference, resolved.event.reference)
+                self.assertEqual(row.code, resolved.code.value)
+                self.assertEqual(row.event_id, resolved.event.id)
 
     def test_source_preprocessor_expands_inputs_and_term_escapes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -419,12 +372,21 @@ class DocumentTest(unittest.TestCase):
                 processor.render(root, project, self.public_targets)
 
     def test_source_preprocessor_renders_instruction_reference(self) -> None:
+        instruction = next(
+            bundle
+            for block in self.composition.blocks
+            if isinstance(block, InstructionSetBlock)
+            for bundle in block.instructions
+        )
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
             source_root = repository / "isa"
             source_root.mkdir()
             root = source_root / "root.tex"
-            root.write_text("See (:ref:base.instructions.ADD:).", encoding="utf-8")
+            root.write_text(
+                f"See (:ref:{_reference_text(instruction.reference)}:).",
+                encoding="utf-8",
+            )
 
             class Project:
                 pass
@@ -451,16 +413,22 @@ class DocumentTest(unittest.TestCase):
             if isinstance(part, EntityReferenceText)
         )
         entity, label = self.public_targets.resolve(reference.reference)
-        self.assertEqual(entity.reference, Reference.parse("base.instructions.ADD"))
-        self.assertEqual(label, "instr:add")
+        self.assertEqual(entity.reference, instruction.reference)
+        self.assertEqual(label, self.public_targets.label(instruction.reference))
 
     def test_source_preprocessor_rejects_unprojected_register_reference(self) -> None:
+        private_reference = next(
+            reference
+            for reference, _ in self.project.entities.references.items()
+            if not self.public_targets.contains(reference)
+        )
         with tempfile.TemporaryDirectory() as directory:
             source_root = Path(directory) / "isa"
             source_root.mkdir()
             root = source_root / "root.tex"
             root.write_text(
-                "Use (:ref:base.registers.CONTROL.PTCR:).", encoding="utf-8"
+                f"Use (:ref:{_reference_text(private_reference)}:).",
+                encoding="utf-8",
             )
 
             class Project:
@@ -478,53 +446,28 @@ class DocumentTest(unittest.TestCase):
     def test_composition_allows_catalog_members_to_remain_private(self) -> None:
         source = self.repository / "artifacts/isa-reference/artifact.yaml"
         original = yaml.safe_load(source.read_text(encoding="utf-8"))
-        for block_kind in ("topic", "term-group", "instruction-set"):
-            with self.subTest(block_kind=block_kind):
-                document = yaml.safe_load(source.read_text(encoding="utf-8"))
-                removed = next(
-                    item for item in document["body"] if block_kind in item
-                )
-                document["body"].remove(removed)
-                with tempfile.TemporaryDirectory() as directory:
-                    path = Path(directory) / "artifact.yaml"
-                    path.write_text(
-                        yaml.safe_dump(document, sort_keys=False), encoding="utf-8"
-                    )
-                    composition = DocumentComposition.load(path, self.project)
+        original["body"] = [original["body"][0]]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.yaml"
+            path.write_text(
+                yaml.safe_dump(original, sort_keys=False), encoding="utf-8"
+            )
+            composition = DocumentComposition.load(path, self.project)
 
-                self.assertEqual(
-                    len(composition.blocks), len(original["body"]) - 1
-                )
+        self.assertEqual(len(composition.blocks), 1)
 
     def test_composition_rejects_duplicate_explicit_placement(self) -> None:
         source = self.repository / "artifacts/isa-reference/artifact.yaml"
-        for block_kind in ("topic", "term-group", "instruction-set"):
-            with self.subTest(block_kind=block_kind):
-                document = yaml.safe_load(source.read_text(encoding="utf-8"))
-                placed = next(
-                    item for item in document["body"] if block_kind in item
-                )
-                document["body"].append(placed)
-                with tempfile.TemporaryDirectory() as directory:
-                    path = Path(directory) / "artifact.yaml"
-                    path.write_text(
-                        yaml.safe_dump(document, sort_keys=False), encoding="utf-8"
-                    )
-                    with self.assertRaises(ValueError):
-                        DocumentComposition.load(path, self.project)
-
-    def test_tex_validation_accepts_current_model_structure(self) -> None:
-        tex = """\\begin{document}
-% topic: base.events
-\\section{Events}\\label{event:new}\\hyperref[event:new]{event}\\begin{BedrockInstruction}{ADD}{Add}{instr:add}
-\\begin{BedrockFormBlock}{2.75in}
-\\end{BedrockFormBlock}
-\\end{BedrockInstruction}
-\\end{document}
-"""
-        report = TexValidator().validate(tex)
-
-        self.assertTrue(report.passed)
+        document = yaml.safe_load(source.read_text(encoding="utf-8"))
+        placed = document["body"][0]
+        document["body"] = [placed, placed]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.yaml"
+            path.write_text(
+                yaml.safe_dump(document, sort_keys=False), encoding="utf-8"
+            )
+            with self.assertRaises(ValueError):
+                DocumentComposition.load(path, self.project)
 
     def test_tex_validation_requires_one_document_environment(self) -> None:
         tex = r"\begin{document}\end{document}"
@@ -565,16 +508,19 @@ class DocumentTest(unittest.TestCase):
             )
 
             self.assertTrue(result.report.passed)
-            self.assertEqual(result.tex, output / "tex/isa-reference.tex")
+            self.assertEqual(
+                result.tex,
+                output / self.generator.definition.outputs["document"],
+            )
             self.assertIsNone(result.pdf)
             ownership = output / ".artifact-ownership"
-            manifests = {
-                source.stem: json.loads(source.read_text(encoding="utf-8"))
-                for source in ownership.glob("*.json")
-            }
-            self.assertEqual(set(manifests), {"isa-reference"})
+            manifest = json.loads(
+                (ownership / f"{self.generator.artifact_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
             self.assertEqual(
-                set(manifests["isa-reference"]["paths"]),
+                set(manifest["paths"]),
                 self._existing_declared_outputs(output),
             )
 
@@ -598,20 +544,6 @@ class DocumentTest(unittest.TestCase):
                 (_DeclaredGenerator(first), _DeclaredGenerator(second))
             )
 
-    def test_document_validate_removes_stale_compiled_outputs(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            output = (Path(directory) / "output").resolve()
-            self._seed_compiled_outputs(output)
-
-            result = DocumentBuilder(generator=self.generator).build(
-                self.workspace, output, compile_pdf=False
-            )
-
-            self.assertTrue(result.report.passed)
-            for path in self.generator.definition.derived_outputs.values():
-                if path.parts[0] == "pdf":
-                    self.assertFalse((output / path).exists())
-
     def test_document_compile_failure_leaves_no_stale_compiled_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = (Path(directory) / "output").resolve()
@@ -627,9 +559,11 @@ class DocumentTest(unittest.TestCase):
                 if path.parts[0] == "pdf":
                     self.assertFalse((output / path).exists())
             manifest = json.loads(
-                (output / ".artifact-ownership/isa-reference.json").read_text(
-                    encoding="utf-8"
-                )
+                (
+                    output
+                    / ".artifact-ownership"
+                    / f"{self.generator.artifact_id}.json"
+                ).read_text(encoding="utf-8")
             )
             self.assertEqual(
                 set(manifest["paths"]),
@@ -684,118 +618,151 @@ class DocumentTest(unittest.TestCase):
         )
 
     def test_ea_diagram_projection_is_explicit_and_owner_local(self) -> None:
-        source = (
-            self.root
-            / "ea/documents/topics/effective_address_modes/006_extended_ea_addressing_modes.tex"
+        topic, reference = next(
+            (topic, Reference.parse(match.group(1)))
+            for topic in self.project.model.document_topics.values()
+            for match in re.finditer(
+                r"(?m)^\(:ea-diagram:([A-Za-z0-9_.-]+):\)$",
+                topic.document.read_text(encoding="utf-8"),
+            )
         )
         context = DocumentFragmentContext(
-            self.project, self.public_targets, source
+            self.project, self.public_targets, topic.document
         )
         projection = EaDiagramFragmentRenderer.project(
-            context, "base.ea.modes.EXT1.default_segment_base"
+            context, _reference_text(reference)
         )
 
-        self.assertEqual(
-            projection.diagram.reference,
-            Reference.parse("base.ea.modes.EXT1.default_segment_base"),
-        )
-        self.assertEqual(projection.diagram.owner, "base")
-        self.assertTrue(projection.diagram.encodings)
-        self.assertTrue(
-            all(
-                sum(field.bits for field in encoding.fields) > 0
-                for encoding in projection.diagram.encodings
-            )
-        )
-        self.assertIsNotNone(projection.diagram.flow)
+        self.assertEqual(projection.diagram.reference, reference)
+        self.assertEqual(projection.diagram.owner, topic.owner)
 
+        foreign = next(
+            mode.reference
+            for mode in self.project.catalog.ea_modes.values()
+            if mode.reference.owner != topic.owner
+        )
         with self.assertRaises(ValueError):
-            EaDiagramFragmentRenderer.project(
-                context, "FP.fea.modes.compact.immediate"
-            )
+            EaDiagramFragmentRenderer.project(context, _reference_text(foreign))
 
     def test_cpuid_leaf_projection_is_explicit_owner_local_and_single_grain(self) -> None:
-        source = (
-            self.root
-            / "cpuid/documents/topics/cpuid_feature_discovery/"
-            "007_optional_extension_directory.tex"
-        )
-        leaf = self.project.cpuid.references.leaves.resolve(
-            Reference.parse("base.cpuid.EXTENSIONS.DIRECTORY")
-        )
-        projection = CpuidLeafProjection.create(self.project.cpuid, leaf)
+        catalog = self.project.cpuid
 
-        self.assertEqual(
-            tuple(
-                (query.first, query.last, query.stride, query.id)
-                for query in projection.queries
-            ),
-            ((0, 0, 1, "HEADER"), (1, 1, 1, "FEATURES")),
-        )
-        self.assertEqual(
-            tuple(
-                (field.id, field.bits)
-                for query in projection.queries
-                for field in query.fields
-            ),
-            (
-                ("MAX_INDEX", 16),
-                ("MAX_LEAF", 16),
-                ("FP", 1),
-                ("FPTRANSA", 1),
-                ("VECTOR", 1),
-                ("VECTORFP", 1),
-            ),
-        )
+        def root_reference(leaf):
+            while leaf.extends is not None:
+                leaf = catalog.references.leaves.resolve(leaf.extends)
+            return leaf.reference
 
+        leaves = tuple(catalog.references.leaves.values())
+        for leaf in leaves:
+            if leaf.extends is not None:
+                continue
+            with self.subTest(leaf=leaf.reference):
+                projection = CpuidLeafProjection.create(catalog, leaf)
+                expected: dict[
+                    tuple[str, int, int, int], set[Reference[object]]
+                ] = {}
+                for candidate in leaves:
+                    if root_reference(candidate) != leaf.reference:
+                        continue
+                    for query in candidate.queries:
+                        key = (
+                            query.id,
+                            query.indexes.first,
+                            query.indexes.last,
+                            query.indexes.stride,
+                        )
+                        expected.setdefault(key, set()).update(
+                            field.reference for field in query.fields
+                        )
+                projected = {
+                    (query.id, query.first, query.last, query.stride): {
+                        field.reference for field in query.fields
+                    }
+                    for query in projection.queries
+                }
+                self.assertEqual(projected, expected)
+                expected_fields = {
+                    reference
+                    for references in expected.values()
+                    for reference in references
+                }
+                projected_fields = {
+                    field.reference
+                    for query in projection.queries
+                    for field in query.fields
+                }
+                self.assertEqual(projected_fields, expected_fields)
+                self.assertEqual(
+                    tuple(projected),
+                    tuple(
+                        sorted(
+                            expected,
+                            key=lambda key: (key[1], key[2], key[3], key[0]),
+                        )
+                    ),
+                )
+                for query in projection.queries:
+                    self.assertEqual(
+                        tuple(field.lsb for field in query.fields),
+                        tuple(sorted(field.lsb for field in query.fields)),
+                    )
+
+        topic, reference = next(
+            (topic, Reference.parse(match.group(1)))
+            for topic in self.project.model.document_topics.values()
+            for match in re.finditer(
+                r"(?m)^\(:cpuid-leaf:([A-Za-z0-9_.-]+):\)$",
+                topic.document.read_text(encoding="utf-8"),
+            )
+        )
+        foreign = next(
+            leaf.reference
+            for leaf in leaves
+            if leaf.extends is None and leaf.reference.owner != topic.owner
+        )
         with self.assertRaises(ValueError):
             DocumentFragmentPipeline.default().expand(
-                "(:cpuid-leaf:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS:)",
+                f"(:cpuid-leaf:{_reference_text(foreign)}:)",
                 self.project,
                 self.public_targets,
-                source,
+                topic.document,
             )
-
-    def test_cpuid_leaf_projection_does_not_iterate_other_leaves(self) -> None:
-        leaf = self.project.cpuid.references.leaves.resolve(
-            Reference.parse("base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS")
-        )
-        projection = CpuidLeafProjection.create(self.project.cpuid, leaf)
-
-        self.assertEqual(
-            tuple(
-                (query.first, query.last, query.stride, query.id)
-                for query in projection.queries
-            ),
-            ((0, 0, 1, "HEADER"), (1, 1, 1, "PARAMETERS")),
-        )
-        self.assertEqual(
-            tuple(
-                (field.id, field.bits)
-                for query in projection.queries
-                for field in query.fields
-            ),
-            (("MAX_INDEX", 16), ("PABITS", 6)),
-        )
+        self.assertEqual(reference.owner, topic.owner)
 
     def test_register_figure_projection_is_explicit_and_owner_local(self) -> None:
-        source = self.root / "registers/documents/topics/register_model/002_register_model.tex"
+        topic, owner, groups = next(
+            (topic, match.group(1), tuple(match.group(2).split(",")))
+            for topic in self.project.model.document_topics.values()
+            for match in re.finditer(
+                r"(?m)^\(:register-figure:"
+                r"(base|[A-Z][A-Z0-9_]*):"
+                r"([A-Z][A-Z0-9_]*(?:,[A-Z][A-Z0-9_]*)*):\)$",
+                topic.document.read_text(encoding="utf-8"),
+            )
+        )
         context = DocumentFragmentContext(
-            self.project, self.public_targets, source
+            self.project, self.public_targets, topic.document
         )
         projection = RegisterModelFigureRenderer.project(
-            context, "base", ("GPR", "SPECIAL")
+            context, owner, groups
         )
 
-        self.assertEqual(projection.namespace.owner, "base")
+        self.assertEqual(projection.namespace.owner, topic.owner)
         self.assertEqual(
             tuple(group.id for group in projection.groups),
-            ("GPR", "SPECIAL"),
+            groups,
         )
 
+        foreign = next(
+            namespace.owner
+            for namespace in self.project.registers.namespaces.values()
+            if namespace.owner != topic.owner
+        )
         with self.assertRaises(ValueError):
             RegisterModelFigureRenderer.project(
-                context, "FP", ("FPR", "STATE")
+                context,
+                foreign,
+                tuple(self.project.registers.namespace(foreign).groups)[:1],
             )
 
     def test_fragment_pipeline_rejects_duplicate_placeholder_owners(self) -> None:

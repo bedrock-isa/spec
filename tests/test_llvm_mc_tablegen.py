@@ -36,7 +36,7 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             ArtifactGenerationContext.create(cls.workspace, ROOT)
         )
         cls.projection = generator.projection
-        cls.catalog = generated.artifact("BedrockGenISACatalog.td").content
+        cls.catalog = generated.artifact(definition.outputs["catalog"]).content
 
     @staticmethod
     def _form_identifier(bundle: InstructionBundle, form: EncodingForm) -> str:

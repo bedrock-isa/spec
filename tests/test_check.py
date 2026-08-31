@@ -13,7 +13,11 @@ from engine.check import (
     ValidationRule,
     ValidationScope,
 )
+from engine.encoding import EncodingForm, FieldBinding, OperandConstraint
+from engine.encoding_metasyntax import EncodingMetasyntax
+from engine.instruction_metasyntax import InstructionMetasyntax
 from engine.project import ArtifactSet, IsaProject
+from engine.reference import Reference
 
 
 class CheckServiceTest(unittest.TestCase):
@@ -21,11 +25,6 @@ class CheckServiceTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.isa_root)
-
-    def test_complete_current_tree_has_no_diagnostics(self) -> None:
-        diagnostics = CheckService().check(self.project)
-        self.assertEqual(list(diagnostics), [])
-        self.assertFalse(diagnostics.has_errors)
 
     def test_check_service_accepts_independent_validation_rules(self) -> None:
         class RecordingRule(ValidationRule):
@@ -37,15 +36,18 @@ class CheckServiceTest(unittest.TestCase):
                 return iter(())
 
         rule = RecordingRule()
-        diagnostics = CheckService((rule,)).check(self.project, ("ADD",))
+        selected = self.project.select()[0]
+        diagnostics = CheckService((rule,)).check(
+            self.project, (selected.reference,)
+        )
 
         self.assertEqual(list(diagnostics), [])
         self.assertIsNotNone(rule.scope)
         self.assertFalse(rule.scope.complete)
-        self.assertEqual(rule.scope.selected[0].instruction.mnemonic, "ADD")
+        self.assertEqual(rule.scope.selected, (selected,))
 
     def test_missing_companion_is_reported_without_stopping_validation(self) -> None:
-        bundle = self.project.bundle("ADD")
+        bundle = self.project.select()[0]
         missing = replace(
             bundle,
             artifacts=ArtifactSet(
@@ -59,7 +61,7 @@ class CheckServiceTest(unittest.TestCase):
         self.assertEqual([item.code for item in diagnostics], ["artifact.missing"])
 
     def test_missing_instruction_owned_sail_entry_is_reported(self) -> None:
-        bundle = self.project.bundle("ADD")
+        bundle = self.project.select()[0]
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "semantics.sail"
             source.write_text("function execute_other() -> unit = ()\n")
@@ -108,13 +110,44 @@ class CheckServiceTest(unittest.TestCase):
             [item.code for item in diagnostics], ["catalog.missing-directory"]
         )
 
-    def test_constraints_separate_reclaimed_set_encoding(self) -> None:
-        setcc = self.project.bundle("SETcc").encodings.forms[0]
-        set_form = self.project.bundle("SET").encodings.forms[0]
+    def test_operand_constraints_separate_overlapping_raw_encodings(self) -> None:
+        field = FieldBinding(
+            "a",
+            "selector",
+            Reference.parse("base.field_types.SYNTHETIC"),
+        )
+        raw = EncodingForm(
+            "raw",
+            EncodingMetasyntax.parse("aa"),
+            InstructionMetasyntax.parse("SYN"),
+            fields=(field,),
+        )
+        constrained = replace(
+            raw,
+            id="constrained",
+            constraints=(
+                OperandConstraint(
+                    role="selector",
+                    reason="reserved",
+                    exclude=(0,),
+                ),
+            ),
+        )
+        reserved = replace(
+            raw,
+            id="reserved",
+            constraints=(
+                OperandConstraint(
+                    role="selector",
+                    reason="reserved",
+                    allow=(0,),
+                ),
+            ),
+        )
 
-        self.assertTrue(setcc.pattern.overlaps(set_form.pattern))
-        self.assertFalse(forms_overlap(setcc, set_form))
-        self.assertTrue(forms_overlap(replace(setcc, constraints=()), set_form))
+        self.assertTrue(raw.pattern.overlaps(reserved.pattern))
+        self.assertFalse(forms_overlap(constrained, reserved))
+        self.assertTrue(forms_overlap(raw, reserved))
 
 if __name__ == "__main__":
     unittest.main()

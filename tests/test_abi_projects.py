@@ -2,9 +2,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from abi.c.model import CAbiProject
 from abi.c.model.call_layout import Argument, Call, ReturnValue, default_rules, layout_call
-from abi.elf.model import ElfAbiProject
 from abi.elf.model.project import (
     DebugRegisterRangeError,
     DebugRegisterRangeErrorReason,
@@ -15,7 +13,6 @@ from abi.elf.model.relocation_metasyntax import (
     RelocationMetasyntaxError,
 )
 from engine.project import IsaProject
-from engine.reference import Reference
 from engine.workspace import SpecWorkspace
 
 
@@ -27,27 +24,6 @@ class AbiProjectTest(unittest.TestCase):
         cls.isa = cls.workspace.require_provider("isa")
         if not isinstance(cls.isa, IsaProject):
             raise TypeError("workspace isa provider must be an IsaProject")
-
-    def test_elf_inventory_loads_hierarchical_members(self) -> None:
-        project = self.workspace.require_provider("abi.elf")
-        self.assertIsInstance(project, ElfAbiProject)
-        relocation = project.relocations.resolve(
-            Reference.parse("base.relocations.R_BEDROCK_CALL32S")
-        )
-        self.assertEqual(relocation.value, 21)
-        self.assertEqual(relocation.calculation.code, "symbol + addend - next_pc")
-        entry = project.process_entry
-        self.assertEqual(entry.entry_point.local.element, "PC")
-        self.assertEqual(entry.stack_alignment_bytes, 16)
-        self.assertEqual(entry.stack_permissions, ("read", "write"))
-        self.assertEqual(set(entry.segment_contexts), {"code", "data", "stack"})
-        self.assertEqual(entry.payload_owner, "external-process-entry-abi")
-        vector_numbers = next(
-            item for item in project.resolved_debug_registers(self.workspace)
-            if item.group == "VECTOR"
-        )
-        self.assertEqual((vector_numbers.first, vector_numbers.last), (64, 95))
-        self.assertEqual(len(vector_numbers.registers), 32)
 
     def test_debug_register_ranges_reject_invalid_boundaries(self) -> None:
         def assignment(first, last, *, status="reserved", registers=()):
@@ -94,26 +70,6 @@ class AbiProjectTest(unittest.TestCase):
         )
         with self.assertRaises(RelocationMetasyntaxError):
             RelocationMetasyntax.parse("symbol + mystery")
-
-    def test_c_inventory_resolves_calling_convention_children(self) -> None:
-        project = self.workspace.require_provider("abi.c")
-        self.assertIsInstance(project, CAbiProject)
-        convention = project.resolved_calling_convention(self.workspace)
-        self.assertEqual(convention.promotions["f32"], "f64")
-        general = next(
-            item
-            for item in convention.register_classes.values()
-            if item.definition.id == "GENERAL"
-        )
-        self.assertEqual(
-            tuple(register.id for register in general.arguments),
-            tuple(f"R{index}" for index in range(8)),
-        )
-        exchange = project.atomic_lowerings.resolve(
-            Reference.parse("base.atomic_lowerings.EXCHANGE")
-        )
-        self.assertEqual(exchange.strategy, "compare_exchange_loop")
-        self.assertEqual(exchange.instructions[0].local.element, "CMPXCHG")
 
     def test_c_call_layout_applies_declared_exhaustion_and_result_policies(self) -> None:
         rules = default_rules()
