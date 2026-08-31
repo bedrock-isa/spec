@@ -20,7 +20,7 @@ from engine.workspace import SpecWorkspace
 class SailCompositionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.workspace = SpecWorkspace.load(Path(__file__).parents[2])
+        cls.workspace = SpecWorkspace.load(Path(__file__).parents[1])
         project = cls.workspace.require_provider("isa")
         if not isinstance(project, IsaProject):
             raise TypeError("workspace isa provider must be an IsaProject")

@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator
 class CpuidSchemaTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        schemas = Path(__file__).parents[1] / "schemas"
+        schemas = Path(__file__).parents[1] / "isa/schemas"
         cls.class_validator = Draft202012Validator(
             yaml.safe_load((schemas / "cpuid-class.yaml").read_text(encoding="utf-8"))
         )

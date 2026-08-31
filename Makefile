@@ -16,8 +16,8 @@ SV_BUILD_DIR ?= $(BUILD_DIR)/systemverilog-decoder
 SV_TEST_ROOT ?= $(SV_BUILD_DIR)/tests
 EMULATOR_MANIFEST := emulator/Cargo.toml
 EMULATOR_TARGET_DIR ?= $(abspath $(BUILD_DIR)/emulator-target)
-ISA_PYTHON_TEST_PATHS := $(shell find isa/tests -type f -name 'test_*.py' -print)
-ISA_PYTHON_TEST_MODULES := $(sort $(subst /,.,$(patsubst %.py,%,$(ISA_PYTHON_TEST_PATHS))))
+SPEC_PYTHON_TEST_PATHS := $(shell find tests -type f -name 'test_*.py' -print)
+SPEC_PYTHON_TEST_MODULES := $(sort $(subst /,.,$(patsubst %.py,%,$(SPEC_PYTHON_TEST_PATHS))))
 LLVM_PROJECT_ROOT ?= $(abspath ../llvm-project)
 LLVM_BUILD_DIR ?= $(LLVM_PROJECT_ROOT)/build
 LLVM_BIN ?= $(LLVM_BUILD_DIR)/bin
@@ -69,7 +69,7 @@ emulator-validate:
 
 test-fast:
 	$(PYTHON) -m engine check
-	$(PYTHON) -m unittest $(ISA_PYTHON_TEST_MODULES)
+	$(PYTHON) -m unittest $(SPEC_PYTHON_TEST_MODULES)
 	+$(MAKE) -j1 emulator-isa-check
 	+$(MAKE) -j1 emulator-format
 	$(CARGO) test --manifest-path "$(EMULATOR_MANIFEST)" --workspace \
@@ -78,8 +78,8 @@ test-fast:
 
 test-hardware:
 	SV_TEST_ROOT="$(SV_TEST_ROOT)" \
-		$(PYTHON) -m unittest isa.tests.test_systemverilog_decoder \
-		isa.tests.test_systemverilog_architecture_artifacts
+		$(PYTHON) -m unittest tests.test_systemverilog_decoder \
+		tests.test_systemverilog_architecture_artifacts
 
 test-pr:
 	+$(MAKE) -j1 test-fast

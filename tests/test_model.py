@@ -15,7 +15,7 @@ from engine.model import (
 from engine.reference import Reference
 
 
-SCHEMA = Path(__file__).parents[1] / "schemas/model.yaml"
+SCHEMA = Path(__file__).parents[1] / "isa/schemas/model.yaml"
 
 
 class ModelCatalogTest(unittest.TestCase):

@@ -15,7 +15,7 @@ from engine.terminology import TermCatalog
 class TermCatalogTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.catalog = TermCatalog.load(
             cls.isa_root, ExtensionSetCatalog.load(cls.isa_root)
         )

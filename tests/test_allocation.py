@@ -50,7 +50,7 @@ class AllocationCubeTest(unittest.TestCase):
 class AllocationAnalyzerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.isa_root)
         cls.analyzer = AllocationAnalyzer()
         cls.entries = cls.analyzer.entries(cls.project)

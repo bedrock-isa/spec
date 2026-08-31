@@ -11,7 +11,7 @@ from engine.workspace import SpecWorkspace
 class InstructionSemanticsContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.workspace = SpecWorkspace.load(Path(__file__).parents[2])
+        cls.workspace = SpecWorkspace.load(Path(__file__).parents[1])
         cls.sail = shutil.which("sail")
         if cls.sail is None:
             raise RuntimeError("Sail executable is required for semantic tests")

@@ -14,7 +14,7 @@ from engine.instruction import (
 class InstructionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
 
     @staticmethod
     def document() -> dict:

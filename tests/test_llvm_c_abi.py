@@ -13,7 +13,7 @@ from engine.workspace import SpecWorkspace
 from engine.yaml_document import YamlDocumentLoader
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class LlvmCAbiArtifactTests(unittest.TestCase):

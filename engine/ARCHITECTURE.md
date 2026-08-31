@@ -919,5 +919,5 @@ python -m engine check ADD
 python -m engine alloc summary
 python -m engine alloc entries extralong --space vector
 python -m engine alloc holes xxlong --space vector --min-slots 16
-python -m pytest -q isa/tests
+python -m pytest -q tests
 ```

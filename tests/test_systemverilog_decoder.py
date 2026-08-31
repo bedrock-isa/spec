@@ -21,7 +21,7 @@ from engine.workspace import SpecWorkspace
 class SystemVerilogDecoderTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.root = Path(__file__).parents[1]
+        cls.root = Path(__file__).parents[1] / "isa"
         cls.workspace = SpecWorkspace.load(cls.root.parent)
         project = cls.workspace.require_provider("isa")
         if not isinstance(project, IsaProject):

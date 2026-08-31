@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator
 class InstructionSchemaTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        isa_root = Path(__file__).parents[1]
+        isa_root = Path(__file__).parents[1] / "isa"
         cls.schema = yaml.safe_load(
             (isa_root / "schemas/instruction.yaml").read_text(encoding="utf-8")
         )

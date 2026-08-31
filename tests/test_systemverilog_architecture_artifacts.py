@@ -16,7 +16,7 @@ from engine.workspace import SpecWorkspace
 class SystemVerilogArchitectureArtifactsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.repository = Path(__file__).parents[2]
+        cls.repository = Path(__file__).parents[1]
         cls.workspace = SpecWorkspace.load(cls.repository)
         cls.registry = ArtifactGeneratorRegistry.discover(cls.workspace)
         project = cls.workspace.require_provider("isa")

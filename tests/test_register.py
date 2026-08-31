@@ -16,7 +16,7 @@ from engine.type_system import PayloadTypeKind, TypeSystem
 class RegisterCatalogTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.extensions = ExtensionSetCatalog.load(cls.isa_root)
         cls.catalog = RegisterCatalog.load(cls.isa_root, cls.extensions)
         cls.types = TypeSystem.load(cls.isa_root, cls.extensions)

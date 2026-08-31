@@ -14,7 +14,7 @@ from engine.reference import Reference
 class EventCatalogTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.events = EventCatalog.load(
             cls.isa_root, ExtensionSetCatalog.load(cls.isa_root)
         )

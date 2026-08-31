@@ -87,7 +87,7 @@ class GenerationTest(unittest.TestCase):
     def test_artifact_schema_requires_valid_named_outputs(
         self,
     ) -> None:
-        repository = Path(__file__).parents[2]
+        repository = Path(__file__).parents[1]
         schema = YamlDocumentLoader().mapping(repository / "artifacts/schema.yaml")
         invalid_definitions = {
             "missing_outputs": "id: example\ngenerator: generator.py\n",
@@ -115,7 +115,7 @@ class GenerationTest(unittest.TestCase):
             source = artifact_root / "combined-reference"
             source.mkdir(parents=True)
             (artifact_root / "schema.yaml").write_text(
-                (Path(__file__).parents[2] / "artifacts/schema.yaml").read_text()
+                (Path(__file__).parents[1] / "artifacts/schema.yaml").read_text()
             )
             (source / "artifact.yaml").write_text(
                 """id: combined-reference

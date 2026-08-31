@@ -92,7 +92,7 @@ class _RejectingValidator:
 class DocumentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.root = Path(__file__).parents[1].resolve()
+        cls.root = (Path(__file__).parents[1] / "isa").resolve()
         cls.repository = cls.root.parent
         cls.workspace = SpecWorkspace.load(cls.repository)
         project = cls.workspace.require_provider("isa")

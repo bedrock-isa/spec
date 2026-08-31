@@ -17,7 +17,7 @@ def _reference_text(reference: Reference[object]) -> str:
 class VectorDiagramTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.root = Path(__file__).parents[1]
+        cls.root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.root)
         cls.schema = yaml.safe_load(
             (cls.root / "schemas/vector-diagram.yaml").read_text(encoding="utf-8")

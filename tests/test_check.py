@@ -19,7 +19,7 @@ from engine.project import ArtifactSet, IsaProject
 class CheckServiceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.isa_root)
 
     def test_complete_current_tree_has_no_diagnostics(self) -> None:

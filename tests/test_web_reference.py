@@ -12,7 +12,7 @@ from engine.workspace import SpecWorkspace
 class WebReferenceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.repository = Path(__file__).parents[2]
+        cls.repository = Path(__file__).parents[1]
         cls.workspace = SpecWorkspace.load(cls.repository)
         cls.project = cls.workspace.require_provider("isa")
         if not isinstance(cls.project, IsaProject):

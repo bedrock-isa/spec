@@ -67,7 +67,7 @@ class EncodingMetasyntaxTest(unittest.TestCase):
 class EncodingMetasyntaxSchemaTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        isa_root = Path(__file__).parents[1]
+        isa_root = Path(__file__).parents[1] / "isa"
         cls.schema = yaml.safe_load(
             (isa_root / "schemas/encoding-metasyntax.yaml").read_text(
                 encoding="utf-8"

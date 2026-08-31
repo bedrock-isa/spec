@@ -9,7 +9,7 @@ from engine.type_system import TypeSystem
 class EAModeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
 
     def test_all_concrete_modes_validate(self) -> None:
         types = TypeSystem.load(self.isa_root)

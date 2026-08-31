@@ -10,7 +10,7 @@ from engine.__main__ import main
 class EngineCliTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
 
     def test_json_success_is_empty_array(self) -> None:
         output = io.StringIO()

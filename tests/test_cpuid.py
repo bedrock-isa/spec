@@ -15,7 +15,7 @@ from engine.reference import Reference
 class CpuidCatalogTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.isa_root)
 
     def test_loads_canonical_references(self) -> None:
