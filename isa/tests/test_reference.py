@@ -17,15 +17,16 @@ class ReferenceTest(unittest.TestCase):
         self.assertEqual(reference.owner, "VECTOR")
         self.assertEqual(reference.path, ("vea", "EXT2"))
         self.assertEqual(reference.element, "explicit_segment_index")
-        self.assertEqual(str(reference), "VECTOR.vea.EXT2.explicit_segment_index")
+        self.assertEqual(
+            reference,
+            Reference("VECTOR", ("vea", "EXT2"), "explicit_segment_index"),
+        )
 
     def test_path_may_be_empty(self) -> None:
         self.assertEqual(Reference.parse("base.ADD").path, ())
 
     def test_document_style_hyphenated_segments_are_supported(self) -> None:
-        reference = Reference.parse(
-            "base.architecture.terminology.address-values"
-        )
+        reference = Reference.parse("base.architecture.terminology.address-values")
 
         self.assertEqual(reference.element, "address-values")
 
@@ -36,22 +37,25 @@ class ReferenceTest(unittest.TestCase):
 
     def test_index_normalizes_and_resolves_references(self) -> None:
         index = ReferenceIndex[int]()
-        reference = index.register("base.ea.compact.register", 7)
+        reference = index.register(Reference.parse("base.ea.compact.register"), 7)
 
         self.assertEqual(index.resolve(reference), 7)
-        self.assertEqual(index["base.ea.compact.register"], 7)
+        self.assertEqual(index[reference], 7)
         with self.assertRaises(DuplicateReferenceError):
             index.register(reference, 8)
         with self.assertRaises(UnknownReferenceError):
-            index.resolve("base.ea.compact.immediate")
+            index.resolve(Reference.parse("base.ea.compact.immediate"))
 
     def test_index_membership_does_not_resolve_missing_references(self) -> None:
         index = ReferenceIndex[int]()
-        index.register("base.field_types.Rn", 4)
+        existing = Reference.parse("base.field_types.Rn")
+        missing = Reference.parse("base.field_types.Missing")
+        index.register(existing, 4)
 
-        self.assertIn("base.field_types.Rn", index)
-        self.assertNotIn("base.field_types.Missing", index)
-        self.assertNotIn("not-a-reference", index)
+        self.assertIn(existing, index)
+        self.assertNotIn(missing, index)
+        with self.assertRaises(ReferenceError):
+            "not-a-reference" in index
 
     def test_qualified_reference_separates_domain_from_local_owner(self) -> None:
         reference = QualifiedReference.parse(
@@ -63,8 +67,11 @@ class ReferenceTest(unittest.TestCase):
         self.assertEqual(reference.local.path, ("intrinsics", "fpu"))
         self.assertEqual(reference.local.element, "fclass_f32")
         self.assertEqual(
-            str(reference),
-            "interfaces.c:FP.intrinsics.fpu.fclass_f32",
+            reference,
+            QualifiedReference(
+                "interfaces.c",
+                Reference("FP", ("intrinsics", "fpu"), "fclass_f32"),
+            ),
         )
 
     def test_local_reference_can_be_qualified_in_provider_context(self) -> None:
@@ -73,8 +80,11 @@ class ReferenceTest(unittest.TestCase):
         )
 
         self.assertEqual(
-            str(reference),
-            "interfaces.c:base.types.mmu.query_result",
+            reference,
+            QualifiedReference(
+                "interfaces.c",
+                Reference("base", ("types", "mmu"), "query_result"),
+            ),
         )
 
     def test_unqualified_reference_requires_context(self) -> None:

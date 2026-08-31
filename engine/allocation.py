@@ -20,6 +20,22 @@ from .reference import Reference
 IMMEDIATE_EA_VALUES = frozenset(range(0x5B, 0x5F))
 
 
+class CandidateOutsideNamespaceError(ValueError):
+    """An allocation candidate is outside its selected namespace."""
+
+    def __init__(
+        self,
+        encoding_class: str,
+        pattern: str,
+        space: str | None,
+    ) -> None:
+        self.encoding_class = encoding_class
+        self.pattern = pattern
+        self.space = space
+        scope = f"{encoding_class}/{space}" if space else encoding_class
+        super().__init__(f"candidate {pattern} is outside {scope} namespace")
+
+
 @dataclass(frozen=True, slots=True)
 class AllocationCube:
     """A set of bit strings represented by fixed-bit mask and value."""
@@ -302,11 +318,7 @@ class AllocationAnalyzer:
         owner = encoding_class(class_name)
         regions = search_regions(owner, space=space, leading=leading)
         entries = self.entries(project, owner.name, space=space, leading=leading)
-        unavailable = tuple(
-            cube
-            for entry in entries
-            for cube in (entry.legal_cubes if include_reclaimed else entry.raw_cubes)
-        )
+        unavailable = unavailable_cubes(entries, include_reclaimed=include_reclaimed)
         cubes = [cube for region in regions for cube in _uncovered(region, unavailable)]
         if max_slots is not None:
             cubes = [piece for cube in cubes for piece in _cap_cube(cube, max_slots)]
@@ -331,8 +343,11 @@ class AllocationAnalyzer:
         candidate = AllocationCube.parse(pattern, owner.allocation_bits)
         regions = search_regions(owner, space=space)
         if covered_slots((candidate,), regions) != candidate.slots:
-            scope = f"{owner.name}/{space}" if space else owner.name
-            raise ValueError(f"candidate {candidate.pattern} is outside {scope} namespace")
+            raise CandidateOutsideNamespaceError(
+                owner.name,
+                candidate.pattern,
+                space,
+            )
         entries = self.entries(project, owner.name, space=space)
         legal = tuple(cube for entry in entries for cube in entry.legal_cubes)
         raw = tuple(cube for entry in entries for cube in entry.raw_cubes)
@@ -372,6 +387,20 @@ class AllocationAnalyzer:
             (AllocationCube.from_encoding(form),),
             form_cubes(form),
         )
+
+
+def unavailable_cubes(
+    entries: tuple[AllocationEntry, ...],
+    *,
+    include_reclaimed: bool,
+) -> tuple[AllocationCube, ...]:
+    """Return the occupied cubes under the requested allocation policy."""
+
+    return tuple(
+        cube
+        for entry in entries
+        for cube in (entry.legal_cubes if include_reclaimed else entry.raw_cubes)
+    )
 
 
 def numeric_bounds(value: int | str) -> tuple[int, int] | None:

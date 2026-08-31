@@ -4,7 +4,11 @@ import unittest
 from pathlib import Path
 
 from engine.extension import ExtensionSetCatalog
-from engine.register import RegisterCatalog
+from engine.register import (
+    RegisterCatalog,
+    RegisterGroupSourceConflictError,
+    RegisterWidthDomainOrderError,
+)
 from engine.reference import Reference
 from engine.type_system import PayloadTypeKind, TypeSystem
 
@@ -52,7 +56,7 @@ class RegisterCatalogTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(ValueError, "unique and increasing"):
+            with self.assertRaises(RegisterWidthDomainOrderError):
                 RegisterCatalog.load(root)
 
     def test_loads_fixed_explicit_inventory_and_layout_companions(self) -> None:
@@ -110,7 +114,7 @@ class RegisterCatalogTest(unittest.TestCase):
                 "registers: []\n", encoding="utf-8"
             )
 
-            with self.assertRaisesRegex(ValueError, "exactly one"):
+            with self.assertRaises(RegisterGroupSourceConflictError):
                 RegisterCatalog.load(root)
 
     def fixture(self):

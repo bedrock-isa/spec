@@ -47,6 +47,14 @@ class _Band:
     height: float
 
 
+@dataclass(frozen=True, slots=True)
+class RegisterFigureProjection:
+    """One owner-local ordered register-group selection."""
+
+    namespace: RegisterNamespace
+    groups: tuple[RegisterGroup, ...]
+
+
 class RegisterModelFigureRenderer(DocumentFragmentProvider):
     """Expand explicitly selected register groups in their owning topic."""
 
@@ -66,6 +74,24 @@ class RegisterModelFigureRenderer(DocumentFragmentProvider):
         if not matches:
             return text
 
+        def replacement(match: re.Match[str]) -> str:
+            owner = match.group(1)
+            group_ids = tuple(match.group(2).split(","))
+            projection = self.project(context, owner, group_ids)
+            return "\n".join(
+                _render_figure(projection.namespace, projection.groups)
+            )
+
+        return _DIRECTIVE_RE.sub(replacement, text)
+
+    @staticmethod
+    def project(
+        context: DocumentFragmentContext,
+        owner: str,
+        group_ids: tuple[str, ...],
+    ) -> RegisterFigureProjection:
+        """Resolve one register figure against its owning topic."""
+
         source = context.source.resolve() if context.source is not None else None
         topics = tuple(
             topic
@@ -76,32 +102,27 @@ class RegisterModelFigureRenderer(DocumentFragmentProvider):
             raise ValueError(
                 f"{context.source}: register figure placement requires one topic owner"
             )
-        topic = topics[0]
-
-        def replacement(match: re.Match[str]) -> str:
-            owner = match.group(1)
-            if owner != topic.owner:
-                raise ValueError(
-                    f"{context.source}: register owner {owner!r} does not match "
-                    f"topic owner {topic.owner!r}"
-                )
-            namespace = context.project.registers.namespace(owner)
-            group_ids = tuple(match.group(2).split(","))
-            duplicates = sorted(
-                group_id
-                for group_id in set(group_ids)
-                if group_ids.count(group_id) > 1
+        if owner != topics[0].owner:
+            raise ValueError(
+                f"{context.source}: register owner {owner!r} does not match "
+                f"topic owner {topics[0].owner!r}"
             )
-            unknown = sorted(set(group_ids) - set(namespace.groups))
-            if duplicates or unknown:
-                raise ValueError(
-                    f"{context.source}: invalid register figure groups; "
-                    f"duplicates={duplicates}, unknown={unknown}"
-                )
-            groups = tuple(namespace.groups[group_id] for group_id in group_ids)
-            return "\n".join(_render_figure(namespace, groups))
-
-        return _DIRECTIVE_RE.sub(replacement, text)
+        namespace = context.project.registers.namespace(owner)
+        duplicates = sorted(
+            group_id
+            for group_id in set(group_ids)
+            if group_ids.count(group_id) > 1
+        )
+        unknown = sorted(set(group_ids) - set(namespace.groups))
+        if duplicates or unknown:
+            raise ValueError(
+                f"{context.source}: invalid register figure groups; "
+                f"duplicates={duplicates}, unknown={unknown}"
+            )
+        return RegisterFigureProjection(
+            namespace,
+            tuple(namespace.groups[group_id] for group_id in group_ids),
+        )
 
 
 def _render_figure(

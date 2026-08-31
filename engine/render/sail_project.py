@@ -5,15 +5,32 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
+from dataclasses import dataclass
 
 from ..composition import SailProgram
 from ..model import SailUnit
 
 
+@dataclass(frozen=True, slots=True)
+class SailProjectModule:
+    """One owned module in the generated Sail project."""
+
+    name: str
+    requirements: tuple[str, ...]
+    sources: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SailProject:
+    """Semantic Sail project structure before textual serialization."""
+
+    modules: tuple[SailProjectModule, ...]
+
+
 class SailProjectRenderer:
-    def render(self, program: SailProgram, output_root: str | Path) -> str:
+    def project(self, program: SailProgram, output_root: str | Path) -> SailProject:
         root = Path(output_root).resolve()
-        lines = ["registry {", "  files generated/registry.sail", "}", ""]
+        modules = [SailProjectModule("registry", (), ("generated/registry.sail",))]
         selected = {unit.reference: unit for unit in program.sail_units}
         boundary = next(
             (
@@ -41,14 +58,8 @@ class SailProjectRenderer:
             )
             if unit.owner == "base" and unit.id == "decode":
                 sources = ("generated/catalog.sail", *sources)
-            lines.extend(
-                [
-                    f"{_module_name(unit)} {{",
-                    f"  requires {', '.join(requirements)}",
-                    *_render_sources(sources),
-                    "}",
-                    "",
-                ]
+            modules.append(
+                SailProjectModule(_module_name(unit), tuple(requirements), sources)
             )
 
         operation_sources = tuple(
@@ -60,14 +71,12 @@ class SailProjectRenderer:
         operation_requirements = [
             "registry", *(_module_name(unit) for unit in ordinary_units)
         ]
-        lines.extend(
-            [
-                "operation_entries {",
-                f"  requires {', '.join(operation_requirements)}",
-                *_render_sources(operation_sources),
-                "}",
-                "",
-            ]
+        modules.append(
+            SailProjectModule(
+                "operation_entries",
+                tuple(operation_requirements),
+                operation_sources,
+            )
         )
 
         if boundary is not None:
@@ -81,15 +90,19 @@ class SailProjectRenderer:
                 Path(os.path.relpath(source, root)).as_posix()
                 for source in boundary.sources
             )
-            lines.extend(
-                [
-                    f"{_module_name(boundary)} {{",
-                    f"  requires {', '.join(requirements)}",
-                    *_render_sources(sources),
-                    "}",
-                    "",
-                ]
+            modules.append(
+                SailProjectModule(_module_name(boundary), tuple(requirements), sources)
             )
+        return SailProject(tuple(modules))
+
+    def render(self, program: SailProgram, output_root: str | Path) -> str:
+        lines: list[str] = []
+        for module in self.project(program, output_root).modules:
+            lines.append(f"{module.name} {{")
+            if module.requirements:
+                lines.append(f"  requires {', '.join(module.requirements)}")
+            lines.extend(_render_sources(module.sources))
+            lines.extend(("}", ""))
         return "\n".join(lines)
 
 

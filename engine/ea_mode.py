@@ -19,6 +19,10 @@ from .reference import Reference, ReferenceError
 from .type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
 
 
+class EAModeSchemaError(ValueError):
+    """An EA mode document violates its structural schema."""
+
+
 class EABaseSource(StrEnum):
     """Typed source of the base term in one EA mode expression."""
 
@@ -228,7 +232,7 @@ class EAMode(MutableMapping[str, Any]):
             error = errors[0]
             location = ".".join(str(part) for part in error.absolute_path)
             where = f" at {location}" if location else ""
-            raise ValueError(f"{self.source}{where}: {error.message}")
+            raise EAModeSchemaError(f"{self.source}{where}: {error.message}")
 
         field_type_references, payload_type_references = self._parse_type_references()
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ from ..composition.document import (
     TopicBlock,
 )
 from ..project import InstructionBundle
+from ..model import DocumentTopic
 from ..semantic_text import (
     EntityReferenceText,
     LiteralText,
@@ -231,7 +233,6 @@ class TermGroupRenderer:
         public_targets: PublicTargetCatalog,
         dependencies=None,
     ) -> str:
-        catalog = project.terminology
         heading = rf"\subsection{{{tex_escape(group.title)}}}"
         if public_targets.contains(group.reference):
             heading += rf"\label{{{public_targets.label(group.reference)}}}"
@@ -276,6 +277,27 @@ class TermGroupRenderer:
         return anchor + f"{subject} is {definition}"
 
 
+@dataclass(frozen=True, slots=True)
+class InstructionBitSegment:
+    label: str
+    width: int
+    fixed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class InstructionByteProjection:
+    index: int
+    segments: tuple[InstructionBitSegment, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class InstructionFormatProjection:
+    """One instruction form split into its reader-facing byte layout."""
+
+    form: "EncodingForm"
+    bytes: tuple[InstructionByteProjection, ...]
+
+
 class InstructionEntryRenderer:
     """Render one instruction bundle from the current typed model."""
 
@@ -284,6 +306,7 @@ class InstructionEntryRenderer:
         bundle: InstructionBundle,
         types: "TypeSystem",
         description: str | None = None,
+        formats: tuple[InstructionFormatProjection, ...] | None = None,
     ) -> str:
         instruction = bundle.instruction
         mnemonic = instruction.mnemonic
@@ -324,7 +347,7 @@ class InstructionEntryRenderer:
             [
                 r"\BedrockInstructionDescriptionHeading{Detailed Semantics}",
                 description,
-                self._forms(bundle, types),
+                self._forms(bundle, types, formats or self.project_formats(bundle)),
                 r"\end{BedrockInstruction}",
             ]
         )
@@ -339,16 +362,47 @@ class InstructionEntryRenderer:
         rendered = "".join(rf"\noindent {line}\par " for line in lines)
         return rf"\begin{{BedrockRaggedBlock}}{rendered}\end{{BedrockRaggedBlock}}"
 
-    def _forms(self, bundle: InstructionBundle, types: "TypeSystem") -> str:
+    @classmethod
+    def project_formats(
+        cls, bundle: InstructionBundle
+    ) -> tuple[InstructionFormatProjection, ...]:
+        return tuple(
+            InstructionFormatProjection(
+                form,
+                tuple(
+                    InstructionByteProjection(
+                        index,
+                        tuple(
+                            InstructionBitSegment(
+                                label,
+                                width,
+                                set(label) <= {"0", "1"},
+                            )
+                            for label, width in segments
+                        ),
+                    )
+                    for index, segments in enumerate(cls._instruction_bytes(form))
+                ),
+            )
+            for form in bundle.encodings.forms
+        )
+
+    def _forms(
+        self,
+        bundle: InstructionBundle,
+        types: "TypeSystem",
+        formats: tuple[InstructionFormatProjection, ...],
+    ) -> str:
         blocks = [r"\begin{BedrockInstructionForms}"]
-        for index, form in enumerate(bundle.encodings.forms):
+        for index, projected in enumerate(formats):
+            form = projected.form
             blocks.extend(
                 [
                     r"\begin{BedrockFormBlock}{2.75in}",
                     *([r"\BedrockInstructionFormsHeading"] if index == 0 else []),
                     rf"\textbf{{{tex_code(form.syntax.code)}}}\par",
                     r"\BedrockInstructionFormatHeading",
-                    self._instruction_diagram(form),
+                    self._instruction_diagram(projected),
                 ]
             )
             descriptions = self._field_descriptions(bundle, form, types)
@@ -545,25 +599,23 @@ class InstructionEntryRenderer:
         )
 
     @classmethod
-    def _instruction_diagram(cls, form: "EncodingForm") -> str:
-        byte_segments = cls._instruction_bytes(form)
+    def _instruction_diagram(cls, projected: InstructionFormatProjection) -> str:
+        form = projected.form
         fields: list[str] = []
-        for byte_index, segments in enumerate(byte_segments):
+        for byte_index, byte in enumerate(projected.bytes):
             if byte_index:
                 fields.append(r"\BedrockBitGap{1}")
-            for label, width in segments:
-                macro = (
-                    "BedrockBitFixed"
-                    if set(label) <= {"0", "1"}
-                    else "BedrockBitVariable"
+            for segment in byte.segments:
+                macro = "BedrockBitFixed" if segment.fixed else "BedrockBitVariable"
+                fields.append(
+                    rf"\{macro}{{{tex_escape(segment.label)}}}{{{segment.width}}}"
                 )
-                fields.append(rf"\{macro}{{{tex_escape(label)}}}{{{width}}}")
         return "\n".join(
             [
                 rf"\begin{{BedrockBitDiagram}}{{Format: Instruction format for "
                 rf"{tex_escape(form.syntax.code)}}}",
                 rf"\BedrockBitFieldRow{{}}{{\BedrockByteRowLabels{{0}}"
-                rf"{{{len(byte_segments)}}}}}{{%",
+                rf"{{{len(projected.bytes)}}}}}{{%",
                 *fields,
                 "}",
                 r"\end{BedrockBitDiagram}",
@@ -661,6 +713,54 @@ class InstructionEntryRenderer:
         return left, right
 
 
+@dataclass(frozen=True, slots=True)
+class ProjectedTopic:
+    """One authored topic selected into the document projection."""
+
+    topic: DocumentTopic
+    content: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectedTermGroup:
+    """One selected terminology group and its rendered body."""
+
+    block: TermGroupBlock
+    content: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectedInstructionEntry:
+    """One selected instruction and its rendered body."""
+
+    bundle: InstructionBundle
+    formats: tuple[InstructionFormatProjection, ...]
+    content: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectedInstructionSet:
+    """One instruction-set block with its immediate public members."""
+
+    block: InstructionSetBlock
+    introduction: tuple[ProjectedTopic, ...]
+    instructions: tuple[ProjectedInstructionEntry, ...]
+
+
+ProjectedDocumentBlock = ProjectedTopic | ProjectedTermGroup | ProjectedInstructionSet
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentProjection:
+    """The complete reader-facing selection before TeX serialization."""
+
+    composition: DocumentComposition
+    preamble: str
+    title_page: str
+    blocks: tuple[ProjectedDocumentBlock, ...]
+    postamble: str
+
+
 class LatexDocumentRenderer:
     """Render one validated composition into a monolithic TeX source."""
 
@@ -684,41 +784,88 @@ class LatexDocumentRenderer:
     ) -> PublicTargetCatalog:
         return _document_public_targets(composition, project)
 
-    def render(self, composition: DocumentComposition, project) -> str:
+    def project(
+        self, composition: DocumentComposition, project
+    ) -> DocumentProjection:
         self.dependencies.clear()
         public_targets = self.public_targets(composition, project)
         artifact: Reference[Entity] = Reference(
             "base", ("artifacts",), composition.artifact
         )
-        parts = [
-            self.sources.render(
-                composition.preamble, project, public_targets, artifact
-            ),
-            self.sources.render(
-                composition.title_page, project, public_targets, artifact
-            ),
-        ]
+        projected: list[ProjectedDocumentBlock] = []
         for block in composition.blocks:
             if isinstance(block, TopicBlock):
-                parts.extend(
-                    [
-                        f"% topic: {block.topic.id}",
+                projected.append(
+                    ProjectedTopic(
+                        block.topic,
                         self._topic(block.topic, project, public_targets),
-                    ]
+                    )
                 )
             elif isinstance(block, TermGroupBlock):
-                parts.extend(
-                    [
-                        f"% term-group: {block.group.id}",
+                projected.append(
+                    ProjectedTermGroup(
+                        block,
                         self.terms.render(
                             block.group,
                             project,
                             public_targets,
                             self.dependencies,
                         ),
-                    ]
+                    )
                 )
             elif isinstance(block, InstructionSetBlock):
+                projected.append(
+                    ProjectedInstructionSet(
+                        block,
+                        tuple(
+                            ProjectedTopic(
+                                topic,
+                                self._topic(topic, project, public_targets),
+                            )
+                            for topic in block.introduction
+                        ),
+                        tuple(
+                            self._instruction_entry(
+                                bundle, project, public_targets
+                            )
+                            for bundle in block.instructions
+                        ),
+                    )
+                )
+        return DocumentProjection(
+            composition,
+            self.sources.render(
+                composition.preamble, project, public_targets, artifact
+            ),
+            self.sources.render(
+                composition.title_page, project, public_targets, artifact
+            ),
+            tuple(projected),
+            self.sources.render(
+                composition.postamble, project, public_targets, artifact
+            ),
+        )
+
+    def render(self, composition: DocumentComposition, project) -> str:
+        projection = self.project(composition, project)
+        parts = [projection.preamble, projection.title_page]
+        for projected in projection.blocks:
+            if isinstance(projected, ProjectedTopic):
+                parts.extend(
+                    [
+                        f"% topic: {projected.topic.id}",
+                        projected.content,
+                    ]
+                )
+            elif isinstance(projected, ProjectedTermGroup):
+                parts.extend(
+                    [
+                        f"% term-group: {projected.block.group.id}",
+                        projected.content,
+                    ]
+                )
+            elif isinstance(projected, ProjectedInstructionSet):
+                block = projected.block
                 slug = re.sub(r"[^a-z0-9]+", "-", block.owner.lower()).strip("-")
                 parts.extend(
                     [
@@ -728,32 +875,16 @@ class LatexDocumentRenderer:
                         rf"\label{{page:instruction-group-{slug}}}",
                         *(
                             item
-                            for topic in block.introduction
+                            for topic in projected.introduction
                             for item in (
-                                f"% topic: {topic.id}",
-                                self._topic(topic, project, public_targets),
+                                f"% topic: {topic.topic.id}",
+                                topic.content,
                             )
                         ),
-                        *(
-                            self.instruction.render(
-                                bundle,
-                                project.types,
-                                self.sources.render(
-                                    bundle.artifacts.description,
-                                    project,
-                                    public_targets,
-                                    bundle.reference,
-                                ),
-                            )
-                            for bundle in block.instructions
-                        ),
+                        *(entry.content for entry in projected.instructions),
                     ]
                 )
-        parts.append(
-            self.sources.render(
-                composition.postamble, project, public_targets, artifact
-            )
-        )
+        parts.append(projection.postamble)
         return "\n\n".join(parts) + "\n"
 
     def _topic(
@@ -761,4 +892,28 @@ class LatexDocumentRenderer:
     ) -> str:
         return self.sources.render(
             topic.document, project, public_targets, topic.reference
+        )
+
+    def _instruction_entry(
+        self,
+        bundle: InstructionBundle,
+        project,
+        public_targets: PublicTargetCatalog,
+    ) -> ProjectedInstructionEntry:
+        formats = self.instruction.project_formats(bundle)
+        description = self.sources.render(
+            bundle.artifacts.description,
+            project,
+            public_targets,
+            bundle.reference,
+        )
+        return ProjectedInstructionEntry(
+            bundle,
+            formats,
+            self.instruction.render(
+                bundle,
+                project.types,
+                description,
+                formats,
+            ),
         )

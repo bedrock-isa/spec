@@ -7,6 +7,7 @@ import yaml
 
 from engine.check import TerminologyValidator
 from engine.extension import ExtensionSetCatalog
+from engine.reference import Reference
 from engine.semantic_text import SemanticText
 from engine.terminology import TermCatalog
 
@@ -19,19 +20,30 @@ class TermCatalogTest(unittest.TestCase):
             cls.isa_root, ExtensionSetCatalog.load(cls.isa_root)
         )
 
-    def test_loads_distributed_namespaces_groups_and_terms(self) -> None:
-        self.assertEqual(
-            tuple(self.catalog.namespaces), ("base", "FP", "FPTRANSA", "VECTOR")
-        )
-        group = self.catalog.references.groups["base.term_groups.address_values"]
-        term = self.catalog.references.terms["base.terms.effective_address"]
-        self.assertEqual(group.title, "Address Values")
-        self.assertEqual(tuple(group.terms)[0], "effective_address")
+    def test_loads_owner_local_groups_and_terms_into_shared_indexes(self) -> None:
+        with self.fixture() as directory:
+            root = Path(directory)
+            terms_root = root / "terminology/groups/sample/terms"
+            self.write_yaml(terms_root / "terms.yaml", {"terms": ["address"]})
+            self.write_yaml(
+                terms_root / "address/term.yaml",
+                {
+                    "id": "address",
+                    "display": {"canonical": "sample address"},
+                    "abbreviation": {"canonical": "SA"},
+                    "definition": "A sample address.",
+                },
+            )
+
+            catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
+
+        group = catalog.references.groups[Reference.parse("base.term_groups.sample")]
+        term = catalog.references.terms[Reference.parse("base.terms.address")]
+        self.assertEqual(set(group.terms), {"address"})
         self.assertIsInstance(term.definition, SemanticText)
-        self.assertEqual(term.abbreviation.canonical, "EA")
+        self.assertEqual(term.abbreviation.canonical, "SA")
         self.assertEqual(
-            self.catalog.spellings["effective address"][0].reference,
-            term.reference,
+            catalog.spellings["sample address"][0].reference, term.reference
         )
 
     def test_validator_reports_inventory_and_unknown_definition_references(
@@ -40,9 +52,7 @@ class TermCatalogTest(unittest.TestCase):
         with self.fixture() as directory:
             root = Path(directory)
             terms_root = root / "terminology/groups/sample/terms"
-            self.write_yaml(
-                terms_root / "terms.yaml", {"terms": ["known", "missing"]}
-            )
+            self.write_yaml(terms_root / "terms.yaml", {"terms": ["known", "missing"]})
             self.write_yaml(
                 terms_root / "known/term.yaml",
                 {
@@ -55,12 +65,12 @@ class TermCatalogTest(unittest.TestCase):
             catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
             codes = [item.code for item in TerminologyValidator().validate(catalog)]
 
-        self.assertEqual(
+        self.assertCountEqual(
             codes,
-            [
+            (
                 "terminology.term.missing-directory",
                 "terminology.definition.unknown-term",
-            ],
+            ),
         )
 
     def test_validator_reports_spelling_conflicts_and_broader_cycles(self) -> None:
@@ -86,12 +96,12 @@ class TermCatalogTest(unittest.TestCase):
             catalog = TermCatalog.load(root, ExtensionSetCatalog.load(root))
             codes = [item.code for item in TerminologyValidator().validate(catalog)]
 
-        self.assertEqual(
+        self.assertCountEqual(
             codes,
-            [
+            (
                 "terminology.spelling.conflict",
                 "terminology.relation.broader-cycle",
-            ],
+            ),
         )
 
     def fixture(self):
@@ -102,9 +112,7 @@ class TermCatalogTest(unittest.TestCase):
         for schema in ("terminology-group.yaml", "term.yaml"):
             shutil.copy2(self.isa_root / "schemas" / schema, root / "schemas" / schema)
         self.write_yaml(root / "extensions/extensions.yaml", {"extensions": []})
-        self.write_yaml(
-            root / "terminology/groups/groups.yaml", {"groups": ["sample"]}
-        )
+        self.write_yaml(root / "terminology/groups/groups.yaml", {"groups": ["sample"]})
         self.write_yaml(
             root / "terminology/groups/sample/group.yaml",
             {"id": "sample", "title": "Sample"},

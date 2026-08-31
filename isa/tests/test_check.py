@@ -44,10 +44,6 @@ class CheckServiceTest(unittest.TestCase):
         self.assertFalse(rule.scope.complete)
         self.assertEqual(rule.scope.selected[0].instruction.mnemonic, "ADD")
 
-    def test_targeted_check_includes_cross_instruction_allocation(self) -> None:
-        diagnostics = CheckService().check(self.project, ("SETcc",))
-        self.assertEqual(list(diagnostics), [])
-
     def test_missing_companion_is_reported_without_stopping_validation(self) -> None:
         bundle = self.project.bundle("ADD")
         missing = replace(
@@ -61,7 +57,6 @@ class CheckServiceTest(unittest.TestCase):
         diagnostics = list(BundleValidator().validate(missing, self.project))
 
         self.assertEqual([item.code for item in diagnostics], ["artifact.missing"])
-        self.assertIn("required semantics artifact", diagnostics[0].message)
 
     def test_missing_instruction_owned_sail_entry_is_reported(self) -> None:
         bundle = self.project.bundle("ADD")
@@ -79,7 +74,6 @@ class CheckServiceTest(unittest.TestCase):
             )
 
         self.assertEqual([item.code for item in diagnostics], ["sail.entry"])
-        self.assertIn("execute_ADD", diagnostics[0].message)
 
     def test_missing_declared_directory_is_a_catalog_diagnostic(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

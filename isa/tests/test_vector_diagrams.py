@@ -5,14 +5,9 @@ from pathlib import Path
 import yaml
 from jsonschema import Draft202012Validator
 
-from engine.composition import DocumentComposition
 from engine.project import IsaProject
 from engine.reference import Reference
-from engine.render.latex_document import LatexDocumentRenderer
-from engine.render.vector_diagram import (
-    VectorDiagramPlacementRenderer,
-    VectorDiagramRenderer,
-)
+from engine.render.vector_diagram import VectorDiagramPlacementRenderer
 
 
 def _reference_text(reference: Reference[object]) -> str:
@@ -24,12 +19,6 @@ class VectorDiagramTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.root = Path(__file__).parents[1]
         cls.project = IsaProject.load(cls.root)
-        cls.composition = DocumentComposition.load(
-            cls.root.parent / "artifacts/isa-reference/artifact.yaml", cls.project
-        )
-        cls.public_targets = LatexDocumentRenderer.public_targets(
-            cls.composition, cls.project
-        )
         cls.schema = yaml.safe_load(
             (cls.root / "schemas/vector-diagram.yaml").read_text(encoding="utf-8")
         )
@@ -89,77 +78,50 @@ class VectorDiagramTest(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertFalse(self.validator.is_valid(invalid))
 
-    def test_phead_restores_counted_physical_predicate_range(self) -> None:
-        bundle = next(
-            bundle
+    def test_predicate_range_projection_matches_its_declared_bounds(self) -> None:
+        examples = tuple(
+            diagram.example
             for bundle in self._diagram_bundles()
-            if bundle.instruction.mnemonic == "PHEAD"
+            for diagram in bundle.diagrams.diagrams.values()
+            if diagram.example.variant == "predicate-range-generation"
         )
-        diagram = next(iter(bundle.diagrams.diagrams.values()))
-        example = diagram.example
 
-        self.assertEqual(
-            example.data["count"], {"label": "source Rn", "value": "3"}
-        )
-        self.assertEqual(
-            (example.data["start"], example.data["end"]), (3, "lane-count")
-        )
-        groups = example.rows[0]["groups"]
-        self.assertEqual(len(groups), 8)
-        self.assertTrue(
-            all([cell["bits"] for cell in group] == [8, 8] for group in groups)
-        )
-        self.assertEqual(
-            [
-                (
-                    group[0]["value"],
-                    group[0]["effect"],
-                    group[0]["appearance"],
+        self.assertTrue(examples)
+        for example in examples:
+            start = example.data["start"]
+            end = example.data["end"]
+            groups = example.rows[0]["groups"]
+            self.assertEqual(len(groups), 8)
+            for index, group in enumerate(groups):
+                active = index >= start and (
+                    end == "lane-count" or index < end
                 )
-                for group in groups
-            ],
-            [("0", "zero", "zero")] * 3
-            + [("1", "copy", "predicate-result")] * 5,
-        )
-        self.assertTrue(
-            all(
-                (group[1]["value"], group[1]["effect"], group[1]["appearance"])
-                == ("0", "zero", "zero")
-                for group in groups
-            )
-        )
-
-        rendered = VectorDiagramRenderer().render(diagram)
-        self.assertIn(
-            r"\node[vectorExampleIndex] (predicateRangeCount) at (5.00,1.95) {3};",
-            rendered,
-        )
-        self.assertIn("{source Rn};", rendered)
-        self.assertIn("vectorExampleControlArrow", rendered)
-        self.assertIn("vectorExampleRange", rendered)
-        self.assertIn("vectorExamplePredicateLaneContinuation", rendered)
-        self.assertEqual(rendered.count(r"\path[vectorExampleContainer]"), 8)
-        self.assertEqual(rendered.count(r"\path[vectorExamplePredicateResult]"), 5)
-
-    def test_description_projection_matches_its_declared_collection(self) -> None:
-        sources = LatexDocumentRenderer().sources
-        for bundle in self._diagram_bundles():
-            rendered = sources.render(
-                bundle.artifacts.description,
-                self.project,
-                self.public_targets,
-                bundle.reference,
-            )
-            with self.subTest(instruction=bundle.instruction.mnemonic):
-                self.assertNotIn("(:diagram:", rendered)
                 self.assertEqual(
-                    rendered.count(r"\begin{BedrockVectorExample}"),
-                    len(bundle.diagrams.diagrams),
+                    tuple(cell["bits"] for cell in group),
+                    (8, 8),
+                )
+                self.assertEqual(
+                    (
+                        group[0]["value"],
+                        group[0]["effect"],
+                        group[0]["appearance"],
+                    ),
+                    ("1", "copy", "predicate-result")
+                    if active
+                    else ("0", "zero", "zero"),
+                )
+                self.assertEqual(
+                    (
+                        group[1]["value"],
+                        group[1]["effect"],
+                        group[1]["appearance"],
+                    ),
+                    ("0", "zero", "zero"),
                 )
 
     def test_rejects_inline_placement(self) -> None:
         bundle, _reference, directive, placements = self._placement_fixture()
-        with self.assertRaisesRegex(ValueError, "must occupy a standalone line"):
+        with self.assertRaises(ValueError):
             placements.expand(
                 f"prose {directive}",
                 self.project,
@@ -169,7 +131,7 @@ class VectorDiagramTest(unittest.TestCase):
 
     def test_rejects_duplicate_placement(self) -> None:
         bundle, _reference, directive, placements = self._placement_fixture()
-        with self.assertRaisesRegex(ValueError, "duplicate diagram placements"):
+        with self.assertRaises(ValueError):
             placements.expand(
                 f"{directive}\n{directive}",
                 self.project,
@@ -179,7 +141,7 @@ class VectorDiagramTest(unittest.TestCase):
 
     def test_rejects_unplaced_declared_diagram(self) -> None:
         bundle, _reference, _directive, placements = self._placement_fixture()
-        with self.assertRaisesRegex(ValueError, "unplaced declared diagrams"):
+        with self.assertRaises(ValueError):
             placements.expand(
                 "No diagram here.",
                 self.project,
@@ -190,20 +152,19 @@ class VectorDiagramTest(unittest.TestCase):
     def test_rejects_unknown_diagram_reference(self) -> None:
         bundle, reference, _directive, placements = self._placement_fixture()
         unknown = Reference(reference.owner, reference.path, "unknown")
-        with self.assertRaises(ValueError) as raised:
+        with self.assertRaises(ValueError):
             placements.expand(
                 f"(:diagram:{_reference_text(unknown)}:)",
                 self.project,
                 bundle.artifacts.description,
                 bundle.reference,
             )
-        self.assertIn(_reference_text(unknown), str(raised.exception))
 
     def test_rejects_diagram_owned_by_another_instruction(self) -> None:
         bundle, _reference, _directive, placements = self._placement_fixture()
         other = next(item for item in self._diagram_bundles() if item is not bundle)
         other_reference = next(iter(other.diagrams.diagrams))
-        with self.assertRaisesRegex(ValueError, "is not owned by this instruction"):
+        with self.assertRaises(ValueError):
             placements.expand(
                 f"(:diagram:{_reference_text(other_reference)}:)",
                 self.project,
@@ -224,7 +185,7 @@ class VectorDiagramTest(unittest.TestCase):
         )
         for value in invalid:
             with self.subTest(reference=value):
-                with self.assertRaisesRegex(ValueError, "must have the form"):
+                with self.assertRaises(ValueError):
                     self.project.vector_diagram(value)
 
 

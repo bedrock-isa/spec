@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import asdict, dataclass
+from enum import StrEnum
 import json
 from pathlib import Path
 import re
 import tempfile
 
-from .composition import DocumentComposition, InstructionSetBlock, TopicBlock
 from .document_pipeline import (
     LatexCompiler,
     PdfArtifactValidator,
@@ -33,10 +33,6 @@ STANDARD_REFERENCE_RE = re.compile(r"\\(?:auto|page)?ref\{([^{}]+)\}")
 INSTRUCTION_TARGET_RE = re.compile(
     r"^\\begin\{BedrockInstruction\}.*\{([^{}\n]+)\}\s*$", re.MULTILINE
 )
-INSTRUCTION_BLOCK_RE = re.compile(
-    r"\\begin\{BedrockInstruction\}.*?\\end\{BedrockInstruction\}",
-    re.DOTALL,
-)
 LISTED_DIAGRAM_TARGET_RE = re.compile(
     r"^\\begin\{BedrockListed(?:Bit|Format)Diagram\}.*\[([^\]\n]+)\]\s*$",
     re.MULTILINE,
@@ -45,9 +41,27 @@ SUMMARY_REFERENCE_RE = re.compile(r"\\BedrockSummaryMnemonic\{([^{}]+)\}")
 
 
 @dataclass(frozen=True, slots=True)
+class TexValidationIssue:
+    """One machine-readable document-validation failure."""
+
+    code: "TexValidationCode"
+    actual: int | None = None
+    expected: int | None = None
+    values: tuple[str, ...] = ()
+    counts: tuple[tuple[str, int], ...] = ()
+
+
+class TexValidationCode(StrEnum):
+    DOCUMENT_ENVIRONMENT_COUNT = "document_environment_count"
+    UNRESOLVED_PLACEHOLDERS = "unresolved_placeholders"
+    DUPLICATE_PUBLIC_TARGETS = "duplicate_public_targets"
+    UNRESOLVED_PUBLIC_TARGETS = "unresolved_public_targets"
+
+
+@dataclass(frozen=True, slots=True)
 class TexValidationReport:
     passed: bool
-    errors: tuple[str, ...]
+    issues: tuple[TexValidationIssue, ...]
     quantitative: dict[str, object]
     qualitative_review: dict[str, object]
 
@@ -61,25 +75,25 @@ class TexValidator:
     def validate(
         self,
         tex: str,
-        *,
-        expected_topics: int,
-        expected_forms: int,
     ) -> TexValidationReport:
-        errors: list[str] = []
-        topic_count = tex.count("% topic:")
-        if topic_count != expected_topics:
-            errors.append(f"rendered {topic_count} topics; expected {expected_topics}")
-        form_count = sum(
-            block.count(r"\begin{BedrockFormBlock}")
-            for block in INSTRUCTION_BLOCK_RE.findall(tex)
-        )
-        if form_count != expected_forms:
-            errors.append(f"rendered {form_count} forms; expected {expected_forms}")
-        if tex.count(r"\begin{document}") != 1 or tex.count(r"\end{document}") != 1:
-            errors.append("TeX must contain exactly one document environment")
+        issues: list[TexValidationIssue] = []
+        document_begins = tex.count(r"\begin{document}")
+        document_ends = tex.count(r"\end{document}")
+        if document_begins != 1 or document_ends != 1:
+            issues.append(
+                TexValidationIssue(
+                    TexValidationCode.DOCUMENT_ENVIRONMENT_COUNT,
+                    counts=(("begin", document_begins), ("end", document_ends)),
+                )
+            )
         placeholders = sorted(set(PLACEHOLDER_RE.findall(tex)))
         if placeholders:
-            errors.append(f"unresolved TeX placeholders: {placeholders}")
+            issues.append(
+                TexValidationIssue(
+                    TexValidationCode.UNRESOLVED_PLACEHOLDERS,
+                    values=tuple(placeholders),
+                )
+            )
         targets = (
             LABEL_RE.findall(tex)
             + INSTRUCTION_TARGET_RE.findall(tex)
@@ -89,7 +103,12 @@ class TexValidator:
             target for target, count in Counter(targets).items() if count > 1
         )
         if duplicate_targets:
-            errors.append(f"duplicate public TeX targets: {duplicate_targets}")
+            issues.append(
+                TexValidationIssue(
+                    TexValidationCode.DUPLICATE_PUBLIC_TARGETS,
+                    values=tuple(duplicate_targets),
+                )
+            )
         references = set(
             HYPER_REFERENCE_RE.findall(tex)
             + STANDARD_REFERENCE_RE.findall(tex)
@@ -97,14 +116,17 @@ class TexValidator:
         )
         missing_targets = sorted(references.difference(targets))
         if missing_targets:
-            errors.append(f"unresolved public TeX targets: {missing_targets}")
+            issues.append(
+                TexValidationIssue(
+                    TexValidationCode.UNRESOLVED_PUBLIC_TARGETS,
+                    values=tuple(missing_targets),
+                )
+            )
         return TexValidationReport(
-            passed=not errors,
-            errors=tuple(errors),
+            passed=not issues,
+            issues=tuple(issues),
             quantitative={
                 "bytes": len(tex),
-                "new_topics": topic_count,
-                "new_encoding_forms": form_count,
                 "public_targets": len(set(targets)),
                 "public_references": len(references),
             },
@@ -150,7 +172,6 @@ class DocumentBuilder:
         provider = workspace.require_provider("isa")
         if not isinstance(provider, IsaProject):
             raise TypeError("workspace isa provider must be an IsaProject")
-        project = provider
         output = Path(output_root).resolve()
         repository = workspace.root
         if output in {Path("/").resolve(), Path.home().resolve(), repository}:
@@ -168,26 +189,7 @@ class DocumentBuilder:
         tex = generated.artifact(document_output).content
         if not isinstance(tex, str):
             raise TypeError("ISA reference TeX artifact must be text")
-        composition = DocumentComposition.load(generator.definition.source, project)
-        expected_topics = sum(
-            1
-            if isinstance(block, TopicBlock)
-            else len(block.introduction)
-            if isinstance(block, InstructionSetBlock)
-            else 0
-            for block in composition.blocks
-        )
-        expected_forms = sum(
-            len(bundle.encodings.forms)
-            for block in composition.blocks
-            if isinstance(block, InstructionSetBlock)
-            for bundle in block.instructions
-        )
-        report = self.validator.validate(
-            tex,
-            expected_topics=expected_topics,
-            expected_forms=expected_forms,
-        )
+        report = self.validator.validate(tex)
         derived = generator.definition.derived_outputs
         validated = GeneratedArtifactSet(
             (

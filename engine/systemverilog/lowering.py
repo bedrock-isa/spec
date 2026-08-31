@@ -854,8 +854,8 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
   typedef struct packed {{
     logic valid;
     overlap_rule_e rule;
-    logic [1:0] left_operand;
-    logic [1:0] right_operand;
+    logic [{_width(ir.limits.max_operands) - 1}:0] left_operand;
+    logic [{_width(ir.limits.max_operands) - 1}:0] right_operand;
   }} overlap_descriptor_t;
 
   typedef struct packed {{
@@ -1640,22 +1640,28 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
         lines.append("      end")
         payload_cases.append("\n".join(lines))
 
+    descriptor_selection_cases: list[str] = []
     descriptor_parse_cases: list[str] = []
     for family in families:
         descriptor_bytes = family.descriptor_bytes
-        descriptor_signal = f"{_identifier(family.name).lower()}_decode"
+        descriptor_raw = f"descriptor_ext{descriptor_bytes}"
+        function_name = f"decode_{_identifier(family.name).lower()}_descriptor"
+        descriptor_selection_cases.append(
+            f"        {family_names[family.name]}: "
+            f"descriptor_decode = {function_name}({descriptor_raw});"
+        )
         descriptor_parse_cases.append(
             f"""      {family_names[family.name]}: begin
         if ((cursor_in + {descriptor_bytes}) > byte_count ||
             (cursor_in + {descriptor_bytes}) > BEDROCK_RECORD_BYTES) begin
           resolve_ea_descriptor.next_cursor = cursor_in + {descriptor_bytes};
-        end else if ({descriptor_signal}.valid) begin
+        end else if (descriptor_decode.valid) begin
           resolve_ea_descriptor.ok = 1'b1;
           resolve_ea_descriptor.stage = D1_STAGE_SUCCESS;
           resolve_ea_descriptor.next_cursor = cursor_in + {descriptor_bytes};
           resolve_ea_descriptor.ea = merge_descriptor_ea(
             compact_decode.ea,
-            {descriptor_signal}.ea
+            descriptor_decode.ea
           );
         end
       end"""
@@ -1670,10 +1676,6 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
         f"ea_descriptor_byte_count = 2'd{family.descriptor_bytes};"
         for family in families
     ]
-    descriptor_inputs = "\n".join(
-        f"    input descriptor_decode_t {_identifier(family.name).lower()}_decode,"
-        for family in families
-    )
     family_enum_text = ",\n".join(family_enum)
 
     return f"""  typedef enum logic [{family_width - 1}:0] {{
@@ -1788,15 +1790,22 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
     input ea_profile_e profile,
     input operand_ea_width_e operand_width,
     input compact_ea_decode_t compact_decode,
-{descriptor_inputs}
+    input logic [7:0] descriptor_ext1,
+    input logic [15:0] descriptor_ext2,
     input logic [4:0] byte_count,
     input logic [5:0] cursor_in
   );
+    descriptor_decode_t descriptor_decode;
     begin
       resolve_ea_descriptor = '0;
       resolve_ea_descriptor.stage = D1_STAGE_EA_DESCRIPTOR;
       resolve_ea_descriptor.next_cursor = cursor_in;
       resolve_ea_descriptor.ea = compact_decode.ea;
+      descriptor_decode = '0;
+      unique case (compact_decode.descriptor_family)
+{chr(10).join(descriptor_selection_cases)}
+        default: begin end
+      endcase
       if (compact_decode.valid) unique case (compact_decode.descriptor_family)
       EA_DESCRIPTOR_FAMILY_NONE: begin
         resolve_ea_descriptor.ok = 1'b1;
@@ -1901,8 +1910,8 @@ def _render_form_case(
                 [
                     f"        decoded_result.overlaps[{index}].valid = 1'b1;",
                     f"        decoded_result.overlaps[{index}].rule = {names.overlap_rule[overlap.rule]};",
-                    f"        decoded_result.overlaps[{index}].left_operand = 2'd{slots[overlap.left]};",
-                    f"        decoded_result.overlaps[{index}].right_operand = 2'd{slots[overlap.right]};",
+                    f"        decoded_result.overlaps[{index}].left_operand = {_width(ir.limits.max_operands)}'d{slots[overlap.left]};",
+                    f"        decoded_result.overlaps[{index}].right_operand = {_width(ir.limits.max_operands)}'d{slots[overlap.right]};",
                 ]
             )
     operand_slots = {operand.name: index for index, operand in enumerate(form.operands)}

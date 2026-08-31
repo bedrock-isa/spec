@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TypeAlias
+from typing import NamedTuple, TypeAlias
 
 from engine.generation import (
     ArtifactGenerationContext,
@@ -44,17 +44,55 @@ _C_TYPES = {
 CType: TypeAlias = str | QualifiedReference[InterfaceType]
 
 
+class HeaderIntrinsicProjection(NamedTuple):
+    intrinsic: InterfaceIntrinsic
+    public_spelling: str
+    builtin_spelling: str
+
+
+class IntrinsicGroupHeaderProjection(NamedTuple):
+    group_id: str
+    path: Path
+    intrinsics: tuple[HeaderIntrinsicProjection, ...]
+
+
+class CTargetHeadersProjection(NamedTuple):
+    groups: tuple[IntrinsicGroupHeaderProjection, ...]
+
+
 class Generator(ArtifactGenerator):
+    @staticmethod
+    def project(project: CInterfaceProject) -> CTargetHeadersProjection:
+        return CTargetHeadersProjection(
+            tuple(
+                IntrinsicGroupHeaderProjection(
+                    group.id,
+                    Path("include") / intrinsic_group_header(group.id),
+                    tuple(
+                        HeaderIntrinsicProjection(
+                            intrinsic,
+                            intrinsic_spelling(intrinsic.id),
+                            clang_builtin_spelling(intrinsic.id),
+                        )
+                        for intrinsic in project.intrinsics.values()
+                        if intrinsic.group == group.id
+                    ),
+                )
+                for group in project.intrinsic_groups.values()
+            )
+        )
+
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("interfaces.c")
         if not isinstance(project, CInterfaceProject):
             raise TypeError("interfaces.c provider must be a CInterfaceProject")
+        projection = self.project(project)
         artifacts = [
             GeneratedArtifact(
-                Path("include") / intrinsic_group_header(group.id),
-                _render_group(project, context, group.id),
+                group.path,
+                _render_group(project, context, group),
             )
-            for group in project.intrinsic_groups.values()
+            for group in projection.groups
         ]
         artifacts.extend(
             GeneratedArtifact(
@@ -69,8 +107,9 @@ class Generator(ArtifactGenerator):
 def _render_group(
     project: CInterfaceProject,
     context: ArtifactGenerationContext,
-    group_id: str,
+    projection: IntrinsicGroupHeaderProjection,
 ) -> str:
+    group_id = projection.group_id
     guard = f"__BEDROCK{group_id.upper()}INTRIN_H"
     groups = [
         group
@@ -95,15 +134,12 @@ def _render_group(
         sections.append("")
     utilities = [item for item in project.utilities.values() if item.group == group_id]
     types = [item for item in project.types.values() if item.group == group_id]
-    intrinsics = [
-        item for item in project.intrinsics.values() if item.group == group_id
-    ]
     for utility in utilities:
         sections.extend((_render_utility(utility.data), ""))
     for interface_type in types:
         sections.extend((_render_type(interface_type, context, project), ""))
-    for intrinsic in intrinsics:
-        sections.extend((_render_intrinsic(intrinsic, project), ""))
+    for intrinsic in projection.intrinsics:
+        sections.extend((_render_intrinsic(intrinsic.intrinsic, project), ""))
     sections.extend((f"#endif /* {guard} */", ""))
     return "\n".join(sections)
 

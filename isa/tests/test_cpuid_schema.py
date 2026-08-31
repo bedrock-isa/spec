@@ -50,21 +50,40 @@ class CpuidSchemaTest(unittest.TestCase):
 
         self.assertEqual(list(self.leaf_validator.iter_errors(document)), [])
 
-    def test_leaf_rejects_out_of_range_allocations_and_path_shaped_ids(self) -> None:
-        document = {
-            "id": "BAD/LEAF",
+    @staticmethod
+    def leaf_document() -> dict:
+        return {
+            "id": "LEAF",
             "name": "Bad Leaf",
-            "value": 65536,
+            "value": 1,
             "queries": [
                 {
                     "id": "QUERY",
                     "index": 0,
-                    "fields": [{"id": "FIELD", "lsb": 64, "bits": 1}],
+                    "fields": [{"id": "FIELD", "lsb": 0, "bits": 1}],
                 }
             ],
         }
 
-        self.assertGreaterEqual(len(list(self.leaf_validator.iter_errors(document))), 3)
+    def assert_leaf_rejected_at(self, document: dict, path: tuple[object, ...]) -> None:
+        errors = list(self.leaf_validator.iter_errors(document))
+        self.assertTrue(errors)
+        self.assertIn(path, {tuple(error.absolute_path) for error in errors})
+
+    def test_leaf_rejects_path_shaped_id(self) -> None:
+        document = self.leaf_document()
+        document["id"] = "BAD/LEAF"
+        self.assert_leaf_rejected_at(document, ("id",))
+
+    def test_leaf_rejects_out_of_range_leaf_value(self) -> None:
+        document = self.leaf_document()
+        document["value"] = 65536
+        self.assert_leaf_rejected_at(document, ("value",))
+
+    def test_leaf_rejects_field_outside_result_width(self) -> None:
+        document = self.leaf_document()
+        document["queries"][0]["fields"][0]["lsb"] = 64
+        self.assert_leaf_rejected_at(document, ("queries", 0, "fields", 0, "lsb"))
 
 
 if __name__ == "__main__":

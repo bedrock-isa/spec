@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import TypeVar, cast
@@ -19,7 +20,12 @@ from .extension import ExtensionMetadata, ExtensionSetCatalog
 from .instruction import Instruction
 from .model import ModelCatalog
 from .register import RegisterCatalog
-from .reference import QualifiedReference, Reference, ReferenceIndex, UnknownReferenceError
+from .reference import (
+    QualifiedReference,
+    Reference,
+    ReferenceIndex,
+    UnknownReferenceError,
+)
 from .terminology import TermCatalog
 from .type_system import TypeNamespace, TypeSystem
 from .vector_diagram import VectorDiagram, VectorDiagramCatalog
@@ -27,6 +33,61 @@ from .yaml_document import YamlDocumentLoader
 
 
 _T = TypeVar("_T")
+
+
+class ProjectLookupReason(StrEnum):
+    UNKNOWN_INSTRUCTION = "unknown_instruction"
+    UNKNOWN_EXTENSION = "unknown_extension"
+
+
+class ProjectLookupError(ValueError):
+    def __init__(self, reason: ProjectLookupReason, value: object) -> None:
+        self.reason = reason
+        self.value = value
+        super().__init__(f"{reason.value}: {value!r}")
+
+
+class SourceCatalogError(ValueError):
+    """Base class for a rejected source-catalog relation."""
+
+
+class ExtensionDependencyCycleError(SourceCatalogError):
+    def __init__(self, source: Path, cycle: tuple[str, ...]) -> None:
+        self.source = source
+        self.cycle = cycle
+        super().__init__(f"{source}: circular extension dependency: {' -> '.join(cycle)}")
+
+
+class RequiredExtensionUnavailableError(SourceCatalogError):
+    def __init__(self, source: Path | str, extension_id: str) -> None:
+        self.source = source
+        self.extension_id = extension_id
+        super().__init__(f"{source}: required extension {extension_id!r} is not available")
+
+
+class UnknownCpuidFlagError(SourceCatalogError):
+    def __init__(self, source: Path, reference: Reference[object]) -> None:
+        self.source = source
+        self.reference = reference
+        super().__init__(f"{source}: unknown CPUID flag reference {reference!r}")
+
+
+class CpuidFlagWidthError(SourceCatalogError):
+    def __init__(self, source: Path, field: CpuidField) -> None:
+        self.source = source
+        self.field = field
+        super().__init__(
+            f"{source}: CPUID flag {field.id!r} names a {field.bits}-bit field"
+        )
+
+
+class RepeatedCpuidRequirementError(SourceCatalogError):
+    def __init__(self, source: Path, field: CpuidField) -> None:
+        self.source = source
+        self.field = field
+        super().__init__(
+            f"{source}: CPUID flag {field.id!r} repeats an inherited requirement"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,19 +283,15 @@ class SourceCatalog:
                 start = active.index(extension_id)
                 cycle = (*active[start:], extension_id)
                 cycle_source = metadata[active[-1]].source
-                raise ValueError(
-                    f"{cycle_source}: circular extension dependency: "
-                    f"{' -> '.join(cycle)}"
-                )
+                raise ExtensionDependencyCycleError(cycle_source, cycle)
             extension = metadata.get(extension_id)
             if extension is None:
                 requiring = metadata[active[-1]] if active else None
                 missing_source = (
                     requiring.source if requiring is not None else extension_id
                 )
-                raise ValueError(
-                    f"{missing_source}: required extension {extension_id!r} "
-                    "is not available"
+                raise RequiredExtensionUnavailableError(
+                    missing_source, extension_id
                 )
 
             active.append(extension_id)
@@ -250,9 +307,8 @@ class SourceCatalog:
                     raw_reference, extension.source, cpuid
                 )
                 if field.reference in seen:
-                    raise ValueError(
-                        f"{extension.source}: CPUID flag {field.id!r} "
-                        "repeats an inherited requirement"
+                    raise RepeatedCpuidRequirementError(
+                        extension.source, field
                     )
                 fields.append(field)
                 seen.add(field.reference)
@@ -273,11 +329,9 @@ class SourceCatalog:
         try:
             field = cpuid.references.fields.resolve(reference)
         except UnknownReferenceError as error:
-            raise ValueError(f"{source}: unknown CPUID flag reference") from error
+            raise UnknownCpuidFlagError(source, reference) from error
         if field.bits != 1:
-            raise ValueError(
-                f"{source}: CPUID flag {field.id!r} names a {field.bits}-bit field"
-            )
+            raise CpuidFlagWidthError(source, field)
         return field
 
     @staticmethod
@@ -296,19 +350,15 @@ class SourceCatalog:
                 start = active.index(extension_id)
                 cycle = (*active[start:], extension_id)
                 cycle_source = components[active[-1]].metadata.source
-                raise ValueError(
-                    f"{cycle_source}: circular extension dependency: "
-                    f"{' -> '.join(cycle)}"
-                )
+                raise ExtensionDependencyCycleError(cycle_source, cycle)
             component = components.get(extension_id)
             if component is None:
                 requiring = components[active[-1]].metadata if active else None
                 missing_source = (
                     requiring.source if requiring is not None else extension_id
                 )
-                raise ValueError(
-                    f"{missing_source}: required extension {extension_id!r} "
-                    "is not available"
+                raise RequiredExtensionUnavailableError(
+                    missing_source, extension_id
                 )
 
             active.append(extension_id)
@@ -379,9 +429,8 @@ class SourceCatalog:
                     raw_reference, instruction.source, cpuid
                 )
                 if field.reference in seen_cpuid_flags:
-                    raise ValueError(
-                        f"{instruction.source}: additional CPUID flag "
-                        f"{field.id!r} repeats an inherited requirement"
+                    raise RepeatedCpuidRequirementError(
+                        instruction.source, field
                     )
                 cpuid_flags.append(field)
                 seen_cpuid_flags.add(field.reference)
@@ -421,6 +470,7 @@ class SourceCatalog:
         if any(not isinstance(value, str) for value in values):
             raise ValueError(f"{path}: {key} entries must be strings")
         return tuple(values)
+
 
 @dataclass(frozen=True, slots=True)
 class IsaProject:
@@ -564,7 +614,9 @@ class IsaProject:
                 )
         return tuple(result)
 
-    def bundle(self, value: str | Reference[InstructionBundle] | Path) -> InstructionBundle:
+    def bundle(
+        self, value: str | Reference[InstructionBundle] | Path
+    ) -> InstructionBundle:
         if isinstance(value, Reference):
             return self.catalog.instructions.resolve(value)
 
@@ -582,7 +634,9 @@ class IsaProject:
             try:
                 return self.catalog.instructions.resolve(Reference.parse(text))
             except UnknownReferenceError as error:
-                raise ValueError("unknown instruction reference") from error
+                raise ProjectLookupError(
+                    ProjectLookupReason.UNKNOWN_INSTRUCTION, value
+                ) from error
 
         matches = [
             bundle
@@ -590,7 +644,7 @@ class IsaProject:
             if bundle.instruction.mnemonic == text
         ]
         if not matches:
-            raise ValueError(f"unknown instruction {text!r}")
+            raise ProjectLookupError(ProjectLookupReason.UNKNOWN_INSTRUCTION, value)
         if len(matches) != 1:
             owners = ", ".join(bundle.owner for bundle in matches)
             raise ValueError(f"ambiguous instruction {text!r}: {owners}")
@@ -602,11 +656,11 @@ class IsaProject:
         try:
             return self.catalog.extensions[extension_id]
         except KeyError as error:
-            raise ValueError(f"unknown extension {extension_id!r}") from error
+            raise ProjectLookupError(
+                ProjectLookupReason.UNKNOWN_EXTENSION, extension_id
+            ) from error
 
-    def vector_diagram(
-        self, value: str | Reference[VectorDiagram]
-    ) -> VectorDiagram:
+    def vector_diagram(self, value: str | Reference[VectorDiagram]) -> VectorDiagram:
         """Resolve one fully qualified instruction-owned vector diagram."""
 
         reference: Reference[VectorDiagram] = Reference.parse(value)

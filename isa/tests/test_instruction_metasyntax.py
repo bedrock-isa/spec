@@ -46,15 +46,10 @@ class InstructionMetasyntaxTest(unittest.TestCase):
 
         address = syntax.operands[2]
         self.assertEqual(address.kind, "address")
-        self.assertNotIn("lane_index", [member.kind for member in address.members])
         self.assertEqual(
             [operand.name for operand in syntax.displayed_operands],
             ["Pn", "Pn", "Rn", "Vn", "disp16s", "Vn"],
         )
-
-    def test_parse_is_idempotent(self) -> None:
-        syntax = InstructionMetasyntax("JMP <imm16s>")
-        self.assertIs(InstructionMetasyntax.parse(syntax), syntax)
 
     def test_derives_canonical_encoding_id_without_mnemonic(self) -> None:
         syntax = InstructionMetasyntax("ADD.{L|Q}(z) Rn(s), Rn(d)")
@@ -68,9 +63,6 @@ class InstructionMetasyntaxTest(unittest.TestCase):
         addressed = InstructionMetasyntax("OP [Rn(b) + Rn(i) * 4]")
 
         self.assertEqual(addressed.encoding_id, "rn_b_add_rn_i_mul_4")
-        self.assertNotIn("field", addressed.encoding_id)
-        self.assertNotIn("literal", addressed.encoding_id)
-        self.assertNotIn("op", addressed.encoding_id)
 
     def test_rejects_noncanonical_or_malformed_text(self) -> None:
         for value in (

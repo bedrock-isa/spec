@@ -3,7 +3,15 @@ import unittest
 from pathlib import Path
 
 from engine.extension import ExtensionMetadata, ExtensionSetCatalog
-from engine.model import ModelCatalog
+from engine.model import (
+    InvalidTopicStructureError,
+    MissingModelManifestError,
+    ModelCatalog,
+    ModelSourceOutsideOwnerError,
+    ModelSourceOwnershipConflictError,
+    SailDependencyCycleError,
+    UnknownSailDependencyError,
+)
 from engine.reference import Reference
 
 
@@ -44,9 +52,7 @@ class ModelCatalogTest(unittest.TestCase):
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
-            "$property\n"
-            if path.suffix == ".sail"
-            else "\\subsection{Topic}\nText.\n"
+            "$property\n" if path.suffix == ".sail" else "\\subsection{Topic}\nText.\n"
         )
 
     def _manifest(self, owner: str, text: str) -> None:
@@ -58,7 +64,9 @@ class ModelCatalogTest(unittest.TestCase):
             self.root, ExtensionSetCatalog.load(self.root), self.extensions
         )
 
-    def test_sail_dependencies_and_document_topic_identity_are_independent(self) -> None:
+    def test_sail_dependencies_and_document_topic_identity_are_independent(
+        self,
+    ) -> None:
         self._source("base", "execution/semantics/types.sail")
         self._source("base", "execution/semantics/dispatch.sail")
         self._source("base", "execution/documents/overview.tex")
@@ -137,15 +145,15 @@ class ModelCatalogTest(unittest.TestCase):
         catalog = self._load()
 
         self.assertEqual(catalog.sail_order, (Reference.parse("base.state"),))
-        self.assertEqual(
-            set(catalog.document_topics), {Reference.parse("FP.overview")}
-        )
+        self.assertEqual(set(catalog.document_topics), {Reference.parse("FP.overview")})
 
     def test_requires_every_owner_model_manifest(self) -> None:
-        (self.root / "extensions/FP/model.yaml").unlink()
+        source = self.root / "extensions/FP/model.yaml"
+        source.unlink()
 
-        with self.assertRaisesRegex(FileNotFoundError, "required model manifest"):
+        with self.assertRaises(MissingModelManifestError) as caught:
             self._load()
+        self.assertEqual(caught.exception.source, source.resolve())
 
     def test_rejects_base_ownership_of_extension_source(self) -> None:
         self._source("FP", "semantics/environment.sail")
@@ -155,8 +163,15 @@ class ModelCatalogTest(unittest.TestCase):
             "    sources: [extensions/FP/semantics/environment.sail]\n",
         )
 
-        with self.assertRaisesRegex(ValueError, "owned by an extension"):
+        with self.assertRaises(ModelSourceOutsideOwnerError) as caught:
             self._load()
+        self.assertEqual(caught.exception.manifest, (self.root / "model.yaml").resolve())
+        self.assertEqual(caught.exception.owner, "base")
+        self.assertEqual(
+            caught.exception.source,
+            (self.root / "extensions/FP/semantics/environment.sail").resolve(),
+        )
+        self.assertEqual(caught.exception.root, self.root.resolve())
 
     def test_rejects_duplicate_source_ownership(self) -> None:
         self._source("base", "state/semantics/state.sail")
@@ -169,8 +184,14 @@ class ModelCatalogTest(unittest.TestCase):
             "    sources: [state/semantics/state.sail]\n",
         )
 
-        with self.assertRaisesRegex(ValueError, "owned by both"):
+        with self.assertRaises(ModelSourceOwnershipConflictError) as caught:
             self._load()
+        self.assertEqual(
+            caught.exception.source,
+            (self.root / "state/semantics/state.sail").resolve(),
+        )
+        self.assertEqual(caught.exception.first_owner, "base.state.left")
+        self.assertEqual(caught.exception.second_owner, "base.state.right")
 
     def test_rejects_document_with_more_than_one_topic_heading(self) -> None:
         self._source("base", "documents/topic.tex")
@@ -183,8 +204,14 @@ class ModelCatalogTest(unittest.TestCase):
             "    source: documents/topic.tex\n",
         )
 
-        with self.assertRaisesRegex(ValueError, "exactly one section heading"):
+        with self.assertRaises(InvalidTopicStructureError) as caught:
             self._load()
+        self.assertEqual(caught.exception.topic_id, "topic")
+        self.assertEqual(
+            caught.exception.document,
+            (self.root / "documents/topic.tex").resolve(),
+        )
+        self.assertEqual(caught.exception.heading_count, 2)
 
     def test_explicit_cross_extension_dependency_is_ordered(self) -> None:
         self._source("FP", "environment/semantics/environment.sail")
@@ -248,8 +275,35 @@ class ModelCatalogTest(unittest.TestCase):
             "    requires: [FP.left]\n",
         )
 
-        with self.assertRaisesRegex(ValueError, "circular Sail dependency"):
+        with self.assertRaises(SailDependencyCycleError) as caught:
             self._load()
+        self.assertEqual(
+            caught.exception.cycle,
+            (
+                Reference.parse("FP.left"),
+                Reference.parse("FP.right"),
+                Reference.parse("FP.left"),
+            ),
+        )
+
+    def test_rejects_unknown_sail_dependency_with_requiring_unit(self) -> None:
+        self._source("FP", "semantics/environment.sail")
+        self._manifest(
+            "FP",
+            "sail:\n  units:\n  - id: environment\n"
+            "    sources: [semantics/environment.sail]\n"
+            "    requires: [FP.missing]\n",
+        )
+
+        with self.assertRaises(UnknownSailDependencyError) as caught:
+            self._load()
+
+        self.assertEqual(caught.exception.requiring, Reference.parse("FP.environment"))
+        self.assertEqual(caught.exception.required, Reference.parse("FP.missing"))
+        self.assertEqual(
+            caught.exception.source,
+            (self.root / "extensions/FP/model.yaml").resolve(),
+        )
 
 
 if __name__ == "__main__":

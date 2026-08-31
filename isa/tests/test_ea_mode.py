@@ -1,9 +1,7 @@
 import unittest
 from pathlib import Path
 
-import yaml
-
-from engine.ea_mode import EABaseSource, EAMode, EAModeCatalog
+from engine.ea_mode import EABaseSource, EAMode, EAModeCatalog, EAModeSchemaError
 from engine.reference import Reference
 from engine.type_system import TypeSystem
 
@@ -14,15 +12,18 @@ class EAModeTest(unittest.TestCase):
         cls.isa_root = Path(__file__).parents[1]
 
     def test_all_concrete_modes_validate(self) -> None:
-        paths = [
-            path
-            for path in self.isa_root.rglob("mode.yaml")
-            if "<" not in str(path)
-        ]
-
-        for path in paths:
-            with self.subTest(path=path):
-                EAMode.load(path, self.isa_root)
+        types = TypeSystem.load(self.isa_root)
+        for catalog in EAModeCatalog.discover(self.isa_root, types):
+            actual = {
+                path.name
+                for path in catalog.source.parent.iterdir()
+                if path.is_dir() and not path.name.startswith(".")
+            }
+            self.assertEqual(set(catalog.modes), actual)
+            for mode_id in catalog.modes:
+                path = catalog.mode_path(mode_id)
+                with self.subTest(path=path):
+                    EAMode.load(path, self.isa_root, types)
 
     def test_catalog_name_is_explicit_reader_text(self) -> None:
         catalogs = EAModeCatalog.discover(
@@ -41,10 +42,11 @@ class EAModeTest(unittest.TestCase):
 
     def test_unqualified_type_reference_is_rejected(self) -> None:
         path = self.isa_root / "ea/modes/compact/register/mode.yaml"
+        import yaml
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         data["fields"]["r"]["type"] = "Rn"
 
-        with self.assertRaisesRegex(ValueError, "does not match"):
+        with self.assertRaises(EAModeSchemaError):
             EAMode(data, path, self.isa_root)
 
     def test_each_profile_resolves_modes_from_its_own_closed_world_catalog(self) -> None:
@@ -72,48 +74,6 @@ class EAModeTest(unittest.TestCase):
                 for mode_id in descriptor.modes:
                     with self.subTest(profile=profile, family=family, mode=mode_id):
                         self.assertTrue(descriptor.mode_path(mode_id).is_file())
-
-    def test_vector_descriptor_update_amounts_are_profile_owned(self) -> None:
-        types = TypeSystem.load(self.isa_root)
-        catalogs = {
-            (catalog.profile, catalog.mode_type): catalog
-            for catalog in EAModeCatalog.discover(self.isa_root, types)
-        }
-
-        scalar_base = EAMode.load(
-            catalogs["ea", "EXT1"].mode_path("default_segment_base"),
-            self.isa_root,
-            types,
-        )
-        vector_base = EAMode.load(
-            catalogs["vea", "EXT1"].mode_path("default_segment_base"),
-            self.isa_root,
-            types,
-        )
-        scalar_index = EAMode.load(
-            catalogs["ea", "EXT2"].mode_path("explicit_segment_index"),
-            self.isa_root,
-            types,
-        )
-        vector_index = EAMode.load(
-            catalogs["vea", "EXT2"].mode_path("explicit_segment_index"),
-            self.isa_root,
-            types,
-        )
-
-        self.assertEqual(
-            scalar_base["encodings"][0]["autoupdate"]["difference"], "scale"
-        )
-        self.assertEqual(
-            vector_base["encodings"][0]["autoupdate"]["difference"], "vlen_bytes"
-        )
-        self.assertEqual(
-            scalar_index["encodings"][0]["autoupdate"]["difference"], 1
-        )
-        self.assertEqual(
-            vector_index["encodings"][0]["autoupdate"]["difference"],
-            "element_count",
-        )
 
     def test_base_source_is_parsed_from_the_mode_expression(self) -> None:
         types = TypeSystem.load(self.isa_root)

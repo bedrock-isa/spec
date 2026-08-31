@@ -8,9 +8,12 @@ from .generation import (
     GeneratedArtifactSet,
 )
 from .render import (
+    SailCatalogProjection,
     SailCatalogRenderer,
+    SailDispatchProjection,
     SailDispatchRenderer,
     SailProjectRenderer,
+    SailRegistryProjection,
     SailRegistryRenderer,
 )
 from .validation import SailEntryValidator
@@ -24,9 +27,12 @@ __all__ = [
     "IsaConfiguration",
     "SailComposer",
     "SailCatalogRenderer",
+    "SailCatalogProjection",
+    "SailDispatchProjection",
     "SailDispatchRenderer",
     "SailEntryValidator",
     "SailProgram",
     "SailProjectRenderer",
     "SailRegistryRenderer",
+    "SailRegistryProjection",
 ]

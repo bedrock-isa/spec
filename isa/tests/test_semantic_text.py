@@ -1,11 +1,13 @@
 import unittest
 from pathlib import Path
 
+from engine.reference import Reference
 from engine.semantic_text import (
     EntityReferenceText,
     LiteralText,
     SemanticText,
     SemanticTextError,
+    SemanticTextErrorReason,
     TermForm,
     TermReferenceText,
     TextOrigin,
@@ -33,12 +35,21 @@ class SemanticTextTest(unittest.TestCase):
         entity = next(
             part for part in text.parts if isinstance(part, EntityReferenceText)
         )
-        self.assertEqual(str(term.reference), "base.terms.effective_address")
-        self.assertIs(term.form, TermForm.SHORT)
-        self.assertEqual(str(entity.reference), "base.instructions.SEGLEA")
         self.assertEqual(
-            tuple(map(str, text.dependencies)),
-            ("base.terms.effective_address", "base.instructions.SEGLEA"),
+            term.reference,
+            Reference("base", ("terms",), "effective_address"),
+        )
+        self.assertIs(term.form, TermForm.SHORT)
+        self.assertEqual(
+            entity.reference,
+            Reference("base", ("instructions",), "SEGLEA"),
+        )
+        self.assertEqual(
+            text.dependencies,
+            (
+                Reference("base", ("terms",), "effective_address"),
+                Reference("base", ("instructions",), "SEGLEA"),
+            ),
         )
 
     def test_non_reserved_parenthesis_colon_text_remains_literal(self) -> None:
@@ -51,17 +62,29 @@ class SemanticTextTest(unittest.TestCase):
 
     def test_rejects_unknown_unterminated_and_modified_ref_escapes(self) -> None:
         cases = (
-            ("(:reff:base.instructions.ADD:)", "unknown semantic escape kind"),
-            ("(:ref:base.instructions.ADD", "unterminated semantic escape"),
-            ("(:ref:base.instructions.ADD|name:)", "do not accept a modifier"),
-            ("(:term:base.terms.address|many:)", "unknown term form"),
+            (
+                "(:reff:base.instructions.ADD:)",
+                SemanticTextErrorReason.UNKNOWN_ESCAPE_KIND,
+            ),
+            (
+                "(:ref:base.instructions.ADD",
+                SemanticTextErrorReason.UNTERMINATED_ESCAPE,
+            ),
+            (
+                "(:ref:base.instructions.ADD|name:)",
+                SemanticTextErrorReason.MODIFIED_ENTITY_REFERENCE,
+            ),
+            (
+                "(:term:base.terms.address|many:)",
+                SemanticTextErrorReason.UNKNOWN_TERM_FORM,
+            ),
         )
 
-        for raw, message in cases:
-            with self.subTest(raw=raw), self.assertRaisesRegex(
-                SemanticTextError, message
-            ):
+        for raw, reason in cases:
+            with self.subTest(raw=raw), self.assertRaises(SemanticTextError) as caught:
                 SemanticText.parse(raw, origin=self.origin)
+            self.assertIs(caught.exception.reason, reason)
+            self.assertEqual(caught.exception.origin, self.origin)
 
 
 if __name__ == "__main__":

@@ -6,11 +6,19 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, cast
+from typing import Any
 
 from .extension import ExtensionSetCatalog
 from .reference import Reference, ReferenceIndex
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+
+
+class RegisterGroupSourceConflictError(ValueError):
+    """A register group declares more than one member source topology."""
+
+
+class RegisterWidthDomainOrderError(ValueError):
+    """A variable-width domain is not a strictly increasing set."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,7 +247,7 @@ def _load_group(
     has_series = "series" in raw
     has_explicit = registers_root.is_dir()
     if has_series == has_explicit:
-        raise ValueError(
+        raise RegisterGroupSourceConflictError(
             f"{source}: register group must own exactly one of a series or a registers directory"
         )
 
@@ -348,7 +356,7 @@ def _decode_width(raw: Any, source: Path) -> RegisterWidth:
     expression, raw_values = next(iter(raw.items()))
     values = tuple(raw_values)
     if values != tuple(sorted(set(values))):
-        raise ValueError(
+        raise RegisterWidthDomainOrderError(
             f"{source}: widths for {expression!r} must be unique and increasing"
         )
     return VariableRegisterWidth(expression, values)

@@ -1,11 +1,19 @@
 import unittest
-from dataclasses import replace
+from contextlib import contextmanager
 from pathlib import Path
+import shutil
+import tempfile
+
+import yaml
 
 from engine.project import (
+    CpuidFlagWidthError,
+    ExtensionDependencyCycleError,
     IsaProject,
-    SourceCatalog,
-    _ExtensionComponents,
+    ProjectLookupError,
+    ProjectLookupReason,
+    RepeatedCpuidRequirementError,
+    UnknownCpuidFlagError,
 )
 from engine.reference import Reference
 
@@ -15,6 +23,26 @@ class IsaProjectTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.isa_root = Path(__file__).parents[1]
         cls.project = IsaProject.load(cls.isa_root)
+
+    @contextmanager
+    def project_fixture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "isa"
+            shutil.copytree(self.isa_root, root)
+            shutil.copytree(
+                self.isa_root.parent / "artifacts/isa-reference/document",
+                root.parent / "artifacts/isa-reference/document",
+            )
+            yield root
+
+    @staticmethod
+    def update_extension(root: Path, extension_id: str, **updates: object) -> None:
+        source = root / "extensions" / extension_id / "extension.yaml"
+        document = yaml.safe_load(source.read_text(encoding="utf-8"))
+        document.update(updates)
+        source.write_text(
+            yaml.safe_dump(document, sort_keys=False), encoding="utf-8"
+        )
 
     def test_extension_projects_owner_declared_dependencies(self) -> None:
         extension = self.project.extension("FPTRANSA")
@@ -54,119 +82,83 @@ class IsaProjectTest(unittest.TestCase):
                     owner_requirements[bundle.owner],
                 )
 
-    def test_cpuid_requirements_reject_unknown_and_non_flag_fields(self) -> None:
-        fp = self.project.extension("FP").metadata
-        cases = (
-            (
-                replace(
-                    fp,
-                    required_cpuid_flags=(
-                        "FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.UNKNOWN",
-                    ),
-                ),
-                "unknown CPUID flag reference",
-            ),
-            (
-                replace(
-                    fp,
-                    required_cpuid_flags=(
-                        "base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID",
-                    ),
-                ),
-                "names a 32-bit field",
-            ),
-        )
-
-        for metadata, message in cases:
-            with (
-                self.subTest(message=message),
-                self.assertRaisesRegex(ValueError, message),
-            ):
-                SourceCatalog._resolve_cpuid_requirements(
-                    {"FP": metadata}, ("FP",), self.project.cpuid
-                )
-
-    def test_cpuid_requirements_reject_repeated_inherited_flags(self) -> None:
-        fp = self.project.extension("FP").metadata
-        fptransa = replace(
-            self.project.extension("FPTRANSA").metadata,
-            required_cpuid_flags=("FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP",),
-        )
-
-        with self.assertRaisesRegex(ValueError, "repeats an inherited requirement"):
-            SourceCatalog._resolve_cpuid_requirements(
-                {"FP": fp, "FPTRANSA": fptransa},
-                ("FP", "FPTRANSA"),
-                self.project.cpuid,
-            )
-
-    def test_exposes_cpuid_as_an_independent_project_catalog(self) -> None:
-        self.assertEqual(self.project.cpuid.base.owner, "base")
-        self.assertIs(
-            self.project.cpuid.references.leaves[
-                Reference.parse("base.cpuid.IMPLEMENTATION.CACHE_TOPOLOGY")
-            ],
-            self.project.cpuid.base.classes["IMPLEMENTATION"].leaves["CACHE_TOPOLOGY"],
-        )
-
     def test_rejects_unknown_extension(self) -> None:
-        with self.assertRaisesRegex(ValueError, "unknown extension"):
+        with self.assertRaises(ProjectLookupError) as caught:
             self.project.extension("DOESNOTEXIST")
+        self.assertIs(caught.exception.reason, ProjectLookupReason.UNKNOWN_EXTENSION)
+
+    def test_rejects_unknown_cpuid_requirement_through_public_load(self) -> None:
+        reference = "FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.UNKNOWN"
+        with self.project_fixture() as root:
+            self.update_extension(root, "FP", required_cpuid_flags=[reference])
+            with self.assertRaises(UnknownCpuidFlagError) as caught:
+                IsaProject.load(root)
+
+        self.assertEqual(caught.exception.reference, Reference.parse(reference))
+
+    def test_rejects_non_flag_cpuid_requirement_through_public_load(self) -> None:
+        reference = "base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID"
+        with self.project_fixture() as root:
+            self.update_extension(root, "FP", required_cpuid_flags=[reference])
+            with self.assertRaises(CpuidFlagWidthError) as caught:
+                IsaProject.load(root)
+
+        self.assertEqual(caught.exception.field.reference, Reference.parse(reference))
+        self.assertNotEqual(caught.exception.field.bits, 1)
+
+    def test_rejects_repeated_inherited_cpuid_requirement(self) -> None:
+        reference = "FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP"
+        with self.project_fixture() as root:
+            self.update_extension(root, "FPTRANSA", required_cpuid_flags=[reference])
+            with self.assertRaises(RepeatedCpuidRequirementError) as caught:
+                IsaProject.load(root)
+
+        self.assertEqual(caught.exception.field.reference, Reference.parse(reference))
 
     def test_resolves_dependencies_independently_of_declaration_order(self) -> None:
-        components = {
-            extension.id: _ExtensionComponents(
-                extension.metadata, extension.types, extension.instruction_set
+        with self.project_fixture() as root:
+            inventory = root / "extensions/extensions.yaml"
+            document = yaml.safe_load(inventory.read_text(encoding="utf-8"))
+            document["extensions"] = ["FPTRANSA", "FP", "VECTOR", "VECTORFP"]
+            inventory.write_text(
+                yaml.safe_dump(document, sort_keys=False), encoding="utf-8"
             )
-            for extension in self.project.catalog.extensions.values()
-        }
+            project = IsaProject.load(root)
 
-        resolved = SourceCatalog._resolve_extensions(
-            components, ("FPTRANSA", "VECTOR", "FP")
+        self.assertIs(
+            project.extension("FPTRANSA").requires[0],
+            project.extension("FP"),
         )
 
-        self.assertIs(resolved["FPTRANSA"].requires[0], resolved["FP"])
-        self.assertEqual(tuple(resolved), ("FPTRANSA", "VECTOR", "FP"))
+    def test_rejects_circular_extension_dependencies_through_public_load(self) -> None:
+        with self.project_fixture() as root:
+            self.update_extension(root, "FP", requires=["FPTRANSA"])
+            with self.assertRaises(ExtensionDependencyCycleError) as caught:
+                IsaProject.load(root)
 
-    def test_rejects_circular_extension_dependencies(self) -> None:
-        fp = self.project.extension("FP")
-        fptransa = self.project.extension("FPTRANSA")
-        components = {
-            "FP": _ExtensionComponents(
-                replace(fp.metadata, requires=("FPTRANSA",)),
-                fp.types,
-                fp.instruction_set,
-            ),
-            "FPTRANSA": _ExtensionComponents(
-                fptransa.metadata,
-                fptransa.types,
-                fptransa.instruction_set,
-            ),
-        }
-
-        with self.assertRaisesRegex(ValueError, "FP -> FPTRANSA -> FP"):
-            SourceCatalog._resolve_extensions(components, ("FP", "FPTRANSA"))
+        self.assertEqual(caught.exception.cycle, ("FP", "FPTRANSA", "FP"))
 
     def test_resolves_mnemonic_reference_and_source_path(self) -> None:
-        by_name = self.project.bundle("VADD")
-        by_reference = self.project.bundle("VECTOR.instructions.VADD")
-        by_path = self.project.bundle(
-            self.isa_root
-            / "extensions/VECTOR/instructions/definitions/VADD/encodings.yaml"
-        )
+        expected = self.project.select()[0]
+        by_name = self.project.bundle(expected.instruction.mnemonic)
+        by_reference = self.project.bundle(expected.reference)
+        by_path = self.project.bundle(expected.encodings.source)
 
-        self.assertIs(by_name, by_reference)
-        self.assertIs(by_name, by_path)
+        self.assertIs(expected, by_name)
+        self.assertIs(expected, by_reference)
+        self.assertIs(expected, by_path)
 
     def test_select_deduplicates_without_reordering_targets(self) -> None:
-        selected = self.project.select(("ADD", "SUB", "ADD"))
-        self.assertEqual(
-            [bundle.instruction.mnemonic for bundle in selected], ["ADD", "SUB"]
+        first, second = self.project.select()[:2]
+        selected = self.project.select(
+            (first.reference, second.reference, first.reference)
         )
+        self.assertEqual(selected, (first, second))
 
     def test_rejects_unknown_instruction(self) -> None:
-        with self.assertRaisesRegex(ValueError, "unknown instruction"):
+        with self.assertRaises(ProjectLookupError) as caught:
             self.project.bundle("DOESNOTEXIST")
+        self.assertIs(caught.exception.reason, ProjectLookupReason.UNKNOWN_INSTRUCTION)
 
 
 if __name__ == "__main__":

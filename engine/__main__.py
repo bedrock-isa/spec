@@ -9,12 +9,12 @@ from pathlib import Path
 import sys
 from typing import Sequence
 
-from .allocation import AllocationAnalyzer
+from .allocation import AllocationAnalyzer, CandidateOutsideNamespaceError
 from .check import CheckService
 from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .document import DocumentBuilder
 from .generation import ArtifactGeneratorRegistry, ArtifactWriter
-from .project import IsaProject
+from .project import IsaProject, ProjectLookupError
 from .workspace import SpecWorkspace
 
 
@@ -117,11 +117,17 @@ def _add_allocation_scope(parser: argparse.ArgumentParser) -> None:
 
 
 def _load_failure(root: Path, error: Exception) -> DiagnosticBag:
+    if isinstance(error, ProjectLookupError):
+        code = f"project.lookup.{error.reason.value.replace('_', '-')}"
+    elif isinstance(error, CandidateOutsideNamespaceError):
+        code = "allocation.candidate-outside-namespace"
+    else:
+        code = "project.load"
     return DiagnosticBag(
         [
             Diagnostic(
                 Severity.ERROR,
-                "project.load",
+                code,
                 root,
                 str(error),
             )

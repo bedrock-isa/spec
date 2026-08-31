@@ -5,6 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+class OperatorSpaceUnavailableError(ValueError):
+    """The requested encoding class does not own the named operator space."""
+
+
 @dataclass(frozen=True, slots=True)
 class EncodingClass:
     """One allocation namespace in the instruction framing grammar."""
@@ -90,7 +94,7 @@ def operator_space(class_name: str, name: str) -> OperatorSpace:
             item.name for item in OPERATOR_SPACES if item.encoding_class == class_name
         )
         suffix = f"; choose one of: {', '.join(available)}" if available else ""
-        raise ValueError(
+        raise OperatorSpaceUnavailableError(
             f"encoding class {class_name!r} has no operator space {name!r}{suffix}"
         )
     return result

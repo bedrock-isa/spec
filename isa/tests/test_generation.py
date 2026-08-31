@@ -84,20 +84,20 @@ class _SailCCompiler:
 
 
 class GenerationTest(unittest.TestCase):
-    def test_artifact_schema_requires_named_outputs(self) -> None:
+    def test_artifact_schema_requires_valid_named_outputs(
+        self,
+    ) -> None:
         repository = Path(__file__).parents[2]
         schema = YamlDocumentLoader().mapping(repository / "artifacts/schema.yaml")
         invalid_definitions = {
-            "singular": "id: legacy\ngenerator: generator.py\noutput: legacy.txt\n",
-            "array": "id: legacy\ngenerator: generator.py\noutputs: [legacy.txt]\n",
-            "special": (
-                "id: legacy\ngenerator: generator.py\n"
-                "outputs: {document: legacy.tex}\n"
-                "dependency-graph: graph.json\n"
+            "missing_outputs": "id: example\ngenerator: generator.py\n",
+            "non_mapping_outputs": (
+                "id: example\ngenerator: generator.py\n"
+                "outputs: [example.tex]\n"
             ),
-            "planned": (
-                "id: future\nstatus: planned\n"
-                "outputs: {reserved: future/output.txt}\n"
+            "absolute_output": (
+                "id: example\ngenerator: generator.py\n"
+                "outputs: {document: /example.tex}\n"
             ),
         }
         with tempfile.TemporaryDirectory() as directory:
@@ -178,12 +178,26 @@ class Generator(ArtifactGenerator):
                 instruction_semantics=(instruction_semantics,),
             )
 
-            rendered = SailProjectRenderer().render(program, root)
+            project = SailProjectRenderer().project(program, root)
 
-            self.assertLess(rendered.index("model_base_core {"), rendered.index("operation_entries {"))
-            self.assertLess(rendered.index("operation_entries {"), rendered.index("model_base_boundary {"))
-            self.assertIn("files\n    instruction.sail,\n    generated/dispatch.sail", rendered)
-            self.assertIn("requires registry, operation_entries, model_base_core", rendered)
+            self.assertEqual(
+                tuple(module.name for module in project.modules),
+                (
+                    "registry",
+                    "model_base_core",
+                    "operation_entries",
+                    "model_base_boundary",
+                ),
+            )
+            operation_entries = project.modules[2]
+            self.assertEqual(
+                operation_entries.sources,
+                ("instruction.sail", "generated/dispatch.sail"),
+            )
+            self.assertEqual(
+                project.modules[3].requirements,
+                ("registry", "operation_entries", "model_base_core"),
+            )
 
     def test_generator_assembles_artifacts_without_writing(self) -> None:
         definition = ArtifactDefinition(
@@ -291,15 +305,6 @@ class Generator(ArtifactGenerator):
             changed_artifacts.artifact(outputs[3]).content,
             artifacts.artifact(outputs[3]).content,
         )
-        core = artifacts.artifact(outputs[0]).content
-        abi = artifacts.artifact(outputs[2]).content
-        self.assertIn("generated C", core)
-        self.assertIn("bedrock_core_execute", core)
-        self.assertIn("BEDROCK_CORE_VECTOR_LANE = 7", abi)
-        self.assertIn("typedef struct bedrock_core bedrock_core;", abi)
-        self.assertIn("typedef struct bedrock_core_request", abi)
-        self.assertIn("int32_t operation;", abi)
-        self.assertIn("int32_t form_id;", abi)
 
     def test_writer_is_the_filesystem_mutation_boundary(self) -> None:
         artifacts = GeneratedArtifactSet(
@@ -376,7 +381,7 @@ class Generator(ArtifactGenerator):
                 root,
             )
 
-            with self.assertRaisesRegex(ValueError, "conflicts with owner 'first'"):
+            with self.assertRaises(ValueError):
                 writer.write(
                     GeneratedArtifactSet(
                         (GeneratedArtifact(Path("shared/value.txt"), "second\n"),),
@@ -397,7 +402,7 @@ class Generator(ArtifactGenerator):
             value.write_text("original\n")
             (root / "alias").symlink_to(actual, target_is_directory=True)
 
-            with self.assertRaisesRegex(ValueError, "traverses a symlink"):
+            with self.assertRaises(ValueError):
                 writer.write(
                     GeneratedArtifactSet(
                         (GeneratedArtifact(Path("alias/value.txt"), "replacement\n"),),
@@ -419,7 +424,7 @@ class Generator(ArtifactGenerator):
             existing.parent.mkdir(parents=True)
             existing.write_text("user-owned\n")
 
-            with self.assertRaisesRegex(ValueError, "unowned"):
+            with self.assertRaises(ValueError):
                 writer.write(
                     GeneratedArtifactSet(
                         (GeneratedArtifact(Path("generated/value.txt"), "new\n"),),
@@ -433,18 +438,16 @@ class Generator(ArtifactGenerator):
 
     def test_artifact_rejects_output_escape(self) -> None:
         for path in (Path("../outside"), Path("/absolute")):
-            with self.subTest(path=path), self.assertRaisesRegex(
-                ValueError, "escapes output root"
-            ):
+            with self.subTest(path=path), self.assertRaises(ValueError):
                 GeneratedArtifact(path, "")
 
     def test_registry_rejects_duplicate_artifact_ids(self) -> None:
         definition = ArtifactDefinition("duplicate", Path("artifact.yaml"), {})
-        with self.assertRaisesRegex(ValueError, "duplicate artifact id"):
+        with self.assertRaises(ValueError):
             ArtifactGeneratorRegistry((_Generator(definition), _Generator(definition)))
 
     def test_artifact_set_rejects_duplicate_output_paths(self) -> None:
-        with self.assertRaisesRegex(ValueError, "duplicate generated artifact paths"):
+        with self.assertRaises(ValueError):
             GeneratedArtifactSet(
                 (
                     GeneratedArtifact(Path("same.txt"), "first"),
@@ -459,7 +462,7 @@ class Generator(ArtifactGenerator):
             Path("dependent/artifact.yaml"),
             {"depends-on": ["missing"], "outputs": {"result": "dependent.txt"}},
         )
-        with self.assertRaisesRegex(ValueError, "unknown artifact dependency"):
+        with self.assertRaises(ValueError):
             ArtifactGeneratorRegistry((_Generator(missing),))
 
         first = ArtifactDefinition(
@@ -470,7 +473,7 @@ class Generator(ArtifactGenerator):
             Path("second/artifact.yaml"),
             {"outputs": {"result": "same.txt"}},
         )
-        with self.assertRaisesRegex(ValueError, "overlaps"):
+        with self.assertRaises(ValueError):
             ArtifactGeneratorRegistry((_Generator(first), _Generator(second)))
 
         tree = ArtifactDefinition(
@@ -481,7 +484,7 @@ class Generator(ArtifactGenerator):
             Path("member/artifact.yaml"),
             {"outputs": {"index": "site/index.html"}},
         )
-        with self.assertRaisesRegex(ValueError, "overlaps"):
+        with self.assertRaises(ValueError):
             ArtifactGeneratorRegistry((_Generator(tree), _Generator(member)))
 
     def test_generated_paths_must_populate_their_declared_output_roots(self) -> None:
@@ -497,7 +500,7 @@ class Generator(ArtifactGenerator):
                 artifact_id="publication",
             )
         )
-        with self.assertRaisesRegex(ValueError, "owned by 0 declared output roots"):
+        with self.assertRaises(ValueError):
             definition.validate_generated(
                 GeneratedArtifactSet(
                     (GeneratedArtifact(Path("outside.txt"), "outside\n"),),

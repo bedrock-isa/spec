@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from importlib import import_module
 from pathlib import Path
-import re
+import subprocess
+import tempfile
 import unittest
 
-from engine.generation import ArtifactDefinition, ArtifactGenerationContext
 from engine.encoding import EncodingForm
 from engine.encoding_architecture import ENCODING_CLASSES_BY_WIDTH
+from engine.generation import ArtifactDefinition, ArtifactGenerationContext
 from engine.project import InstructionBundle, IsaProject
-from engine.reference import Reference
 from engine.type_system import FieldTypeKind, PayloadTypeKind
 from engine.workspace import SpecWorkspace
 from engine.yaml_document import YamlDocumentLoader
@@ -30,13 +30,13 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
         definition = ArtifactDefinition.load(
             ROOT / "artifacts/llvm-mc-tablegen/artifact.yaml", schema
         )
-        generator_type = import_module(
-            "artifacts.llvm-mc-tablegen.generator"
-        ).Generator
-        generated = generator_type(definition).generate(
+        generator_type = import_module("artifacts.llvm-mc-tablegen.generator").Generator
+        generator = generator_type(definition)
+        generated = generator.generate(
             ArtifactGenerationContext.create(cls.workspace, ROOT)
         )
-        cls.content = generated.artifact("BedrockGenISACatalog.td").content
+        cls.projection = generator.projection
+        cls.catalog = generated.artifact("BedrockGenISACatalog.td").content
 
     @staticmethod
     def _form_identifier(bundle: InstructionBundle, form: EncodingForm) -> str:
@@ -48,14 +48,7 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             for bundle in self.project.catalog.instructions.values()
             for form in bundle.encodings.forms
         }
-        actual = set(
-            re.findall(
-                r'^def BRForm_[^ ]+ : BedrockISAForm<\n  "([^"]+)"',
-                self.content,
-                flags=re.MULTILINE,
-            )
-        )
-        self.assertEqual(actual, expected)
+        self.assertEqual({form.identifier for form in self.projection.forms}, expected)
 
     def test_variable_length_forms_are_not_native_codec_candidates(self) -> None:
         expected: dict[str, bool] = {}
@@ -79,47 +72,32 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
                     for payload in form.payloads
                 )
                 expected[self._form_identifier(bundle, form)] = (
-                    not has_variable_length
-                    and primary_bytes + fixed_payload_bytes <= 8
+                    not has_variable_length and primary_bytes + fixed_payload_bytes <= 8
                 )
-
         projected = {
-            identifier: codec_candidate == "1"
-            for identifier, has_variable_length, codec_candidate in re.findall(
-                r'^def BRForm_[^ ]+ : BedrockISAForm<\n'
-                r'  "([^"]+)",[^\n]*\n'
-                r'  \d+, \d+, [01], ([01]), ([01]),',
-                self.content,
-                flags=re.MULTILINE,
-            )
-            if has_variable_length == "1"
+            form.identifier: form.tablegen_codec_candidate
+            for form in self.projection.forms
+            if form.has_variable_length
         }
-
         self.assertTrue(expected)
         self.assertEqual(projected, expected)
 
     def test_vector_table_covers_forms_and_projects_alias_policy(self) -> None:
-        expected_aliases = {
+        expected = {
             self._form_identifier(bundle, form): bool(
-                dict(bundle.instruction).get("assembly", {}).get(
-                    "width_suffix_aliases", False
-                )
+                dict(bundle.instruction)
+                .get("assembly", {})
+                .get("width_suffix_aliases", False)
             )
             for bundle in self.project.catalog.instructions.values()
             if bundle.instruction.route == "vector"
             for form in bundle.encodings.forms
         }
-        actual_aliases = {
-            identifier: alias == "1"
-            for identifier, alias in re.findall(
-                r'^def BRForm_vector_[^ ]+ : BedrockVectorEncodingForm<\n'
-                r'  "([^"]+)", "[^"]+", "[^"]+", "[^"]*", '
-                r'[^,]+, [^,]+, [^,]+, [^,]+, [^,]+, [^,]+, ([01]),',
-                self.content,
-                flags=re.MULTILINE,
-            )
+        actual = {
+            form.identifier: form.has_width_only_aliases
+            for form in self.projection.vector_forms
         }
-        self.assertEqual(actual_aliases, expected_aliases)
+        self.assertEqual(actual, expected)
 
     def test_scalar_records_reference_canonical_non_vector_forms(self) -> None:
         canonical = {
@@ -127,20 +105,14 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             for bundle in self.project.catalog.instructions.values()
             for form in bundle.encodings.forms
         }
-        records = re.findall(
-            r'^def BRForm_scalar_[^ ]+ : BedrockScalarEncodingForm<\n'
-            r'  "([^"]+)", "[^"]+", "([^"]+)", (\d+),',
-            self.content,
-            flags=re.MULTILINE,
-        )
-        self.assertTrue(records)
-        for identifier, pattern, fixed_payload_bytes in records:
-            with self.subTest(identifier=identifier):
-                bundle, form = canonical[identifier]
+        self.assertTrue(self.projection.scalar_forms)
+        for record in self.projection.scalar_forms:
+            with self.subTest(identifier=record.identifier):
+                bundle, form = canonical[record.identifier]
                 self.assertNotEqual(bundle.instruction.route, "vector")
-                self.assertEqual(pattern, form.pattern.code)
+                self.assertEqual(record.pattern, form.pattern.code)
                 self.assertEqual(
-                    int(fixed_payload_bytes),
+                    record.fixed_payload_bytes,
                     sum(
                         self.project.types.payload_types.resolve(payload.type).bytes
                         for payload in form.payloads
@@ -165,57 +137,74 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             for group_reference in selector_group_references
         ]
         actual_groups: dict[int, set[tuple[str, int]]] = {}
-        for group, name, encoding in re.findall(
-            r'BedrockRegisterSelector<(\d+), "([^"]+)", (\d+)>',
-            self.content,
-        ):
-            actual_groups.setdefault(int(group), set()).add((name, int(encoding)))
-
+        for selector in self.projection.register_selectors:
+            actual_groups.setdefault(selector.group, set()).add(
+                (selector.name, selector.encoding)
+            )
         self.assertCountEqual(list(actual_groups.values()), expected_groups)
 
-    def test_extz_destinations_reject_immediate_ea(self) -> None:
-        # EXTZ destination constraints are authored ISA rules.  The scalar
-        # TableGen operand flag is the external LLVM consumer boundary.
-        for mnemonic in ("EXTZW", "EXTZL", "EXTZQ"):
-            bundle = self.project.catalog.instructions[
-                Reference.parse(f"base.instructions.{mnemonic}")
-            ]
-            for form in bundle.encodings.forms:
-                identifier = self._form_identifier(bundle, form)
-                match = re.search(
-                    r'^def BRForm_scalar_[^ ]+ : BedrockScalarEncodingForm<\n'
-                    rf'  "{re.escape(identifier)}",(?P<arguments>.*?)>;',
-                    self.content,
-                    flags=re.MULTILINE | re.DOTALL,
-                )
-                self.assertIsNotNone(match, identifier)
-                assert match is not None
-                arguments = [
-                    identifier,
-                    *(
-                        value.strip().strip('"')
-                        for value in match.group("arguments")
-                        .replace("\n", "")
-                        .split(",")
-                    ),
-                ]
-                destination_index = next(
-                    index
-                    for index, operand in enumerate(form.syntax.operands)
-                    if operand.field is not None
-                    and (binding := form.field_for_marker(operand.field)) is not None
-                    and binding.role == "dst"
-                )
-                self.assertTrue(
-                    any(
-                        constraint.role == "dst"
-                        and "immediate" in constraint.exclude
-                        for constraint in form.constraints
-                    ),
-                    identifier,
-                )
-                allow_immediate_ea = arguments[10 + destination_index * 10 + 4]
-                self.assertEqual(allow_immediate_ea, "0", identifier)
+    def test_authored_destination_exclusions_reach_scalar_projection(self) -> None:
+        canonical = {
+            self._form_identifier(bundle, form): form
+            for bundle in self.project.catalog.instructions.values()
+            for form in bundle.encodings.forms
+        }
+        scalar_ids = {record.identifier for record in self.projection.scalar_forms}
+        constrained = {
+            identifier: form
+            for identifier, form in canonical.items()
+            if identifier in scalar_ids
+            and any(
+                constraint.role == "dst" and "immediate" in constraint.exclude
+                for constraint in form.constraints
+            )
+        }
+        projected = {
+            record.identifier: record
+            for record in self.projection.scalar_forms
+            if record.identifier in constrained
+        }
+        self.assertEqual(set(projected), set(constrained))
+        for identifier, record in projected.items():
+            form = constrained[identifier]
+            destination_index = next(
+                index
+                for index, operand in enumerate(form.syntax.operands)
+                if operand.field is not None
+                and (binding := form.field_for_marker(operand.field)) is not None
+                and binding.role == "dst"
+            )
+            self.assertFalse(
+                record.operands[destination_index].allow_immediate_ea,
+                identifier,
+            )
+
+    def test_serialized_catalog_is_accepted_by_llvm_tablegen(self) -> None:
+        tablegen = ROOT.parent / "llvm-project/build/bin/llvm-tblgen"
+        if not tablegen.is_file():
+            self.skipTest("workspace llvm-tblgen is unavailable")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generated = root / "BedrockGenISACatalog.td"
+            generated.write_text(self.catalog, encoding="utf-8")
+            source = root / "consume.td"
+            source.write_text(
+                f'include "llvm/TableGen/SearchableTable.td"\ninclude "{generated}"\n',
+                encoding="utf-8",
+            )
+            completed = subprocess.run(
+                [
+                    str(tablegen),
+                    "-I",
+                    str(ROOT.parent / "llvm-project/llvm/include"),
+                    "-print-records",
+                    str(source),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
 
 if __name__ == "__main__":

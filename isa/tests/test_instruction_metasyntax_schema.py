@@ -15,10 +15,16 @@ class InstructionMetasyntaxSchemaTest(unittest.TestCase):
             )
         )
 
-    def test_is_a_valid_string_schema(self) -> None:
+    def test_accepts_nonempty_instruction_syntax(self) -> None:
         Draft202012Validator.check_schema(self.schema)
-        self.assertEqual(self.schema["type"], "string")
-        self.assertEqual(self.schema["minLength"], 1)
+        validator = Draft202012Validator(self.schema)
+        self.assertEqual(list(validator.iter_errors("ADD.Q Rn(s), Rn(d)")), [])
+
+    def test_rejects_empty_and_non_string_instruction_syntax(self) -> None:
+        validator = Draft202012Validator(self.schema)
+        for value in ("", None, []):
+            with self.subTest(value=value):
+                self.assertTrue(list(validator.iter_errors(value)))
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 import re
+from typing import NamedTuple
 
 from abi.elf.model import ElfAbiProject, RelocationExpression
 from abi.elf.model.project import Relocation
@@ -60,20 +61,53 @@ _MACROS = (
 )
 
 
+class UnmappedRelocationExpressionError(ValueError):
+    """A relocation expression has no LLVM/LLD projection."""
+
+
+class LlvmRelocationProjection(NamedTuple):
+    relocation: Relocation
+    lld_expression: str
+
+    @classmethod
+    def create(cls, relocation: Relocation) -> "LlvmRelocationProjection":
+        return cls(relocation, _lld_expression(relocation))
+
+
+class ElfAbiProjection(NamedTuple):
+    relocations: tuple[LlvmRelocationProjection, ...]
+
+
 class Generator(ArtifactGenerator):
     """Project ELF ABI entities into LLVM-friendly X-macro includes."""
+
+    @staticmethod
+    def project(project: ElfAbiProject) -> ElfAbiProjection:
+        return ElfAbiProjection(
+            tuple(
+                LlvmRelocationProjection.create(relocation)
+                for relocation in sorted(
+                    project.relocations.values(), key=lambda item: item.value
+                )
+            )
+        )
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("abi.elf")
         if not isinstance(project, ElfAbiProject):
             raise TypeError("abi.elf provider must be an ElfAbiProject")
-        relocations = sorted(project.relocations.values(), key=lambda item: item.value)
+        projection = self.project(project)
         return GeneratedArtifactSet(
             (
-                GeneratedArtifact(_RELOCATIONS_OUTPUT, _render_relocations(relocations)),
+                GeneratedArtifact(
+                    _RELOCATIONS_OUTPUT,
+                    _render_relocations(
+                        [item.relocation for item in projection.relocations]
+                    ),
+                ),
                 GeneratedArtifact(
                     _CATALOG_OUTPUT,
-                    _render_catalog(project, relocations, context.workspace),
+                    _render_catalog(project, projection, context.workspace),
                 ),
             ),
             self.artifact_id,
@@ -88,9 +122,9 @@ def _render_relocations(relocations: list[Relocation]) -> str:
         "//",
         "//===----------------------------------------------------------------------===//",
         "",
-        '#ifndef ELF_RELOC',
+        "#ifndef ELF_RELOC",
         '#error "ELF_RELOC must be defined"',
-        '#endif',
+        "#endif",
         "",
     ]
     lines.extend(f"ELF_RELOC({item.id}, {item.value})" for item in relocations)
@@ -98,7 +132,9 @@ def _render_relocations(relocations: list[Relocation]) -> str:
     return "\n".join(lines)
 
 
-def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], workspace) -> str:
+def _render_catalog(
+    project: ElfAbiProject, projection: ElfAbiProjection, workspace
+) -> str:
     lines = [
         "//===-- BedrockGenELFABI.inc - generated ELF ABI data --------*- C++ -*-===//",
         "//",
@@ -132,7 +168,8 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
     ]
     lines.extend(_macro_defaults())
 
-    for relocation in relocations:
+    for projected in projection.relocations:
+        relocation = projected.relocation
         result = relocation.result
         lines.append(
             "BEDROCK_ELF_RELOCATION("
@@ -144,7 +181,7 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
                     _token(result.kind.value),
                     str(result.width_bits or 0),
                     "1" if result.signed else "0",
-                    _lld_expression(relocation),
+                    projected.lld_expression,
                     _c_string(relocation.calculation.code),
                     _c_string(
                         _field_id(workspace, relocation.field)
@@ -200,7 +237,13 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
                 "BEDROCK_ELF_TLS_PROPERTY",
                 tls_model.id,
                 tls_model.data,
-                excluded={"id", "selection", "base_register", "protocol", "relocations"},
+                excluded={
+                    "id",
+                    "selection",
+                    "base_register",
+                    "protocol",
+                    "relocations",
+                },
             )
         )
 
@@ -229,18 +272,18 @@ def _render_catalog(project: ElfAbiProject, relocations: list[Relocation], works
         "NONE" if state.tls_base is None else workspace.resolve(state.tls_base).id
     )
     lines.append(
-            f"BEDROCK_ELF_ENTRY_STATE("
-            f"{workspace.resolve(state.entry_point).id}, "
-            f"{_c_string(state.entry_point_source)}, {workspace.resolve(state.stack).id}, "
-            f"{state.stack_alignment_bytes}, {tls_base}, "
-            f"{_c_string(state.payload_owner)})"
+        f"BEDROCK_ELF_ENTRY_STATE("
+        f"{workspace.resolve(state.entry_point).id}, "
+        f"{_c_string(state.entry_point_source)}, {workspace.resolve(state.stack).id}, "
+        f"{state.stack_alignment_bytes}, {tls_base}, "
+        f"{_c_string(state.payload_owner)})"
     )
     for permission in state.stack_permissions:
         lines.append(f"BEDROCK_ELF_ENTRY_STACK_PERMISSION({_token(permission)})")
     for role, register in state.segment_contexts.items():
         lines.append(
             f"BEDROCK_ELF_ENTRY_SEGMENT_CONTEXT({_token(role)}, "
-                f"{workspace.resolve(register).id})"
+            f"{workspace.resolve(register).id})"
         )
     for requirement in state.readiness:
         lines.append(f"BEDROCK_ELF_ENTRY_READINESS({_token(requirement)})")
@@ -295,7 +338,7 @@ def _lld_expression(relocation: Relocation) -> str:
     try:
         return _LLD_EXPRESSION_SIGNATURES[signature]
     except KeyError as error:
-        raise ValueError(
+        raise UnmappedRelocationExpressionError(
             f"{relocation.source}: no LLVM/LLD expression mapping for "
             f"{relocation.calculation.code!r} ({signature})"
         ) from error

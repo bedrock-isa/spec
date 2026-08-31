@@ -18,12 +18,58 @@ _DIRECTIVE_RE = re.compile(
 
 
 @dataclass(frozen=True, slots=True)
-class _ProjectedQuery:
+class ProjectedCpuidQuery:
+    """One public query row and its result-format fields."""
+
     id: str
     first: int
     last: int
     stride: int
     fields: tuple[CpuidField, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CpuidLeafProjection:
+    """The owner-local public contract selected by one root CPUID leaf."""
+
+    leaf: CpuidLeaf
+    queries: tuple[ProjectedCpuidQuery, ...]
+
+    @classmethod
+    def create(cls, catalog, leaf: CpuidLeaf) -> "CpuidLeafProjection":
+        if leaf.extends is not None:
+            raise ValueError(
+                f"CPUID leaf projection requires a root leaf, not {leaf.reference}"
+            )
+        fields_by_query: dict[tuple[str, int, int, int], list[CpuidField]] = {}
+        for namespace in catalog.namespaces.values():
+            for cpuid_class in namespace.classes.values():
+                for candidate in cpuid_class.leaves.values():
+                    if _root_leaf(catalog, candidate).reference != leaf.reference:
+                        continue
+                    for query in candidate.queries:
+                        key = (
+                            query.id,
+                            query.indexes.first,
+                            query.indexes.last,
+                            query.indexes.stride,
+                        )
+                        fields_by_query.setdefault(key, []).extend(query.fields)
+
+        queries = tuple(
+            ProjectedCpuidQuery(
+                query_id,
+                first,
+                last,
+                stride,
+                tuple(sorted(fields, key=lambda field: field.lsb)),
+            )
+            for (query_id, first, last, stride), fields in sorted(
+                fields_by_query.items(),
+                key=lambda item: (item[0][1], item[0][2], item[0][3], item[0][0]),
+            )
+        )
+        return cls(leaf, queries)
 
 
 def _identifier(value: object) -> str:
@@ -46,37 +92,6 @@ def _root_leaf(catalog, leaf: CpuidLeaf) -> CpuidLeaf:
         active.add(leaf.reference)
         leaf = catalog.references.leaves.resolve(leaf.extends)
     return leaf
-
-
-def _projected_queries(catalog, root: CpuidLeaf) -> tuple[_ProjectedQuery, ...]:
-    fields_by_query: dict[tuple[str, int, int, int], list[CpuidField]] = {}
-    for namespace in catalog.namespaces.values():
-        for cpuid_class in namespace.classes.values():
-            for leaf in cpuid_class.leaves.values():
-                if _root_leaf(catalog, leaf).reference != root.reference:
-                    continue
-                for query in leaf.queries:
-                    key = (
-                        query.id,
-                        query.indexes.first,
-                        query.indexes.last,
-                        query.indexes.stride,
-                    )
-                    fields_by_query.setdefault(key, []).extend(query.fields)
-
-    return tuple(
-        _ProjectedQuery(
-            query_id,
-            first,
-            last,
-            stride,
-            tuple(sorted(fields, key=lambda field: field.lsb)),
-        )
-        for (query_id, first, last, stride), fields in sorted(
-            fields_by_query.items(),
-            key=lambda item: (item[0][1], item[0][2], item[0][3], item[0][0]),
-        )
-    )
 
 
 def _diagram_labels(fields: tuple[CpuidField, ...]) -> dict[Reference[object], str]:
@@ -110,7 +125,7 @@ def _bit_range(field: CpuidField) -> str:
 
 
 def _query_diagram_label(
-    query: _ProjectedQuery,
+    query: ProjectedCpuidQuery,
     fields: tuple[CpuidField, ...], labels: dict[Reference[object], str]
 ) -> str:
     lines = [
@@ -211,7 +226,7 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
 
     @staticmethod
     def render(catalog, leaf: CpuidLeaf) -> str:
-        queries = _projected_queries(catalog, leaf)
+        queries = CpuidLeafProjection.create(catalog, leaf).queries
         labels = {query: _diagram_labels(query.fields) for query in queries}
         rows = [
             f"{_identifier(_index(query.first, query.last, query.stride))} & "
@@ -249,4 +264,8 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
         )
 
 
-__all__ = ["CpuidLeafFragmentRenderer"]
+__all__ = [
+    "CpuidLeafFragmentRenderer",
+    "CpuidLeafProjection",
+    "ProjectedCpuidQuery",
+]

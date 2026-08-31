@@ -11,6 +11,14 @@ import yaml
 from jsonschema import Draft202012Validator
 
 
+class MnemonicDirectoryMismatchError(ValueError):
+    """The instruction mnemonic disagrees with its owning directory."""
+
+
+class UnknownRepeatObservedValueError(ValueError):
+    """A repeat contract names neither an operand nor the computed result."""
+
+
 class Instruction(MutableMapping[str, Any]):
     """Encapsulate and internally validate one ``instruction.yaml``."""
 
@@ -55,7 +63,7 @@ class Instruction(MutableMapping[str, Any]):
 
         mnemonic = self._data["mnemonic"]
         if self.source.parent.name != mnemonic:
-            raise ValueError(
+            raise MnemonicDirectoryMismatchError(
                 f"{self.source}: mnemonic {mnemonic!r} does not match "
                 f"instruction directory {self.source.parent.name!r}"
             )
@@ -64,7 +72,7 @@ class Instruction(MutableMapping[str, Any]):
         if repeat and repeat["type"] == "repcc":
             observed = repeat["observed_value"]
             if observed != "computed" and observed not in self._data["operands"]:
-                raise ValueError(
+                raise UnknownRepeatObservedValueError(
                     f"{self.source}: repeat observed_value {observed!r} does not "
                     "name an operand"
                 )

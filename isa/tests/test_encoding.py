@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 
 from engine.encoding import EncodingCatalog
-from engine.reference import UnknownReferenceError
+from engine.reference import Reference, UnknownReferenceError
 from engine.type_system import TypeSystem
 
 
@@ -15,21 +15,21 @@ class EncodingCatalogTest(unittest.TestCase):
         cls.isa_root = Path(__file__).parents[1]
         cls.types = TypeSystem.load(cls.isa_root)
 
-    def test_loads_typed_add_forms_in_source_order(self) -> None:
-        catalog = EncodingCatalog.load(
-            self.isa_root / "instructions/definitions/ADD/encodings.yaml",
-            self.types,
-            self.isa_root,
-        )
+    def test_loads_typed_forms_in_declared_source_order(self) -> None:
+        document = {
+            "encodings": {
+                "q_8_sp": {"pattern": "0001110", "syntax": "ADD.Q 8, SP"},
+                "q_4_sp": {"pattern": "0001111", "syntax": "ADD.Q 4, SP"},
+            }
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "encodings.yaml"
+            path.write_text(
+                yaml.safe_dump(document, sort_keys=False), encoding="utf-8"
+            )
+            catalog = EncodingCatalog.load(path, self.types, self.isa_root)
 
-        self.assertEqual(catalog.forms[0].id, "q_8_sp")
-        register_form = catalog.forms[1]
-        self.assertEqual(register_form.syntax.mnemonic, "ADD")
-        self.assertEqual(register_form.pattern.bit_width, 14)
-        self.assertEqual(
-            str(register_form.field_for_marker("s").type),
-            "base.field_types.Rn",
-        )
+        self.assertEqual(tuple(form.id for form in catalog.forms), tuple(document["encodings"]))
 
     def test_resolves_payload_types_while_loading(self) -> None:
         catalog = EncodingCatalog.load(
@@ -38,9 +38,9 @@ class EncodingCatalogTest(unittest.TestCase):
             self.isa_root,
         )
         payload_types = {
-            str(payload.type) for form in catalog.forms for payload in form.payloads
+            payload.type for form in catalog.forms for payload in form.payloads
         }
-        self.assertIn("base.payload_types.DISP16S", payload_types)
+        self.assertIn(Reference.parse("base.payload_types.DISP16S"), payload_types)
 
     def test_rejects_unknown_type_reference(self) -> None:
         document = {

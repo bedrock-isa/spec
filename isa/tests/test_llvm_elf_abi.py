@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from importlib import import_module
 from pathlib import Path
-import re
+import shutil
+import subprocess
 from types import SimpleNamespace
+import tempfile
 import unittest
 
-from abi.elf.model import RelocationMetasyntax
+from abi.elf.model import ElfAbiProject, RelocationMetasyntax
 from engine.generation import ArtifactDefinition, ArtifactGenerationContext
-from engine.project import IsaProject
 from engine.workspace import SpecWorkspace
 from engine.yaml_document import YamlDocumentLoader
 
@@ -20,166 +22,174 @@ class LlvmElfAbiArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.workspace = SpecWorkspace.load(ROOT)
-        cls.isa = cls.workspace.require_provider("isa")
-        if not isinstance(cls.isa, IsaProject):
-            raise TypeError("workspace isa provider must be an IsaProject")
-        cls.elf = cls.workspace.require_provider("abi.elf")
         schema = YamlDocumentLoader().mapping(ROOT / "artifacts/schema.yaml")
         definition = ArtifactDefinition.load(
             ROOT / "artifacts/llvm-elf-abi/artifact.yaml", schema
         )
         cls.generator_module = import_module("artifacts.llvm-elf-abi.generator")
+        project = cls.workspace.require_provider("abi.elf")
+        if not isinstance(project, ElfAbiProject):
+            raise TypeError("workspace abi.elf provider must be an ElfAbiProject")
+        cls.project = project
         generated = cls.generator_module.Generator(definition).generate(
             ArtifactGenerationContext.create(cls.workspace, ROOT)
         )
         cls.relocations = generated.artifact("ELFRelocs/Bedrock.def").content
         cls.catalog = generated.artifact("BedrockGenELFABI.inc").content
 
-    def test_elf_relocation_definition_covers_the_numeric_catalog(self) -> None:
-        actual = {
-            name: int(value)
-            for name, value in re.findall(
-                r"^ELF_RELOC\((R_BEDROCK_[A-Z0-9_]+), ([0-9]+)\)$",
-                self.relocations,
-                flags=re.MULTILINE,
+    def _compile(self, source: str) -> None:
+        compiler = shutil.which("clang++") or shutil.which("c++")
+        if compiler is None:
+            self.skipTest("no C++ compiler is available")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "consume.cc"
+            path.write_text(source, encoding="utf-8")
+            completed = subprocess.run(
+                [compiler, "-std=c++17", "-fsyntax-only", str(path)],
+                text=True,
+                capture_output=True,
+                check=False,
             )
-        }
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_relocation_definition_is_accepted_by_its_cpp_consumer(self) -> None:
+        self._compile(
+            "constexpr int relocation_count = 0\n"
+            "#define ELF_RELOC(name, value) + 1\n"
+            + self.relocations
+            + f";\nstatic_assert(relocation_count == "
+            f"{len(self.project.relocations)});\n" + "int main() { return 0; }\n"
+        )
+
+    def test_catalog_families_have_authoritative_model_cardinality(self) -> None:
+        relocations = list(self.project.relocations.values())
+        code_models = list(self.project.code_models.values())
+        tls_models = list(self.project.tls_models.values())
+        protocols = list(self.project.linkage_protocols.values())
+        debug_ranges = self.project.resolved_debug_registers(self.workspace)
+        state = self.project.process_entry
         expected = {
-            relocation.id: relocation.value
-            for relocation in self.elf.relocations.values()
+            "BEDROCK_ELF_RELOCATION": len(relocations),
+            "BEDROCK_ELF_RELAXATION": sum(
+                len(item.relaxations) for item in relocations
+            ),
+            "BEDROCK_ELF_CODE_MODEL": len(code_models),
+            "BEDROCK_ELF_CODE_MODEL_RELOCATION": sum(
+                len(item.default_relocations) for item in code_models
+            ),
+            "BEDROCK_ELF_TLS_MODEL": len(tls_models),
+            "BEDROCK_ELF_TLS_MODEL_RELOCATION": sum(
+                len(item.relocations) for item in tls_models
+            ),
+            "BEDROCK_ELF_TLS_PROPERTY": sum(
+                self._property_count(
+                    item.data,
+                    {"id", "selection", "base_register", "protocol", "relocations"},
+                )
+                for item in tls_models
+            ),
+            "BEDROCK_ELF_LINKAGE_PROTOCOL": len(protocols),
+            "BEDROCK_ELF_LINKAGE_STEP": sum(len(item.steps) for item in protocols),
+            "BEDROCK_ELF_LINKAGE_REGISTER": sum(
+                len(contract.registers) for item in protocols for contract in item.state
+            ),
+            "BEDROCK_ELF_LINKAGE_PROPERTY": sum(
+                self._property_count(item.data, {"id", "steps", "state"})
+                for item in protocols
+            ),
+            "BEDROCK_ELF_DEBUG_REGISTER_RANGE": len(debug_ranges),
+            "BEDROCK_ELF_DEBUG_REGISTER_MAPPING": sum(
+                len(item.registers) for item in debug_ranges
+            ),
+            "BEDROCK_ELF_ENTRY_STATE": 1,
+            "BEDROCK_ELF_ENTRY_STACK_PERMISSION": len(state.stack_permissions),
+            "BEDROCK_ELF_ENTRY_SEGMENT_CONTEXT": len(state.segment_contexts),
+            "BEDROCK_ELF_ENTRY_READINESS": len(state.readiness),
+            "BEDROCK_ELF_ENTRY_CLEARED_REGISTER": len(state.cleared),
         }
-        self.assertEqual(actual, expected)
+        compiler = shutil.which("clang++") or shutil.which("c++")
+        if compiler is None:
+            self.skipTest("no C++ compiler is available")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "BedrockGenELFABI.inc").write_text(self.catalog, encoding="utf-8")
+            source = []
+            for index, (macro, count) in enumerate(expected.items()):
+                source.extend(
+                    (
+                        f"constexpr int family_{index} = 0",
+                        f"#define {macro}(...) + 1",
+                        '#include "BedrockGenELFABI.inc"',
+                        ";",
+                        f"static_assert(family_{index} == {count});",
+                        f"#undef {macro}",
+                    )
+                )
+            source.extend(
+                (
+                    "#define BEDROCK_ELF_RELOCATION(id, ...) "
+                    "constexpr bool seen_relocation_##id = true;",
+                    "#define BEDROCK_ELF_CODE_MODEL(id, ...) "
+                    "constexpr bool seen_code_model_##id = true;",
+                    "#define BEDROCK_ELF_TLS_MODEL(id, ...) "
+                    "constexpr bool seen_tls_model_##id = true;",
+                    "#define BEDROCK_ELF_LINKAGE_PROTOCOL(id) "
+                    "constexpr bool seen_protocol_##id = true;",
+                    '#include "BedrockGenELFABI.inc"',
+                )
+            )
+            source.extend(
+                f"static_assert(seen_relocation_{item.id});" for item in relocations
+            )
+            source.extend(
+                f"static_assert(seen_code_model_{item.id});" for item in code_models
+            )
+            source.extend(
+                f"static_assert(seen_tls_model_{item.id});" for item in tls_models
+            )
+            source.extend(
+                f"static_assert(seen_protocol_{item.id});" for item in protocols
+            )
+            source.append("int main() { return 0; }")
+            path = root / "consume.cc"
+            path.write_text("\n".join(source), encoding="utf-8")
+            completed = subprocess.run(
+                [compiler, "-std=c++17", "-fsyntax-only", str(path)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
-    def test_metadata_covers_every_relocation_and_lld_expression(self) -> None:
-        records = re.findall(
-            r"^BEDROCK_ELF_RELOCATION\((R_BEDROCK_[A-Z0-9_]+), "
-            r"([0-9]+), ([A-Z0-9_]+), ([A-Z0-9_]+), ([0-9]+), "
-            r"([01]), ([A-Z0-9_]+),",
-            self.catalog,
-            flags=re.MULTILINE,
-        )
-        self.assertEqual(len(records), len(self.elf.relocations))
-        by_name = {record[0]: record for record in records}
-        self.assertEqual(by_name["R_BEDROCK_CALL32S"][6], "PC")
-        self.assertEqual(by_name["R_BEDROCK_TLSDESC"][6], "TLSDESC")
-        self.assertEqual(by_name["R_BEDROCK_ABS32S"][4:6], ("32", "1"))
-
-    def test_relocation_fields_use_authored_type_ids(self) -> None:
-        actual = dict(
-            re.findall(
-                r'^BEDROCK_ELF_RELOCATION\((R_BEDROCK_[A-Z0-9_]+), '
-                r'.*, "([A-Z0-9_]*)"\)$',
-                self.catalog,
-                flags=re.MULTILINE,
+    @staticmethod
+    def _property_count(data: object, excluded: set[str] | None = None) -> int:
+        if isinstance(data, Mapping):
+            return sum(
+                LlvmElfAbiArtifactTests._property_count(value)
+                for key, value in data.items()
+                if excluded is None or key not in excluded
             )
-        )
-        expected = {
-            relocation.id: (
-                self.workspace.resolve(relocation.field).id
-                if relocation.field
-                else ""
-            )
-            for relocation in self.elf.relocations.values()
-        }
-        self.assertEqual(actual, expected)
-
-    def test_relaxation_edges_come_from_the_catalog(self) -> None:
-        actual = set(
-            re.findall(
-                r"^BEDROCK_ELF_RELAXATION\((R_BEDROCK_[A-Z0-9_]+), "
-                r"(R_BEDROCK_[A-Z0-9_]+)\)$",
-                self.catalog,
-                flags=re.MULTILINE,
-            )
-        )
-        expected = {
-            (relocation.id, target.element)
-            for relocation in self.elf.relocations.values()
-            for target in relocation.relaxations
-        }
-        self.assertEqual(actual, expected)
-
-    def test_code_tls_and_linkage_inventories_are_projected(self) -> None:
-        for model in self.elf.code_models.values():
-            self.assertIn(f"BEDROCK_ELF_CODE_MODEL({model.id},", self.catalog)
-        for model in self.elf.tls_models.values():
-            self.assertIn(f"BEDROCK_ELF_TLS_MODEL({model.id},", self.catalog)
-        for protocol in self.elf.linkage_protocols.values():
-            self.assertIn(
-                f"BEDROCK_ELF_LINKAGE_PROTOCOL({protocol.id})", self.catalog
-            )
-        self.assertIn(
-            "BEDROCK_ELF_LINKAGE_PROPERTY(ORDINARY_PLT, ENTRY_SIZE_BYTES, 32)",
-            self.catalog,
-        )
-        self.assertIn(
-            "BEDROCK_ELF_TLS_PROPERTY(TLSDESC, DESCRIPTOR_SIZE_BYTES, 16)",
-            self.catalog,
-        )
-
-    def test_debug_register_inventory_is_projected_completely(self) -> None:
-        ranges = set(
-            re.findall(
-                r"^BEDROCK_ELF_DEBUG_REGISTER_RANGE\(([A-Z0-9_]+),",
-                self.catalog,
-                flags=re.MULTILINE,
-            )
-        )
-        assignments = self.elf.resolved_debug_registers(self.workspace)
-        expected_ranges = {
-            f"RESERVED_{item.first}" if item.status == "reserved" else item.group
-            for item in assignments
-        }
-        self.assertEqual(ranges, expected_ranges)
-        mappings = re.findall(
-            r"^BEDROCK_ELF_DEBUG_REGISTER_MAPPING\(([A-Z0-9_]+), "
-            r"([0-9]+), ([A-Z][A-Z0-9]+)\)$",
-            self.catalog,
-            flags=re.MULTILINE,
-        )
-        self.assertEqual(
-            len(mappings),
-            sum(len(item.registers) for item in assignments),
-        )
-        self.assertIn(("SPECIAL", "16", "SP"), mappings)
-        self.assertIn(("VECTOR", "95", "V31"), mappings)
-
-    def test_entry_state_inventory_is_projected_completely(self) -> None:
-        state = self.elf.process_entry
-        self.assertIn(
-            f"BEDROCK_ELF_ENTRY_STATE({state.entry_point.local.element},",
-            self.catalog,
-        )
-        for permission in state.stack_permissions:
-            self.assertIn(
-                f"BEDROCK_ELF_ENTRY_STACK_PERMISSION({permission.upper()})",
-                self.catalog,
-            )
-        for role, register in state.segment_contexts.items():
-            self.assertIn(
-                f"BEDROCK_ELF_ENTRY_SEGMENT_CONTEXT("
-                f"{role.upper()}, {register.local.element})",
-                self.catalog,
-            )
+        if isinstance(data, list):
+            return sum(LlvmElfAbiArtifactTests._property_count(value) for value in data)
+        return 1
 
     def test_lld_expression_mapping_uses_the_parsed_ast(self) -> None:
         relocation = SimpleNamespace(
             id="R_BEDROCK_EQUIVALENT",
             source=Path("equivalent.yaml"),
-            calculation=RelocationMetasyntax.parse(
-                "(symbol + addend) - place"
-            ),
+            calculation=RelocationMetasyntax.parse("(symbol + addend) - place"),
         )
-        self.assertEqual(self.generator_module._lld_expression(relocation), "PC")
+        projection = self.generator_module.LlvmRelocationProjection.create(relocation)
+        self.assertEqual(projection.lld_expression, "PC")
 
-    def test_unmapped_calculation_is_rejected(self) -> None:
+    def test_unmapped_calculation_is_rejected_by_type(self) -> None:
         relocation = SimpleNamespace(
             id="R_BEDROCK_FUTURE",
             source=Path("future.yaml"),
             calculation=RelocationMetasyntax.parse("symbol - addend"),
         )
-        with self.assertRaisesRegex(ValueError, "no LLVM/LLD expression mapping"):
-            self.generator_module._lld_expression(relocation)
+        with self.assertRaises(self.generator_module.UnmappedRelocationExpressionError):
+            self.generator_module.LlvmRelocationProjection.create(relocation)
 
 
 if __name__ == "__main__":

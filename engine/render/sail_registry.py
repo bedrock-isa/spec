@@ -49,6 +49,35 @@ class SailTypeContribution:
     effect_kinds: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True, slots=True)
+class SailOperationProjection:
+    operation: str
+    mnemonic: str
+    route: str
+
+
+@dataclass(frozen=True, slots=True)
+class SailEventProjection:
+    event_id: str
+    class_value: int
+    selector: int | None
+    frame: str
+    family: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SailRegistryProjection:
+    """Active operation, type, CPUID, and event semantics for Sail."""
+
+    cpuid_flags: tuple[str, ...]
+    instruction_sets: tuple[str, ...]
+    fault_kinds: tuple[str, ...]
+    effect_kinds: tuple[str, ...]
+    event_families: tuple[str, ...]
+    events: tuple[SailEventProjection, ...]
+    operations: tuple[SailOperationProjection, ...]
+
+
 EXTENSION_CONTRIBUTIONS = {
     "FP": SailTypeContribution(
         instruction_sets=("FpuSet",),
@@ -70,10 +99,7 @@ EXTENSION_CONTRIBUTIONS = {
 
 
 class SailRegistryRenderer:
-    def render(self, program: SailProgram) -> str:
-        from .sail_catalog import catalog_id_declarations
-
-        routes = tuple(dict.fromkeys(bundle.instruction.route for bundle in program.bundles))
+    def project(self, program: SailProgram) -> SailRegistryProjection:
         cpuid_flags = tuple(
             dict.fromkeys(
                 field.id
@@ -102,59 +128,90 @@ class SailRegistryRenderer:
             )
         )
 
+        return SailRegistryProjection(
+            cpuid_flags,
+            tuple(instruction_sets),
+            tuple(faults),
+            tuple(effects),
+            event_families,
+            tuple(
+                SailEventProjection(
+                    item.event.id,
+                    item.code.class_value,
+                    item.code.event_selector,
+                    item.event.frame,
+                    item.event.family,
+                )
+                for item in event_entries
+            ),
+            tuple(
+                SailOperationProjection(
+                    _operation(bundle),
+                    bundle.instruction.mnemonic,
+                    bundle.instruction.route,
+                )
+                for bundle in program.bundles
+            ),
+        )
+
+    def render(self, program: SailProgram) -> str:
+        from .sail_catalog import catalog_id_declarations
+
+        projection = self.project(program)
+        routes = tuple(dict.fromkeys(item.route for item in projection.operations))
         lines = [
             "// Generated from instruction.yaml owners. Do not edit.", "",
             "default Order dec", "", "$include <prelude.sail>",
             "$include <generic_equality.sail>", "",
             *catalog_id_declarations(program), "",
-            "enum Cpuid_flag =", *_constructors(f"CpuidFlag_{flag}" for flag in cpuid_flags), "",
+            "enum Cpuid_flag =", *_constructors(f"CpuidFlag_{flag}" for flag in projection.cpuid_flags), "",
             "enum Semantic_route =",
             *_constructors(ROUTE_CONSTRUCTORS[route] for route in routes), "",
-            "enum Instruction_set =", *_constructors(instruction_sets), "",
-            "enum Fault_kind =", *_constructors(faults), "",
-            "enum Effect_kind =", *_constructors(effects), "",
+            "enum Instruction_set =", *_constructors(projection.instruction_sets), "",
+            "enum Fault_kind =", *_constructors(projection.fault_kinds), "",
+            "enum Effect_kind =", *_constructors(projection.effect_kinds), "",
             "enum Event_frame_type =",
             *_constructors(("EventFrameBasic", "EventFrameError", "EventFramePage", "EventFrameAuxiliary")), "",
             "enum Event_family =",
-            *_constructors(("EventFamilyNone", *(f"EventFamily_{family}" for family in event_families))), "",
+            *_constructors(("EventFamilyNone", *(f"EventFamily_{family}" for family in projection.event_families))), "",
             "enum Architectural_event =",
-            *_constructors(f"Event_{item.event.id}" for item in event_entries), "",
+            *_constructors(f"Event_{item.event_id}" for item in projection.events), "",
             "enum Semantic_operation =",
-            *_constructors(_operation(bundle) for bundle in program.bundles), "",
+            *_constructors(item.operation for item in projection.operations), "",
             "function semantic_route(operation : Semantic_operation) -> Semantic_route = match operation {",
         ]
         lines.extend(
-            f"  {_operation(bundle)} => {ROUTE_CONSTRUCTORS[bundle.instruction.route]},"
-            for bundle in program.bundles
+            f"  {item.operation} => {ROUTE_CONSTRUCTORS[item.route]},"
+            for item in projection.operations
         )
         lines.extend(["}", "", "function semantic_mnemonic(operation : Semantic_operation) -> string = match operation {"])
         lines.extend(
-            f'  {_operation(bundle)} => "{bundle.instruction.mnemonic}",'
-            for bundle in program.bundles
+            f'  {item.operation} => "{item.mnemonic}",'
+            for item in projection.operations
         )
         lines.extend([
             "}", "", "function all_semantic_operations() -> list(Semantic_operation) = [|",
-            "  " + ", ".join(_operation(bundle) for bundle in program.bundles),
+            "  " + ", ".join(item.operation for item in projection.operations),
             "|]", "",
             "function architectural_event_class(event : Architectural_event) -> bits(8) = match event {",
         ])
-        for item in event_entries:
+        for item in projection.events:
             lines.append(
-                f"  Event_{item.event.id} => 0x{item.code.class_value:02x},"
+                f"  Event_{item.event_id} => 0x{item.class_value:02x},"
             )
         lines.extend([
             "}", "",
             "function architectural_event_selector(event : Architectural_event) -> option(bits(24)) = match event {",
         ])
         lines.extend(
-            f"  Event_{item.event.id} => "
+            f"  Event_{item.event_id} => "
             + (
-                f"Some(0x{item.code.event_selector:06x})"
-                if item.code.event_selector is not None
+                f"Some(0x{item.selector:06x})"
+                if item.selector is not None
                 else "None()"
             )
             + ","
-            for item in event_entries
+            for item in projection.events
         )
         lines.extend([
             "}", "",
@@ -167,22 +224,22 @@ class SailRegistryRenderer:
             "auxiliary": "EventFrameAuxiliary",
         }
         lines.extend(
-            f"  Event_{item.event.id} => {frame_constructors[item.event.frame]},"
-            for item in event_entries
+            f"  Event_{item.event_id} => {frame_constructors[item.frame]},"
+            for item in projection.events
         )
         lines.extend([
             "}", "",
             "function architectural_event_family(event : Architectural_event) -> Event_family = match event {",
         ])
         lines.extend(
-            f"  Event_{item.event.id} => "
-            f"{f'EventFamily_{item.event.family}' if item.event.family is not None else 'EventFamilyNone'},"
-            for item in event_entries
+            f"  Event_{item.event_id} => "
+            f"{f'EventFamily_{item.family}' if item.family is not None else 'EventFamilyNone'},"
+            for item in projection.events
         )
         lines.extend([
             "}", "",
             "function all_architectural_events() -> list(Architectural_event) = [|",
-            "  " + ", ".join(f"Event_{item.event.id}" for item in event_entries),
+            "  " + ", ".join(f"Event_{item.event_id}" for item in projection.events),
             "|]", "",
         ])
         return "\n".join(lines)

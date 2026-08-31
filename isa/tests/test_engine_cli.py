@@ -12,14 +12,6 @@ class EngineCliTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.isa_root = Path(__file__).parents[1]
 
-    def test_check_one_instruction(self) -> None:
-        output = io.StringIO()
-        with redirect_stdout(output):
-            result = main(["--isa-root", str(self.isa_root), "check", "ADD"])
-
-        self.assertEqual(result, 0)
-        self.assertIn("checked 1 instruction, 11 encodings: ok", output.getvalue())
-
     def test_json_success_is_empty_array(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):
@@ -37,14 +29,27 @@ class EngineCliTest(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(json.loads(output.getvalue()), [])
 
-    def test_unknown_target_is_reported_as_load_diagnostic(self) -> None:
+    def test_unknown_target_is_reported_as_structured_diagnostic(self) -> None:
         errors = io.StringIO()
         with redirect_stderr(errors):
-            result = main(["--isa-root", str(self.isa_root), "check", "DOESNOTEXIST"])
+            result = main(
+                [
+                    "--isa-root",
+                    str(self.isa_root),
+                    "check",
+                    "DOESNOTEXIST",
+                    "--format",
+                    "json",
+                ]
+            )
 
         self.assertEqual(result, 1)
-        self.assertIn("error[project.load]", errors.getvalue())
-        self.assertIn("unknown instruction", errors.getvalue())
+        diagnostics = json.loads(errors.getvalue())
+        self.assertEqual(
+            [item["code"] for item in diagnostics],
+            ["project.lookup.unknown-instruction"],
+        )
+        self.assertEqual([item["severity"] for item in diagnostics], ["error"])
 
     def test_alloc_entries_uses_class_name_and_operator_space(self) -> None:
         output = io.StringIO()
@@ -60,12 +65,16 @@ class EngineCliTest(unittest.TestCase):
                     "vector",
                     "--grep",
                     "VADD",
+                    "--format",
+                    "json",
                 ]
             )
 
         self.assertEqual(result, 0)
-        self.assertIn("VADD.", output.getvalue())
-        self.assertIn("reclaimed", output.getvalue())
+        entries = json.loads(output.getvalue())
+        self.assertTrue(entries)
+        self.assertTrue(all(item["instruction"].endswith(".VADD") for item in entries))
+        self.assertTrue(all("reclaimed" in item for item in entries))
 
     def test_alloc_holes_json_reports_namespace_scoped_blocks(self) -> None:
         output = io.StringIO()
@@ -102,11 +111,17 @@ class EngineCliTest(unittest.TestCase):
                     "check",
                     "xxlong",
                     "0000",
+                    "--format",
+                    "json",
                 ]
             )
 
         self.assertEqual(result, 1)
-        self.assertIn("outside xxlong namespace", errors.getvalue())
+        diagnostic = json.loads(errors.getvalue())
+        self.assertEqual(
+            [item["code"] for item in diagnostic],
+            ["allocation.candidate-outside-namespace"],
+        )
 
 
 if __name__ == "__main__":

@@ -20,6 +20,8 @@ from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader
 
+from .relocation_metasyntax import RelocationMetasyntax
+
 if TYPE_CHECKING:
     from engine.project import InstructionBundle, IsaProject
     from engine.register import Register, RegisterGroup
@@ -28,14 +30,33 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 
-from .relocation_metasyntax import RelocationMetasyntax
-
 
 class RelocationResultKind(StrEnum):
     NONE = "none"
     INTEGER = "integer"
     BYTES = "bytes"
     PAIR = "pair"
+
+
+class DebugRegisterRangeErrorReason(StrEnum):
+    EMPTY = "empty"
+    NONCONTIGUOUS = "noncontiguous"
+    UNBOUNDED_NOT_LAST = "unbounded_not_last"
+    UNBOUNDED_ASSIGNED = "unbounded_assigned"
+    REVERSED = "reversed"
+    ASSIGNMENT_WIDTH = "assignment_width"
+    RESERVED_ASSIGNED = "reserved_assigned"
+    MISSING_UNBOUNDED_TAIL = "missing_unbounded_tail"
+
+
+class DebugRegisterRangeError(ValueError):
+    """A DWARF register-number range violates the range topology."""
+
+    def __init__(
+        self, reason: DebugRegisterRangeErrorReason, message: str
+    ) -> None:
+        self.reason = reason
+        super().__init__(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +147,20 @@ class DebugRegisterAssignment:
     status: str
     registers: tuple[QualifiedReference[Register], ...]
     condition: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DebugRegisterRangeTopology:
+    """A validated contiguous DWARF register-number assignment topology."""
+
+    assignments: tuple[DebugRegisterAssignment, ...]
+
+    @classmethod
+    def create(
+        cls, assignments: tuple[DebugRegisterAssignment, ...]
+    ) -> "DebugRegisterRangeTopology":
+        _validate_debug_register_ranges(assignments)
+        return cls(assignments)
 
 
 @dataclass(frozen=True, slots=True)
@@ -372,7 +407,7 @@ class ElfAbiProject:
         debug_assignments = sorted(
             self.resolved_debug_registers(workspace), key=lambda item: item.first
         )
-        _validate_debug_register_ranges(debug_assignments)
+        DebugRegisterRangeTopology.create(tuple(debug_assignments))
         for assignment in debug_assignments:
             for assigned_register in assignment.registers:
                 workspace.resolve(assigned_register)
@@ -695,42 +730,52 @@ def _validate_debug_register_ranges(
     assignments: list[DebugRegisterAssignment],
 ) -> None:
     if not assignments:
-        raise ValueError("DWARF register numbering requires at least one assignment")
+        raise DebugRegisterRangeError(
+            DebugRegisterRangeErrorReason.EMPTY,
+            "DWARF register numbering requires at least one assignment",
+        )
     previous_last = -1
     for index, assignment in enumerate(assignments):
         if assignment.first != previous_last + 1:
-            raise ValueError(
+            raise DebugRegisterRangeError(
+                DebugRegisterRangeErrorReason.NONCONTIGUOUS,
                 f"{assignment.source}: DWARF register numbering must be contiguous"
             )
         if assignment.last is None:
             if index != len(assignments) - 1:
-                raise ValueError(
+                raise DebugRegisterRangeError(
+                    DebugRegisterRangeErrorReason.UNBOUNDED_NOT_LAST,
                     f"{assignment.source}: unbounded DWARF register range must be last"
                 )
             if assignment.registers:
-                raise ValueError(
+                raise DebugRegisterRangeError(
+                    DebugRegisterRangeErrorReason.UNBOUNDED_ASSIGNED,
                     f"{assignment.source}: unbounded DWARF register range cannot "
                     "assign registers"
                 )
             return
         if assignment.last < assignment.first:
-            raise ValueError(
+            raise DebugRegisterRangeError(
+                DebugRegisterRangeErrorReason.REVERSED,
                 f"{assignment.source}: DWARF register range ends before it begins"
             )
         width = assignment.last - assignment.first + 1
         if assignment.status in {"assigned", "extension"}:
             if len(assignment.registers) != width:
-                raise ValueError(
+                raise DebugRegisterRangeError(
+                    DebugRegisterRangeErrorReason.ASSIGNMENT_WIDTH,
                     f"{assignment.source}: DWARF register range has width {width} "
                     f"but assigns {len(assignment.registers)} registers"
                 )
         elif assignment.registers:
-            raise ValueError(
+            raise DebugRegisterRangeError(
+                DebugRegisterRangeErrorReason.RESERVED_ASSIGNED,
                 f"{assignment.source}: reserved DWARF register range cannot assign "
                 "registers"
             )
         previous_last = assignment.last
-    raise ValueError(
+    raise DebugRegisterRangeError(
+        DebugRegisterRangeErrorReason.MISSING_UNBOUNDED_TAIL,
         f"{assignments[-1].source}: DWARF register numbering must end with an "
         "unbounded reserved range"
     )

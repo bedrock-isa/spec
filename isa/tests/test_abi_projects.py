@@ -5,7 +5,11 @@ from types import SimpleNamespace
 from abi.c.model import CAbiProject
 from abi.c.model.call_layout import Argument, Call, ReturnValue, default_rules, layout_call
 from abi.elf.model import ElfAbiProject
-from abi.elf.model.project import _validate_debug_register_ranges
+from abi.elf.model.project import (
+    DebugRegisterRangeError,
+    DebugRegisterRangeErrorReason,
+    DebugRegisterRangeTopology,
+)
 from abi.elf.model.relocation_metasyntax import (
     RelocationMetasyntax,
     RelocationMetasyntaxError,
@@ -36,9 +40,7 @@ class AbiProjectTest(unittest.TestCase):
         self.assertEqual(entry.entry_point.local.element, "PC")
         self.assertEqual(entry.stack_alignment_bytes, 16)
         self.assertEqual(entry.stack_permissions, ("read", "write"))
-        self.assertEqual(
-            tuple(entry.segment_contexts), ("code", "data", "stack")
-        )
+        self.assertEqual(set(entry.segment_contexts), {"code", "data", "stack"})
         self.assertEqual(entry.payload_owner, "external-process-entry-abi")
         vector_numbers = next(
             item for item in project.resolved_debug_registers(self.workspace)
@@ -57,16 +59,28 @@ class AbiProjectTest(unittest.TestCase):
                 source=Path(f"range-{first}.yaml"),
             )
 
-        with self.assertRaisesRegex(ValueError, "unbounded.*must be last"):
-            _validate_debug_register_ranges(
-                [assignment(0, None), assignment(1, None)]
+        with self.assertRaises(DebugRegisterRangeError) as caught:
+            DebugRegisterRangeTopology.create(
+                (assignment(0, None), assignment(1, None))
             )
-        with self.assertRaisesRegex(ValueError, "width 1.*assigns 0"):
-            _validate_debug_register_ranges(
-                [assignment(0, 0, status="assigned"), assignment(1, None)]
+        self.assertIs(
+            caught.exception.reason,
+            DebugRegisterRangeErrorReason.UNBOUNDED_NOT_LAST,
+        )
+        with self.assertRaises(DebugRegisterRangeError) as caught:
+            DebugRegisterRangeTopology.create(
+                (assignment(0, 0, status="assigned"), assignment(1, None))
             )
-        with self.assertRaisesRegex(ValueError, "must end with an unbounded"):
-            _validate_debug_register_ranges([assignment(0, 0)])
+        self.assertIs(
+            caught.exception.reason,
+            DebugRegisterRangeErrorReason.ASSIGNMENT_WIDTH,
+        )
+        with self.assertRaises(DebugRegisterRangeError) as caught:
+            DebugRegisterRangeTopology.create((assignment(0, 0),))
+        self.assertIs(
+            caught.exception.reason,
+            DebugRegisterRangeErrorReason.MISSING_UNBOUNDED_TAIL,
+        )
 
     def test_relocation_metasyntax_preserves_and_parses_authored_expression(self) -> None:
         expression = RelocationMetasyntax.parse("got(symbol) + addend - place")

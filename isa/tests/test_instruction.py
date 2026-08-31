@@ -4,7 +4,11 @@ from pathlib import Path
 
 import yaml
 
-from engine.instruction import Instruction
+from engine.instruction import (
+    Instruction,
+    MnemonicDirectoryMismatchError,
+    UnknownRepeatObservedValueError,
+)
 
 
 class InstructionTest(unittest.TestCase):
@@ -46,7 +50,7 @@ class InstructionTest(unittest.TestCase):
 
     def test_rejects_mnemonic_directory_mismatch(self) -> None:
         source = self.isa_root / "instructions/definitions/SUB/instruction.yaml"
-        with self.assertRaisesRegex(ValueError, "does not match"):
+        with self.assertRaises(MnemonicDirectoryMismatchError):
             Instruction(self.document(), source, self.isa_root)
 
     def test_rejects_unknown_repeat_observed_value(self) -> None:
@@ -54,7 +58,7 @@ class InstructionTest(unittest.TestCase):
         document["repeat"]["observed_value"] = "missing"
         source = self.isa_root / "instructions/definitions/ADD/instruction.yaml"
 
-        with self.assertRaisesRegex(ValueError, "does not name an operand"):
+        with self.assertRaises(UnknownRepeatObservedValueError):
             Instruction(document, source, self.isa_root)
 
     def test_accepts_computed_repeat_observed_value(self) -> None:

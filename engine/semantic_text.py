@@ -21,6 +21,31 @@ _ESCAPE_START_RE = re.compile(r"\(:([a-z][a-z0-9_-]*):")
 class SemanticTextError(ValueError):
     """Raised when a semantic-text escape is malformed."""
 
+    def __init__(
+        self,
+        reason: "SemanticTextErrorReason",
+        origin: "TextOrigin",
+        offset: int,
+        detail: str,
+    ) -> None:
+        self.reason = reason
+        self.origin = origin
+        self.offset = offset
+        self.detail = detail
+        location = ".".join(map(str, origin.path))
+        where = f" at {location}" if location else ""
+        super().__init__(f"{origin.source}{where}, offset {offset}: {detail}")
+
+
+class SemanticTextErrorReason(StrEnum):
+    NON_STRING = "non_string"
+    UNTERMINATED_ESCAPE = "unterminated_escape"
+    UNKNOWN_ESCAPE_KIND = "unknown_escape_kind"
+    INVALID_ESCAPE_PAYLOAD = "invalid_escape_payload"
+    MODIFIED_ENTITY_REFERENCE = "modified_entity_reference"
+    INVALID_REFERENCE = "invalid_reference"
+    UNKNOWN_TERM_FORM = "unknown_term_form"
+
 
 class TermForm(StrEnum):
     """A registered presentation of one terminology entry."""
@@ -76,7 +101,12 @@ class SemanticText:
     @classmethod
     def parse(cls, raw: str, *, origin: TextOrigin) -> "SemanticText":
         if not isinstance(raw, str):
-            raise SemanticTextError("semantic text must be a string")
+            raise SemanticTextError(
+                SemanticTextErrorReason.NON_STRING,
+                origin,
+                0,
+                "semantic text must be a string",
+            )
         parts: list[SemanticTextPart] = []
         cursor = 0
         while match := _ESCAPE_START_RE.search(raw, cursor):
@@ -87,7 +117,10 @@ class SemanticText:
             end = raw.find(":)", match.end())
             if end < 0:
                 raise _syntax_error(
-                    origin, match.start(), "unterminated semantic escape"
+                    SemanticTextErrorReason.UNTERMINATED_ESCAPE,
+                    origin,
+                    match.start(),
+                    "unterminated semantic escape",
                 )
             kind = match.group(1)
             payload = raw[match.end() : end]
@@ -117,31 +150,64 @@ def _parse_escape(
     end: int,
 ) -> SemanticTextPart:
     if kind not in {"ref", "term"}:
-        raise _syntax_error(origin, start, f"unknown semantic escape kind {kind!r}")
+        raise _syntax_error(
+            SemanticTextErrorReason.UNKNOWN_ESCAPE_KIND,
+            origin,
+            start,
+            f"unknown semantic escape kind {kind!r}",
+        )
     pieces = payload.split("|")
     if not pieces[0] or len(pieces) > 2:
-        raise _syntax_error(origin, start, f"invalid {kind} escape payload")
+        raise _syntax_error(
+            SemanticTextErrorReason.INVALID_ESCAPE_PAYLOAD,
+            origin,
+            start,
+            f"invalid {kind} escape payload",
+        )
     if kind == "ref":
         if len(pieces) != 1:
-            raise _syntax_error(origin, start, "ref escapes do not accept a modifier")
+            raise _syntax_error(
+                SemanticTextErrorReason.MODIFIED_ENTITY_REFERENCE,
+                origin,
+                start,
+                "ref escapes do not accept a modifier",
+            )
         try:
             entity_reference: Reference[Entity] = Reference.parse(pieces[0])
         except ReferenceError as error:
-            raise _syntax_error(origin, start, str(error)) from error
+            raise _syntax_error(
+                SemanticTextErrorReason.INVALID_REFERENCE,
+                origin,
+                start,
+                str(error),
+            ) from error
         return EntityReferenceText(entity_reference, start, end)
     try:
         term_reference: Reference[Term] = Reference.parse(pieces[0])
     except ReferenceError as error:
-        raise _syntax_error(origin, start, str(error)) from error
+        raise _syntax_error(
+            SemanticTextErrorReason.INVALID_REFERENCE,
+            origin,
+            start,
+            str(error),
+        ) from error
     raw_form = pieces[1] if len(pieces) == 2 else TermForm.CANONICAL.value
     try:
         form = TermForm(raw_form)
     except ValueError as error:
-        raise _syntax_error(origin, start, f"unknown term form {raw_form!r}") from error
+        raise _syntax_error(
+            SemanticTextErrorReason.UNKNOWN_TERM_FORM,
+            origin,
+            start,
+            f"unknown term form {raw_form!r}",
+        ) from error
     return TermReferenceText(term_reference, form, start, end)
 
 
-def _syntax_error(origin: TextOrigin, offset: int, message: str) -> SemanticTextError:
-    location = ".".join(map(str, origin.path))
-    where = f" at {location}" if location else ""
-    return SemanticTextError(f"{origin.source}{where}, offset {offset}: {message}")
+def _syntax_error(
+    reason: SemanticTextErrorReason,
+    origin: TextOrigin,
+    offset: int,
+    message: str,
+) -> SemanticTextError:
+    return SemanticTextError(reason, origin, offset, message)

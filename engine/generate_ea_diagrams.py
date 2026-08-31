@@ -11,7 +11,8 @@ import re
 import sys
 from typing import Any
 
-from .ea_mode import EAMode, EAModeCatalog
+from .ea_mode import EABaseSource, EAMode, EAModeCatalog
+from .reference import Reference
 from .type_system import TypeSystem
 
 
@@ -88,8 +89,66 @@ def _flat_pattern(pattern: str | Sequence[str]) -> str:
     return pattern if isinstance(pattern, str) else "".join(pattern)
 
 
-def _format_fields(pattern: str | Sequence[str]) -> list[str]:
-    commands: list[str] = []
+@dataclass(frozen=True, slots=True)
+class EAEncodingFieldProjection:
+    """One fixed-bit or named-field run in an EA encoding row."""
+
+    code: str
+    bits: int
+    fixed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EAAutoupdateProjection:
+    """One architected register update attached to an encoding variant."""
+
+    encoding_index: int
+    target: str
+    update_type: str
+    difference: str
+
+
+@dataclass(frozen=True, slots=True)
+class EAEncodingProjection:
+    """One reader-facing encoding row and its optional update behavior."""
+
+    label: str
+    fields: tuple[EAEncodingFieldProjection, ...]
+    autoupdate: EAAutoupdateProjection | None
+
+
+@dataclass(frozen=True, slots=True)
+class EAFlowProjection:
+    """The address-generation relation conveyed by one EA flow diagram."""
+
+    kind: str
+    base_source: EABaseSource
+    base_label: str | None
+    base_operand: str | None
+    index_operand: str | None
+    has_displacement: bool
+    has_scale: bool
+    has_memory_tail: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EAModeDiagramProjection:
+    """Owner-local semantic input to the EA diagram serializer."""
+
+    reference: Reference[EAMode]
+    owner: str
+    source: Path
+    title: str
+    encodings: tuple[EAEncodingProjection, ...]
+    flow: EAFlowProjection | None
+    autoupdates: tuple[EAAutoupdateProjection, ...]
+    authored_mode: EAMode
+
+
+def _encoding_fields(
+    pattern: str | Sequence[str],
+) -> tuple[EAEncodingFieldProjection, ...]:
+    fields: list[EAEncodingFieldProjection] = []
     flat = _flat_pattern(pattern)
     start = 0
     while start < len(flat):
@@ -103,12 +162,11 @@ def _format_fields(pattern: str | Sequence[str]) -> list[str]:
                 break
             end += 1
         run = flat[start:end]
-        if fixed:
-            commands.append(f"  \\BedrockFormatFixed{{{run}}}{{{len(run)}}}")
-        else:
-            commands.append(f"  \\BedrockFormatFieldCode{{{run[0]}}}{{{len(run)}}}")
+        fields.append(
+            EAEncodingFieldProjection(run if fixed else run[0], len(run), fixed)
+        )
         start = end
-    return commands
+    return tuple(fields)
 
 
 def _payload_type_id(mode: EAMode, encoding_index: int, payload_index: int) -> str:
@@ -130,16 +188,18 @@ def _encoding_label(
     return " + ".join(parts) if parts else "plain"
 
 
-def render_encoding_diagram(mode: EAMode) -> str:
+def render_encoding_diagram(projection: EAModeDiagramProjection) -> str:
     """Render the wire encodings of one EA mode as a Bedrock format diagram."""
 
-    caption = _title_case(f"{mode['name']} encodings")
+    caption = _title_case(f"{projection.title} encodings")
     lines = [f"\\begin{{BedrockFormatDiagram}}{{{_tex(caption)}}}"]
-    for encoding_index, encoding in enumerate(mode["encodings"]):
-        lines.append(
-            f"\\BedrockFormatRow{{{_tex(_encoding_label(mode, encoding_index, encoding))}}}{{%"
-        )
-        lines.extend(_format_fields(encoding["pattern"]))
+    for encoding in projection.encodings:
+        lines.append(f"\\BedrockFormatRow{{{_tex(encoding.label)}}}{{%")
+        for field in encoding.fields:
+            macro = "Fixed" if field.fixed else "FieldCode"
+            lines.append(
+                f"  \\BedrockFormat{macro}{{{field.code}}}{{{field.bits}}}"
+            )
         lines.append("}")
     lines.append("\\end{BedrockFormatDiagram}")
     return "\n".join(lines)
@@ -166,6 +226,58 @@ def _base_operand(mode: EAMode, expression: str) -> tuple[str, str]:
     if "absolute" in expression.split():
         return "ABSOLUTE ADDRESS", "absolute"
     return "ZERO BASE", "0"
+
+
+def project_mode(mode: EAMode) -> EAModeDiagramProjection:
+    """Project one authored EA mode into its reader-facing diagram semantics."""
+
+    updates: list[EAAutoupdateProjection] = []
+    encodings: list[EAEncodingProjection] = []
+    for encoding_index, encoding in enumerate(mode["encodings"]):
+        raw_update = encoding.get("autoupdate")
+        update = None
+        if raw_update is not None:
+            update = EAAutoupdateProjection(
+                encoding_index,
+                raw_update["target"],
+                raw_update["type"],
+                str(raw_update["difference"]),
+            )
+            updates.append(update)
+        encodings.append(
+            EAEncodingProjection(
+                _encoding_label(mode, encoding_index, encoding),
+                _encoding_fields(encoding["pattern"]),
+                update,
+            )
+        )
+
+    flow = None
+    if "pseudocode" in mode:
+        expression = _expression(mode)
+        words = expression.split()
+        base_label, base_operand = _base_operand(mode, expression)
+        flow = EAFlowProjection(
+            mode["kind"],
+            mode.base_source,
+            base_label,
+            base_operand,
+            _field_operand(mode, "index"),
+            "displacement" in words,
+            "scale" in words,
+            mode["kind"] != "immediate",
+        )
+
+    return EAModeDiagramProjection(
+        mode.reference,
+        mode.reference.owner,
+        mode.source,
+        mode["name"],
+        tuple(encodings),
+        flow,
+        tuple(updates),
+        mode,
+    )
 
 
 @dataclass(frozen=True)
@@ -398,16 +510,16 @@ def _add_result_and_memory(
     layout.add_memory_tail("ptr", result_row + 1)
 
 
-def render_flow_diagram(mode: EAMode) -> str | None:
+def render_flow_diagram(projection: EAModeDiagramProjection) -> str | None:
     """Render one plain EA mode through the semantic grid layout engine."""
 
-    if "pseudocode" not in mode:
+    flow = projection.flow
+    if flow is None:
         return None
 
-    generated_value = "operand" if mode["kind"] == "immediate" else "address"
-    name = _tex(_title_case(f"{mode['name']} {generated_value} generation"))
-    expression = _expression(mode)
-    if mode["kind"] == "immediate":
+    generated_value = "operand" if flow.kind == "immediate" else "address"
+    name = _tex(_title_case(f"{projection.title} {generated_value} generation"))
+    if flow.kind == "immediate":
         layout = _EAFlowLayout(name, 2)
         layout.add_box(
             "imm",
@@ -427,11 +539,11 @@ def render_flow_diagram(mode: EAMode) -> str | None:
         layout.connect("imm.south", "operand.north")
         return layout.render()
 
-    source_label, base = _base_operand(mode, expression)
-    index = _field_operand(mode, "index")
-    if index and "scale" in expression.split():
-        displacement = "displacement" if "displacement" in expression.split() else ""
-        has_displacement = bool(displacement)
+    assert flow.base_label is not None and flow.base_operand is not None
+    source_label, base = flow.base_label, flow.base_operand
+    index = flow.index_operand
+    if index and flow.has_scale:
+        has_displacement = flow.has_displacement
         index_row = 2 if has_displacement else 1
         merge_row = index_row + 1
         layout = _EAFlowLayout(name, merge_row + 3)
@@ -478,7 +590,7 @@ def render_flow_diagram(mode: EAMode) -> str | None:
         _add_result_and_memory(layout, merge_row + 1, "EFFECTIVE ADDRESS")
         layout.connect("addindex.south", "ptr.north")
         return layout.render()
-    if "displacement" in expression.split():
+    if flow.has_displacement:
         layout = _EAFlowLayout(name, 4)
         layout.add_box(
             "base", 0, "main", _tex(base), row_label=_tex(source_label), show_bits=True
@@ -507,33 +619,39 @@ def render_flow_diagram(mode: EAMode) -> str | None:
 
 
 def render_autoupdate_diagrams(
-    mode: EAMode, *, embedded: bool = False
+    projection: EAModeDiagramProjection, *, embedded: bool = False
 ) -> list[str]:
     """Render each autoupdate variant as an integrated address-generation flow."""
 
-    if "pseudocode" not in mode:
+    flow = projection.flow
+    if flow is None:
         return []
-    expression = _expression(mode)
-    source_label, base = _base_operand(mode, expression)
-    displacement = "displacement" if "displacement" in expression.split() else ""
-    index = _field_operand(mode, "index")
+    assert flow.base_label is not None and flow.base_operand is not None
+    source_label, base = flow.base_label, flow.base_operand
+    displacement = "displacement" if flow.has_displacement else ""
+    index = flow.index_operand
     diagrams: list[str] = []
-    for encoding in mode["encodings"]:
-        update = encoding.get("autoupdate")
-        if not update:
-            continue
-        target = update["target"]
-        update_type = update["type"]
-        difference = _tex(update["difference"])
+    for update in projection.autoupdates:
+        target = update.target
+        update_type = update.update_type
+        difference = _tex(update.difference)
         suffix = f" / {update_type}"
         variant_name = (
-            mode["name"] if mode["name"].endswith(suffix) else mode["name"] + suffix
+            projection.title
+            if projection.title.endswith(suffix)
+            else projection.title + suffix
         )
         caption = _tex(_title_case(f"{variant_name} address generation"))
         if target == "base":
-            operand = _field_operand(mode, "base")
+            operand = (
+                flow.base_operand
+                if flow.base_source is EABaseSource.ENCODED
+                else None
+            )
             if operand is None:
-                raise ValueError(f"{mode.source}: base autoupdate requires a base field")
+                raise ValueError(
+                    f"{projection.source}: base autoupdate requires a base field"
+                )
             layout = _EAFlowLayout(caption, 5)
             layout.add_box(
                 "base",
@@ -585,7 +703,9 @@ def render_autoupdate_diagrams(
             )
         elif target == "index":
             if index is None:
-                raise ValueError(f"{mode.source}: index autoupdate requires an index field")
+                raise ValueError(
+                    f"{projection.source}: index autoupdate requires an index field"
+                )
             layout = _EAFlowLayout(caption, 7)
             layout.add_box(
                 "base", 0, "main", _tex(base), row_label=_tex(source_label), show_bits=True
@@ -656,30 +776,30 @@ def render_autoupdate_diagrams(
                 )
             )
         else:
-            raise ValueError(f"{mode.source}: unsupported autoupdate target {target!r}")
+            raise ValueError(
+                f"{projection.source}: unsupported autoupdate target {target!r}"
+            )
     return diagrams
 
 
-def _block_height(mode: EAMode) -> float:
+def _block_height(projection: EAModeDiagramProjection) -> float:
     """Estimate the space used by the format diagram and its optional flow."""
 
-    format_height = 0.90 + 0.68 * len(mode["encodings"])
-    if "pseudocode" not in mode:
+    format_height = 0.90 + 0.68 * len(projection.encodings)
+    flow = projection.flow
+    if flow is None:
         flow_height = 0.0
-    elif mode["kind"] == "immediate":
+    elif flow.kind == "immediate":
         flow_height = 1.55
-    elif _field_operand(mode, "index") and "scale" in _expression(mode).split():
+    elif flow.index_operand and flow.has_scale:
         flow_height = 3.30
-    elif "displacement" in _expression(mode).split():
+    elif flow.has_displacement:
         flow_height = 2.35
     else:
         flow_height = 2.10
-    updates = [
-        encoding.get("autoupdate") for encoding in mode["encodings"]
-    ]
-    if any(update and update["target"] == "index" for update in updates):
+    if any(update.target == "index" for update in projection.autoupdates):
         return 7.55
-    if any(update for update in updates):
+    if projection.autoupdates:
         return 6.35
     return min(7.0, format_height + flow_height + 0.70)
 
@@ -847,27 +967,27 @@ def _encoding_variant_mode(
     )
 
 
-def _render_mode_section(
-    mode: EAMode,
-) -> str:
-    parts = [f"\\par\\Needspace{{{_block_height(mode):.2f}in}}%"]
+def _render_mode_section(projection: EAModeDiagramProjection) -> str:
+    mode = projection.authored_mode
+    parts = [f"\\par\\Needspace{{{_block_height(projection):.2f}in}}%"]
     parts.extend(
         (
             render_description_block(mode),
-            render_encoding_diagram(mode),
+            render_encoding_diagram(projection),
         )
     )
-    update_flows = render_autoupdate_diagrams(mode, embedded=True)
+    update_flows = render_autoupdate_diagrams(projection, embedded=True)
     if update_flows:
         parts.extend(update_flows)
     else:
-        flow = render_flow_diagram(mode)
+        flow = render_flow_diagram(projection)
         if flow:
             parts.append(flow)
     return "\n\n".join(parts)
 
 
-def render_mode(mode: EAMode) -> str:
+def render_mode(projection: EAModeDiagramProjection) -> str:
+    mode = projection.authored_mode
     relative_source = mode.source
     try:
         relative_source = mode.source.resolve().relative_to(mode.isa_root.resolve())
@@ -880,7 +1000,7 @@ def render_mode(mode: EAMode) -> str:
     ):
         sections = []
         for index, encoding in enumerate(encodings):
-            variant = _encoding_variant_mode(mode, encoding)
+            variant = project_mode(_encoding_variant_mode(mode, encoding))
             section = _render_mode_section(variant)
             sections.append(section if index == 0 else f"\\clearpage\n{section}")
         return "\n\n".join((header, *sections))
@@ -888,7 +1008,7 @@ def render_mode(mode: EAMode) -> str:
     return "\n\n".join(
         (
             header,
-            _render_mode_section(mode),
+            _render_mode_section(projection),
         )
     )
 
@@ -916,7 +1036,11 @@ def render_modes(modes: Iterable[EAMode]) -> str:
 
     header = "% Generated by engine.generate_ea_diagrams.\n"
     separator = "\n\n\\clearpage\n\n"
-    return header + separator.join(render_mode(mode) for mode in modes) + "\n"
+    return (
+        header
+        + separator.join(render_mode(project_mode(mode)) for mode in modes)
+        + "\n"
+    )
 
 
 def _parser() -> argparse.ArgumentParser:

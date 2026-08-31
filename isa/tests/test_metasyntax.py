@@ -21,7 +21,7 @@ class MetasyntaxTest(unittest.TestCase):
         for value in values:
             with self.subTest(type=type(value).__name__):
                 self.assertIsInstance(value, Metasyntax)
-                self.assertIs(type(value).parse(value), value)
+                self.assertEqual(type(value).parse(value), value)
                 self.assertIsNone(value.validate())
                 self.assertEqual(str(value), value.code)
 

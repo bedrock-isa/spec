@@ -4,86 +4,114 @@ from pathlib import Path
 
 import yaml
 
-from engine.reference import UnknownReferenceError
-from engine.type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
+from engine.reference import Reference, UnknownReferenceError
+from engine.type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
 
 
 class TypeSystemTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.types = TypeSystem.load(Path(__file__).parents[1])
-
-    def test_indexes_base_and_extension_field_types(self) -> None:
-        self.assertEqual(self.types.field_types["base.field_types.Rn"].bits, 4)
-        self.assertEqual(self.types.field_types["FP.field_types.Fn"].bits, 4)
-        self.assertEqual(self.types.field_types["VECTOR.field_types.Vn"].bits, 5)
-
-    def test_indexes_size_selector_field_types(self) -> None:
-        self.assertEqual(self.types.field_types["base.field_types.SIZE_BWLQ"].bits, 2)
-        self.assertEqual(self.types.field_types["FP.field_types.SIZE_SD"].bits, 1)
-        self.assertEqual(
-            self.types.field_types["VECTOR.field_types.SIZE_VTYPE"].bits, 3
-        )
-
-    def test_indexes_base_and_extension_payload_types(self) -> None:
-        self.assertEqual(self.types.payload_types["base.payload_types.DISP8S"].bytes, 1)
-        self.assertEqual(self.types.payload_types["FP.payload_types.IMMDF"].bytes, 8)
-
-    def test_exposes_concrete_type_objects_without_a_common_parent(self) -> None:
-        field = self.types.field_types["base.field_types.SIZE_BWLQ"]
-        payload = self.types.payload_types["base.payload_types.IMM16"]
-
-        self.assertIsInstance(field, FieldType)
-        self.assertIsInstance(payload, PayloadType)
-        self.assertEqual(field.kind, FieldTypeKind.SIZE_SELECTOR)
-        self.assertEqual([value.code for value in field.values], ["B", "W", "L", "Q"])
-        self.assertFalse(isinstance(field, PayloadType))
-
-    def test_groups_types_by_owner_namespace(self) -> None:
-        vector = self.types.namespace("VECTOR")
-
-        self.assertIs(
-            vector.field_types["VECTOR.field_types.Vn"],
-            self.types.field_types["VECTOR.field_types.Vn"],
-        )
-        self.assertEqual(len(vector.payload_types), 0)
-
-    def test_missing_type_is_not_resolved_by_scope(self) -> None:
-        with self.assertRaises(UnknownReferenceError):
-            self.types.payload_types.resolve("VECTOR.payload_types.DISP8S")
-
-    def test_does_not_load_types_from_an_undeclared_extension(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "extensions/UNLISTED").mkdir(parents=True)
-            (root / "field_types.yaml").write_text(
-                yaml.safe_dump({"field_types": {}}), encoding="utf-8"
-            )
-            (root / "payload_types.yaml").write_text(
-                yaml.safe_dump({"payload_types": {}}), encoding="utf-8"
-            )
-            (root / "extensions/extensions.yaml").write_text(
-                yaml.safe_dump({"extensions": []}), encoding="utf-8"
-            )
-            (root / "extensions/UNLISTED/field_types.yaml").write_text(
-                yaml.safe_dump(
-                    {
-                        "field_types": {
-                            "Hidden": {
-                                "type": "immediate",
-                                "bits": 1,
-                                "value_type": "unsigned_integer",
-                            }
-                        }
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self._write("extensions/extensions.yaml", {"extensions": ["SAMPLE"]})
+        self._write(
+            "field_types.yaml",
+            {
+                "field_types": {
+                    "WIDTH": {
+                        "type": "size_selector",
+                        "bits": 1,
+                        "values": [
+                            {"value": 0, "code": "NARROW"},
+                            {"value": 1, "code": "WIDE"},
+                        ],
                     }
-                ),
-                encoding="utf-8",
-            )
+                }
+            },
+        )
+        self._write(
+            "payload_types.yaml",
+            {
+                "payload_types": {
+                    "BASE_ONLY": {
+                        "type": "immediate",
+                        "bytes": 2,
+                        "value_type": "unsigned_integer",
+                    }
+                }
+            },
+        )
+        self._write(
+            "extensions/SAMPLE/field_types.yaml",
+            {
+                "field_types": {
+                    "COUNT": {
+                        "type": "immediate",
+                        "bits": 3,
+                        "value_type": "unsigned_integer",
+                    }
+                }
+            },
+        )
+        self._write("extensions/SAMPLE/payload_types.yaml", {"payload_types": {}})
 
-            types = TypeSystem.load(root)
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def _write(self, relative: str, document: object) -> None:
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+
+    def test_loads_declared_owner_namespaces(self) -> None:
+        types = TypeSystem.load(self.root)
+
+        self.assertEqual(set(types.extensions), {"SAMPLE"})
+        self.assertEqual(types.namespace("base").owner, "base")
+        self.assertEqual(types.namespace("SAMPLE").owner, "SAMPLE")
+
+    def test_projects_typed_definitions_into_global_indexes(self) -> None:
+        types = TypeSystem.load(self.root)
+        width = types.field_types[Reference.parse("base.field_types.WIDTH")]
+        count = types.field_types[Reference.parse("SAMPLE.field_types.COUNT")]
+        payload = types.payload_types[Reference.parse("base.payload_types.BASE_ONLY")]
+
+        self.assertIs(width, types.base.field_types[width.reference])
+        self.assertIs(count, types.extensions["SAMPLE"].field_types[count.reference])
+        self.assertIs(payload, types.base.payload_types[payload.reference])
+        self.assertIs(width.kind, FieldTypeKind.SIZE_SELECTOR)
+        self.assertEqual(
+            tuple(value.code for value in width.values), ("NARROW", "WIDE")
+        )
+        self.assertIs(payload.kind, PayloadTypeKind.IMMEDIATE)
+
+    def test_reference_resolution_does_not_fall_back_across_owners(self) -> None:
+        types = TypeSystem.load(self.root)
 
         with self.assertRaises(UnknownReferenceError):
-            types.field_types.resolve("UNLISTED.field_types.Hidden")
+            types.payload_types.resolve(
+                Reference.parse("SAMPLE.payload_types.BASE_ONLY")
+            )
+
+    def test_ignores_an_undeclared_extension_namespace(self) -> None:
+        self._write(
+            "extensions/UNLISTED/field_types.yaml",
+            {
+                "field_types": {
+                    "Hidden": {
+                        "type": "immediate",
+                        "bits": 1,
+                        "value_type": "unsigned_integer",
+                    }
+                }
+            },
+        )
+        self._write("extensions/UNLISTED/payload_types.yaml", {"payload_types": {}})
+
+        types = TypeSystem.load(self.root)
+
+        self.assertEqual(set(types.extensions), {"SAMPLE"})
+        with self.assertRaises(UnknownReferenceError):
+            types.field_types.resolve(Reference.parse("UNLISTED.field_types.Hidden"))
 
 
 if __name__ == "__main__":

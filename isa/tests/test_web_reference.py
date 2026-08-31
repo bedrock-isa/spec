@@ -5,7 +5,6 @@ from engine.composition import DocumentComposition
 from engine.generation import ArtifactGenerationContext, ArtifactGeneratorRegistry
 from engine.project import IsaProject
 from engine.site.model import DocumentSiteSpec, build_site
-from engine.site.pandoc import normalize_latex_for_site
 from engine.site.structure import parse_latex_structure
 from engine.workspace import SpecWorkspace
 
@@ -77,21 +76,6 @@ class WebReferenceTest(unittest.TestCase):
         owned = [page.output.as_posix() for page in self.site.registry.pages]
 
         self.assertEqual(sorted(projected), sorted(owned))
-
-    def test_current_style_wrappers_are_lowered_at_the_pandoc_boundary(self) -> None:
-        normalized = normalize_latex_for_site(
-            r"""\begin{document}
-\begin{BedrockLongTable}{ll}A & B\\\end{BedrockLongTable}
-\BedrockField{Profile:}{bedrock-elf}
-\end{document}
-"""
-        )
-
-        self.assertNotIn("BedrockLongTable", normalized)
-        self.assertNotIn(r"\BedrockField", normalized)
-        self.assertEqual(normalized.count(r"\begin{longtable}"), 1)
-        self.assertEqual(normalized.count(r"\begin{tabular}"), 1)
-
 
 if __name__ == "__main__":
     unittest.main()

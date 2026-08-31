@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+from typing import NamedTuple
 
 from abi.c.model import CAbiProject
 from abi.c.model.project import CallingConvention, LocationPolicy
@@ -41,15 +42,37 @@ _LLVM_RETURN_TYPES = {
     "GENERAL_SCALAR": ("i1", "i8", "i16", "i32", "i64"),
     "FLOAT_SCALAR": ("f32", "f64"),
     "VECTOR_VALUE": (
-        "nxv16i8", "nxv8i16", "nxv4i32", "nxv2i64",
-        "nxv8f16", "nxv4f32", "nxv2f64",
+        "nxv16i8",
+        "nxv8i16",
+        "nxv4i32",
+        "nxv2i64",
+        "nxv8f16",
+        "nxv4f32",
+        "nxv2f64",
     ),
     "PREDICATE_VALUE": ("nxv16i1", "nxv8i1", "nxv4i1", "nxv2i1"),
 }
 _LLVM_RETURN_CLASS_ORDER = (
-    "PREDICATE_VALUE", "VECTOR_VALUE", "FLOAT_SCALAR", "GENERAL_SCALAR"
+    "PREDICATE_VALUE",
+    "VECTOR_VALUE",
+    "FLOAT_SCALAR",
+    "GENERAL_SCALAR",
 )
 _SPILLABLE_REGISTER_GROUPS = {"GPR", "FPR", "VECTOR", "PREDICATE"}
+
+
+class CallingConventionReturnRule(NamedTuple):
+    value_class: str
+    llvm_types: tuple[str, ...]
+    registers: tuple[str, ...]
+
+
+class CallingConventionProjection(NamedTuple):
+    """The C ABI relations consumed by LLVM calling-convention TableGen."""
+
+    return_rules: tuple[CallingConventionReturnRule, ...]
+    spillable_callee_saved: tuple[str, ...]
+    all_callee_saved: tuple[str, ...]
 
 
 class Generator(ArtifactGenerator):
@@ -61,13 +84,14 @@ class Generator(ArtifactGenerator):
             raise TypeError("abi.c provider must be a CAbiProject")
         convention = project.calling_convention
         _validate_llvm_projection(project, convention)
+        calling_convention = _project_calling_convention(
+            project, convention, context.workspace
+        )
         return GeneratedArtifactSet(
             (
                 GeneratedArtifact(
                     _CALLING_CONV_OUTPUT,
-                    _render_calling_convention(
-                        project, convention, context.workspace
-                    ),
+                    _render_calling_convention(calling_convention),
                 ),
                 GeneratedArtifact(
                     _CATALOG_OUTPUT, _render_catalog(project, context.workspace)
@@ -91,8 +115,9 @@ def _validate_llvm_projection(
             f"{sorted(required_classes)}, got {sorted(classes)}"
         )
     values = {
-        project.value_classes.resolve(reference).id:
-        project.value_classes.resolve(reference)
+        project.value_classes.resolve(reference).id: project.value_classes.resolve(
+            reference
+        )
         for reference in convention.value_classes
     }
     missing = set(_LLVM_RETURN_TYPES) - set(values)
@@ -110,7 +135,8 @@ def _validate_llvm_projection(
     for value_id, class_id in expected_result_classes.items():
         policy = values[value_id].result
         actual = (
-            "NONE" if policy.register_class is None
+            "NONE"
+            if policy.register_class is None
             else project.register_classes.resolve(policy.register_class).id
         )
         if policy.mode != "value" or policy.units != 1 or actual != class_id:
@@ -120,19 +146,50 @@ def _validate_llvm_projection(
             )
 
 
-def _render_calling_convention(
+def _project_calling_convention(
     project: CAbiProject, convention: CallingConvention, workspace
-) -> str:
+) -> CallingConventionProjection:
     classes = {
-        project.register_classes.resolve(reference).id:
-        project.register_classes.resolve(reference)
+        project.register_classes.resolve(
+            reference
+        ).id: project.register_classes.resolve(reference)
         for reference in convention.register_classes
     }
     value_classes = {
-        project.value_classes.resolve(reference).id:
-        project.value_classes.resolve(reference)
+        project.value_classes.resolve(reference).id: project.value_classes.resolve(
+            reference
+        )
         for reference in convention.value_classes
     }
+    return_rules: list[CallingConventionReturnRule] = []
+    for value_id in _LLVM_RETURN_CLASS_ORDER:
+        value_class = value_classes[value_id]
+        result_register_class = value_class.result.register_class
+        if result_register_class is None:
+            raise ValueError(f"value class {value_class.id!r} has no result class")
+        register_class = classes[
+            project.register_classes.resolve(result_register_class).id
+        ]
+        return_rules.append(
+            CallingConventionReturnRule(
+                value_id,
+                _LLVM_RETURN_TYPES[value_id],
+                tuple(workspace.resolve(item).id for item in register_class.results),
+            )
+        )
+    callee_saved = next(
+        item for item in convention.preservation if item.disposition == "callee_saved"
+    ).registers
+    all_callee_saved = tuple(workspace.resolve(item).id for item in callee_saved)
+    spillable = tuple(
+        workspace.resolve(item).id
+        for item in callee_saved
+        if workspace.resolve(item).group in _SPILLABLE_REGISTER_GROUPS
+    )
+    return CallingConventionProjection(tuple(return_rules), spillable, all_callee_saved)
+
+
+def _render_calling_convention(projection: CallingConventionProjection) -> str:
     lines = [
         "//===-- BedrockGenCallingConv.td - generated C ABI -------*- tablegen -*-===//",
         "//",
@@ -145,34 +202,17 @@ def _render_calling_convention(
         "def RetCC_Bedrock : CallingConv<[",
         "  CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,",
     ]
-    return_rules: list[str] = []
-    for value_id in _LLVM_RETURN_CLASS_ORDER:
-        value_class = value_classes[value_id]
-        result_register_class = value_class.result.register_class
-        if result_register_class is None:
-            raise ValueError(f"value class {value_class.id!r} has no result class")
-        register_class = classes[
-            project.register_classes.resolve(result_register_class).id
-        ]
-        types = ", ".join(_LLVM_RETURN_TYPES[value_id])
-        registers = ", ".join(
-            workspace.resolve(item).id for item in register_class.results
-        )
-        return_rules.append(
-            f"  CCIfType<[{types}], CCAssignToReg<[{registers}]>>"
-        )
+    return_rules = [
+        f"  CCIfType<[{', '.join(rule.llvm_types)}], "
+        f"CCAssignToReg<[{', '.join(rule.registers)}]>>"
+        for rule in projection.return_rules
+    ]
     lines.extend(",\n".join(return_rules).splitlines())
     lines.extend(("]>;", ""))
 
-    callee_saved = next(
-        item for item in convention.preservation
-        if item.disposition == "callee_saved"
-    ).registers
-    spillable = tuple(
-        item for item in callee_saved
-        if workspace.resolve(item).group in _SPILLABLE_REGISTER_GROUPS
+    lines.extend(
+        _callee_saved_record("CSR_Bedrock_Save", projection.spillable_callee_saved)
     )
-    lines.extend(_callee_saved_record("CSR_Bedrock_Save", spillable, workspace))
     lines.append("")
     lines.extend(
         (
@@ -180,13 +220,12 @@ def _render_calling_convention(
             "// remains present in the complete C ABI call-preserved mask.",
         )
     )
-    lines.extend(_callee_saved_record("CSR_Bedrock", callee_saved, workspace))
+    lines.extend(_callee_saved_record("CSR_Bedrock", projection.all_callee_saved))
     lines.append("")
     return "\n".join(lines)
 
 
-def _callee_saved_record(name: str, registers, workspace) -> list[str]:
-    names = [workspace.resolve(item).id for item in registers]
+def _callee_saved_record(name: str, names: tuple[str, ...]) -> list[str]:
     lines = [f"def {name} : CalleeSavedRegs<", "  (add " + names[0] + ","]
     for index in range(1, len(names)):
         suffix = ")>;" if index == len(names) - 1 else ","
@@ -211,25 +250,38 @@ def _render_catalog(project: CAbiProject, workspace) -> str:
         item = namespace.types[entity_id]
         fixed = isinstance(item.size_bits, int)
         lines.append(
-            "BEDROCK_C_TYPE(" + ", ".join((
-                item.id, _c_string(item.spelling), _token(item.call_kind),
-                "FIXED" if fixed else "SYMBOLIC",
-                str(item.size_bits) if fixed else "0",
-                _c_string("") if fixed else _c_string(str(item.size_bits)),
-                str(item.alignment_bytes), _token(item.representation or "none"),
-            )) + ")"
+            "BEDROCK_C_TYPE("
+            + ", ".join(
+                (
+                    item.id,
+                    _c_string(item.spelling),
+                    _token(item.call_kind),
+                    "FIXED" if fixed else "SYMBOLIC",
+                    str(item.size_bits) if fixed else "0",
+                    _c_string("") if fixed else _c_string(str(item.size_bits)),
+                    str(item.alignment_bytes),
+                    _token(item.representation or "none"),
+                )
+            )
+            + ")"
         )
 
     convention = project.calling_convention
     stack = convention.stack
     lines.append(
-        "BEDROCK_C_CALLING_CONVENTION(" + ", ".join((
-            workspace.resolve(stack.pointer).id, _token(stack.growth),
-            str(stack.entry_alignment_bytes),
-            str(stack.first_argument_offset_bytes),
-            str(stack.argument_slot_bytes), workspace.resolve(stack.sret_register).id,
-            str(stack.red_zone_bytes),
-        )) + ")"
+        "BEDROCK_C_CALLING_CONVENTION("
+        + ", ".join(
+            (
+                workspace.resolve(stack.pointer).id,
+                _token(stack.growth),
+                str(stack.entry_alignment_bytes),
+                str(stack.first_argument_offset_bytes),
+                str(stack.argument_slot_bytes),
+                workspace.resolve(stack.sret_register).id,
+                str(stack.red_zone_bytes),
+            )
+        )
+        + ")"
     )
     for reference in convention.register_classes:
         register_class = project.register_classes.resolve(reference)
@@ -294,7 +346,8 @@ def _render_catalog(project: CAbiProject, workspace) -> str:
             f"{int(mapping.load is not None)}, {int(mapping.store is not None)})"
         )
         for operation, sequence in (
-            ("LOAD", mapping.load), ("STORE", mapping.store),
+            ("LOAD", mapping.load),
+            ("STORE", mapping.store),
             ("THREAD_FENCE", mapping.thread_fence),
         ):
             for index, step in enumerate(sequence or ()):
@@ -312,8 +365,7 @@ def _render_catalog(project: CAbiProject, workspace) -> str:
     for entity_id in namespace.atomic_lowering_inventory.declared:
         lowering = namespace.atomic_lowerings[entity_id]
         lines.append(
-            f"BEDROCK_C_ATOMIC_LOWERING({lowering.id}, "
-            f"{_token(lowering.strategy)})"
+            f"BEDROCK_C_ATOMIC_LOWERING({lowering.id}, {_token(lowering.strategy)})"
         )
         for operation in lowering.c_operations:
             lines.append(
@@ -348,10 +400,14 @@ def _macro_defaults() -> list[str]:
     lines: list[str] = []
     for macro in _MACROS:
         marker = f"BEDROCK_GEN_DEFINED_{macro}"
-        lines.extend((
-            f"#ifndef {macro}", f"#define {macro}(...)",
-            f"#define {marker}", "#endif",
-        ))
+        lines.extend(
+            (
+                f"#ifndef {macro}",
+                f"#define {macro}(...)",
+                f"#define {marker}",
+                "#endif",
+            )
+        )
     lines.append("")
     return lines
 
@@ -360,10 +416,14 @@ def _macro_cleanup() -> list[str]:
     lines = [""]
     for macro in _MACROS:
         marker = f"BEDROCK_GEN_DEFINED_{macro}"
-        lines.extend((
-            f"#ifdef {marker}", f"#undef {macro}",
-            f"#undef {marker}", "#endif",
-        ))
+        lines.extend(
+            (
+                f"#ifdef {marker}",
+                f"#undef {macro}",
+                f"#undef {marker}",
+                "#endif",
+            )
+        )
     return lines
 
 

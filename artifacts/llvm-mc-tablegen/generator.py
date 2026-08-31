@@ -110,6 +110,16 @@ class _RegisterSelector(NamedTuple):
     encoding: int
 
 
+class TableGenProjection(NamedTuple):
+    """Typed records selected for the LLVM TableGen consumer."""
+
+    forms: tuple[_RenderedForm, ...]
+    scalar_forms: tuple[_ScalarForm, ...]
+    vector_forms: tuple[_VectorForm, ...]
+    repeat_entries: tuple[_RepeatEntry, ...]
+    register_selectors: tuple[_RegisterSelector, ...]
+
+
 _OPERAND_NONE = 0
 _OPERAND_CONDITION = 1
 _OPERAND_GPR = 2
@@ -134,6 +144,8 @@ _VECTOR_ENCODING_CLASS = {"long": 0, "extralong": 1, "xxlong": 2}
 
 class Generator(ArtifactGenerator):
     """Project every canonical instruction form into searchable TableGen data."""
+
+    projection: TableGenProjection
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         project = context.require_provider("isa")
@@ -254,16 +266,23 @@ class Generator(ArtifactGenerator):
                 )
             )
 
+        self.projection = TableGenProjection(
+            tuple(forms),
+            tuple(scalar_forms),
+            tuple(vector_forms),
+            tuple(repeat_entries),
+            tuple(register_selectors),
+        )
         return GeneratedArtifactSet(
             (
                 GeneratedArtifact(
                     _OUTPUT,
                     _render(
-                        forms,
-                        scalar_forms,
-                        vector_forms,
-                        repeat_entries,
-                        register_selectors,
+                        self.projection.forms,
+                        self.projection.scalar_forms,
+                        self.projection.vector_forms,
+                        self.projection.repeat_entries,
+                        self.projection.register_selectors,
                     ),
                 ),
             ),
@@ -355,8 +374,7 @@ def _render_vector_form(
                 logical = dict(bundle.instruction)["operands"].get(binding.role, {})
                 access = logical.get("access")
             excludes_immediate = any(
-                constraint.role == binding.role
-                and "immediate" in constraint.exclude
+                constraint.role == binding.role and "immediate" in constraint.exclude
                 for constraint in form.constraints
             )
             operands.append(
@@ -396,9 +414,7 @@ def _render_vector_form(
         raise ValueError(f"{identifier}: payload has no displayed operand")
     if len(operands) > 6:
         raise ValueError(f"{identifier}: more than six vector operands")
-    operands.extend(
-        [_VectorOperand(_OPERAND_NONE, 0, 0, False)] * (6 - len(operands))
-    )
+    operands.extend([_VectorOperand(_OPERAND_NONE, 0, 0, False)] * (6 - len(operands)))
 
     distinct_a = distinct_b = -1
     if form.overlaps:
@@ -407,7 +423,9 @@ def _render_vector_form(
             distinct_a = explicit_roles.index(overlap.operands[0])
             distinct_b = explicit_roles.index(overlap.operands[1])
         except ValueError as error:
-            raise ValueError(f"{identifier}: overlap operand is not displayed") from error
+            raise ValueError(
+                f"{identifier}: overlap operand is not displayed"
+            ) from error
 
     allowed_condition_mask = 0xFFFF
     if condition_fields:
@@ -452,7 +470,9 @@ def _render_scalar_form(
         field.marker: project.types.field_types.resolve(field.type)
         for field in form.fields
     }
-    if any(operand.kind not in {"reference", "decimal"} for operand in form.syntax.operands):
+    if any(
+        operand.kind not in {"reference", "decimal"} for operand in form.syntax.operands
+    ):
         return None
 
     mnemonic = form.syntax.mnemonic.lower()
@@ -514,9 +534,7 @@ def _render_scalar_form(
                 0,
                 sum(
                     1 << value
-                    for value in _constraint_values(
-                        form, binding.role, definition.bits
-                    )
+                    for value in _constraint_values(form, binding.role, definition.bits)
                 ),
             )
         )
@@ -561,8 +579,7 @@ def _render_scalar_form(
                     _ScalarOperand(
                         (
                             _OPERAND_REGISTER_SELECTOR
-                            if definition.kind
-                            == PayloadTypeKind.REGISTER_SELECTOR
+                            if definition.kind == PayloadTypeKind.REGISTER_SELECTOR
                             else (
                                 _OPERAND_TAIL_SIGNED
                                 if signed
@@ -577,8 +594,7 @@ def _render_scalar_form(
                             _selector_group_id(
                                 selector_group_ids, definition.register_group
                             )
-                            if definition.kind
-                            == PayloadTypeKind.REGISTER_SELECTOR
+                            if definition.kind == PayloadTypeKind.REGISTER_SELECTOR
                             else 0
                         ),
                         1,
@@ -610,8 +626,8 @@ def _render_scalar_form(
         )
         access = binding.access
         if access is None:
-            access = dict(bundle.instruction)["operands"].get(binding.role, {}).get(
-                "access"
+            access = (
+                dict(bundle.instruction)["operands"].get(binding.role, {}).get("access")
             )
         operands.append(
             _ScalarOperand(
@@ -643,8 +659,7 @@ def _render_scalar_form(
     if len(operands) > 4:
         return None
     operands.extend(
-        [_ScalarOperand(_OPERAND_NONE, 0, 0, False, False, 0, 1)]
-        * (4 - len(operands))
+        [_ScalarOperand(_OPERAND_NONE, 0, 0, False, False, 0, 1)] * (4 - len(operands))
     )
 
     distinct_a = distinct_b = -1
@@ -807,12 +822,12 @@ def _render(
         "",
         "def BedrockISAForms : GenericTable {",
         '  let FilterClass = "BedrockISAForm";',
-        "  let Fields = [\"Id\", \"Mnemonic\", \"Syntax\", \"Pattern\",",
-        "                \"EncodingClass\", \"Owner\", \"PrimaryBytes\",",
-        "                \"FixedPayloadBytes\", \"HasEffectiveAddress\",",
-        "                \"HasVariableLength\", \"TableGenCodecCandidate\",",
-        "                \"FieldMarkers\", \"FieldRoles\", \"FieldTypes\",",
-        "                \"PayloadRoles\", \"PayloadTypes\"];",
+        '  let Fields = ["Id", "Mnemonic", "Syntax", "Pattern",',
+        '                "EncodingClass", "Owner", "PrimaryBytes",',
+        '                "FixedPayloadBytes", "HasEffectiveAddress",',
+        '                "HasVariableLength", "TableGenCodecCandidate",',
+        '                "FieldMarkers", "FieldRoles", "FieldTypes",',
+        '                "PayloadRoles", "PayloadTypes"];',
         "}",
         "",
         "def lookupBedrockISAFormById : SearchIndex {",
@@ -933,40 +948,55 @@ def _render_scalar_table(forms: list[_ScalarForm]) -> list[str]:
         "def BedrockScalarEncodingForms : GenericTable {",
         '  let FilterClass = "BedrockScalarEncodingForm";',
         '  let CppTypeName = "ScalarEncodingForm";',
-        "  let Fields = [\"Id\", \"Mnemonic\", \"Pattern\",",
-        "                \"FixedPayloadBytes\", \"Suffixes\",",
-        "                \"SuffixField\", \"AllowedSuffixMask\",",
-        "                \"ConditionField\", \"AllowedConditionMask\",",
-        "                \"OperandCount\",",
+        '  let Fields = ["Id", "Mnemonic", "Pattern",',
+        '                "FixedPayloadBytes", "Suffixes",',
+        '                "SuffixField", "AllowedSuffixMask",',
+        '                "ConditionField", "AllowedConditionMask",',
+        '                "OperandCount",',
         "                " + ", ".join(operand_fields) + ",",
-        "                \"DistinctOperandA\", \"DistinctOperandB\"];",
+        '                "DistinctOperandA", "DistinctOperandB"];',
         "}",
         "",
     ]
     for form in forms:
         values = [
-            _td_string(form.identifier), _td_string(form.mnemonic),
-            _td_string(form.pattern), str(form.fixed_payload_bytes),
+            _td_string(form.identifier),
+            _td_string(form.mnemonic),
+            _td_string(form.pattern),
+            str(form.fixed_payload_bytes),
             _td_string(form.suffixes),
-            str(form.suffix_field), str(form.allowed_suffix_mask),
-            str(form.condition_field), str(form.allowed_condition_mask),
+            str(form.suffix_field),
+            str(form.allowed_suffix_mask),
+            str(form.condition_field),
+            str(form.allowed_condition_mask),
             str(sum(operand.kind != _OPERAND_NONE for operand in form.operands)),
         ]
         for operand in form.operands:
-            values.extend((str(operand.kind), str(operand.field), str(operand.width),
-                           _td_bool(operand.signed),
-                           _td_bool(operand.allow_immediate_ea),
-                           str(operand.fixed_value),
-                           *(str((operand.allowed_mask >> (64 * index)) & ((1 << 64) - 1))
-                             for index in range(4))))
-        values.extend((str(form.distinct_operand_a & 0xFF),
-                       str(form.distinct_operand_b & 0xFF)))
-        lines.extend((
-            f"def {form.record_name} : BedrockScalarEncodingForm<",
-            "  " + ", ".join(values[:10]) + ",",
-            "  " + ", ".join(values[10:28]) + ",",
-            "  " + ", ".join(values[28:]) + ">;",
-        ))
+            values.extend(
+                (
+                    str(operand.kind),
+                    str(operand.field),
+                    str(operand.width),
+                    _td_bool(operand.signed),
+                    _td_bool(operand.allow_immediate_ea),
+                    str(operand.fixed_value),
+                    *(
+                        str((operand.allowed_mask >> (64 * index)) & ((1 << 64) - 1))
+                        for index in range(4)
+                    ),
+                )
+            )
+        values.extend(
+            (str(form.distinct_operand_a & 0xFF), str(form.distinct_operand_b & 0xFF))
+        )
+        lines.extend(
+            (
+                f"def {form.record_name} : BedrockScalarEncodingForm<",
+                "  " + ", ".join(values[:10]) + ",",
+                "  " + ", ".join(values[10:28]) + ",",
+                "  " + ", ".join(values[28:]) + ">;",
+            )
+        )
     return lines
 
 
@@ -1016,13 +1046,13 @@ def _render_vector_tables(forms: list[_VectorForm]) -> list[str]:
         "def BedrockVectorEncodingForms : GenericTable {",
         '  let FilterClass = "BedrockVectorEncodingForm";',
         '  let CppTypeName = "VectorEncodingForm";',
-        "  let Fields = [\"Id\", \"Mnemonic\", \"Owner\", \"Pattern\", \"Suffixes\",",
-        "                \"EncodingClass\", \"SuffixField\",",
-        "                \"AllowedSuffixMask\", \"AllowedConditionMask\",",
-        "                \"HasCondition\", \"HasWidthOnlyAliases\",",
-        "                \"OperandCount\",",
+        '  let Fields = ["Id", "Mnemonic", "Owner", "Pattern", "Suffixes",',
+        '                "EncodingClass", "SuffixField",',
+        '                "AllowedSuffixMask", "AllowedConditionMask",',
+        '                "HasCondition", "HasWidthOnlyAliases",',
+        '                "OperandCount",',
         "                " + ", ".join(operand_fields) + ",",
-        "                \"DistinctOperandA\", \"DistinctOperandB\"];",
+        '                "DistinctOperandA", "DistinctOperandB"];',
         "}",
         "",
     ]
@@ -1081,8 +1111,8 @@ def _render_repeat_table(entries: list[_RepeatEntry]) -> list[str]:
         "def BedrockRepeatEligibilityTable : GenericTable {",
         '  let FilterClass = "BedrockRepeatEligibility";',
         '  let CppTypeName = "RepeatEligibility";',
-        "  let Fields = [\"Mnemonic\", \"HasCondition\", \"AllowsREP\",",
-        "                \"AllowsREPcc\"];",
+        '  let Fields = ["Mnemonic", "HasCondition", "AllowsREP",',
+        '                "AllowsREPcc"];',
         "}",
         "",
     ]

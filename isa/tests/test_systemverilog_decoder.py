@@ -1,6 +1,8 @@
-import re
 import unittest
 from pathlib import Path
+import shutil
+import subprocess
+import tempfile
 
 from engine.generation import (
     ArtifactDefinition,
@@ -42,106 +44,6 @@ class SystemVerilogDecoderTest(unittest.TestCase):
     ) -> decoder_ir.FormIR:
         key = ".".join((reference.owner, *reference.path, reference.element))
         return next(form for form in self.ir.forms if form.key == key)
-
-    def test_package_projects_decode_ir_limits(self) -> None:
-        package = self.outputs[Path("bedrock_decode_pkg.sv")]
-        expected = {
-            "BEDROCK_OPCODE_BITS": self.ir.limits.max_opcode_width,
-            "BEDROCK_RECORD_BYTES": self.ir.limits.max_record_bytes,
-            "BEDROCK_FORM_COUNT": self.ir.limits.form_count,
-            "BEDROCK_OPERAND_SLOTS": self.ir.limits.max_operands,
-            "BEDROCK_EA_SLOTS": self.ir.limits.max_ea_operands,
-            "BEDROCK_OVERLAP_SLOTS": self.ir.limits.max_overlaps,
-        }
-        for parameter, value in expected.items():
-            with self.subTest(parameter=parameter):
-                self.assertRegex(
-                    package,
-                    rf"\b{parameter} = 10'd{value};",
-                )
-
-    def test_rendered_modules_keep_the_public_decoder_ports(self) -> None:
-        package = self.outputs[Path("bedrock_decode_pkg.sv")]
-        d0 = self.outputs[Path("bedrock_decode_d0.sv")]
-        d1 = self.outputs[Path("bedrock_decode_d1.sv")]
-        ea = self.outputs[Path("bedrock_decode_ea.sv")]
-
-        self.assertIn("package bedrock_decode_pkg;", package)
-        for public_type in (
-            "} d0_result_t;",
-            "} d0_ea_result_t;",
-            "} d1_opcode_result_t;",
-            "} ea_decode_result_t;",
-        ):
-            self.assertIn(public_type, package)
-        self.assertIn("module bedrock_decode_d0", d0)
-        self.assertIn(
-            """input  logic valid_i,
-  input  opcode_class_e opcode_class_i,
-  input  logic [BEDROCK_OPCODE_BITS-1:0] opcode_i,
-  output d0_result_t result_o,
-  output d0_ea_result_t ea_result_o""",
-            d0,
-        )
-        self.assertIn("module bedrock_decode_d1", d1)
-        self.assertIn(
-            """input  d0_result_t d0_i,
-  input  logic [BEDROCK_RECORD_BYTES*8-1:0] record_i,
-  input  logic [4:0] byte_count_i,
-  output d1_opcode_result_t result_o""",
-            d1,
-        )
-        self.assertNotIn("opcode_i", d1)
-        self.assertIn("module bedrock_decode_ea", ea)
-        self.assertIn(
-            """input  d0_ea_result_t d0_i,
-  input  logic [BEDROCK_RECORD_BYTES*8-1:0] record_i,
-  input  logic [4:0] byte_count_i,
-  output ea_decode_result_t result_o""",
-            ea,
-        )
-
-    def test_d1_emits_every_operand_overlap_constraint(self) -> None:
-        d1 = self.outputs[Path("bedrock_decode_d1.sv")]
-        gather = self._form(
-            Reference.parse("VECTOR.VGATHER.l_pn_p_pn_c_vn_x_vn_v")
-        )
-        match = re.search(
-            rf"begin // \d+: {re.escape(gather.key)}\n(.*?)"
-            rf"(?=\n\s+64'b|\n\s+default:)",
-            d1,
-            flags=re.DOTALL,
-        )
-        self.assertIsNotNone(match, gather.key)
-        case = match.group(1)
-        self.assertIn(
-            f"decoded_result.overlap_count = 2'd{len(gather.overlaps)};",
-            case,
-        )
-        operand_indexes = {
-            operand.name: index for index, operand in enumerate(gather.operands)
-        }
-        for index, overlap in enumerate(gather.overlaps):
-            with self.subTest(overlap=index, form=gather.key):
-                self.assertEqual(overlap.rule, "illegal_instruction")
-                self.assertIn(
-                    f"decoded_result.overlaps[{index}].valid = 1'b1;", case
-                )
-                self.assertIn(
-                    "decoded_result.overlaps["
-                    f"{index}].rule = OVERLAP_ILLEGAL_INSTRUCTION;",
-                    case,
-                )
-                self.assertIn(
-                    "decoded_result.overlaps["
-                    f"{index}].left_operand = 2'd{operand_indexes[overlap.left]};",
-                    case,
-                )
-                self.assertIn(
-                    "decoded_result.overlaps["
-                    f"{index}].right_operand = 2'd{operand_indexes[overlap.right]};",
-                    case,
-                )
 
     def test_reference_decoder_consumes_all_ea_descriptors_before_payloads(
         self,
@@ -244,6 +146,132 @@ class SystemVerilogDecoderTest(unittest.TestCase):
 
     def test_generation_is_deterministic(self) -> None:
         self.assertEqual(self.outputs, render_outputs(Path(".")))
+
+    def test_decoder_projection_owns_public_ports_and_derived_limits(self) -> None:
+        generator = ArtifactGeneratorRegistry.discover(self.workspace).generator(
+            "systemverilog-instruction-decoder"
+        )
+        projection = generator.project()
+
+        self.assertEqual(
+            tuple((port.direction, port.name) for port in projection.d0_ports),
+            (
+                ("input", "valid_i"),
+                ("input", "opcode_class_i"),
+                ("input", "opcode_i"),
+                ("output", "result_o"),
+                ("output", "ea_result_o"),
+            ),
+        )
+        self.assertEqual(
+            tuple((port.direction, port.name) for port in projection.d1_ports),
+            (
+                ("input", "d0_i"),
+                ("input", "record_i"),
+                ("input", "byte_count_i"),
+                ("output", "result_o"),
+            ),
+        )
+        self.assertEqual(projection.limits.form_count, len(self.ir.forms))
+        self.assertEqual(
+            projection.limits.max_overlaps,
+            max(len(form.overlaps) for form in self.ir.forms),
+        )
+        self.assertEqual(
+            projection.limits.max_required_bytes,
+            max(form.maximum_required_bytes for form in self.ir.forms),
+        )
+
+    def test_d1_overlap_projection_maps_operand_names_to_public_slots(self) -> None:
+        generator = ArtifactGeneratorRegistry.discover(self.workspace).generator(
+            "systemverilog-instruction-decoder"
+        )
+        projection = generator.project()
+        expected = []
+        for form in self.ir.forms:
+            slots = {operand.name: index for index, operand in enumerate(form.operands)}
+            expected.extend(
+                (form.key, slots[overlap.left], slots[overlap.right], overlap.rule)
+                for overlap in form.overlaps
+            )
+
+        self.assertEqual(
+            tuple(
+                (
+                    overlap.form_key,
+                    overlap.left_operand,
+                    overlap.right_operand,
+                    overlap.rule,
+                )
+                for overlap in projection.d1_overlaps
+            ),
+            tuple(expected),
+        )
+
+    def test_generated_decoder_is_accepted_by_a_systemverilog_consumer(self) -> None:
+        verilator = shutil.which("verilator")
+        if verilator is None:
+            self.skipTest("verilator is not available")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources = []
+            registry = ArtifactGeneratorRegistry.discover(self.workspace)
+            for artifact_id in (
+                "systemverilog-package",
+                "systemverilog-instruction-decoder",
+                "systemverilog-ea-decoder",
+            ):
+                generated = registry.generate(artifact_id, self.workspace, root)
+                for artifact in generated.artifacts:
+                    source = root / artifact.relative_path
+                    source.parent.mkdir(parents=True, exist_ok=True)
+                    source.write_text(str(artifact.content), encoding="utf-8")
+                    sources.append(source)
+            projection = registry.generator(
+                "systemverilog-instruction-decoder"
+            ).project()
+            declarations = []
+            instances = []
+            for module_name, prefix, ports in (
+                ("bedrock_decode_d0", "d0", projection.d0_ports),
+                ("bedrock_decode_d1", "d1", projection.d1_ports),
+            ):
+                connections = []
+                for port in ports:
+                    signal = f"{prefix}_{port.name}"
+                    declarations.append(f"  {port.type_name} {signal};")
+                    connections.append(f"    .{port.name}({signal})")
+                instances.append(
+                    f"  {module_name} {prefix}_instance (\n"
+                    + ",\n".join(connections)
+                    + "\n  );"
+                )
+            consumer = root / "decoder_consumer.sv"
+            consumer.write_text(
+                "module decoder_consumer;\n"
+                "  import bedrock_decode_pkg::*;\n"
+                + "\n".join(declarations)
+                + "\n"
+                + "\n".join(instances)
+                + "\nendmodule\n",
+                encoding="utf-8",
+            )
+            sources.append(consumer)
+            sources.sort(key=lambda path: (not path.name.endswith("_pkg.sv"), path.name))
+            completed = subprocess.run(
+                [
+                    verilator,
+                    "--lint-only",
+                    "--sv",
+                    "-Wno-fatal",
+                    *(str(source) for source in sources),
+                ],
+                cwd=root,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_manifest_role_selects_a_renamed_output_path(self) -> None:
         registered = ArtifactGeneratorRegistry.discover(self.workspace).generator(

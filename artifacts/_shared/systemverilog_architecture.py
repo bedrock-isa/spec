@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
 
 from engine.generation import (
@@ -29,6 +30,89 @@ def _generated(body: str) -> str:
         + body.rstrip()
         + "\n"
     )
+
+
+@dataclass(frozen=True)
+class CpuidFieldProjection:
+    id: str
+    lsb: int
+    bits: int
+    mask: int
+
+
+@dataclass(frozen=True)
+class CpuidQueryProjection:
+    owner: str
+    class_id: str
+    class_value: int
+    leaf_id: str
+    leaf_value: int
+    query_id: str
+    first_index: int
+    last_index: int
+    stride: int
+    fields: tuple[CpuidFieldProjection, ...]
+
+
+@dataclass(frozen=True)
+class CpuidProjection:
+    queries: tuple[CpuidQueryProjection, ...]
+
+
+@dataclass(frozen=True)
+class FixedEventRouteProjection:
+    owner: str
+    event_id: str
+    code: int
+    frame: str
+    payload_mask: int
+
+
+@dataclass(frozen=True)
+class DynamicEventRouteProjection:
+    class_value: int
+    frame: str
+
+
+@dataclass(frozen=True)
+class EventCodecProjection:
+    payload_bits: tuple[tuple[str, int], ...]
+    fixed_routes: tuple[FixedEventRouteProjection, ...]
+    dynamic_routes: tuple[DynamicEventRouteProjection, ...]
+
+
+@dataclass(frozen=True)
+class RegisterFieldProjection:
+    id: str
+    lsb: int
+    mask: int
+
+
+@dataclass(frozen=True)
+class RegisterContractProjection:
+    owner: str
+    group_id: str
+    group_index: int
+    register_id: str
+    encoding: int
+    width_kind: int
+    fixed_width: int
+    writable_mask: int
+    reset_known: bool
+    reset_value: int
+    fields: tuple[RegisterFieldProjection, ...]
+
+
+@dataclass(frozen=True)
+class RegisterContractsProjection:
+    group_names: tuple[str, ...]
+    registers: tuple[RegisterContractProjection, ...]
+
+
+@dataclass(frozen=True)
+class VectorGeometryProjection:
+    vector_register_count: int
+    predicate_register_count: int
 
 
 class _Generator(ArtifactGenerator):
@@ -112,40 +196,75 @@ def _resolve_cpuid_leaf(catalog, item):
 
 
 class CpuidGenerator(_Generator):
-    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+    def project(self, context: ArtifactGenerationContext) -> CpuidProjection:
         project = context.require_provider("isa")
-        constants: list[str] = []
+        queries = []
         for owner, namespace in project.cpuid.namespaces.items():
             for cpuid_class in namespace.classes.values():
                 root_class = _resolve_cpuid_class(project.cpuid, cpuid_class)
-                prefix = f"CPUID_{_identifier(owner)}_{_identifier(cpuid_class.id)}"
-                constants.append(
-                    f"  localparam logic [31:0] {prefix}_CLASS = 32'h{root_class.value:08x};"
-                )
                 for leaf in cpuid_class.leaves.values():
                     root_leaf = _resolve_cpuid_leaf(project.cpuid, leaf)
-                    leaf_prefix = f"{prefix}_{_identifier(leaf.id)}"
-                    constants.append(
-                        f"  localparam logic [15:0] {leaf_prefix}_LEAF = 16'h{root_leaf.value:04x};"
-                    )
                     for query in leaf.queries:
-                        query_prefix = f"{leaf_prefix}_{_identifier(query.id)}"
-                        constants.extend(
-                            (
-                                f"  localparam logic [15:0] {query_prefix}_FIRST = 16'h{query.indexes.first:04x};",
-                                f"  localparam logic [15:0] {query_prefix}_LAST = 16'h{query.indexes.last:04x};",
-                                f"  localparam logic [15:0] {query_prefix}_STRIDE = 16'd{query.indexes.stride};",
+                        queries.append(
+                            CpuidQueryProjection(
+                                owner=owner,
+                                class_id=cpuid_class.id,
+                                class_value=root_class.value,
+                                leaf_id=leaf.id,
+                                leaf_value=root_leaf.value,
+                                query_id=query.id,
+                                first_index=query.indexes.first,
+                                last_index=query.indexes.last,
+                                stride=query.indexes.stride,
+                                fields=tuple(
+                                    CpuidFieldProjection(
+                                        field.id,
+                                        field.lsb,
+                                        field.bits,
+                                        _mask(field.lsb, field.bits),
+                                    )
+                                    for field in query.fields
+                                ),
                             )
                         )
-                        for field in query.fields:
-                            field_prefix = f"{query_prefix}_{_identifier(field.id)}"
-                            constants.extend(
-                                (
-                                    f"  localparam logic [6:0] {field_prefix}_LSB = 7'd{field.lsb};",
-                                    f"  localparam logic [6:0] {field_prefix}_BITS = 7'd{field.bits};",
-                                    f"  localparam logic [63:0] {field_prefix}_MASK = 64'h{_mask(field.lsb, field.bits):016x};",
-                                )
-                            )
+        return CpuidProjection(tuple(queries))
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        constants: list[str] = []
+        class_constants: set[tuple[str, str]] = set()
+        leaf_constants: set[tuple[str, str, str]] = set()
+        for query in self.project(context).queries:
+            prefix = f"CPUID_{_identifier(query.owner)}_{_identifier(query.class_id)}"
+            class_key = (query.owner, query.class_id)
+            if class_key not in class_constants:
+                class_constants.add(class_key)
+                constants.append(
+                    f"  localparam logic [31:0] {prefix}_CLASS = 32'h{query.class_value:08x};"
+                )
+            leaf_prefix = f"{prefix}_{_identifier(query.leaf_id)}"
+            leaf_key = (query.owner, query.class_id, query.leaf_id)
+            if leaf_key not in leaf_constants:
+                leaf_constants.add(leaf_key)
+                constants.append(
+                    f"  localparam logic [15:0] {leaf_prefix}_LEAF = 16'h{query.leaf_value:04x};"
+                )
+            query_prefix = f"{leaf_prefix}_{_identifier(query.query_id)}"
+            constants.extend(
+                (
+                    f"  localparam logic [15:0] {query_prefix}_FIRST = 16'h{query.first_index:04x};",
+                    f"  localparam logic [15:0] {query_prefix}_LAST = 16'h{query.last_index:04x};",
+                    f"  localparam logic [15:0] {query_prefix}_STRIDE = 16'd{query.stride};",
+                )
+            )
+            for field in query.fields:
+                field_prefix = f"{query_prefix}_{_identifier(field.id)}"
+                constants.extend(
+                    (
+                        f"  localparam logic [6:0] {field_prefix}_LSB = 7'd{field.lsb};",
+                        f"  localparam logic [6:0] {field_prefix}_BITS = 7'd{field.bits};",
+                        f"  localparam logic [63:0] {field_prefix}_MASK = 64'h{field.mask:016x};",
+                    )
+                )
 
         package = (
             """package bedrock_cpuid_pkg;
@@ -196,44 +315,66 @@ _FRAME_VALUES = {
 
 
 class EventCodecGenerator(_Generator):
-    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+    def project(self, context: ArtifactGenerationContext) -> EventCodecProjection:
         project = context.require_provider("isa")
         resolved = project.events.resolved_events()
         payload_names = sorted(
             {name for item in resolved for name in item.event.payload}
         )
         payload_bits = {name: bit for bit, name in enumerate(payload_names)}
-        constants: list[str] = []
-        cases: list[str] = []
         class_frames: dict[int, str] = {}
+        fixed_routes = []
         for item in resolved:
-            owner = _identifier(item.owner)
-            name = _identifier(item.event.id)
-            frame_name = f"EVENT_FRAME_{_identifier(item.event.frame)}"
             if item.code.selector.kind != "fixed":
-                class_frames.setdefault(item.code.class_value, frame_name)
+                class_frames.setdefault(item.code.class_value, item.event.frame)
             if item.code.value is None:
                 continue
-            constant = f"EVENT_{owner}_{name}"
-            payload_mask = sum(1 << payload_bits[value] for value in item.event.payload)
+            fixed_routes.append(
+                FixedEventRouteProjection(
+                    item.owner,
+                    item.event.id,
+                    item.code.value,
+                    item.event.frame,
+                    sum(1 << payload_bits[value] for value in item.event.payload),
+                )
+            )
+        return EventCodecProjection(
+            tuple(payload_bits.items()),
+            tuple(fixed_routes),
+            tuple(
+                DynamicEventRouteProjection(class_value, frame)
+                for class_value, frame in sorted(class_frames.items())
+            ),
+        )
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        projection = self.project(context)
+        payload_bits = dict(projection.payload_bits)
+        constants: list[str] = []
+        cases: list[str] = []
+        for route in projection.fixed_routes:
+            constant = (
+                f"EVENT_{_identifier(route.owner)}_{_identifier(route.event_id)}"
+            )
             constants.append(
-                f"  localparam logic [31:0] {constant} = 32'h{item.code.value:08x};"
+                f"  localparam logic [31:0] {constant} = 32'h{route.code:08x};"
             )
             cases.append(
-                f"      {constant}: begin frame_o = {frame_name}; payload_mask_o = "
-                f"{max(1, len(payload_names))}'h{payload_mask:x}; end"
+                f"      {constant}: begin frame_o = "
+                f"EVENT_FRAME_{_identifier(route.frame)}; payload_mask_o = "
+                f"{max(1, len(payload_bits))}'h{route.payload_mask:x}; end"
             )
         for name, bit in payload_bits.items():
             constants.append(
-                f"  localparam logic [{max(1, len(payload_names)) - 1}:0] "
-                f"EVENT_PAYLOAD_{_identifier(name)} = {max(1, len(payload_names))}'h{1 << bit:x};"
+                f"  localparam logic [{max(1, len(payload_bits)) - 1}:0] "
+                f"EVENT_PAYLOAD_{_identifier(name)} = {max(1, len(payload_bits))}'h{1 << bit:x};"
             )
         enum_items = ",\n".join(
             f"    EVENT_FRAME_{_identifier(name)} = 2'd{value[0]}"
             for name, value in _FRAME_VALUES.items()
         )
         package = f"""package bedrock_event_pkg;
-  localparam integer BEDROCK_EVENT_PAYLOAD_KINDS = {max(1, len(payload_names))};
+  localparam integer BEDROCK_EVENT_PAYLOAD_KINDS = {max(1, len(payload_bits))};
   typedef enum logic [1:0] {{
 {enum_items}
   }} bedrock_event_frame_type_e;
@@ -246,8 +387,9 @@ class EventCodecGenerator(_Generator):
 endpackage"""
 
         dynamic_cases = "\n".join(
-            f"      8'h{class_value:02x}: frame_o = {frame};"
-            for class_value, frame in sorted(class_frames.items())
+            f"      8'h{route.class_value:02x}: frame_o = "
+            f"EVENT_FRAME_{_identifier(route.frame)};"
+            for route in projection.dynamic_routes
         )
         codec = f"""module bedrock_event_codec
   import bedrock_event_pkg::*;
@@ -340,55 +482,89 @@ def _register_width_kind(width: object) -> int:
 
 
 class RegisterContractsGenerator(_Generator):
-    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+    def project(
+        self, context: ArtifactGenerationContext
+    ) -> RegisterContractsProjection:
         project = context.require_provider("isa")
-        groups: list[tuple[str, object]] = []
-        registers: list[tuple[str, str, object]] = []
+        group_names = []
+        registers = []
         for owner, namespace in project.registers.namespaces.items():
             for group in namespace.groups.values():
                 group_name = (
                     f"REGISTER_GROUP_{_identifier(owner)}_{_identifier(group.id)}"
                 )
-                groups.append((group_name, group))
+                group_index = len(group_names)
+                group_names.append(group_name)
                 for register in group.registers.values():
                     if register.encoding is not None:
-                        registers.append((group_name, owner, register))
-        group_width = max(1, (len(groups) - 1).bit_length())
+                        fields = register.layout.fields if register.layout else ()
+                        writable_mask = (
+                            sum(_mask(field.lsb, field.bits) for field in fields)
+                            if register.layout is not None
+                            else (1 << 64) - 1
+                        )
+                        reset_known = (
+                            register.reset is not None
+                            and register.reset.value is not None
+                        )
+                        registers.append(
+                            RegisterContractProjection(
+                                owner=owner,
+                                group_id=group.id,
+                                group_index=group_index,
+                                register_id=register.id,
+                                encoding=register.encoding,
+                                width_kind=_register_width_kind(register.width),
+                                fixed_width=(
+                                    register.width
+                                    if isinstance(register.width, int)
+                                    else 0
+                                ),
+                                writable_mask=writable_mask,
+                                reset_known=reset_known,
+                                reset_value=(
+                                    register.reset.value if reset_known else 0
+                                ),
+                                fields=tuple(
+                                    RegisterFieldProjection(
+                                        field.id,
+                                        field.lsb,
+                                        _mask(field.lsb, field.bits),
+                                    )
+                                    for field in fields
+                                ),
+                            )
+                        )
+        return RegisterContractsProjection(tuple(group_names), tuple(registers))
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        projection = self.project(context)
+        group_width = max(1, (len(projection.group_names) - 1).bit_length())
         group_enum = ",\n".join(
             f"    {name} = {group_width}'d{index}"
-            for index, (name, _) in enumerate(groups)
+            for index, name in enumerate(projection.group_names)
         )
         constants: list[str] = []
         cases: list[str] = []
-        for group_name, owner, register in registers:
-            prefix = f"REGISTER_{_identifier(owner)}_{_identifier(register.group)}_{_identifier(register.id)}"
+        for register in projection.registers:
+            group_name = projection.group_names[register.group_index]
+            prefix = f"REGISTER_{_identifier(register.owner)}_{_identifier(register.group_id)}_{_identifier(register.register_id)}"
             constants.append(
                 f"  localparam logic [15:0] {prefix} = 16'h{register.encoding:04x};"
             )
-            if register.layout is None:
-                writable_mask = (1 << 64) - 1
-            else:
-                writable_mask = sum(
-                    _mask(field.lsb, field.bits) for field in register.layout.fields
-                )
-                for field in register.layout.fields:
-                    field_prefix = f"{prefix}_{_identifier(field.id)}"
-                    constants.extend(
-                        (
-                            f"  localparam logic [6:0] {field_prefix}_LSB = 7'd{field.lsb};",
-                            f"  localparam logic [63:0] {field_prefix}_MASK = 64'h{_mask(field.lsb, field.bits):016x};",
-                        )
+            for field in register.fields:
+                field_prefix = f"{prefix}_{_identifier(field.id)}"
+                constants.extend(
+                    (
+                        f"  localparam logic [6:0] {field_prefix}_LSB = 7'd{field.lsb};",
+                        f"  localparam logic [63:0] {field_prefix}_MASK = 64'h{field.mask:016x};",
                     )
-            reset_known = (
-                register.reset is not None and register.reset.value is not None
-            )
-            reset_value = register.reset.value if reset_known else 0
-            width_value = register.width if isinstance(register.width, int) else 0
+                )
             cases.append(
                 f"      {{{group_name}, {prefix}}}: begin\n"
-                f"        valid_o = 1'b1; width_kind_o = 2'd{_register_width_kind(register.width)};\n"
-                f"        fixed_width_o = 16'd{width_value}; writable_mask_o = 64'h{writable_mask:016x};\n"
-                f"        reset_known_o = 1'b{int(reset_known)}; reset_value_o = 64'h{reset_value:016x};\n"
+                f"        valid_o = 1'b1; width_kind_o = 2'd{register.width_kind};\n"
+                f"        fixed_width_o = 16'd{register.fixed_width}; writable_mask_o = 64'h{register.writable_mask:016x};\n"
+                f"        reset_known_o = 1'b{int(register.reset_known)}; reset_value_o = 64'h{register.reset_value:016x};\n"
                 "      end"
             )
         package = f"""package bedrock_register_pkg;
@@ -435,16 +611,21 @@ endmodule"""
 
 
 class VectorGeometryGenerator(_Generator):
-    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+    def project(self, context: ArtifactGenerationContext) -> VectorGeometryProjection:
         project = context.require_provider("isa")
         vector_namespace = project.registers.namespaces.get("VECTOR")
         if vector_namespace is None:
             raise ValueError("VECTOR register namespace is required")
-        vector_count = len(vector_namespace.groups["VECTOR"].registers)
-        predicate_count = len(vector_namespace.groups["PREDICATE"].registers)
+        return VectorGeometryProjection(
+            len(vector_namespace.groups["VECTOR"].registers),
+            len(vector_namespace.groups["PREDICATE"].registers),
+        )
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        projection = self.project(context)
         package = f"""package bedrock_vector_geometry_pkg;
-  localparam integer BEDROCK_VECTOR_REGISTER_COUNT = {vector_count};
-  localparam integer BEDROCK_PREDICATE_REGISTER_COUNT = {predicate_count};
+  localparam integer BEDROCK_VECTOR_REGISTER_COUNT = {projection.vector_register_count};
+  localparam integer BEDROCK_PREDICATE_REGISTER_COUNT = {projection.predicate_register_count};
   typedef enum logic [2:0] {{
     VECTOR_PERMUTE_ZIP_LO,
     VECTOR_PERMUTE_ZIP_HI,

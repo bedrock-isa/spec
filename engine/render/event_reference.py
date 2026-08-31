@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
 
 from ..reference import Reference
-from ..event import ArchitecturalEvent, ResolvedEvent
+from ..event import ArchitecturalEvent
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 from .latex_document import tex_escape
 
@@ -15,13 +16,17 @@ def _identifier(value: str) -> str:
     return rf"\texttt{{{escaped}}}"
 
 
-def _code(resolved: ResolvedEvent) -> str:
-    if resolved.code.value is not None:
-        return rf"\texttt{{0x{resolved.code.value:08X}}}"
-    return (
-        rf"\texttt{{0x{resolved.code.class_value:02X}:"
-        rf"{tex_escape(resolved.code.selector.kind)}}}"
-    )
+@dataclass(frozen=True, slots=True)
+class EventCodeRow:
+    """One explicitly selected fixed event-code allocation."""
+
+    reference: Reference[ArchitecturalEvent]
+    code: int
+    event_id: str
+
+
+def _code(row: EventCodeRow) -> str:
+    return rf"\texttt{{0x{row.code:08X}}}"
 
 
 _EVENT_CODE_DIRECTIVE_OPEN = "(:event-code:"
@@ -56,25 +61,17 @@ class EventReferenceRenderer(DocumentFragmentProvider):
         if not matches:
             return text
 
-        resolved_by_reference = {
-            resolved.event.reference: resolved
-            for resolved in context.project.events.resolved_events()
-        }
         placed: set[Reference[object]] = set()
 
         def replacement(match: re.Match[str]) -> str:
             reference = Reference.parse(match.group(1))
             try:
-                resolved = resolved_by_reference[reference]
-            except KeyError as error:
+                row = self.project_row(context.project.events, reference)
+            except (KeyError, ValueError) as error:
                 raise ValueError(
-                    f"{context.source}: unknown architectural event {match.group(1)!r}"
+                    f"{context.source}: cannot place architectural event "
+                    f"{match.group(1)!r}"
                 ) from error
-            if resolved.code.value is None:
-                raise ValueError(
-                    f"{context.source}: event {reference} has an external selector, "
-                    "not a fixed event-code allocation"
-                )
             if reference in placed:
                 raise ValueError(
                     f"{context.source}: duplicate event-code placement {reference}"
@@ -85,9 +82,31 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 anchor = (
                     rf"\phantomsection\label{{{context.public_targets.label(reference)}}}"
                 )
-            return f"{_code(resolved)}{anchor} & {_identifier(resolved.event.id)}\\\\"
+            return f"{_code(row)}{anchor} & {_identifier(row.event_id)}\\\\"
 
         return _EVENT_CODE_DIRECTIVE_RE.sub(replacement, text)
+
+    @staticmethod
+    def project_row(catalog, reference: Reference[object]) -> EventCodeRow:
+        """Select the public row owned by one fixed architectural event."""
+
+        resolved = next(
+            (
+                item
+                for item in catalog.resolved_events()
+                if item.event.reference == reference
+            ),
+            None,
+        )
+        if resolved is None:
+            raise KeyError(reference)
+        if resolved.code.value is None:
+            raise ValueError(f"event {reference} is not a fixed event-code allocation")
+        return EventCodeRow(
+            resolved.event.reference,
+            resolved.code.value,
+            resolved.event.id,
+        )
 
     @staticmethod
     def event_target(event: ArchitecturalEvent) -> str:

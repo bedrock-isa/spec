@@ -84,10 +84,12 @@ class InstructionSchemaTest(unittest.TestCase):
             "privileged": False,
             "operands": {},
         }
-        self.assert_invalid({**base, "repeat": {"type": "rep", "observed_value": "dst"}})
+        self.assert_invalid(
+            {**base, "repeat": {"type": "rep", "observed_value": "dst"}}
+        )
         self.assert_invalid({**base, "repeat": {"type": "repcc"}})
 
-    def test_rejects_unknown_fields_and_incomplete_operands(self) -> None:
+    def test_rejects_unknown_fields(self) -> None:
         base = {
             "mnemonic": "ADD",
             "name": "Add",
@@ -96,7 +98,17 @@ class InstructionSchemaTest(unittest.TestCase):
             "privileged": False,
             "operands": {},
         }
-        self.assert_invalid({**base, "category": "integer_alu"})
+        self.assert_invalid({**base, "unexpected": "value"})
+
+    def test_rejects_incomplete_operands(self) -> None:
+        base = {
+            "mnemonic": "ADD",
+            "name": "Add",
+            "summary": "Adds values.",
+            "route": "integer_alu",
+            "privileged": False,
+            "operands": {},
+        }
         self.assert_invalid(
             {
                 **base,

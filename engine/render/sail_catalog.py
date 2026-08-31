@@ -208,17 +208,6 @@ def _representative_record(program: SailProgram, form: EncodingForm) -> tuple[in
     return tuple(record)
 
 
-def _render_representative(
-    program: SailProgram, bundle: InstructionBundle, form: EncodingForm
-) -> str:
-    record = _representative_record(program, form)
-    bytes_text = ", ".join(f"0x{byte:02X}" for byte in record)
-    return (
-        f"  struct {{ form_id = {_constructor('Form_', _form_key(bundle, form))}, "
-        f"bytes = [|{bytes_text}|] }}"
-    )
-
-
 def _render_constraint(form: EncodingForm, constraint) -> str:
     field = form.field_for_role(constraint.role)
     assert field is not None
@@ -254,6 +243,34 @@ class _OperandRepresentation:
     payload: PayloadBinding | None = None
     fixed_name: str | None = None
     fixed_value: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SailOperandBindingProjection:
+    """One logical operand bound to a field, payload, or fixed syntax value."""
+
+    name: str
+    type_name: str
+    access: str
+    field_marker: str | None
+    payload_type: Reference[PayloadType] | None
+    fixed_name: str | None
+    fixed_value: int | None
+    ea_profile: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SailFormProjection:
+    """One selected instruction form lowered into the Sail decode catalog."""
+
+    key: str
+    operation: str
+    owner: str
+    route: str
+    bundle: InstructionBundle
+    form: EncodingForm
+    operands: tuple[SailOperandBindingProjection, ...]
+    representative_record: tuple[int, ...]
 
 
 def _fixed_syntax_representations(
@@ -463,7 +480,7 @@ def _render_entry(program: SailProgram, bundle: InstructionBundle, form: Encodin
 
 
 @dataclass(frozen=True, slots=True)
-class _EaVariant:
+class SailEaFormProjection:
     name: str
     profile: str | None
     family: str | None
@@ -518,7 +535,7 @@ def _mode_segment(mode, raw: Mapping[str, object]) -> tuple[str | None, str | No
     return None, None
 
 
-def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
+def _ea_variants(program: SailProgram) -> tuple[SailEaFormProjection, ...]:
     variants = []
     for mode in program.project.catalog.ea_modes.values():
         if mode.catalog.owner not in program.configuration.owners:
@@ -562,7 +579,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
                 name = _compact_name(mode_id, payload_definition)
                 descriptor = raw.get("extension", {}).get("id")
                 kind = str(raw["kind"])
-                variants.append(_EaVariant(
+                variants.append(SailEaFormProjection(
                     name,
                     mode.catalog.profile,
                     None,
@@ -589,7 +606,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
             else:
                 name = mode_id + (f"_{update_mode}" if update_mode else "")
                 variants.append(
-                    _EaVariant(
+                    SailEaFormProjection(
                         name,
                         mode.catalog.profile,
                         mode_type.lower(),
@@ -611,7 +628,7 @@ def _ea_variants(program: SailProgram) -> tuple[_EaVariant, ...]:
     return tuple(variants)
 
 
-def _render_ea_variant(program: SailProgram, variant: _EaVariant) -> str:
+def _render_ea_variant(program: SailProgram, variant: SailEaFormProjection) -> str:
     patterns = _list(
         f"struct {{ width = {len(code)}, value = 0x{int(''.join('1' if c == '1' else '0' for c in code), 2):04X}, "
         f"mask = 0x{int(''.join('1' if c in '01' else '0' for c in code), 2):04X} }}"
@@ -642,21 +659,72 @@ def _render_ea_variant(program: SailProgram, variant: _EaVariant) -> str:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class SailCatalogProjection:
+    """Selected form and effective-address relations consumed by Sail."""
+
+    forms: tuple[SailFormProjection, ...]
+    ea_forms: tuple[SailEaFormProjection, ...]
+
+
 class SailCatalogRenderer:
     """Project the selected typed ISA into the runtime decode catalogs."""
 
     _CATALOG_CHUNK_SIZE = 24
 
+    def project(self, program: SailProgram) -> SailCatalogProjection:
+        forms: list[SailFormProjection] = []
+        for bundle in program.bundles:
+            for form in bundle.encodings.forms:
+                operands = []
+                for operand in _operand_representations(program, bundle, form):
+                    ea_profile = None
+                    if operand.field is not None:
+                        definition = program.project.types.field_types.resolve(
+                            operand.field.type
+                        )
+                        if definition.kind is FieldTypeKind.EFFECTIVE_ADDRESS:
+                            ea_profile = definition.profile
+                    operands.append(
+                        SailOperandBindingProjection(
+                            operand.name,
+                            operand.type_name,
+                            operand.access,
+                            operand.field.marker if operand.field is not None else None,
+                            operand.payload.type
+                            if operand.payload is not None
+                            else None,
+                            operand.fixed_name,
+                            operand.fixed_value,
+                            ea_profile,
+                        )
+                    )
+                forms.append(
+                    SailFormProjection(
+                        _form_key(bundle, form),
+                        f"Op_{bundle.instruction.mnemonic}",
+                        bundle.owner,
+                        bundle.instruction.route,
+                        bundle,
+                        form,
+                        tuple(operands),
+                        _representative_record(program, form),
+                    )
+                )
+        return SailCatalogProjection(tuple(forms), _ea_variants(program))
+
     def render(self, program: SailProgram) -> str:
+        projection = self.project(program)
         entries_by_class: dict[str, list[str]] = {
             name: [] for name in CLASS_CONSTRUCTORS
         }
-        for bundle in program.bundles:
-            for form in bundle.encodings.forms:
-                encoding_class = ENCODING_CLASSES_BY_WIDTH[form.pattern.bit_width]
-                entries_by_class[encoding_class.name].append(
-                    _render_entry(program, bundle, form)
-                )
+        for projected in projection.forms:
+            encoding_class = ENCODING_CLASSES_BY_WIDTH[
+                projected.form.pattern.bit_width
+            ]
+            entries_by_class[encoding_class.name].append(
+                _render_entry(program, projected.bundle, projected.form)
+            )
         catalog_sections: list[str] = []
         for name, constructor in CLASS_CONSTRUCTORS.items():
             entries = entries_by_class[name]
@@ -695,11 +763,16 @@ class SailCatalogRenderer:
                 "",
             )
         )
-        ea_entries = [_render_ea_variant(program, item) for item in _ea_variants(program)]
+        ea_entries = [
+            _render_ea_variant(program, item) for item in projection.ea_forms
+        ]
         representatives = [
-            _render_representative(program, bundle, form)
-            for bundle in program.bundles
-            for form in bundle.encodings.forms
+            "  struct { form_id = "
+            f"{_constructor('Form_', item.key)}, "
+            "bytes = [|"
+            + ", ".join(f"0x{byte:02X}" for byte in item.representative_record)
+            + "|] }"
+            for item in projection.forms
         ]
         return "\n".join(
             [

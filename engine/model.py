@@ -13,6 +13,83 @@ from .reference import Reference
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
+class ModelError(ValueError):
+    """Base class for a rejected model ownership or dependency relation."""
+
+
+class MissingModelManifestError(ModelError):
+    def __init__(self, source: Path) -> None:
+        self.source = source
+        super().__init__(f"required model manifest does not exist: {source}")
+
+
+class ModelSourceOwnershipConflictError(ModelError):
+    def __init__(
+        self,
+        manifest: Path,
+        source: Path,
+        first_owner: str,
+        second_owner: str,
+    ) -> None:
+        self.manifest = manifest
+        self.source = source
+        self.first_owner = first_owner
+        self.second_owner = second_owner
+        super().__init__(
+            f"{manifest}: source {source} is owned by both "
+            f"{first_owner} and {second_owner}"
+        )
+
+
+class ModelSourceOutsideOwnerError(ModelError):
+    def __init__(self, manifest: Path, owner: str, source: Path, root: Path) -> None:
+        self.manifest = manifest
+        self.owner = owner
+        self.source = source
+        self.root = root
+        super().__init__(f"{manifest}: {owner} source {source} is outside {root}")
+
+
+class InvalidTopicStructureError(ModelError):
+    def __init__(
+        self,
+        manifest: Path,
+        topic_id: str,
+        document: Path,
+        heading_count: int,
+    ) -> None:
+        self.manifest = manifest
+        self.topic_id = topic_id
+        self.document = document
+        self.heading_count = heading_count
+        super().__init__(
+            f"{manifest}: document topic {topic_id!r} has {heading_count} headings "
+            f"in {document}"
+        )
+
+
+class SailDependencyCycleError(ModelError):
+    def __init__(
+        self, source: Path, cycle: tuple[Reference["SailUnit"], ...]
+    ) -> None:
+        self.source = source
+        self.cycle = cycle
+        super().__init__(f"{source}: circular Sail dependency: {cycle!r}")
+
+
+class UnknownSailDependencyError(ModelError):
+    def __init__(
+        self,
+        source: Path,
+        requiring: Reference["SailUnit"],
+        required: Reference["SailUnit"],
+    ) -> None:
+        self.source = source
+        self.requiring = requiring
+        self.required = required
+        super().__init__(f"{source}: {requiring!r} requires unknown unit {required!r}")
+
+
 @dataclass(frozen=True, slots=True)
 class SailUnit:
     """One dependency-ordered executable semantics unit."""
@@ -36,7 +113,6 @@ class DocumentTopic:
     document: Path
 
 
-
 @dataclass(frozen=True, slots=True)
 class ModelNamespace:
     """The Sail units and document topics owned by base or one extension."""
@@ -58,7 +134,7 @@ class ModelManifestLoader:
         namespace_root = Path(root).resolve()
         source = namespace_root / "model.yaml"
         if not source.is_file():
-            raise FileNotFoundError(f"required model manifest does not exist: {source}")
+            raise MissingModelManifestError(source)
 
         manifest = SchemaValidatedYamlLoader().load(source, self.schema)
 
@@ -81,7 +157,9 @@ class ModelManifestLoader:
         for raw in raw_units:
             unit_id = raw["id"]
             if unit_id in seen:
-                raise ValueError(f"{manifest_path}: duplicate Sail unit {owner}.{unit_id}")
+                raise ValueError(
+                    f"{manifest_path}: duplicate Sail unit {owner}.{unit_id}"
+                )
             seen.add(unit_id)
             sources = tuple(
                 _owned_source(owner, root, item, ".sail", manifest_path)
@@ -90,9 +168,11 @@ class ModelManifestLoader:
             for path in sources:
                 previous = owned_sources.get(path)
                 if previous is not None:
-                    raise ValueError(
-                        f"{manifest_path}: Sail source {path} is owned by both "
-                        f"{owner}.{previous} and {owner}.{unit_id}"
+                    raise ModelSourceOwnershipConflictError(
+                        manifest_path,
+                        path,
+                        f"{owner}.{previous}",
+                        f"{owner}.{unit_id}",
                     )
                 owned_sources[path] = unit_id
             units.append(
@@ -133,9 +213,11 @@ class ModelManifestLoader:
             _require_one_topic_heading(document, manifest_path, topic_id)
             previous = owned_sources.get(document)
             if previous is not None:
-                raise ValueError(
-                    f"{manifest_path}: document source {document} is owned by both "
-                    f"{owner}.{previous} and {owner}.{topic_id}"
+                raise ModelSourceOwnershipConflictError(
+                    manifest_path,
+                    document,
+                    f"{owner}.{previous}",
+                    f"{owner}.{topic_id}",
                 )
             owned_sources[document] = topic_id
             topics.append(
@@ -168,6 +250,7 @@ class ModelCatalog:
         extensions: Mapping[str, ExtensionMetadata],
     ) -> "ModelCatalog":
         return ModelCatalogLoader().load(isa_root, extension_catalog, extensions)
+
 
 class ModelCatalogLoader:
     """Coordinate manifest loading and resolve only executable dependencies."""
@@ -241,15 +324,15 @@ class ModelDependencyResolver:
                 return
             if reference in active:
                 start = active.index(reference)
-                raise ValueError(
-                    "circular Sail dependency"
+                cycle = (*active[start:], reference)
+                raise SailDependencyCycleError(
+                    units[reference].source, cycle
                 )
             unit = units.get(reference)
             if unit is None:
                 requiring = active[-1] if active else reference
-                raise ValueError(
-                    "unknown required Sail unit"
-                )
+                source = units[requiring].source if requiring in units else Path("model.yaml")
+                raise UnknownSailDependencyError(source, requiring, reference)
             active.append(reference)
             for required in unit.requires:
                 resolve(required)
@@ -268,9 +351,9 @@ def _owned_source(
     relative = Path(str(raw))
     path = (root / relative).resolve()
     if relative.is_absolute() or not path.is_relative_to(root) or path.suffix != suffix:
-        raise ValueError(f"{manifest}: {owner} source {raw!r} is outside {root}")
+        raise ModelSourceOutsideOwnerError(manifest, owner, path, root)
     if owner == "base" and path.is_relative_to((root / "extensions").resolve()):
-        raise ValueError(f"{manifest}: base source {raw!r} is owned by an extension")
+        raise ModelSourceOutsideOwnerError(manifest, owner, path, root)
     if not path.is_file():
         raise ValueError(f"{manifest}: required {owner} source does not exist: {path}")
     return path
@@ -305,14 +388,11 @@ _TOPIC_HEADING = re.compile(
 )
 
 
-def _require_one_topic_heading(
-    document: Path, manifest: Path, topic_id: str
-) -> None:
+def _require_one_topic_heading(document: Path, manifest: Path, topic_id: str) -> None:
     headings = _TOPIC_HEADING.findall(document.read_text(encoding="utf-8"))
     if len(headings) != 1:
-        raise ValueError(
-            f"{manifest}: document topic {topic_id!r} must contain exactly one "
-            f"section heading, found {len(headings)} in {document}"
+        raise InvalidTopicStructureError(
+            manifest, topic_id, document, len(headings)
         )
 
 

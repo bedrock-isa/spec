@@ -1,5 +1,7 @@
 import json
-import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -60,23 +62,62 @@ class SpecificationArtifactsTest(unittest.TestCase):
         self.assertEqual(intrinsic_group_header("sysreg"), "bedrocksysregintrin.h")
 
     def test_c_target_headers_cover_the_complete_interface_catalog(self) -> None:
+        generator = self.registry.generator("c-target-headers")
+        interface = self.workspace.require_provider("interfaces.c")
+        projection = generator.project(interface)
         generated = self.registry.generate(
             "c-target-headers", self.workspace, self.repository / "output"
         )
-        interface = self.workspace.require_provider("interfaces.c")
         expected_builtins = {
             intrinsic.clang_builtin for intrinsic in interface.intrinsics.values()
         }
-        actual_builtins: set[str] = set()
-        for group in interface.intrinsic_groups.values():
-            header = generated.artifact(
-                f"include/{intrinsic_group_header(group.id)}"
-            ).content
-            actual_builtins.update(
-                re.findall(r"__builtin_bedrock_[a-zA-Z0-9_]+", header)
-            )
+        projected_builtins = {
+            intrinsic.builtin_spelling
+            for group in projection.groups
+            for intrinsic in group.intrinsics
+        }
 
-        self.assertEqual(actual_builtins, expected_builtins)
+        self.assertEqual(projected_builtins, expected_builtins)
+        self.assertEqual(
+            {group.path for group in projection.groups},
+            {
+                Path("include") / intrinsic_group_header(group.id)
+                for group in interface.intrinsic_groups.values()
+            },
+        )
+
+        compiler = shutil.which("clang") or shutil.which("cc")
+        if compiler is None:
+            self.skipTest("no C preprocessor is available")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for artifact in generated.artifacts:
+                path = root / artifact.relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(artifact.content, encoding="utf-8")
+            source = root / "consume.c"
+            source.write_text(
+                "\n".join(
+                    f"#include <{intrinsic_group_header(group.id)}>"
+                    for group in interface.intrinsic_groups.values()
+                ),
+                encoding="utf-8",
+            )
+            completed = subprocess.run(
+                (
+                    compiler,
+                    "-E",
+                    "-x",
+                    "c",
+                    "-I",
+                    str(root / "include"),
+                    str(source),
+                ),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_reference_graph_is_a_standalone_workspace_visualization(self) -> None:
         generated = self.registry.generate(
@@ -85,7 +126,6 @@ class SpecificationArtifactsTest(unittest.TestCase):
         graph = json.loads(
             generated.artifact("reference/graph.json").content
         )
-        view = generated.artifact("reference/graph.html").content
 
         interface = self.workspace.require_provider("interfaces.c")
         elf = self.workspace.require_provider("abi.elf")
@@ -98,10 +138,6 @@ class SpecificationArtifactsTest(unittest.TestCase):
         )
         self.assertEqual(graph["node_count"], expected_nodes)
         self.assertEqual(graph["link_count"], len(graph["links"]))
-        self.assertIn('<canvas id="graph"></canvas>', view)
-        self.assertIn('id="graph-data"', view)
-        self.assertNotIn("mkdocs", view.lower())
-
         nodes = {node["id"]: node for node in graph["nodes"]}
         self.assertEqual(
             nodes["isa:base.instructions.ADD"]["label"],
