@@ -42,6 +42,8 @@ from engine.render import (
     CpuidLeafProjection,
     EaDiagramFragmentRenderer,
     EventReferenceRenderer,
+    InstructionSetSummaryProjection,
+    InstructionSummaryRow,
     LatexSemanticTextRenderer,
     LatexSourcePreprocessor,
     ProjectedInstructionSet,
@@ -129,6 +131,29 @@ class DocumentTest(unittest.TestCase):
                     self.assertIsInstance(authored, InstructionSetBlock)
                     self.assertIsInstance(projected, ProjectedInstructionSet)
                     self.assertIs(projected.block, authored)
+                    self.assertIsInstance(
+                        projected.summary, InstructionSetSummaryProjection
+                    )
+                    self.assertEqual(
+                        projected.summary.caption,
+                        f"{authored.title} Summary (Informative)",
+                    )
+                    self.assertEqual(
+                        tuple(row.reference for row in projected.summary.rows),
+                        tuple(bundle.reference for bundle in authored.instructions),
+                    )
+                    for row, bundle in zip(
+                        projected.summary.rows,
+                        authored.instructions,
+                        strict=True,
+                    ):
+                        self.assertIsInstance(row, InstructionSummaryRow)
+                        self.assertEqual(row.mnemonic, bundle.instruction.mnemonic)
+                        self.assertEqual(row.description, bundle.instruction.summary)
+                        self.assertEqual(
+                            row.target,
+                            self.public_targets.label(bundle.reference),
+                        )
                     self.assertEqual(
                         tuple(topic.topic for topic in projected.introduction),
                         authored.introduction,

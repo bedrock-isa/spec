@@ -748,10 +748,29 @@ class ProjectedInstructionEntry:
 
 
 @dataclass(frozen=True, slots=True)
+class InstructionSummaryRow:
+    """One immediate instruction member in an owner-scoped public summary."""
+
+    reference: Reference[InstructionBundle]
+    mnemonic: str
+    description: str
+    target: str
+
+
+@dataclass(frozen=True, slots=True)
+class InstructionSetSummaryProjection:
+    """The navigation summary owned by one public instruction-set section."""
+
+    caption: str
+    rows: tuple[InstructionSummaryRow, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ProjectedInstructionSet:
     """One instruction-set block with its immediate public members."""
 
     block: InstructionSetBlock
+    summary: InstructionSetSummaryProjection
     introduction: tuple[ProjectedTopic, ...]
     instructions: tuple[ProjectedInstructionEntry, ...]
 
@@ -826,6 +845,7 @@ class LatexDocumentRenderer:
                 projected.append(
                     ProjectedInstructionSet(
                         block,
+                        self._instruction_summary(block, public_targets),
                         tuple(
                             ProjectedTopic(
                                 topic,
@@ -882,6 +902,7 @@ class LatexDocumentRenderer:
                         r"\clearpage",
                         rf"\section{{{tex_escape(block.title)}}}",
                         rf"\label{{page:instruction-group-{slug}}}",
+                        self._render_instruction_summary(projected.summary),
                         *(
                             item
                             for topic in projected.introduction
@@ -925,4 +946,54 @@ class LatexDocumentRenderer:
                 description,
                 formats,
             ),
+        )
+
+    @staticmethod
+    def _instruction_summary(
+        block: InstructionSetBlock,
+        public_targets: PublicTargetCatalog,
+    ) -> InstructionSetSummaryProjection:
+        return InstructionSetSummaryProjection(
+            f"{block.title} Summary (Informative)",
+            tuple(
+                InstructionSummaryRow(
+                    bundle.reference,
+                    bundle.instruction.mnemonic,
+                    bundle.instruction.summary,
+                    public_targets.label(bundle.reference),
+                )
+                for bundle in block.instructions
+            ),
+        )
+
+    @staticmethod
+    def _render_instruction_summary(
+        projection: InstructionSetSummaryProjection,
+    ) -> str:
+        rows = (
+            rf"\BedrockSummaryMnemonic{{{row.target}}}"
+            rf"{{{tex_escape(row.mnemonic)}}} & "
+            rf"{tex_escape(row.description)}\\"
+            for row in projection.rows
+        )
+        header = (
+            r"\toprule",
+            r"\rowcolor{BedrockHeaderFill}",
+            r"\textbf{Mnemonic} & \textbf{Brief description}\\",
+            r"\midrule",
+        )
+        return "\n".join(
+            (
+                r"\subsection{Summary}",
+                rf"\BedrockTableCaption{{{tex_escape(projection.caption)}}}",
+                r"\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{4.35in}@{}}",
+                *header,
+                r"\endfirsthead",
+                r"\multicolumn{2}{l}{\scriptsize\itshape Table \theBedrockTable\ (continued)}\\",
+                *header,
+                r"\endhead",
+                *rows,
+                r"\bottomrule",
+                r"\end{BedrockLongTable}",
+            )
         )
