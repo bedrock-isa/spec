@@ -73,6 +73,40 @@ class _RejectingValidator:
         )
 
 
+def _cpuid_projection_structure(
+    rendered: str,
+) -> tuple[tuple[tuple[str, str], ...], tuple[tuple[str, int], ...], int]:
+    def identifier(value: str) -> str:
+        return value.replace(r"\_\allowbreak{}", "_").replace(r"\_", "_")
+
+    table = rendered.split(r"\end{BedrockTabular}", 1)[0]
+    table_body = table.split(r"\midrule", 1)[1].rsplit(r"\bottomrule", 1)[0]
+    rows = tuple(
+        (
+            identifier(left.removeprefix(r"\texttt{").removesuffix("}")),
+            identifier(right.removeprefix(r"\texttt{").removesuffix("}")),
+        )
+        for left, right in re.findall(r"(?m)^(.+?) & (.+?)\\\\$", table_body)
+    )
+
+    diagram = rendered.split(r"\begin{BedrockListedFormatDiagram}", 1)[1]
+    fields = tuple(
+        (
+            identifier(field),
+            int(bit_range.split(":", 1)[0])
+            - int(bit_range.split(":", 1)[-1])
+            + 1,
+        )
+        for field, bit_range in re.findall(
+            r"\\texttt\{((?:[^{}]|\\allowbreak\{\})+)\}"
+            r"\[\\texttt\{([0-9]+(?::[0-9]+)?)\}\]",
+            diagram,
+        )
+    )
+    row_count = diagram.count(r"\BedrockFormatRowRange")
+    return rows, fields, row_count
+
+
 class DocumentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -747,6 +781,66 @@ class DocumentTest(unittest.TestCase):
                 self.public_targets,
                 source,
             )
+
+    def test_cpuid_leaf_projection_is_explicit_owner_local_and_single_grain(self) -> None:
+        source = (
+            self.root
+            / "cpuid/documents/topics/cpuid_feature_discovery/"
+            "007_optional_extension_directory.tex"
+        )
+        rendered = DocumentFragmentPipeline.default().expand(
+            "(:cpuid-leaf:base.cpuid.EXTENSIONS.DIRECTORY:)",
+            self.project,
+            self.public_targets,
+            source,
+        )
+
+        rows, fields, diagram_rows = _cpuid_projection_structure(rendered)
+        self.assertEqual(
+            rows,
+            (("0x0000", "HEADER"), ("0x0001", "FEATURES")),
+        )
+        self.assertEqual(
+            fields,
+            (
+                ("MAX_INDEX", 16),
+                ("MAX_LEAF", 16),
+                ("FP", 1),
+                ("FPTRANSA", 1),
+                ("VECTOR", 1),
+                ("VECTORFP", 1),
+            ),
+        )
+        self.assertEqual(diagram_rows, 2)
+
+        with self.assertRaises(ValueError):
+            DocumentFragmentPipeline.default().expand(
+                "(:cpuid-leaf:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS:)",
+                self.project,
+                self.public_targets,
+                source,
+            )
+
+    def test_cpuid_leaf_projection_does_not_iterate_other_leaves(self) -> None:
+        source = (
+            self.root
+            / "cpuid/documents/topics/cpuid_feature_discovery/"
+            "013_address_width_discovery.tex"
+        )
+        rendered = DocumentFragmentPipeline.default().expand(
+            "(:cpuid-leaf:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS:)",
+            self.project,
+            self.public_targets,
+            source,
+        )
+
+        rows, fields, diagram_rows = _cpuid_projection_structure(rendered)
+        self.assertEqual(
+            rows,
+            (("0x0000", "HEADER"), ("0x0001", "PARAMETERS")),
+        )
+        self.assertEqual(fields, (("MAX_INDEX", 16), ("PABITS", 6)))
+        self.assertEqual(diagram_rows, 2)
 
     def test_register_figure_projection_is_explicit_and_owner_local(self) -> None:
         source = self.root / "registers/documents/topics/register_model/002_register_model.tex"

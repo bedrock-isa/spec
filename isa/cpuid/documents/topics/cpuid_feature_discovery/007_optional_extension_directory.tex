@@ -1,4 +1,7 @@
 \subsection{Optional-Extension Directory}\label{section:cpuid-extension-directory}
-Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. Each extension
-owns the meaning of the bit it contributes to this leaf. The index-zero (:term:base.terms.header:) reports the largest
-extension-contributed leaf and \texttt{MAX\_INDEX=1}. Unlisted bits are (:term:base.terms.reserved:) and read as zero.
+Software treats the optional-extension directory as the first availability gate. Before using an optional
+architectural behavior or consuming one of its parameter leaves, software establishes every extension predicate
+required by that extension. A result returned by a parameter leaf does not by itself establish extension
+availability.
+
+(:cpuid-leaf:base.cpuid.EXTENSIONS.DIRECTORY:)

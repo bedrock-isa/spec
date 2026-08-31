@@ -1,6 +1,9 @@
 \subsection{Vector-Parameter Discovery}
-Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one, bit two is the \texttt{VECTOR} discovery predicate.
-Class \texttt{0x00000001}, leaf \texttt{0x0002} is \texttt{VECTOR\_PARAMETERS}. Index zero reports
-\texttt{MAX\_INDEX=1}. Index one returns \texttt{VLEN\_LOG2\_BITS} in bits 3 through 0 and zero in bits 63 through
-4. The value is the base-2 logarithm of VLEN in bits and is in the range 7 through 11. Consequently VLEN is an
-implementation-selected power of two from 128 through 2048 bits. The selected value is stable until reset.
+After establishing \texttt{VECTOR} availability, software uses this leaf to obtain the architectural VLEN. VLEN is
+$2^{\mathtt{VLEN\_LOG2\_BITS}}$ bits and is an implementation-selected power of two from 128 through 2048 bits.
+It determines vector-register width, predicate storage, the number of lanes for a selected element width, and the
+size of each (:term:VECTOR.terms.vector_register:) and (:term:VECTOR.terms.predicate_register:) image.
+\texttt{SAVE\_AREA\_LAYOUT} remains the authority for save-component placement and size. This leaf does not
+establish availability of \texttt{VECTORFP} or any other extension that consumes vector state.
+
+(:cpuid-leaf:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS:)

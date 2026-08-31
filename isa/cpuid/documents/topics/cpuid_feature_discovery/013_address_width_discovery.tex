@@ -1,8 +1,10 @@
 \subsection{Address-Width Discovery}
-Class \texttt{0x00000002}, leaf \texttt{0x0003} is
-\texttt{ADDRESS\_WIDTHS}. Index zero reports \texttt{MAX\_INDEX=1}. At index
-one, bits \texttt{5..0} contain the exact implementation \texttt{PABITS}
-value in the inclusive range 32 through 56; bits \texttt{63..6} are zero.
-PABITS is stable until reset and applies to page-table roots, every present PTE
-PFN, translated results, and paging-disabled (:term:base.terms.physical_address|plural:). Separate
-selectors determine page-table geometry and TLB identity.
+\texttt{PABITS} is the authoritative physical-address bound for the current
+(:term:base.terms.logical_processor:) and has a value from 32 through 56. A (:term:base.terms.physical_address:) is
+representable only when it is less than $2^{\mathtt{PABITS}}$. Page-table roots, every present PTE PFN, translated
+results, and paging-disabled (:term:base.terms.physical_address|plural:) are subject to that bound.
+
+\texttt{PABITS} does not select page-table geometry or translation-cache identity. \texttt{PTCR.LA57} selects the
+walk geometry, while the translation-cache contract separately defines entry identity.
+
+(:cpuid-leaf:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS:)

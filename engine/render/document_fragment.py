@@ -52,6 +52,7 @@ class DocumentFragmentPipeline:
 
     @classmethod
     def default(cls) -> "DocumentFragmentPipeline":
+        from .cpuid_leaf import CpuidLeafFragmentRenderer
         from .ea_diagram import EaDiagramFragmentRenderer
         from .event_reference import EventReferenceRenderer
         from .implementation_disclosure import ImplementationDisclosureRenderer
@@ -59,6 +60,7 @@ class DocumentFragmentPipeline:
 
         return cls(
             (
+                CpuidLeafFragmentRenderer(),
                 EaDiagramFragmentRenderer(),
                 EventReferenceRenderer(),
                 ImplementationDisclosureRenderer(),

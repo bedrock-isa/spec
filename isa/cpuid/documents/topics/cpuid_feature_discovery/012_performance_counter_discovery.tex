@@ -1,14 +1,10 @@
+\par\Needspace{2.50in}
 \subsection{Performance-Counter Discovery}\label{section:performance-counter-discovery}
-Class \texttt{0x00000002}, leaf \texttt{0x0002} uses indexes 1 through 65535 as RDPMC counter IDs. Index zero is the
-common (:term:base.terms.header:). Result bit 0 is \texttt{PRESENT}; bits 63..1 are (:term:base.terms.reserved:) and read as zero. CYCLE, INSTRET, and PTWALK
-IDs 1, 2, and 3 are mandatory and therefore always report present; the index-zero (:term:base.terms.header:) reports
-\texttt{MAX\_INDEX=3} when no implementation-defined counter has a greater ID. An implementation-defined ID may be
-used only when its query reports present.
+This leaf determines whether an RDPMC counter ID is available on the current (:term:base.terms.logical_processor:).
+Counter IDs form a sparse space: the (:term:base.terms.header:) bounds the selectors that software may examine but does
+not imply that every intervening ID is present. Software checks the selected ID before issuing RDPMC.
 
-\begin{BedrockListedFormatDiagram}{Performance-Counter Presence Result}
-\BedrockFormatRowRange{result[63:0]}{63}{0}{%
-\BedrockFormatReserved{(:term:base.terms.reserved:)}{63}
-\BedrockFormatField{P}{1}
-}
-\end{BedrockListedFormatDiagram}
-{\small\texttt{P} is \texttt{PRESENT}.\par}
+The standard counter events are defined by (:ref:base.instructions.RDPMC:). An implementation-defined counter
+additionally requires implementation documentation that names the event counted by its ID.
+
+(:cpuid-leaf:base.cpuid.IMPLEMENTATION.PERFORMANCE_COUNTERS:)

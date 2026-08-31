@@ -1,6 +1,7 @@
 \subsection{FPTRANSA Accuracy Discovery}
-Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one, bit one is the \texttt{FPTRANSA} discovery predicate.
-It requires \texttt{FP} and is set when at least one approximate transcendental contract is present.
+The \texttt{FPTRANSA} predicate requires \texttt{FP} and reports that at least one approximate transcendental
+contract may be available. Software determines each operation\textquotesingle{}s availability separately from its
+accuracy-contract result.
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
 16-bit accuracy-contract IDs. Index zero is the common (:term:base.terms.header:) and reports \texttt{MAX\_INDEX=0x0044}.
 A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
@@ -61,9 +62,10 @@ The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 1
 (:ref:FPTRANSA.instructions.FLOG2A:) uses \texttt{0x0000000100010043}. An implementation that certifies (:ref:FPTRANSA.instructions.FSINA:) at 1.5 ULP for
 S and 2 ULP for D returns \texttt{0x8000000102000180}.
 
-\texttt{PRESENT=1} guarantees that the instruction and both S and D encodings are architecturally usable under the
-returned contract. The S and D bounds are worst-case bounds over every input in the contract domain and apply to
-every execution on the (:term:base.terms.logical_processor:) that returned the CPUID result until reset. Executing the instruction with
-\texttt{PRESENT=0} raises (:ref:base.events.EXCEPTION.UNAVAILABLE_INSTRUCTION_EXTENSION:) before operand or floating-point-state access.
+\texttt{PRESENT=1} establishes the accuracy contract for both S and D encodings but does not waive the
+instruction\textquotesingle{}s (:term:base.terms.ordinary:) legality checks. The S and D bounds are worst-case bounds over every input in
+the contract domain and apply to every execution on the (:term:base.terms.logical_processor:) that returned the CPUID result until reset.
+Executing the instruction with \texttt{PRESENT=0} raises (:ref:base.events.EXCEPTION.INVALID_OPERAND_RELATION:)
+before operand or floating-point-state access.
 
 \input{isa/extensions/FPTRANSA/cpuid/documents/fragments/fptransa_accuracy_contracts.tex}

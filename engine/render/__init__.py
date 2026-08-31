@@ -5,6 +5,7 @@ from .document_fragment import (
     DocumentFragmentPipeline,
     DocumentFragmentProvider,
 )
+from .cpuid_leaf import CpuidLeafFragmentRenderer
 from .ea_diagram import EaDiagramFragmentRenderer
 from .event_reference import EventReferenceRenderer
 from .implementation_disclosure import ImplementationDisclosureRenderer
@@ -27,6 +28,7 @@ from .sail_registry import SailRegistryRenderer
 from .vector_diagram import VectorDiagramPlacementRenderer, VectorDiagramRenderer
 
 __all__ = [
+    "CpuidLeafFragmentRenderer",
     "DocumentFragmentContext",
     "DocumentFragmentPipeline",
     "DocumentFragmentProvider",
