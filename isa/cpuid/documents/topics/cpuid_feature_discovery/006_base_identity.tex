@@ -32,13 +32,12 @@ such selector. The base-identity (:term:base.terms.payload:) is:
 
 \texttt{VENDOR\_ID} selects the vendor namespace in which \texttt{IMPLEMENTATION\_ID} is interpreted.
 \texttt{IMPLEMENTATION\_ID} is assigned within that \texttt{VENDOR\_ID} namespace.
-\texttt{ARCHITECTURE\_ID} selects the base architectural contract, so the
-\texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies an implementation and
-\texttt{ARCHITECTURE\_ID} identifies the ISA contract it implements.
+\texttt{ARCHITECTURE\_ID} identifies the base ISA definition implemented by the processor, while the
+\texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies the implementation.
 
-\texttt{ARCHITECTURE\_REVISION} is the unsigned 16-bit revision of the selected
-\texttt{ARCHITECTURE\_ID} contract; it does not imply the behavior of any other revision. Optional instruction groups,
-state, and parameterized contracts are selected from their CPUID leaves and feature bits.
+\texttt{ARCHITECTURE\_REVISION} is the unsigned 16-bit revision of the base ISA definition selected by
+\texttt{ARCHITECTURE\_ID}; it does not imply the behavior of any other revision. Optional instruction groups,
+processor state, and feature-specific parameters are reported separately by their CPUID leaves and feature bits.
 \texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned
 by the vendor and is compared only when both \texttt{VENDOR\_ID} and \texttt{IMPLEMENTATION\_ID} match.
 

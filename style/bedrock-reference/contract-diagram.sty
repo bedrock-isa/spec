@@ -21,7 +21,7 @@
     bedrockLayerAxis/.style={-{Latex[length=2.2mm,width=1.7mm]},draw=RuleGray,line width=0.65pt}
   ]
   \node[font=\footnotesize\bfseries] at (-1.55,4.82) {Core ABI stack};
-  \node[font=\footnotesize\bfseries] at (4.05,4.82) {Cross-layer contract};
+  \node[font=\footnotesize\bfseries] at (4.05,4.82) {Cross-layer ABI};
   \BedrockContractNode{application}{bedrockCoreLayer}{application}{(-1.55,4.15)}{\textbf{4. Application ABI}}
   \BedrockContractNode{standard-library}{bedrockCoreLayer}{standardlibrary}{(-1.55,3.15)}{\textbf{3. Language Standard Library ABI}}
   \BedrockContractNode{language}{bedrockCoreLayer}{language}{(-1.55,2.15)}{\textbf{2. Language ABI}}
@@ -29,9 +29,9 @@
   \BedrockContractNode{platform}{bedrockPlatformSpan}{platform}{(4.05,2.65)}{\textbf{Platform / OS ABI}\\[0.5mm]{\footnotesize spans layers 1 through 4}}
   \BedrockContractNode{foundation}{bedrockFoundation}{foundation}{(-0.10,0.15)}{\textbf{Architecture / ISA Specification}\\{\footnotesize Non-ABI foundation}}
   \draw[bedrockLayerAxis] (-5.95,0.72) -- (-5.95,4.58);
-  \node[font=\footnotesize,align=right,anchor=east] at (-6.12,2.65) {higher-level\\contracts};
+  \node[font=\footnotesize,align=right,anchor=east] at (-6.12,2.65) {higher-level ABI\\layers};
   \end{tikzpicture}
   \end{center}
-  \noindent\footnotesize\textbf{Current document:} \BedrockDocumentTitle. The shaded block identifies its primary contract position. The Platform / OS ABI spans and constrains the four core ABI layers; the ISA specification is their non-ABI architectural foundation.\normalsize\par}
+  \noindent\footnotesize\textbf{Current document:} \BedrockDocumentTitle. The shaded block identifies its primary position in the architecture and ABI stack. The Platform / OS ABI spans and constrains the four core ABI layers; the ISA specification is their non-ABI architectural foundation.\normalsize\par}
 
 \endinput
