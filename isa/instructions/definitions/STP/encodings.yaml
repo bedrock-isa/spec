@@ -1,0 +1,9 @@
+encodings:
+  pairn_s_ea_e:
+    pattern: 111111000101011000000000ssseeeeeee
+    syntax: STP PAIRn(s), <ea>(e)
+    fields:
+      s: {role: pair_id, type: base.field_types.PAIRn}
+      e: {role: memory, type: base.field_types.EA}
+    constraints:
+    - {role: memory, exclude: [immediate], reason: memory_operand_required}

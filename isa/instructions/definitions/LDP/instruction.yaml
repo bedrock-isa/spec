@@ -1,0 +1,10 @@
+mnemonic: LDP
+name: Load Pair
+summary: Loads one 128-bit memory value into a canonical register pair.
+route: data_movement
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.LDP
+operands:
+  memory: {role: source, access: read, value_type: integer}
+  pair_id: {role: destination, access: write, value_type: integer}

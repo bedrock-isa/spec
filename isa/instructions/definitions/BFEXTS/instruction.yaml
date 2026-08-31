@@ -1,0 +1,13 @@
+mnemonic: BFEXTS
+name: Bitfield Extract Signed
+summary: Extracts a contiguous bitfield and sign-extends it.
+route: integer_bitfield
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.BFEXTS
+repeat: {type: repcc, observed_value: dst}
+operands:
+  lsb: {role: source, access: read, value_type: integer}
+  width_minus1: {role: source, access: read, value_type: integer}
+  src: {role: source, access: read, value_type: integer}
+  dst: {role: destination, access: write, value_type: integer}

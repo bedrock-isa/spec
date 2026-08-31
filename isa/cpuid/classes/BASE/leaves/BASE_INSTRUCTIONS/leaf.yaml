@@ -1,0 +1,32 @@
+id: BASE_INSTRUCTIONS
+name: Optional Base Instructions
+value: 0x0001
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: FEATURES
+  index: 1
+  fields:
+  - {id: MOVACQ, lsb: 0, bits: 1}
+  - {id: MOVREL, lsb: 1, bits: 1}
+  - {id: FETCHXCHG, lsb: 2, bits: 1}
+  - {id: CMPXCHGP, lsb: 3, bits: 1}
+  - {id: SPECFENCE, lsb: 4, bits: 1}
+  - {id: BIC, lsb: 5, bits: 1}
+  - {id: BFEXTU, lsb: 6, bits: 1}
+  - {id: BFEXTS, lsb: 7, bits: 1}
+  - {id: BFINS, lsb: 8, bits: 1}
+  - {id: REVBIT, lsb: 9, bits: 1}
+  - {id: FETCHANDN, lsb: 10, bits: 1}
+  - {id: FETCHMINS, lsb: 11, bits: 1}
+  - {id: FETCHMINU, lsb: 12, bits: 1}
+  - {id: FETCHMAXS, lsb: 13, bits: 1}
+  - {id: FETCHMAXU, lsb: 14, bits: 1}
+  - {id: MADD, lsb: 15, bits: 1}
+  - {id: MSUB, lsb: 16, bits: 1}
+  - {id: LDP, lsb: 17, bits: 1}
+  - {id: STP, lsb: 18, bits: 1}
+  - {id: CRC32, lsb: 19, bits: 1}
+  - {id: CRC32C, lsb: 20, bits: 1}

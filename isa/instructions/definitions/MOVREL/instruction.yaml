@@ -1,0 +1,16 @@
+mnemonic: MOVREL
+name: Move Release
+summary: Stores to memory with release ordering.
+route: data_movement
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.MOVREL
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  memory:
+    role: destination
+    access: write
+    value_type: integer

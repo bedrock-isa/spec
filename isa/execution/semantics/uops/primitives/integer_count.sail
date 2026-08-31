@@ -13,8 +13,10 @@ function clause execute_uop(UopIntegerCount(operation), uop, values, instruction
                 IntegerCountPopulation => bit_count_from(narrowed, 0, bits),
                 IntegerCountParity => tmod_int(bit_count_from(narrowed, 0, bits), 2),
                 IntegerReverseBytes => unsigned(reverse_bytes(narrowed, uop.width)),
+                IntegerReverseBits => unsigned(reverse_bits(narrowed, uop.width)),
             };
-            let destination_width = if operation == IntegerReverseBytes then uop.width else 8;
+            let destination_width = if operation == IntegerReverseBytes | operation == IntegerReverseBits
+                then uop.width else 8;
             match uop_location_write(uop.destination, bits_from_int(count), destination_width,
                                      instruction.form.operation, speculative, values) {
                 Some((next_state, next_values)) => uop_step_continue(next_state, next_values),

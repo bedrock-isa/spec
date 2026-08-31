@@ -55,6 +55,8 @@ sail:
     - execution/semantics/uops/primitives/integer_shift.sail
     - execution/semantics/uops/primitives/integer_bit.sail
     - execution/semantics/uops/primitives/integer_count.sail
+    - execution/semantics/uops/primitives/integer_bitfield.sail
+    - execution/semantics/uops/primitives/integer_crc.sail
     - execution/semantics/uops/primitives/integer_extend.sail
     - execution/semantics/uops/primitives/integer_math.sail
     - execution/semantics/uops/primitives/integer_divide.sail
@@ -63,6 +65,7 @@ sail:
     - execution/semantics/uops/primitives/bounds_compare.sail
     - execution/semantics/uops/primitives/move.sail
     - execution/semantics/uops/primitives/memory_load.sail
+    - execution/semantics/uops/primitives/memory_pair.sail
     - execution/semantics/uops/primitives/memory_probe.sail
     - execution/semantics/uops/primitives/cache.sail
     - execution/semantics/uops/primitives/atomic.sail

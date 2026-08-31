@@ -1,0 +1,9 @@
+encodings:
+  b_w_l_q_z_rn_l_rn_r_rn_d:
+    pattern: 111111000101010101zz00llllrrrrdddd
+    syntax: MSUB.{B|W|L|Q}(z) Rn(l), Rn(r), Rn(d)
+    fields:
+      z: {role: size, type: base.field_types.SIZE_BWLQ}
+      l: {role: lhs, type: base.field_types.Rn}
+      r: {role: rhs, type: base.field_types.Rn}
+      d: {role: dst, type: base.field_types.Rn}

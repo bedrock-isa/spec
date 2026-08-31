@@ -68,6 +68,7 @@ function initial_cpu() -> Cpu_state = struct {
   fflags = 0b00000,
   fstatus = 0x0000000000000000,
   supervisor = false,
+  base_instruction_features = 0x0000000000000000,
   fp_enabled = false,
   fp16_convert_enabled = false,
   fptrans_enabled = false,

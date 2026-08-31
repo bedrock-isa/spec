@@ -1,0 +1,10 @@
+mnemonic: STP
+name: Store Pair
+summary: Stores one canonical register pair as a 128-bit memory value.
+route: data_movement
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.STP
+operands:
+  pair_id: {role: source, access: read, value_type: integer}
+  memory: {role: destination, access: write, value_type: integer}

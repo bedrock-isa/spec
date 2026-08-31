@@ -1,0 +1,9 @@
+Treats each canonical register pair as a 128-bit little-endian integer: the even register supplies bits 63:0 and
+the following odd register supplies bits 127:64. The instruction atomically reads a naturally aligned 16-byte
+memory value, compares it with the original expected pair, and stores the original desired pair only when both
+halves compare equal. In both cases the expected pair receives the old memory value. Z is set exactly when the
+store occurs; N, C, and V are cleared.
+
+The encoded memory-order selector governs the complete operation on both outcomes under the same success and
+failure rules as (:ref:base.instructions.CMPXCHG:). An alignment or memory-access fault exposes no register, flag,
+or memory update.

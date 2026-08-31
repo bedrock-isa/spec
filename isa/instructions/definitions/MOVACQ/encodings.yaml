@@ -1,0 +1,19 @@
+encodings:
+  b_w_l_q_z_ea_e_rn_d:
+    pattern: 111111000101010000zz000ddddeeeeeee
+    syntax: MOVACQ.{B|W|L|Q}(z) <ea>(e), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: memory
+        type: base.field_types.EA
+    constraints:
+    - role: memory
+      exclude:
+      - immediate
+      reason: memory_operand_required

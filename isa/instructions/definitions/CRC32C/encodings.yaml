@@ -1,0 +1,8 @@
+encodings:
+  b_w_l_q_z_ea_e_rn_d:
+    pattern: 111111000101011010zz000ddddeeeeeee
+    syntax: CRC32C.{B|W|L|Q}(z) <ea>(e), Rn(d)
+    fields:
+      z: {role: size, type: base.field_types.SIZE_BWLQ}
+      e: {role: src, type: base.field_types.EA}
+      d: {role: dst, type: base.field_types.Rn}

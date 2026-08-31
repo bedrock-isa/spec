@@ -1,0 +1,13 @@
+mnemonic: BFINS
+name: Bitfield Insert
+summary: Inserts low source bits into a contiguous destination bitfield.
+route: integer_bitfield
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.BFINS
+repeat: {type: repcc, observed_value: dst}
+operands:
+  lsb: {role: source, access: read, value_type: integer}
+  width_minus1: {role: source, access: read, value_type: integer}
+  src: {role: source, access: read, value_type: integer}
+  dst: {role: destination, access: read_write, value_type: integer}

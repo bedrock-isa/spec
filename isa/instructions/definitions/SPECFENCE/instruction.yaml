@@ -1,0 +1,8 @@
+mnemonic: SPECFENCE
+name: Speculation Fence
+summary: Prevents younger instructions from executing speculatively across the fence.
+route: core_control
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.SPECFENCE
+operands: {}

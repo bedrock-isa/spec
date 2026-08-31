@@ -1,0 +1,26 @@
+encodings:
+  order_o_pairn_x_pairn_d_ea_e:
+    pattern: 111111000101100000oooxxxdddeeeeeee
+    syntax: CMPXCHGP/order(o) PAIRn(x), PAIRn(d), <ea>(e)
+    fields:
+      o:
+        role: order
+        type: base.field_types.MORDER
+      x:
+        role: expected
+        type: base.field_types.PAIRn
+      d:
+        role: desired
+        type: base.field_types.PAIRn
+      e:
+        role: memory
+        type: base.field_types.EA
+    constraints:
+    - role: order
+      allow:
+      - 0x0..0x4
+      reason: memory_order_reserved_reclaimed
+    - role: memory
+      exclude:
+      - immediate
+      reason: memory_operand_required

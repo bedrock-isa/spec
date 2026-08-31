@@ -242,6 +242,10 @@ class _InstructionMetasyntaxParser:
                     order_field = self.field_expression()
             else:
                 fixed_size_suffix = "." + self.identifier("fixed size suffix")
+                if self.take("/order"):
+                    order_field = self.field_expression()
+        elif self.take("/order"):
+            order_field = self.field_expression()
 
         operands: list[InstructionMetasyntaxOperand] = []
         if self.index < len(self.value):

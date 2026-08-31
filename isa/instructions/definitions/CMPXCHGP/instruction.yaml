@@ -1,0 +1,24 @@
+mnemonic: CMPXCHGP
+name: Compare And Exchange Pair
+summary: Atomically compares and conditionally exchanges a 128-bit memory value using two register pairs.
+route: atomics
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.CMPXCHGP
+operands:
+  order:
+    role: source
+    access: read
+    value_type: integer
+  expected:
+    role: destination
+    access: read_write
+    value_type: integer
+  desired:
+    role: source
+    access: read
+    value_type: integer
+  memory:
+    role: destination
+    access: read_write
+    value_type: integer

@@ -1,0 +1,12 @@
+mnemonic: MSUB
+name: Multiply Subtract
+summary: Subtracts the low product of two sources from the destination.
+route: integer_mul_div
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.MSUB
+repeat: {type: repcc, observed_value: dst}
+operands:
+  lhs: {role: source, access: read, value_type: integer}
+  rhs: {role: source, access: read, value_type: integer}
+  dst: {role: destination, access: read_write, value_type: integer}

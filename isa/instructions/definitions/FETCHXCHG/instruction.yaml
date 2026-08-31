@@ -1,0 +1,20 @@
+mnemonic: FETCHXCHG
+name: Atomic Fetch Exchange
+summary: Atomically exchanges a register with memory and returns the old memory value.
+route: atomics
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.FETCHXCHG
+operands:
+  order:
+    role: source
+    access: read
+    value_type: integer
+  src:
+    role: destination
+    access: read_write
+    value_type: integer
+  memory:
+    role: destination
+    access: read_write
+    value_type: integer

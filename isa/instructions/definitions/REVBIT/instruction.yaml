@@ -1,0 +1,10 @@
+mnemonic: REVBIT
+name: Reverse Bits
+summary: Reverses bit order within the selected operand width.
+route: integer_alu
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.REVBIT
+repeat: {type: repcc, observed_value: dst}
+operands:
+  dst: {role: destination, access: read_write, value_type: integer}

@@ -8,7 +8,17 @@ function uop_atomic_selector(operation : Atomic_uop_operation) -> bits(64) = mat
     AtomicFetchOr => 0x0000000000000003,
     AtomicFetchSubtract => 0x0000000000000004,
     AtomicFetchXor => 0x0000000000000005,
+    AtomicCompareExchangePair => 0x0000000000000006,
+    AtomicFetchExchange => 0x0000000000000007,
+    AtomicFetchAndNot => 0x0000000000000008,
+    AtomicFetchMinimumSigned => 0x0000000000000009,
+    AtomicFetchMinimumUnsigned => 0x000000000000000A,
+    AtomicFetchMaximumSigned => 0x000000000000000B,
+    AtomicFetchMaximumUnsigned => 0x000000000000000C,
 }
+
+function uop_atomic_pair_high(location : Uop_location) -> Uop_location =
+    { location with index = location.index + 1 }
 
 function clause execute_uop(UopAtomicIssue(operation), uop, values, instruction, before, speculative) =
     match (uop_value_get(values, uop.source0.index),
@@ -17,13 +27,36 @@ function clause execute_uop(UopAtomicIssue(operation), uop, values, instruction,
            uop_location_read(uop.auxiliary, speculative, values)) {
         (Some(address), Some(first), Some(second), Some(order_value)) => {
             let compare = operation == AtomicCompareExchange;
-            let request = { uop_memory_request_make(AtomicReadModifyWrite, address, uop.width,
-                AccessReadModifyWrite, if compare then 0x0000000000000000 else first, true) with
-                memory_order = unsigned(order_value[2 .. 0]),
-                selector = uop_atomic_selector(operation),
-                expected = if compare then narrow_bits(first, uop.width) else 0x0000000000000000,
-                desired = if compare then narrow_bits(second, uop.width) else 0x0000000000000000 };
-            uop_step_wait(uop.destination.index, request, first)
+            let pair = operation == AtomicCompareExchangePair;
+            if pair then match (
+                uop_location_read(uop_atomic_pair_high(uop.source1), speculative, values),
+                uop_location_read(uop_atomic_pair_high(uop.source2), speculative, values)
+            ) {
+                (Some(expected_high), Some(desired_high)) => {
+                    let request = { uop_memory_request_make(
+                        AtomicReadModifyWrite, address, 16, AccessReadModifyWrite,
+                        desired_high, true) with
+                        memory_order = unsigned(order_value[2 .. 0]),
+                        selector = uop_atomic_selector(operation),
+                        expected = first,
+                        desired = second,
+                        auxiliary = expected_high };
+                    uop_step_wait(uop.destination.index, request, first)
+                },
+                _ => uop_step_fault(faulted(
+                    before, instruction.form.operation, InvalidControlState,
+                    "pair atomic high register is unavailable"
+                )),
+            }
+            else {
+                let request = { uop_memory_request_make(AtomicReadModifyWrite, address, uop.width,
+                    AccessReadModifyWrite, if compare then 0x0000000000000000 else first, true) with
+                    memory_order = unsigned(order_value[2 .. 0]),
+                    selector = uop_atomic_selector(operation),
+                    expected = if compare then narrow_bits(first, uop.width) else 0x0000000000000000,
+                    desired = if compare then narrow_bits(second, uop.width) else 0x0000000000000000 };
+                uop_step_wait(uop.destination.index, request, first)
+            }
         },
         _ => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
                                "atomic uop input is unavailable")),
@@ -34,13 +67,44 @@ function clause execute_uop(UopAtomicComplete(operation), uop, values, instructi
            uop_location_read(uop.source1, speculative, values)) {
         (Some(response), Some(expected)) => {
             let compare = operation == AtomicCompareExchange;
-            let equal = narrow_bits(response.value, uop.width) == narrow_bits(expected, uop.width);
-            if compare & response.atomic_store_happened != equal then
+            let pair = operation == AtomicCompareExchangePair;
+            let expected_high = uop_location_read(
+                uop_atomic_pair_high(uop.source1), speculative, values
+            );
+            let equal = if pair then match expected_high {
+                    Some(high) => response.value == expected & response.secondary_value == high,
+                    None() => false,
+                }
+                else narrow_bits(response.value, uop.width) == narrow_bits(expected, uop.width);
+            if (compare | pair) & response.atomic_store_happened != equal then
                 uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
                                   "inconsistent CMPXCHG atomic acknowledgement"))
-            else if not_bool(compare) & not_bool(response.atomic_store_happened) then
+            else if not_bool(compare | pair) & not_bool(response.atomic_store_happened) then
                 uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
                                   "atomic operation did not acknowledge its store"))
+            else if pair then match uop_location_write(
+                uop.destination, response.value, 8,
+                instruction.form.operation, speculative, values
+            ) {
+                Some((low_state, low_values)) => match uop_location_write(
+                    uop_atomic_pair_high(uop.destination), response.secondary_value, 8,
+                    instruction.form.operation, low_state, low_values
+                ) {
+                    Some((next_state, next_values)) => {
+                        var updated = next_state;
+                        updated.flags = flags_value(equal, false, false, false);
+                        uop_step_continue(updated, next_values)
+                    },
+                    None() => uop_step_fault(faulted(
+                        before, instruction.form.operation, InvalidControlState,
+                        "pair atomic high destination is not writable"
+                    )),
+                },
+                None() => uop_step_fault(faulted(
+                    before, instruction.form.operation, InvalidControlState,
+                    "pair atomic low destination is not writable"
+                )),
+            }
             else match uop_location_write(uop.destination, response.value, uop.width,
                                            instruction.form.operation, speculative, values) {
                 Some((next_state, next_values)) => {

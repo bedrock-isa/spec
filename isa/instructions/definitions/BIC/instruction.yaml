@@ -1,0 +1,19 @@
+mnemonic: BIC
+name: Bit Clear
+summary: Clears destination bits selected by the source operand.
+route: integer_alu
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.BIC
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

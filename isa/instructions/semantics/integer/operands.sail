@@ -128,6 +128,14 @@ function reverse_bytes_int(value : int, remaining : int, accumulated : int) -> i
 function reverse_bytes(value : bits(64), width : int) -> bits(64) =
   bits_from_int(reverse_bytes_int(unsigned(narrow_bits(value, width)), width, 0))
 
+function reverse_bits_int(value : int, remaining : int, accumulated : int) -> int =
+  if remaining <= 0 then accumulated
+  else reverse_bits_int(tdiv_int(value, 2), remaining - 1,
+                        accumulated * 2 + tmod_int(value, 2))
+
+function reverse_bits(value : bits(64), width : int) -> bits(64) =
+  bits_from_int(reverse_bits_int(unsigned(narrow_bits(value, width)), width * 8, 0))
+
 function carryless_loop(lhs : bits(128), rhs : bits(64), index : int,
                         accumulated : bits(128)) -> bits(128) =
   if index >= 64 then accumulated

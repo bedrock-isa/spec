@@ -1,5 +1,6 @@
 function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   var reset = initial_cpu();
+  reset.base_instruction_features = state.base_instruction_features;
   reset.fp_enabled = state.fp_enabled;
   reset.fp16_convert_enabled = state.fp16_convert_enabled;
   reset.fptrans_enabled = state.fptrans_enabled;

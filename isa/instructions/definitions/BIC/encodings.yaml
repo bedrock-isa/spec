@@ -1,0 +1,8 @@
+encodings:
+  b_w_l_q_z_rn_s_rn_d:
+    pattern: 111111000101010011zz000000ssssdddd
+    syntax: BIC.{B|W|L|Q}(z) Rn(s), Rn(d)
+    fields:
+      z: {role: size, type: base.field_types.SIZE_BWLQ}
+      s: {role: src, type: base.field_types.Rn}
+      d: {role: dst, type: base.field_types.Rn}

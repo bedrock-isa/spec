@@ -1,0 +1,7 @@
+encodings:
+  b_w_l_q_z_rn_d:
+    pattern: 111111000101010110zz0000000000dddd
+    syntax: REVBIT.{B|W|L|Q}(z) Rn(d)
+    fields:
+      z: {role: size, type: base.field_types.SIZE_BWLQ}
+      d: {role: dst, type: base.field_types.Rn}

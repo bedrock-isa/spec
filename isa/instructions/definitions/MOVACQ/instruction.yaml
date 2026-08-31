@@ -1,0 +1,16 @@
+mnemonic: MOVACQ
+name: Move Acquire
+summary: Loads from memory with acquire ordering.
+route: data_movement
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.MOVACQ
+operands:
+  memory:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,7 @@
+No architecturally younger instruction may issue an externally observable or transiently data-dependent operation
+until SPECFENCE retires. No architecturally older conditional control transfer or faulting instruction may remain
+unresolved when SPECFENCE retires.
+
+SPECFENCE changes no register, flag, or memory value and is not a memory-ordering fence. Programs use
+(:ref:base.instructions.RFENCE:), (:ref:base.instructions.WFENCE:), or (:ref:base.instructions.AFENCE:) when they
+need architectural memory ordering.

@@ -31,6 +31,7 @@ struct Cpu_state = {
   fflags : bits(5),
   fstatus : bits(64),
   supervisor : bool,
+  base_instruction_features : bits(64),
   fp_enabled : bool,
   fp16_convert_enabled : bool,
   fptrans_enabled : bool,

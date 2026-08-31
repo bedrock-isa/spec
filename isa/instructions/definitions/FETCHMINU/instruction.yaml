@@ -1,0 +1,11 @@
+mnemonic: FETCHMINU
+name: Atomic Fetch Unsigned Minimum
+summary: Atomically stores the unsigned minimum of memory and source and returns the old value.
+route: atomics
+privileged: false
+additional_cpuid_flags:
+- base.cpuid.BASE.BASE_INSTRUCTIONS.FEATURES.FETCHMINU
+operands:
+  order: {role: source, access: read, value_type: integer}
+  src: {role: destination, access: read_write, value_type: integer}
+  memory: {role: destination, access: read_write, value_type: integer}

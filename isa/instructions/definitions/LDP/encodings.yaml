@@ -1,0 +1,9 @@
+encodings:
+  ea_e_pairn_d:
+    pattern: 111111000101010111000000dddeeeeeee
+    syntax: LDP <ea>(e), PAIRn(d)
+    fields:
+      e: {role: memory, type: base.field_types.EA}
+      d: {role: pair_id, type: base.field_types.PAIRn}
+    constraints:
+    - {role: memory, exclude: [immediate], reason: memory_operand_required}

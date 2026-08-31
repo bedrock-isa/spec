@@ -287,7 +287,16 @@ enum Integer_count_uop_operation = {
     IntegerCountPopulation,
     IntegerCountParity,
     IntegerReverseBytes,
+    IntegerReverseBits,
 }
+
+enum Integer_bitfield_uop_operation = {
+    IntegerBitfieldExtractUnsigned,
+    IntegerBitfieldExtractSigned,
+    IntegerBitfieldInsert,
+}
+
+enum Integer_crc_uop_operation = { IntegerCrc32, IntegerCrc32c }
 
 enum Integer_extend_uop_operation = { IntegerExtendSigned, IntegerExtendUnsigned }
 
@@ -316,13 +325,21 @@ enum Core_action_uop_operation = {
     CoreActionWait,
     CoreActionYield,
     CoreActionTrace,
+    CoreActionSpeculationFence,
     CoreActionIllegal,
 }
 
 enum Atomic_uop_operation = {
     AtomicCompareExchange,
+    AtomicCompareExchangePair,
     AtomicFetchAdd,
     AtomicFetchAnd,
+    AtomicFetchAndNot,
+    AtomicFetchExchange,
+    AtomicFetchMaximumSigned,
+    AtomicFetchMaximumUnsigned,
+    AtomicFetchMinimumSigned,
+    AtomicFetchMinimumUnsigned,
     AtomicFetchOr,
     AtomicFetchSubtract,
     AtomicFetchXor,

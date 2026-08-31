@@ -1,0 +1,19 @@
+encodings:
+  b_w_l_q_z_rn_s_ea_e:
+    pattern: 111111000101010001zz000sssseeeeeee
+    syntax: MOVREL.{B|W|L|Q}(z) Rn(s), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: memory
+        type: base.field_types.EA
+    constraints:
+    - role: memory
+      exclude:
+      - immediate
+      reason: memory_operand_required

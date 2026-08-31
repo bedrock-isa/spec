@@ -1,0 +1,10 @@
+encodings:
+  b_w_l_q_z_imm6_l_imm6_w_rn_s_rn_d:
+    pattern: 111111000010zzllllllwwwwwwssssdddd
+    syntax: BFEXTU.{B|W|L|Q}(z) imm6(l), imm6(w), Rn(s), Rn(d)
+    fields:
+      z: {role: size, type: base.field_types.SIZE_BWLQ}
+      l: {role: lsb, type: base.field_types.IMM6}
+      w: {role: width_minus1, type: base.field_types.IMM6}
+      s: {role: src, type: base.field_types.Rn}
+      d: {role: dst, type: base.field_types.Rn}
