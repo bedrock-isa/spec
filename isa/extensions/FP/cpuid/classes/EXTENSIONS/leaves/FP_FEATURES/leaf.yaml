@@ -1,6 +1,5 @@
 id: FP_FEATURES
 name: Floating-Point Features
-value: 0x0003
 queries:
 - id: HEADER
   index: 0

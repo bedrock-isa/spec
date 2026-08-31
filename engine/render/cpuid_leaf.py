@@ -48,11 +48,13 @@ class CpuidLeafProjection:
             raise ValueError(
                 f"CPUID leaf projection requires a root leaf, not {leaf.reference}"
             )
+        allocation = catalog.resolve_leaf(leaf)
         fields_by_query: dict[tuple[str, int, int, int], list[CpuidField]] = {}
         for namespace in catalog.namespaces.values():
             for cpuid_class in namespace.classes.values():
                 for candidate in cpuid_class.leaves.values():
-                    if _root_leaf(catalog, candidate).reference != leaf.reference:
+                    candidate_root = catalog.resolve_leaf(candidate).root_leaf.reference
+                    if candidate_root != leaf.reference:
                         continue
                     for query in candidate.queries:
                         key = (
@@ -76,8 +78,12 @@ class CpuidLeafProjection:
                 key=lambda item: (item[0][1], item[0][2], item[0][3], item[0][0]),
             )
         )
-        class_value, leaf_value = catalog.leaf_allocation(leaf)
-        return cls(leaf, class_value, leaf_value, queries)
+        return cls(
+            leaf,
+            allocation.class_value,
+            allocation.leaf_value,
+            queries,
+        )
 
 
 def _identifier(value: object) -> str:
@@ -90,16 +96,6 @@ def _index(first: int, last: int, stride: int) -> str:
         return f"0x{first:04X}"
     result = f"0x{first:04X}--0x{last:04X}"
     return result if stride == 1 else f"{result}/{stride}"
-
-
-def _root_leaf(catalog, leaf: CpuidLeaf) -> CpuidLeaf:
-    active: set[Reference[object]] = set()
-    while leaf.extends is not None:
-        if leaf.reference in active:
-            raise ValueError(f"circular CPUID leaf overlay at {leaf.reference}")
-        active.add(leaf.reference)
-        leaf = catalog.references.leaves.resolve(leaf.extends)
-    return leaf
 
 
 def _diagram_labels(fields: tuple[CpuidField, ...]) -> dict[Reference[object], str]:

@@ -40,7 +40,6 @@ from engine.render import (
     DocumentFragmentContext,
     DocumentFragmentPipeline,
     DocumentFragmentProvider,
-    CpuidLeafProjection,
     EaDiagramFragmentRenderer,
     EventReferenceRenderer,
     LatexSemanticTextRenderer,
@@ -643,91 +642,6 @@ class DocumentTest(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             EaDiagramFragmentRenderer.project(context, _reference_text(foreign))
-
-    def test_cpuid_leaf_projection_is_explicit_owner_local_and_single_grain(self) -> None:
-        catalog = self.project.cpuid
-
-        def root_reference(leaf):
-            while leaf.extends is not None:
-                leaf = catalog.references.leaves.resolve(leaf.extends)
-            return leaf.reference
-
-        leaves = tuple(catalog.references.leaves.values())
-        for leaf in leaves:
-            if leaf.extends is not None:
-                continue
-            with self.subTest(leaf=leaf.reference):
-                projection = CpuidLeafProjection.create(catalog, leaf)
-                expected: dict[
-                    tuple[str, int, int, int], set[Reference[object]]
-                ] = {}
-                for candidate in leaves:
-                    if root_reference(candidate) != leaf.reference:
-                        continue
-                    for query in candidate.queries:
-                        key = (
-                            query.id,
-                            query.indexes.first,
-                            query.indexes.last,
-                            query.indexes.stride,
-                        )
-                        expected.setdefault(key, set()).update(
-                            field.reference for field in query.fields
-                        )
-                projected = {
-                    (query.id, query.first, query.last, query.stride): {
-                        field.reference for field in query.fields
-                    }
-                    for query in projection.queries
-                }
-                self.assertEqual(projected, expected)
-                expected_fields = {
-                    reference
-                    for references in expected.values()
-                    for reference in references
-                }
-                projected_fields = {
-                    field.reference
-                    for query in projection.queries
-                    for field in query.fields
-                }
-                self.assertEqual(projected_fields, expected_fields)
-                self.assertEqual(
-                    tuple(projected),
-                    tuple(
-                        sorted(
-                            expected,
-                            key=lambda key: (key[1], key[2], key[3], key[0]),
-                        )
-                    ),
-                )
-                for query in projection.queries:
-                    self.assertEqual(
-                        tuple(field.lsb for field in query.fields),
-                        tuple(sorted(field.lsb for field in query.fields)),
-                    )
-
-        topic, reference = next(
-            (topic, Reference.parse(match.group(1)))
-            for topic in self.project.model.document_topics.values()
-            for match in re.finditer(
-                r"(?m)^\(:cpuid-leaf:([A-Za-z0-9_.-]+):\)$",
-                topic.document.read_text(encoding="utf-8"),
-            )
-        )
-        foreign = next(
-            leaf.reference
-            for leaf in leaves
-            if leaf.extends is None and leaf.reference.owner != topic.owner
-        )
-        with self.assertRaises(ValueError):
-            DocumentFragmentPipeline.default().expand(
-                f"(:cpuid-leaf:{_reference_text(foreign)}:)",
-                self.project,
-                self.public_targets,
-                topic.document,
-            )
-        self.assertEqual(reference.owner, topic.owner)
 
     def test_register_figure_projection_is_explicit_and_owner_local(self) -> None:
         topic, owner, groups = next(

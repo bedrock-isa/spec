@@ -1,6 +1,5 @@
 id: VECTOR_PARAMETERS
 name: Vector Parameters
-value: 0x0002
 queries:
 - id: HEADER
   index: 0

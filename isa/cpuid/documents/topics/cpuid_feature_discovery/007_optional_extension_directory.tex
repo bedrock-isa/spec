@@ -4,4 +4,9 @@ architectural behavior or consuming one of its parameter leaves, software establ
 required by that extension. A result returned by a parameter leaf does not by itself establish extension
 availability.
 
+Each advertised extension owns exactly one discovery leaf in class \texttt{0x00000001}. If its availability
+field is bit $m$ of directory index $n$, where $1 \le n \le 1023$ and $0 \le m \le 63$, its discovery
+leaf is $64(n-1)+m+1$. This relation is one-to-one; an extension with no additional discovery payload still
+provides the leaf with its index-zero (:term:base.terms.header:).
+
 (:cpuid-leaf:base.cpuid.EXTENSIONS.DIRECTORY:)

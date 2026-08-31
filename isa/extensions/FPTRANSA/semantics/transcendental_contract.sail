@@ -59,7 +59,7 @@ function fp_approx_selected_bound(contract_word : bits(64), width : int)
   else None()
 
 function fp_approx_cpuid_selector(contract_id : bits(16)) -> bits(64) =
-  0x000000010001 @ contract_id
+  0x000000010002 @ contract_id
 
 function fp_approx_contract_lookup(contract_id : bits(16), contract_word : bits(64))
   -> Fp_approx_contract_lookup = match fp_approx_contract_operation(contract_id) {

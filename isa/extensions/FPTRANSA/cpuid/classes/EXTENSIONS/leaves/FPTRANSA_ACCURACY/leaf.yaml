@@ -1,6 +1,5 @@
 id: FPTRANSA_ACCURACY
 name: Approximate Transcendental Accuracy Contracts
-value: 0x0001
 layouts:
   ACCURACY:
     fields:

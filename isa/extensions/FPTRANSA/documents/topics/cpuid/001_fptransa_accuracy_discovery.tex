@@ -2,7 +2,7 @@
 The \texttt{FPTRANSA} predicate requires \texttt{FP} and reports that at least one approximate transcendental
 contract may be available. Software determines each operation\textquotesingle{}s availability separately from its
 accuracy-contract result.
-Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
+Class \texttt{0x00000001}, leaf \texttt{0x0002} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
 16-bit accuracy-contract IDs. Index zero is the common (:term:base.terms.header:) and reports \texttt{MAX\_INDEX=0x0044}.
 A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
 and mathematical properties; it is independent of instruction encoding placement. A different tuple of those
@@ -55,11 +55,11 @@ contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \t
 \texttt{CONTRACT\_REVISION} is 1, and the S or D bound required by the call site is no larger than its quality
 threshold; otherwise it
 does not use the instruction under that accuracy contract. For example, a D-format (:ref:FPTRANSA.instructions.FLOG2A:) path requiring at most 2 ULP accepts selector
-\texttt{0x0000000100010043} only when the returned D (:term:base.terms.field:) is at most \texttt{0x0200}.
+\texttt{0x0000000100020043} only when the returned D (:term:base.terms.field:) is at most \texttt{0x0200}.
 
-The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
-\textit{contract-id}$. For example, (:ref:FPTRANSA.instructions.FSINA:) uses selector \texttt{0x0000000100010001}, and
-(:ref:FPTRANSA.instructions.FLOG2A:) uses \texttt{0x0000000100010043}. An implementation that certifies (:ref:FPTRANSA.instructions.FSINA:) at 1.5 ULP for
+The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0002} \ll 16) \mathbin{|}
+\textit{contract-id}$. For example, (:ref:FPTRANSA.instructions.FSINA:) uses selector \texttt{0x0000000100020001}, and
+(:ref:FPTRANSA.instructions.FLOG2A:) uses \texttt{0x0000000100020043}. An implementation that certifies (:ref:FPTRANSA.instructions.FSINA:) at 1.5 ULP for
 S and 2 ULP for D returns \texttt{0x8000000102000180}.
 
 \texttt{PRESENT=1} establishes the accuracy contract for both S and D encodings but does not waive the

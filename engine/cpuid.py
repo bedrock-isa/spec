@@ -82,7 +82,7 @@ class CpuidQuery:
 
 @dataclass(frozen=True, slots=True)
 class CpuidLeaf:
-    """One authored leaf definition or overlay fragment."""
+    """One CPUID leaf definition or overlay fragment."""
 
     reference: Reference["CpuidLeaf"]
     source: Path
@@ -127,6 +127,24 @@ class CpuidReferenceIndexes:
     leaves: ReferenceIndex[CpuidLeaf]
     queries: ReferenceIndex[CpuidQuery]
     fields: ReferenceIndex[CpuidField]
+
+
+class CpuidResolutionError(ValueError):
+    """A source-located error while resolving a CPUID allocation."""
+
+    def __init__(self, source: Path, message: str) -> None:
+        super().__init__(message)
+        self.source = source
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedCpuidLeaf:
+    """One leaf fragment joined with its root and numeric allocation."""
+
+    leaf: CpuidLeaf
+    root_leaf: CpuidLeaf
+    class_value: int
+    leaf_value: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,26 +197,68 @@ class CpuidCatalog:
         current = cpuid_class
         while current.extends is not None:
             if current.reference in active:
-                raise ValueError("circular CPUID class overlay")
+                raise CpuidResolutionError(
+                    current.source, "circular CPUID class overlay"
+                )
             active.append(current.reference)
-            current = self.references.classes.resolve(current.extends)
+            try:
+                target = self.references.classes.resolve(current.extends)
+            except UnknownReferenceError as error:
+                raise CpuidResolutionError(
+                    current.source, "unknown CPUID class overlay target"
+                ) from error
+            if current.id != target.id:
+                raise CpuidResolutionError(
+                    current.source,
+                    f"class ID {current.id!r} does not match overlay target "
+                    f"ID {target.id!r}",
+                )
+            current = target
         if current.value is None:
-            raise ValueError(f"incomplete CPUID class definition {current.id!r}")
+            raise CpuidResolutionError(
+                current.source, f"incomplete CPUID class definition {current.id!r}"
+            )
         return current
 
-    def leaf_allocation(self, leaf: CpuidLeaf) -> tuple[int, int]:
-        """Return the effective numeric class and leaf allocation."""
+    def _extension_discovery_leaf(
+        self, cpuid_class: CpuidClass
+    ) -> CpuidLeaf | None:
+        root_class = self.root_class(cpuid_class)
+        if cpuid_class.extends is None or root_class.value != 1:
+            return None
+        roots = tuple(
+            leaf for leaf in cpuid_class.leaves.values() if leaf.extends is None
+        )
+        if len(roots) != 1:
+            raise CpuidResolutionError(
+                cpuid_class.leaf_inventory.source,
+                "a class-1 extension contribution must own one discovery leaf",
+            )
+        if roots[0].value is not None:
+            raise CpuidResolutionError(
+                roots[0].source,
+                "a class-1 extension discovery leaf must not declare value",
+            )
+        return roots[0]
+
+    def resolve_leaf(self, leaf: CpuidLeaf) -> ResolvedCpuidLeaf:
+        """Resolve one leaf fragment through its owning allocation policy."""
 
         active: list[Reference[CpuidLeaf]] = []
 
-        def resolve(current: CpuidLeaf) -> tuple[int, int]:
+        def resolve(current: CpuidLeaf) -> ResolvedCpuidLeaf:
             if current.reference in active:
-                raise ValueError("circular CPUID leaf overlay")
+                raise CpuidResolutionError(
+                    current.source, "circular CPUID leaf overlay"
+                )
             if (
                 current.reference.path[:1] != ("cpuid",)
                 or len(current.reference.path) != 2
             ):
-                raise ValueError(f"invalid CPUID leaf reference {current.reference!r}")
+                raise CpuidResolutionError(
+                    current.source,
+                    f"invalid CPUID leaf reference {current.reference!r}",
+                )
             cpuid_class = self.references.classes.resolve(
                 Reference(
                     current.reference.owner,
@@ -208,20 +268,91 @@ class CpuidCatalog:
             )
             root_class = self.root_class(cpuid_class)
             assert root_class.value is not None
-            if current.value is not None:
-                return root_class.value, current.value
+            discovery = self._extension_discovery_leaf(cpuid_class)
 
-            assert current.extends is not None
-            active.append(current.reference)
-            allocation = resolve(self.references.leaves.resolve(current.extends))
-            active.pop()
-            if allocation[0] != root_class.value:
-                raise ValueError(
-                    f"CPUID leaf overlay {current.id!r} crosses numeric classes"
+            if current.extends is not None:
+                active.append(current.reference)
+                try:
+                    target = self.references.leaves.resolve(current.extends)
+                except UnknownReferenceError as error:
+                    raise CpuidResolutionError(
+                        current.source, "unknown CPUID leaf overlay target"
+                    ) from error
+                resolved = resolve(target)
+                active.pop()
+                if current.id != target.id:
+                    raise CpuidResolutionError(
+                        current.source,
+                        f"leaf ID {current.id!r} does not match overlay target "
+                        f"ID {target.id!r}",
+                    )
+                if resolved.class_value != root_class.value:
+                    raise CpuidResolutionError(
+                        current.source,
+                        f"CPUID leaf overlay {current.id!r} crosses numeric classes",
+                    )
+                return ResolvedCpuidLeaf(
+                    current,
+                    resolved.root_leaf,
+                    resolved.class_value,
+                    resolved.leaf_value,
                 )
-            return allocation
+
+            if current is discovery:
+                directories = tuple(
+                    candidate
+                    for candidate in cpuid_class.leaves.values()
+                    if candidate.extends is not None
+                    and (
+                        (resolved := resolve(candidate)).class_value,
+                        resolved.leaf_value,
+                    )
+                    == (1, 0)
+                )
+                if len(directories) != 1:
+                    raise CpuidResolutionError(
+                        cpuid_class.leaf_inventory.source,
+                        "a class-1 extension contribution must reopen leaf 0 once",
+                    )
+                directory = directories[0]
+                if len(directory.queries) != 1 or len(directory.queries[0].fields) != 1:
+                    raise CpuidResolutionError(
+                        directory.source,
+                        "a class-1 extension directory contribution must own one bit",
+                    )
+                query = directory.queries[0]
+                field = query.fields[0]
+                if query.indexes.count != 1 or field.bits != 1:
+                    raise CpuidResolutionError(
+                        directory.source,
+                        "an extension directory bit requires one fixed query index",
+                    )
+                try:
+                    leaf_value = extension_discovery_leaf_value(
+                        query.indexes.first, field.lsb
+                    )
+                except ValueError as error:
+                    raise CpuidResolutionError(directory.source, str(error)) from error
+                return ResolvedCpuidLeaf(
+                    current, current, root_class.value, leaf_value
+                )
+
+            if current.value is None:
+                raise CpuidResolutionError(
+                    current.source, f"incomplete CPUID leaf definition {current.id!r}"
+                )
+            return ResolvedCpuidLeaf(
+                current, current, root_class.value, current.value
+            )
 
         return resolve(leaf)
+
+    def resolved_leaves(self) -> tuple[ResolvedCpuidLeaf, ...]:
+        """Return all leaf fragments in owner and inventory order."""
+
+        for cpuid_class in self.references.classes.values():
+            self._extension_discovery_leaf(cpuid_class)
+        return tuple(self.resolve_leaf(leaf) for leaf in self.references.leaves.values())
 
     def resolve_flag(self, raw_reference: str, source: Path) -> CpuidField:
         """Resolve one fixed-index, one-bit CPUID availability field."""
@@ -244,6 +375,20 @@ class CpuidCatalog:
                 f"{source}: CPUID flag {field.id!r} belongs to an indexed query range"
             )
         return field
+
+
+def extension_discovery_leaf_value(directory_index: int, directory_bit: int) -> int:
+    """Map one class-1 directory slot to its one-to-one discovery leaf."""
+
+    if not 1 <= directory_index <= 1023:
+        raise ValueError(
+            f"extension directory index {directory_index!r} is outside 1..1023"
+        )
+    if not 0 <= directory_bit < 64:
+        raise ValueError(
+            f"extension directory bit {directory_bit!r} is outside 0..63"
+        )
+    return 64 * (directory_index - 1) + directory_bit + 1
 
 
 def compose_selector(class_value: int, leaf_value: int, index: int) -> int:

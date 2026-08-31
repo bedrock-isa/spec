@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .allocation import AllocationCube, forms_overlap, numeric_bounds
-from .cpuid import CpuidCatalog, CpuidClass, CpuidLeaf, CpuidQuery
+from .cpuid import CpuidCatalog, CpuidLeaf, CpuidQuery, CpuidResolutionError
 from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
 from .encoding import OperandConstraint
 from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH
@@ -420,14 +420,20 @@ class CpuidValidator:
 
     def validate(self, catalog: CpuidCatalog) -> Iterator[Diagnostic]:
         yield from self._validate_inventories(catalog)
-        class_values, class_roots, class_diagnostics = self._resolve_classes(catalog)
-        yield from class_diagnostics
-        leaf_values, leaf_roots, leaf_diagnostics = self._resolve_leaves(
-            catalog, class_values, class_roots
-        )
-        yield from leaf_diagnostics
+        try:
+            resolved = catalog.resolved_leaves()
+        except CpuidResolutionError as error:
+            yield _error("cpuid.resolution", error.source, str(error))
+            return
+        leaf_values = {
+            item.leaf.reference: (item.class_value, item.leaf_value)
+            for item in resolved
+        }
+        leaf_roots = {
+            item.leaf.reference: item.root_leaf.reference for item in resolved
+        }
         yield from self._validate_class_allocations(catalog)
-        yield from self._validate_leaf_allocations(catalog, class_values)
+        yield from self._validate_leaf_allocations(catalog, leaf_values)
         yield from self._validate_query_allocations(catalog, leaf_values, leaf_roots)
 
     @staticmethod
@@ -465,179 +471,6 @@ class CpuidValidator:
                     )
 
     @staticmethod
-    def _resolve_classes(
-        catalog: CpuidCatalog,
-    ) -> tuple[
-        dict[Reference[CpuidClass], int],
-        dict[Reference[CpuidClass], Reference[CpuidClass]],
-        tuple[Diagnostic, ...],
-    ]:
-        values: dict[Reference[CpuidClass], int] = {}
-        roots: dict[Reference[CpuidClass], Reference[CpuidClass]] = {}
-        diagnostics: list[Diagnostic] = []
-        active: list[Reference[CpuidClass]] = []
-
-        def resolve(
-            cpuid_class: CpuidClass,
-        ) -> tuple[int, Reference[CpuidClass]] | None:
-            if cpuid_class.reference in values:
-                return values[cpuid_class.reference], roots[cpuid_class.reference]
-            if cpuid_class.reference in active:
-                cycle = (
-                    *active[active.index(cpuid_class.reference) :],
-                    cpuid_class.reference,
-                )
-                diagnostics.append(
-                    _error(
-                        "cpuid.class.extend-cycle",
-                        cpuid_class.source,
-                        "circular CPUID class overlay: "
-                        + " -> ".join(
-                            catalog.references.classes.resolve(item).id
-                            for item in cycle
-                        ),
-                    )
-                )
-                return None
-            if cpuid_class.value is not None:
-                resolved_result = (cpuid_class.value, cpuid_class.reference)
-            else:
-                assert cpuid_class.extends is not None
-                try:
-                    target = catalog.references.classes.resolve(cpuid_class.extends)
-                except ValueError:
-                    diagnostics.append(
-                        _error(
-                            "cpuid.class.unknown-extends",
-                            cpuid_class.source,
-                            "unknown CPUID class overlay target",
-                            "extends",
-                        )
-                    )
-                    return None
-                if cpuid_class.id != target.id:
-                    diagnostics.append(
-                        _error(
-                            "cpuid.class.extend-id",
-                            cpuid_class.source,
-                            f"class ID {cpuid_class.id!r} does not match overlay target "
-                            f"ID {target.id!r}",
-                            "id",
-                        )
-                    )
-                active.append(cpuid_class.reference)
-                inherited_result = resolve(target)
-                active.pop()
-                if inherited_result is None:
-                    return None
-                resolved_result = inherited_result
-            values[cpuid_class.reference], roots[cpuid_class.reference] = (
-                resolved_result
-            )
-            return resolved_result
-
-        for cpuid_class in catalog.references.classes.values():
-            resolve(cpuid_class)
-        return values, roots, tuple(diagnostics)
-
-    @staticmethod
-    def _resolve_leaves(
-        catalog: CpuidCatalog,
-        class_values: Mapping[Reference[CpuidClass], int],
-        class_roots: Mapping[
-            Reference[CpuidClass], Reference[CpuidClass]
-        ],
-    ) -> tuple[
-        dict[Reference[CpuidLeaf], tuple[int, int]],
-        dict[Reference[CpuidLeaf], Reference[CpuidLeaf]],
-        tuple[Diagnostic, ...],
-    ]:
-        values: dict[Reference[CpuidLeaf], tuple[int, int]] = {}
-        roots: dict[Reference[CpuidLeaf], Reference[CpuidLeaf]] = {}
-        diagnostics: list[Diagnostic] = []
-        active: list[Reference[CpuidLeaf]] = []
-
-        leaf_parents = {
-            leaf.reference: cpuid_class.reference
-            for namespace in catalog.namespaces.values()
-            for cpuid_class in namespace.classes.values()
-            for leaf in cpuid_class.leaves.values()
-        }
-
-        def resolve(
-            leaf: CpuidLeaf,
-        ) -> tuple[tuple[int, int], Reference[CpuidLeaf]] | None:
-            if leaf.reference in values:
-                return values[leaf.reference], roots[leaf.reference]
-            if leaf.reference in active:
-                cycle = (*active[active.index(leaf.reference) :], leaf.reference)
-                diagnostics.append(
-                    _error(
-                        "cpuid.leaf.extend-cycle",
-                        leaf.source,
-                        "circular CPUID leaf overlay: "
-                        + " -> ".join(
-                            catalog.references.leaves.resolve(item).id
-                            for item in cycle
-                        ),
-                    )
-                )
-                return None
-            parent = leaf_parents[leaf.reference]
-            class_value = class_values.get(parent)
-            if class_value is None:
-                return None
-            if leaf.value is not None:
-                result = ((class_value, leaf.value), leaf.reference)
-            else:
-                assert leaf.extends is not None
-                try:
-                    target = catalog.references.leaves.resolve(leaf.extends)
-                except ValueError:
-                    diagnostics.append(
-                        _error(
-                            "cpuid.leaf.unknown-extends",
-                            leaf.source,
-                            "unknown CPUID leaf overlay target",
-                            "extends",
-                        )
-                    )
-                    return None
-                if leaf.id != target.id:
-                    diagnostics.append(
-                        _error(
-                            "cpuid.leaf.extend-id",
-                            leaf.source,
-                            f"leaf ID {leaf.id!r} does not match overlay target "
-                            f"ID {target.id!r}",
-                            "id",
-                        )
-                    )
-                active.append(leaf.reference)
-                resolved_target = resolve(target)
-                active.pop()
-                if resolved_target is None:
-                    return None
-                target_value, target_root = resolved_target
-                if target_value[0] != class_value:
-                    diagnostics.append(
-                        _error(
-                            "cpuid.leaf.extend-class",
-                            leaf.source,
-                            f"leaf overlay target {target.id!r} belongs to a different "
-                            "numeric class",
-                            "extends",
-                        )
-                    )
-                result = (target_value, target_root)
-            values[leaf.reference], roots[leaf.reference] = result
-            return result
-
-        for leaf in catalog.references.leaves.values():
-            resolve(leaf)
-        return values, roots, tuple(diagnostics)
-
-    @staticmethod
     def _validate_class_allocations(catalog: CpuidCatalog) -> Iterator[Diagnostic]:
         definitions = [
             cpuid_class
@@ -661,29 +494,29 @@ class CpuidValidator:
     @staticmethod
     def _validate_leaf_allocations(
         catalog: CpuidCatalog,
-        class_values: Mapping[Reference[CpuidClass], int],
+        leaf_values: Mapping[Reference[CpuidLeaf], tuple[int, int]],
     ) -> Iterator[Diagnostic]:
-        definitions: list[tuple[int, CpuidLeaf]] = []
+        definitions: list[tuple[tuple[int, int], CpuidLeaf]] = []
         for namespace in catalog.namespaces.values():
             for cpuid_class in namespace.classes.values():
-                class_value = class_values.get(cpuid_class.reference)
-                if class_value is None:
+                for leaf in cpuid_class.leaves.values():
+                    if leaf.extends is not None:
+                        continue
+                    selector = leaf_values.get(leaf.reference)
+                    if selector is not None:
+                        definitions.append((selector, leaf))
+        for index, (left_selector, left) in enumerate(definitions):
+            for right_selector, right in definitions[index + 1 :]:
+                if left_selector != right_selector:
                     continue
-                definitions.extend(
-                    (class_value, leaf)
-                    for leaf in cpuid_class.leaves.values()
-                    if leaf.value is not None
-                )
-        for index, (left_class, left) in enumerate(definitions):
-            for right_class, right in definitions[index + 1 :]:
-                if left_class != right_class or left.value != right.value:
-                    continue
+                path = ("value",) if left.value is not None else ()
                 yield _error(
                     "cpuid.leaf.value-overlap",
                     left.source,
-                    f"leaf value 0x{left.value:04x} in class 0x{left_class:08x} "
+                    f"leaf value 0x{left_selector[1]:04x} in class "
+                    f"0x{left_selector[0]:08x} "
                     f"is also allocated by {right.id!r}",
-                    "value",
+                    *path,
                     related=(
                         RelatedLocation(right.source, "conflicting leaf allocation"),
                     ),

@@ -1,5 +1,8 @@
 \subsection{Vector Floating-Point Discovery}
 
-\texttt{VECTORFP} defines no separate CPUID parameter leaf. Software establishes \texttt{VECTORFP}, \texttt{VECTOR},
-and \texttt{FP} through the \hyperref[section:cpuid-extension-directory]{Optional-Extension Directory} before using
-this extension.
+Software establishes \texttt{VECTORFP}, \texttt{VECTOR}, and \texttt{FP} through the
+\hyperref[section:cpuid-extension-directory]{Optional-Extension Directory} before using this extension. This
+extension defines no additional discovery payload, so its discovery leaf contains only the common
+(:term:base.terms.header:).
+
+(:cpuid-leaf:VECTORFP.cpuid.EXTENSIONS.VECTORFP_DISCOVERY:)
