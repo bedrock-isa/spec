@@ -450,12 +450,8 @@ def _render_entry(program: SailProgram, bundle: InstructionBundle, form: Encodin
     sizes = form.syntax.selected_size_codes
     if not sizes and form.syntax.fixed_size_suffix:
         sizes = (form.syntax.fixed_size_suffix.removeprefix("."),)
-    required = _list(_cpuid_constructor(item) for item in bundle.required_cpuid_flags)
-    availability = _list(
-        [
-            "struct { case_id = \"all_forms\", selectors = [||], "
-            f"operand_profiles = [||], required_flags = {required} }}"
-        ]
+    required = _list(
+        _cpuid_constructor(item) for item in bundle.required_cpuid_flags_for(form)
     )
     repeat = bundle.instruction.to_dict().get("repeat")
     repeat_rep = repeat is not None
@@ -475,7 +471,7 @@ def _render_entry(program: SailProgram, bundle: InstructionBundle, form: Encodin
         f"operands = {_list(_render_operand(program, bundle, form, item) for item in representations)}, "
         f"sizes = {_list(_constructor('Size_', item) for item in sizes)}, "
         f"appended_payloads = {_list(_render_payload(program, item, by_name) for item in form.payloads)}, "
-        f"availability_rules = {availability}, common_required_cpuid_flags = {required} }}"
+        f"required_cpuid_flags = {required} }}"
     )
 
 

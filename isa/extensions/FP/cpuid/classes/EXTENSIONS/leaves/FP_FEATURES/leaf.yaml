@@ -1,0 +1,12 @@
+id: FP_FEATURES
+name: Floating-Point Features
+value: 0x0003
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: FEATURES
+  index: 1
+  fields:
+  - {id: FP16_CONVERT, lsb: 0, bits: 1}

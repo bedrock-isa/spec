@@ -1,11 +1,20 @@
 encodings:
-  h_d_z_fn_s_fn_d:
-    pattern: 11111011100100100zssssdddd
-    syntax: FCVTS.{H|D}(z) Fn(s), Fn(d)
+  h_fn_s_fn_d:
+    pattern: 111110111001001000ssssdddd
+    syntax: FCVTS.H Fn(s), Fn(d)
     fields:
-      z:
-        role: size
-        type: FP.field_types.SIZE_HD
+      s:
+        role: src
+        type: FP.field_types.Fn
+      d:
+        role: dst
+        type: FP.field_types.Fn
+    additional_cpuid_flags:
+    - FP.cpuid.EXTENSIONS.FP_FEATURES.FEATURES.FP16_CONVERT
+  d_fn_s_fn_d:
+    pattern: 111110111001001001ssssdddd
+    syntax: FCVTS.D Fn(s), Fn(d)
+    fields:
       s:
         role: src
         type: FP.field_types.Fn
@@ -69,13 +78,10 @@ encodings:
       exclude:
       - immediate
       reason: invalid_destination
-  h_d_z_ea_e_fn_d:
-    pattern: 11111011011000zddddeeeeeee
-    syntax: FCVTS.{H|D}(z) <ea>(e), Fn(d)
+  h_ea_e_fn_d:
+    pattern: 111110110110000ddddeeeeeee
+    syntax: FCVTS.H <ea>(e), Fn(d)
     fields:
-      z:
-        role: size
-        type: FP.field_types.SIZE_HD
       e:
         role: src
         type: FP.field_types.FEA
@@ -87,13 +93,44 @@ encodings:
       exclude:
       - immediate
       reason: invalid_source
-  h_d_z_fn_s_ea_e:
-    pattern: 11111011011010zsssseeeeeee
-    syntax: FCVTS.{H|D}(z) Fn(s), <ea>(e)
+    additional_cpuid_flags:
+    - FP.cpuid.EXTENSIONS.FP_FEATURES.FEATURES.FP16_CONVERT
+  d_ea_e_fn_d:
+    pattern: 111110110110001ddddeeeeeee
+    syntax: FCVTS.D <ea>(e), Fn(d)
     fields:
-      z:
-        role: size
-        type: FP.field_types.SIZE_HD
+      e:
+        role: src
+        type: FP.field_types.FEA
+      d:
+        role: dst
+        type: FP.field_types.Fn
+    constraints:
+    - role: src
+      exclude:
+      - immediate
+      reason: invalid_source
+  h_fn_s_ea_e:
+    pattern: 111110110110100sssseeeeeee
+    syntax: FCVTS.H Fn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: FP.field_types.Fn
+      e:
+        role: dst
+        type: FP.field_types.FEA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+    additional_cpuid_flags:
+    - FP.cpuid.EXTENSIONS.FP_FEATURES.FEATURES.FP16_CONVERT
+  d_fn_s_ea_e:
+    pattern: 111110110110101sssseeeeeee
+    syntax: FCVTS.D Fn(s), <ea>(e)
+    fields:
       s:
         role: src
         type: FP.field_types.Fn

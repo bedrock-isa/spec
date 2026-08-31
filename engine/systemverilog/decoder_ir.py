@@ -151,28 +151,6 @@ class CpuidFlagIR:
 
 
 @dataclass(frozen=True)
-class AvailabilitySelectorIR:
-    domain: str
-    field_symbol: str
-    positions: tuple[int, ...]
-    encoded_values: tuple[int, ...]
-
-
-@dataclass(frozen=True)
-class AvailabilityOperandProfileIR:
-    operand_name: str
-    type_names: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class AvailabilityRuleIR:
-    case_id: str
-    selectors: tuple[AvailabilitySelectorIR, ...]
-    operand_profiles: tuple[AvailabilityOperandProfileIR, ...]
-    required_cpuid_flags: tuple[str, ...]
-
-
-@dataclass(frozen=True)
 class OperandOverlapIR:
     left: str
     right: str
@@ -197,7 +175,7 @@ class FormIR:
     sizes: tuple[str, ...]
     overlaps: tuple[OperandOverlapIR, ...]
     control: ControlIR
-    availability_rules: tuple[AvailabilityRuleIR, ...]
+    required_cpuid_flags: tuple[str, ...]
     fixed_required_bytes: int
     minimum_required_bytes: int
     maximum_required_bytes: int
@@ -920,7 +898,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
         item.width // 8 for item in layout if isinstance(item, ReadPayloadIR)
     )
     required_flags = tuple(
-        field.id for field in bundle.required_cpuid_flags
+        field.id for field in bundle.required_cpuid_flags_for(form)
     )
     key = f"{bundle.owner}.{bundle.instruction.mnemonic}.{form.id}"
     return FormIR(
@@ -958,7 +936,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
             any(isinstance(item.source, EffectiveAddressSourceIR) for item in operands),
             repeat_ir,
         ),
-        (AvailabilityRuleIR("all_forms", (), (), required_flags),),
+        required_flags,
         fixed_bytes,
         fixed_bytes,
         fixed_bytes + sum(10 for item in layout if isinstance(item, ParseEaIR)),
@@ -983,12 +961,50 @@ def _load_decode_ir(root: Path) -> DecodeIR:
         _form_ir(project, bundle, form, index)
         for index, (_, bundle, form) in enumerate(pending)
     )
-    flags = tuple(
-        CpuidFlagIR(name, name, 0, 0, 0, index)
-        for index, name in enumerate(("FP", "FPTRANSA", "VECTOR", "VECTORFP"))
+    cpuid_fields = tuple(
+        {
+            field.reference: field
+            for bundle in project.catalog.instructions.values()
+            for field in (
+                *bundle.required_cpuid_flags,
+                *(
+                    local
+                    for form in bundle.encodings.forms
+                    for local in form.additional_cpuid_flags
+                ),
+            )
+        }.values()
     )
+
+    def allocation_value(reference: Any, index: Any) -> int:
+        item = index.resolve(reference)
+        while item.value is None:
+            item = index.resolve(item.extends)
+        return item.value
+
+    flags = []
+    for field in cpuid_fields:
+        reference = field.reference
+        class_reference = Reference(reference.owner, ("cpuid",), reference.path[1])
+        leaf_reference = Reference(
+            reference.owner, ("cpuid", reference.path[1]), reference.path[2]
+        )
+        query_reference = Reference(
+            reference.owner, reference.path[:-1], reference.path[-1]
+        )
+        query = project.cpuid.references.queries.resolve(query_reference)
+        flags.append(
+            CpuidFlagIR(
+                field.id,
+                field.id,
+                allocation_value(class_reference, project.cpuid.references.classes),
+                allocation_value(leaf_reference, project.cpuid.references.leaves),
+                query.indexes.first,
+                field.lsb,
+            )
+        )
     return DecodeIR(
-        flags,
+        tuple(flags),
         tuple(sorted({form.mnemonic for form in forms_ir})),
         (),
         _derive_limits(forms_ir, effective_addresses),

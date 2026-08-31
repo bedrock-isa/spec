@@ -21,7 +21,7 @@ from engine.reference import Reference
 class IsaProjectTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.isa_root)
 
     @contextmanager
@@ -66,7 +66,9 @@ class IsaProjectTest(unittest.TestCase):
         )
         self.assertIs(extension.types, self.project.types.namespace("FPTRANSA"))
 
-    def test_instruction_bundles_receive_owner_cpuid_requirements(self) -> None:
+    def test_instruction_bundles_combine_owner_and_local_cpuid_requirements(
+        self,
+    ) -> None:
         owner_requirements = {
             "base": (),
             **{
@@ -77,10 +79,27 @@ class IsaProjectTest(unittest.TestCase):
 
         for bundle in self.project.select():
             with self.subTest(reference=bundle.reference):
-                self.assertEqual(
-                    bundle.required_cpuid_flags,
-                    owner_requirements[bundle.owner],
+                local = tuple(
+                    self.project.cpuid.references.fields[
+                        Reference.parse(reference)
+                    ]
+                    for reference in bundle.instruction.to_dict().get(
+                        "additional_cpuid_flags", ()
+                    )
                 )
+                self.assertEqual(
+                    set(bundle.required_cpuid_flags),
+                    {*owner_requirements[bundle.owner], *local},
+                )
+            for form in bundle.encodings.forms:
+                with self.subTest(reference=bundle.reference, form=form.id):
+                    self.assertEqual(
+                        set(bundle.required_cpuid_flags_for(form)),
+                        {
+                            *bundle.required_cpuid_flags,
+                            *form.additional_cpuid_flags,
+                        },
+                    )
 
     def test_rejects_unknown_extension(self) -> None:
         with self.assertRaises(ProjectLookupError) as caught:

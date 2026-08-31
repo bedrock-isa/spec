@@ -46,23 +46,6 @@ struct Catalog_payload = {
   signed : bool,
 }
 
-struct Catalog_availability_selector = {
-  field_symbol : Field_id,
-  values : list(int),
-}
-
-struct Catalog_availability_operand_profile = {
-  operand_ordinal : int,
-  operand_types : list(Operand_type),
-}
-
-struct Catalog_availability_rule = {
-  case_id : string,
-  selectors : list(Catalog_availability_selector),
-  operand_profiles : list(Catalog_availability_operand_profile),
-  required_flags : list(Cpuid_flag),
-}
-
 struct Ea_pattern = {
   width : int,
   value : bits(16),
@@ -116,6 +99,5 @@ struct Catalog_entry = {
   operands : list(Catalog_operand),
   sizes : list(Size_code),
   appended_payloads : list(Catalog_payload),
-  availability_rules : list(Catalog_availability_rule),
-  common_required_cpuid_flags : list(Cpuid_flag),
+  required_cpuid_flags : list(Cpuid_flag),
 }

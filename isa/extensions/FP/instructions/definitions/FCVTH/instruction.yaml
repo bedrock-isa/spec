@@ -3,6 +3,8 @@ name: Convert to Half Precision
 summary: Converts between H and signed B/W/L/Q integer or S/D floating-point representations.
 route: fpu
 privileged: false
+additional_cpuid_flags:
+- FP.cpuid.EXTENSIONS.FP_FEATURES.FEATURES.FP16_CONVERT
 repeat:
   type: rep
 operands:

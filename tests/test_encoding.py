@@ -12,7 +12,7 @@ from engine.type_system import TypeSystem
 class EncodingCatalogTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.isa_root = Path(__file__).parents[1]
+        cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.types = TypeSystem.load(cls.isa_root)
 
     def test_loads_typed_forms_in_declared_source_order(self) -> None:

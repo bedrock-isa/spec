@@ -405,6 +405,15 @@ class InstructionEntryRenderer:
                     self._instruction_diagram(projected),
                 ]
             )
+            if form.additional_cpuid_flags:
+                blocks.append(
+                    r"\par\Needspace{0.36in}\noindent"
+                    r"\textbf{Additional CPUID flags:}\enspace "
+                    + ", ".join(
+                        tex_code(field.id) for field in form.additional_cpuid_flags
+                    )
+                    + r"\par"
+                )
             descriptions = self._field_descriptions(bundle, form, types)
             if descriptions:
                 blocks.append(r"\BedrockInstructionFieldsHeading")

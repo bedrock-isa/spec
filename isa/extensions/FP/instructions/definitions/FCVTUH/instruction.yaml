@@ -3,6 +3,8 @@ name: Convert Unsigned and Half Precision
 summary: Converts between H and unsigned B/W/L/Q integers.
 route: fpu
 privileged: false
+additional_cpuid_flags:
+- FP.cpuid.EXTENSIONS.FP_FEATURES.FEATURES.FP16_CONVERT
 repeat: {type: rep}
 operands:
   src: {role: source, access: read, value_type: floating}

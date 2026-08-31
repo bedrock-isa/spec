@@ -31,7 +31,7 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         }
         (BASE_CLASS, 0, 3..=10) => name_word(VENDOR_NAME, usize::from(index - 3)),
         (BASE_CLASS, 0, 11..=18) => name_word(PROCESSOR_NAME, usize::from(index - 11)),
-        (EXTENSION_CLASS, 0, 0) => header_with_leaf(2, 1),
+        (EXTENSION_CLASS, 0, 0) => header_with_leaf(3, 1),
         (EXTENSION_CLASS, 0, 1) => 0b1111,
         (EXTENSION_CLASS, 1, 0) => 0x0044,
         (EXTENSION_CLASS, 1, id) if FPTRANSA_CONTRACT_IDS.contains(&id) => {
@@ -39,6 +39,8 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         }
         (EXTENSION_CLASS, 2, 0) => 1,
         (EXTENSION_CLASS, 2, 1) => 7,
+        (EXTENSION_CLASS, 3, 0) => 1,
+        (EXTENSION_CLASS, 3, 1) => 1,
         (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(4, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,

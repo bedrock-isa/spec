@@ -9,7 +9,7 @@ from types import MappingProxyType
 from typing import Any, cast
 
 from .extension import ExtensionSetCatalog
-from .reference import Reference, ReferenceIndex
+from .reference import Reference, ReferenceIndex, UnknownReferenceError
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
@@ -171,6 +171,28 @@ class CpuidCatalog:
             return self.namespaces[owner]
         except KeyError as error:
             raise ValueError(f"unknown CPUID namespace {owner!r}") from error
+
+    def resolve_flag(self, raw_reference: str, source: Path) -> CpuidField:
+        """Resolve one fixed-index, one-bit CPUID availability field."""
+
+        reference: Reference[CpuidField] = Reference.parse(raw_reference)
+        try:
+            field = self.references.fields.resolve(reference)
+        except UnknownReferenceError as error:
+            raise ValueError(f"{source}: unknown CPUID flag reference") from error
+        if field.bits != 1:
+            raise ValueError(
+                f"{source}: CPUID flag {field.id!r} names a {field.bits}-bit field"
+            )
+        query_reference: Reference[CpuidQuery] = Reference(
+            reference.owner, reference.path[:-1], reference.path[-1]
+        )
+        query = self.references.queries.resolve(query_reference)
+        if query.indexes.count != 1:
+            raise ValueError(
+                f"{source}: CPUID flag {field.id!r} belongs to an indexed query range"
+            )
+        return field
 
 
 def compose_selector(class_value: int, leaf_value: int, index: int) -> int:

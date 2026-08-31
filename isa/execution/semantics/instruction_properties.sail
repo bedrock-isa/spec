@@ -37,16 +37,6 @@ function predicate_holds(instruction : Decoded_instruction, state : Cpu_state) -
         None() => true,
     }
 
-function operand_at(ordinal : int, operands : list(Decoded_operand)) -> option(Decoded_operand) =
-    match operands {
-        [||] => None(),
-        operand :: tail => if ordinal == 0 then {
-            Some(operand)
-        } else {
-            operand_at(ordinal - 1, tail)
-        },
-    }
-
 function find_operand_by_name(name : Operand_id, operands : list(Decoded_operand)) -> option(Decoded_operand) =
     match operands {
         [||] => None(),
@@ -57,61 +47,10 @@ function find_operand_by_name(name : Operand_id, operands : list(Decoded_operand
         },
     }
 
-function availability_int_contains(values : list(int), value : int) -> bool =
-    match values {
-        [||] => false,
-        item :: tail => item == value | availability_int_contains(tail, value),
-    }
-
-function availability_operand_type_contains(values : list(Operand_type), value : Operand_type) -> bool =
-    match values {
-        [||] => false,
-        item :: tail => item == value | availability_operand_type_contains(tail, value),
-    }
-
-function availability_selector_matches(selector : Catalog_availability_selector, fields : list(Decoded_field)) -> bool =
-    match find_decoded_field(selector.field_symbol, fields) {
-        Some(field) => availability_int_contains(selector.values, field.value),
-        None() => false,
-    }
-
-function availability_selectors_match(
-    selectors : list(Catalog_availability_selector),
-    fields : list(Decoded_field),
-) -> (
-    bool
-) =
-    match selectors {
-        [||] => true,
-        selector :: tail => availability_selector_matches(selector, fields) & availability_selectors_match(tail, fields),
-    }
-
-function availability_operand_profile_matches(
-    profile : Catalog_availability_operand_profile,
-    operands : list(Decoded_operand),
-) -> (
-    bool
-) =
-    match operand_at(profile.operand_ordinal, operands) {
-        Some(operand) => availability_operand_type_contains(profile.operand_types, operand.operand_type),
-        None() => false,
-    }
-
-function availability_operand_profiles_match(
-    profiles : list(Catalog_availability_operand_profile),
-    operands : list(Decoded_operand),
-) -> (
-    bool
-) =
-    match profiles {
-        [||] => true,
-        profile :: tail => availability_operand_profile_matches(profile, operands) &
-            availability_operand_profiles_match(tail, operands),
-    }
-
 function cpuid_flag_enabled(flag : Cpuid_flag, state : Cpu_state) -> bool =
     match flag {
         CpuidFlag_FP => state.fp_enabled,
+        CpuidFlag_FP16_CONVERT => state.fp16_convert_enabled,
         CpuidFlag_FPTRANSA => state.fptrans_enabled,
         CpuidFlag_VECTOR => state.vector_enabled,
         CpuidFlag_VECTORFP => state.fp_enabled & state.vector_enabled,
@@ -123,31 +62,11 @@ function cpuid_flags_available(flags : list(Cpuid_flag), state : Cpu_state) -> b
         flag :: tail => cpuid_flag_enabled(flag, state) & cpuid_flags_available(tail, state),
     }
 
-function matching_availability_flags(
-    rules : list(Catalog_availability_rule),
-    fields : list(Decoded_field),
-    operands : list(Decoded_operand),
-) -> (
-    option(list(Cpuid_flag))
-) =
-    match rules {
-        [||] => None(),
-        rule :: tail => if availability_selectors_match(rule.selectors, fields) &
-            availability_operand_profiles_match(rule.operand_profiles, operands) then {
-            Some(rule.required_flags)
-        } else {
-            matching_availability_flags(tail, fields, operands)
-        },
-    }
-
 function instruction_available(instruction : Decoded_instruction, state : Cpu_state) -> bool =
-    match matching_availability_flags(instruction.form.availability_rules, instruction.fields, instruction.operands) {
-        Some(flags) => cpuid_flags_available(flags, state),
-        None() => false,
-    }
+    cpuid_flags_available(instruction.form.required_cpuid_flags, state)
 
 function candidate_form_available(form : Catalog_entry, state : Cpu_state) -> bool =
-    cpuid_flags_available(form.common_required_cpuid_flags, state)
+    cpuid_flags_available(form.required_cpuid_flags, state)
 
 function first_ea_operand(operands : list(Decoded_operand)) -> option(Decoded_operand) = match operands {
     [||] => None(),

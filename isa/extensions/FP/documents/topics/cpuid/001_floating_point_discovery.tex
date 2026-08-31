@@ -1,3 +1,12 @@
 \subsection{Floating-Point Extension Discovery}
 When \texttt{FP} is available, the floating-point registers, state, event, addressing forms, and instructions defined
-by this extension are available subject to their (:term:base.terms.ordinary:) legality checks.
+available subject to their (:term:base.terms.ordinary:) legality checks and any feature-specific predicates below.
+
+When \texttt{FP16\_CONVERT} is available, binary16 conversion is available
+through every form of (:ref:FP.instructions.FCVTH:) and (:ref:FP.instructions.FCVTUH:), the H forms of
+(:ref:FP.instructions.FCVTS:), and the H forms of (:ref:FP.instructions.FCVTD:). It does not advertise
+binary16 arithmetic. The reported value is stable until reset. Executing one of those forms while
+\texttt{FP16\_CONVERT} is clear raises
+(:ref:base.events.EXCEPTION.UNAVAILABLE_INSTRUCTION_EXTENSION:) before operand or floating-point-state access.
+
+(:cpuid-leaf:FP.cpuid.EXTENSIONS.FP_FEATURES:)

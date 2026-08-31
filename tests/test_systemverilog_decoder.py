@@ -182,6 +182,24 @@ class SystemVerilogDecoderTest(unittest.TestCase):
             max(form.maximum_required_bytes for form in self.ir.forms),
         )
 
+    def test_decode_ir_preserves_effective_form_cpuid_requirements(self) -> None:
+        expected = {
+            f"{bundle.owner}.{bundle.instruction.mnemonic}.{form.id}": {
+                field.id for field in bundle.required_cpuid_flags_for(form)
+            }
+            for bundle in self.project.select()
+            for form in bundle.encodings.forms
+        }
+        actual = {
+            form.key: set(form.required_cpuid_flags) for form in self.ir.forms
+        }
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(
+            {field.id for field in self.ir.cpuid_flags},
+            set().union(*expected.values()),
+        )
+
     def test_d1_overlap_projection_maps_operand_names_to_public_slots(self) -> None:
         generator = ArtifactGeneratorRegistry.discover(self.workspace).generator(
             "systemverilog-instruction-decoder"

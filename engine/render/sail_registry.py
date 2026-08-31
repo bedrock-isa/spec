@@ -104,7 +104,14 @@ class SailRegistryRenderer:
             dict.fromkeys(
                 field.id
                 for bundle in program.bundles
-                for field in bundle.required_cpuid_flags
+                for field in (
+                    *bundle.required_cpuid_flags,
+                    *(
+                        local
+                        for form in bundle.encodings.forms
+                        for local in form.additional_cpuid_flags
+                    ),
+                )
             )
         )
         instruction_sets = ["BaseSet"]

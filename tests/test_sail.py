@@ -108,14 +108,13 @@ class SailCompositionTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
-            projection.cpuid_flags,
-            tuple(
-                dict.fromkeys(
-                    field.id
-                    for bundle in program.bundles
-                    for field in bundle.required_cpuid_flags
-                )
-            ),
+            set(projection.cpuid_flags),
+            {
+                field.id
+                for bundle in program.bundles
+                for form in bundle.encodings.forms
+                for field in bundle.required_cpuid_flags_for(form)
+            },
         )
         self.assertEqual(
             projection.instruction_sets,

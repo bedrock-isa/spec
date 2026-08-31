@@ -46,6 +46,13 @@ $defs:
         uniqueItems: true
         items:
           $ref: '#/$defs/overlap'
+      additional_cpuid_flags:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          type: string
+          pattern: '^(?:base|[A-Z][A-Z0-9_]*)\.cpuid\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$'
   fields:
     type: object
     minProperties: 1
@@ -135,4 +142,5 @@ x-interpretation-rules:
   - Effective-address purpose is derived from the logical operand role, and effective-address width is derived from the fixed or selected size suffix; neither is repeated in the encoding.
   - A fixed size suffix directly selects its size; a selected suffix binds its field marker to a size-selector field type; sizes is not repeated in the encoding.
   - A constraint role resolves to one field in the same encoding; allow and exclude values are interpreted in that field type's value domain.
+  - additional_cpuid_flags lists one-bit CPUID fields conjoined with the requirements inherited from the owning instruction for this entire encoding form.
   - An overlap names two distinct field-backed logical operands; same_value requires writable operands and permits aliasing with one value, while illegal_instruction may constrain any operands and rejects aliasing.

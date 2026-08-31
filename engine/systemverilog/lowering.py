@@ -554,7 +554,17 @@ def derive_public_layout(ir: decode_ir.DecodeIR) -> PublicLayout:
     return PublicLayout(
         size_order=tuple(sorted({size for form in ir.forms for size in form.sizes})),
         cpuid_flag_order=tuple(
-            item.id for item in sorted(ir.cpuid_flags, key=lambda item: item.index)
+            item.id
+            for item in sorted(
+                ir.cpuid_flags,
+                key=lambda item: (
+                    item.selector_class,
+                    item.leaf,
+                    item.index,
+                    item.bit,
+                    item.token,
+                ),
+            )
         ),
     )
 
@@ -599,50 +609,16 @@ def _render_mask_assignment(
     ]
 
 
-def _render_availability_assignment(
+def _render_cpuid_assignment(
     form: decode_ir.FormIR,
     public_layout: PublicLayout,
 ) -> list[str]:
     names = _mask_names("CPUID_FLAG", public_layout.cpuid_flag_order)
-    lines = ["        result_o.required_cpuid_flag_mask = '0;"]
-    for index, rule in enumerate(form.availability_rules):
-        conditions: list[list[str]] = []
-        for selector in rule.selectors:
-            gathered = _gather("d0_i.opcode", selector.positions)
-            comparisons = [
-                f"{gathered} == {len(selector.positions)}'d{value}"
-                for value in selector.encoded_values
-            ]
-            conditions.append(
-                [
-                    f"({comparisons[0]}",
-                    *[f" || {comparison}" for comparison in comparisons[1:]],
-                    ")",
-                ]
-            )
-        keyword = "if" if index == 0 else "else if"
-        if not conditions:
-            lines.append(f"        {keyword} (1'b1) begin")
-        else:
-            lines.append(f"        {keyword} (")
-            for selector_index, selector_lines in enumerate(conditions):
-                for line_index, condition_line in enumerate(selector_lines):
-                    conjunction = (
-                        " &&"
-                        if selector_index + 1 < len(conditions)
-                        and line_index + 1 == len(selector_lines)
-                        else ""
-                    )
-                    lines.append(f"          {condition_line}{conjunction}")
-            lines.append("        ) begin")
-        assignment = _render_mask_assignment(
-            "result_o.required_cpuid_flag_mask",
-            rule.required_cpuid_flags,
-            names,
-        )
-        lines.extend("  " + item for item in assignment)
-        lines.append("        end")
-    return lines
+    return _render_mask_assignment(
+        "result_o.required_cpuid_flag_mask",
+        form.required_cpuid_flags,
+        names,
+    )
 
 
 def _all_ea_forms(ir: decode_ir.DecodeIR) -> tuple[decode_ir.EaFormIR, ...]:
@@ -1863,7 +1839,7 @@ def _render_form_case(
     lines.extend(_render_mask_assignment("decoded_result.size_mask", form.sizes, size_names))
     lines.extend(
         line.replace("result_o.", "decoded_result.")
-        for line in _render_availability_assignment(form, public_layout)
+        for line in _render_cpuid_assignment(form, public_layout)
     )
     lines.extend(
         [

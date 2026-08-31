@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .cpuid import CpuidCatalog, CpuidField
 from .encoding_metasyntax import EncodingMetasyntax
 from .instruction_metasyntax import InstructionMetasyntax
 from .reference import Reference
@@ -65,6 +66,7 @@ class EncodingForm:
     payloads: tuple[PayloadBinding, ...] = ()
     constraints: tuple[OperandConstraint, ...] = ()
     overlaps: tuple[OperandOverlap, ...] = ()
+    additional_cpuid_flags: tuple[CpuidField, ...] = ()
 
     def field_for_marker(self, marker: str) -> FieldBinding | None:
         return next((field for field in self.fields if field.marker == marker), None)
@@ -86,6 +88,7 @@ class EncodingCatalog:
         path: str | Path,
         types: TypeSystem,
         isa_root: str | Path | None = None,
+        cpuid: CpuidCatalog | None = None,
     ) -> "EncodingCatalog":
         source = Path(path).resolve()
         root = (
@@ -120,6 +123,12 @@ class EncodingCatalog:
                 OperandOverlap(tuple(overlap["operands"]), overlap["type"])
                 for overlap in raw_form.get("overlaps", ())
             )
+            additional_cpuid_flags = cls._cpuid_flags(
+                raw_form.get("additional_cpuid_flags", ()),
+                cpuid,
+                source,
+                encoding_id,
+            )
             forms.append(
                 EncodingForm(
                     id=encoding_id,
@@ -129,6 +138,7 @@ class EncodingCatalog:
                     payloads=payloads,
                     constraints=constraints,
                     overlaps=overlaps,
+                    additional_cpuid_flags=additional_cpuid_flags,
                 )
             )
         return cls(source=source, forms=tuple(forms))
@@ -144,6 +154,24 @@ class EncodingCatalog:
         reference = Reference.parse(raw["type"])
         types.payload_types.resolve(reference)
         return PayloadBinding(raw["role"], reference, raw.get("access"))
+
+    @staticmethod
+    def _cpuid_flags(
+        raw: tuple[str, ...] | list[str],
+        cpuid: CpuidCatalog | None,
+        source: Path,
+        encoding_id: str,
+    ) -> tuple[CpuidField, ...]:
+        if not raw:
+            return ()
+        if cpuid is None:
+            raise ValueError(
+                f"{source}: {encoding_id}: CPUID catalog is required for "
+                "additional_cpuid_flags"
+            )
+        return tuple(
+            cpuid.resolve_flag(reference, source) for reference in raw
+        )
 
     @staticmethod
     def _find_isa_root(source: Path) -> Path:

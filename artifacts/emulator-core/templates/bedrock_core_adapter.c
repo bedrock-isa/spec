@@ -285,6 +285,7 @@ bedrock_core_status bedrock_core_get_state(
   state->halted = core->state.zhalted ? 1 : 0;
   state->run_state = core->state.zrun_state;
   state->fp_enabled = core->state.zfp_enabled ? 1 : 0;
+  state->fp16_convert_enabled = core->state.zfp16_convert_enabled ? 1 : 0;
   state->fptrans_enabled = core->state.zfptrans_enabled ? 1 : 0;
   state->vector_enabled = core->state.zvector_enabled ? 1 : 0;
   state->cache_maintenance_granule = core->state.zcache_maintenance_granule;
@@ -368,6 +369,7 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zhalted = state->halted != 0;
   core->state.zrun_state = (enum zRun_state)state->run_state;
   core->state.zfp_enabled = state->fp_enabled != 0;
+  core->state.zfp16_convert_enabled = state->fp16_convert_enabled != 0;
   core->state.zfptrans_enabled = state->fptrans_enabled != 0;
   core->state.zvector_enabled = state->vector_enabled != 0;
   core->state.zcache_maintenance_granule = state->cache_maintenance_granule;

@@ -99,6 +99,7 @@ pub struct SailCoreState {
     pub halted: u8,
     pub run_state: i32,
     pub fp_enabled: u8,
+    pub fp16_convert_enabled: u8,
     pub fptrans_enabled: u8,
     pub vector_enabled: u8,
     pub cache_maintenance_granule: i64,

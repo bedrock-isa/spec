@@ -13,7 +13,7 @@ from .cpuid import CpuidCatalog, CpuidField
 from .dependency import EntityDependency
 from .disclosure import ImplementationDisclosureCatalog
 from .ea_mode import EAMode, EAModeCatalog
-from .encoding import EncodingCatalog
+from .encoding import EncodingCatalog, EncodingForm
 from .entity import Entity, EntityCatalog
 from .event import EventCatalog
 from .extension import ExtensionMetadata, ExtensionSetCatalog
@@ -109,6 +109,13 @@ class InstructionBundle:
     diagrams: VectorDiagramCatalog
     artifacts: ArtifactSet
     required_cpuid_flags: tuple[CpuidField, ...]
+
+    def required_cpuid_flags_for(
+        self, form: EncodingForm
+    ) -> tuple[CpuidField, ...]:
+        """Return inherited and form-local CPUID requirements."""
+
+        return (*self.required_cpuid_flags, *form.additional_cpuid_flags)
 
 
 @dataclass(frozen=True, slots=True)
@@ -435,8 +442,20 @@ class SourceCatalog:
                 cpuid_flags.append(field)
                 seen_cpuid_flags.add(field.reference)
             encoding_catalog = EncodingCatalog.load(
-                directory / "encodings.yaml", types, isa_root
+                directory / "encodings.yaml", types, isa_root, cpuid
             )
+            common_cpuid_references = {field.reference for field in cpuid_flags}
+            for form in encoding_catalog.forms:
+                repeated = tuple(
+                    field.id
+                    for field in form.additional_cpuid_flags
+                    if field.reference in common_cpuid_references
+                )
+                if repeated:
+                    raise ValueError(
+                        f"{encoding_catalog.source}: {form.id}: additional CPUID "
+                        f"flags repeat inherited requirements {repeated}"
+                    )
             diagram_catalog = VectorDiagramCatalog.load(
                 owner=owner,
                 mnemonic=mnemonic,
@@ -516,7 +535,18 @@ class IsaProject:
 
         for bundle in self.catalog.instructions.values():
             source = cast(Reference[object], bundle.reference)
-            for field in bundle.required_cpuid_flags:
+            required_cpuid_fields = {
+                field.reference: field
+                for field in (
+                    *bundle.required_cpuid_flags,
+                    *(
+                        local
+                        for form in bundle.encodings.forms
+                        for local in form.additional_cpuid_flags
+                    ),
+                )
+            }
+            for field in required_cpuid_fields.values():
                 add(
                     source,
                     cast(Reference[object], field.reference),

@@ -58,6 +58,7 @@ typedef struct bedrock_core_state {
   uint8_t halted;
   int32_t run_state;
   uint8_t fp_enabled;
+  uint8_t fp16_convert_enabled;
   uint8_t fptrans_enabled;
   uint8_t vector_enabled;
   int64_t cache_maintenance_granule;

@@ -11,7 +11,7 @@ from engine.type_system import TypeSystem
 class InstructionEncodingsSchemaTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        isa_root = Path(__file__).parents[1]
+        isa_root = Path(__file__).parents[1] / "isa"
         cls.isa_root = isa_root
         cls.schema = yaml.safe_load(
             (isa_root / "schemas/instruction-encodings.yaml").read_text(
