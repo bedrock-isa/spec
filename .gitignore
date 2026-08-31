@@ -8,12 +8,6 @@
 *.dylib
 *.dSYM/
 
-# Generated helper binaries inside vendored trees
-/qbe/obj/
-/qbe/minic/minic
-/qbe/minic/minic.dSYM/
-/qbe/.git-upstream/
-
 # Local reference documents and generated PDFs
 /*.pdf
 
@@ -23,6 +17,9 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Sail cache
+sail_smt_cache
 
 # LaTeX scratch files, in case a local build writes outside build/
 *.aux

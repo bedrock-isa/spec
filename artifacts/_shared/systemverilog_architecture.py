@@ -173,45 +173,22 @@ endmodule"""
         return self._outputs({"evaluator": body})
 
 
-def _resolve_cpuid_class(catalog, item):
-    current = item
-    seen = set()
-    while current.value is None:
-        if current.reference in seen or current.extends is None:
-            raise ValueError(f"unresolved CPUID class {item.id}")
-        seen.add(current.reference)
-        current = catalog.references.classes.resolve(current.extends)
-    return current
-
-
-def _resolve_cpuid_leaf(catalog, item):
-    current = item
-    seen = set()
-    while current.value is None:
-        if current.reference in seen or current.extends is None:
-            raise ValueError(f"unresolved CPUID leaf {item.id}")
-        seen.add(current.reference)
-        current = catalog.references.leaves.resolve(current.extends)
-    return current
-
-
 class CpuidGenerator(_Generator):
     def project(self, context: ArtifactGenerationContext) -> CpuidProjection:
         project = context.require_provider("isa")
         queries = []
         for owner, namespace in project.cpuid.namespaces.items():
             for cpuid_class in namespace.classes.values():
-                root_class = _resolve_cpuid_class(project.cpuid, cpuid_class)
                 for leaf in cpuid_class.leaves.values():
-                    root_leaf = _resolve_cpuid_leaf(project.cpuid, leaf)
+                    resolved = project.cpuid.resolve_leaf(leaf)
                     for query in leaf.queries:
                         queries.append(
                             CpuidQueryProjection(
                                 owner=owner,
                                 class_id=cpuid_class.id,
-                                class_value=root_class.value,
+                                class_value=resolved.class_value,
                                 leaf_id=leaf.id,
-                                leaf_value=root_leaf.value,
+                                leaf_value=resolved.leaf_value,
                                 query_id=query.id,
                                 first_index=query.indexes.first,
                                 last_index=query.indexes.last,

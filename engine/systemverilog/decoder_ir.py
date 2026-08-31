@@ -976,16 +976,9 @@ def _load_decode_ir(root: Path) -> DecodeIR:
         }.values()
     )
 
-    def allocation_value(reference: Any, index: Any) -> int:
-        item = index.resolve(reference)
-        while item.value is None:
-            item = index.resolve(item.extends)
-        return item.value
-
     flags = []
     for field in cpuid_fields:
         reference = field.reference
-        class_reference = Reference(reference.owner, ("cpuid",), reference.path[1])
         leaf_reference = Reference(
             reference.owner, ("cpuid", reference.path[1]), reference.path[2]
         )
@@ -993,12 +986,14 @@ def _load_decode_ir(root: Path) -> DecodeIR:
             reference.owner, reference.path[:-1], reference.path[-1]
         )
         query = project.cpuid.references.queries.resolve(query_reference)
+        leaf = project.cpuid.references.leaves.resolve(leaf_reference)
+        resolved_leaf = project.cpuid.resolve_leaf(leaf)
         flags.append(
             CpuidFlagIR(
                 field.id,
                 field.id,
-                allocation_value(class_reference, project.cpuid.references.classes),
-                allocation_value(leaf_reference, project.cpuid.references.leaves),
+                resolved_leaf.class_value,
+                resolved_leaf.leaf_value,
                 query.indexes.first,
                 field.lsb,
             )

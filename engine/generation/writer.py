@@ -106,6 +106,7 @@ class ArtifactWriter:
 
     @staticmethod
     def _validate_paths(paths: tuple[Path, ...]) -> None:
+        path_set: set[Path] = set()
         for path in paths:
             if not path.parts or path == Path("."):
                 raise ValueError("generated artifact path must name a file")
@@ -115,12 +116,20 @@ class ArtifactWriter:
                 raise ValueError(
                     f"generated artifact path uses reserved ownership directory: {path}"
                 )
-        for index, path in enumerate(paths):
-            for other in paths[index + 1 :]:
-                if path.is_relative_to(other) or other.is_relative_to(path):
+            if path in path_set:
+                raise ValueError(
+                    "generated artifact paths overlap as file and directory: "
+                    f"{path}, {path}"
+                )
+            path_set.add(path)
+        for path in paths:
+            for parent in path.parents:
+                if parent == Path("."):
+                    break
+                if parent in path_set:
                     raise ValueError(
                         "generated artifact paths overlap as file and directory: "
-                        f"{path}, {other}"
+                        f"{parent}, {path}"
                     )
 
     @staticmethod

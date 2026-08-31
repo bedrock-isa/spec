@@ -202,6 +202,7 @@ def _instruction_pages(
                 group.title,
                 PurePosixPath(document.id)
                 / "instructions"
+                / "groups"
                 / group_id
                 / "index.md",
                 group=document.id,
