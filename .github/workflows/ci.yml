@@ -46,7 +46,9 @@ jobs:
             texlive-extra-utils
 
       - name: Compile and validate the complete document set
-        run: make docs
+        run: |
+          make docs
+          make docs-site
 
       - name: Upload Programmer's Reference Manual
         uses: actions/upload-artifact@v7
@@ -106,10 +108,28 @@ jobs:
           rustup default stable
           rustup component add rustfmt --toolchain stable
 
-      - name: Install Verilator
+      - name: Install Sail
+        env:
+          SAIL_VERSION: "0.20.1"
+          SAIL_SHA256: aae38b01b582c0df8810d4fd5b2abb19c20bb91b5592deb42a5af443a1085855
+        run: |
+          set -euo pipefail
+
+          archive="${RUNNER_TEMP}/sail-${SAIL_VERSION}.tar.gz"
+          install_dir="${RUNNER_TEMP}/sail"
+          curl --fail --location --silent --show-error \
+            "https://github.com/rems-project/sail/releases/download/${SAIL_VERSION}/sail-Linux-x86_64.tar.gz" \
+            --output "${archive}"
+          echo "${SAIL_SHA256}  ${archive}" | sha256sum --check -
+          tar -xzf "${archive}" -C "${RUNNER_TEMP}"
+          chmod +x "${install_dir}/bin/sail" "${install_dir}/bin/z3"
+          "${install_dir}/bin/sail" --version
+          echo "${install_dir}/bin" >> "${GITHUB_PATH}"
+
+      - name: Install emulator and hardware test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y verilator
+          sudo apt-get install -y libgmp-dev verilator
 
       - name: Run canonical PR test gate
         env:
