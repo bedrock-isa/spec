@@ -1,4 +1,29 @@
 reset: 0
+generated_state_registers:
+- PTCR
+- ASCR
+- ECR
+- UPC
+- USP
+- UCS
+- UDS
+- USS
+- UCTL
+- UINFO
+- EPC
+- ECS
+- EDS
+- SSS
+- SSP
+- ISS
+- ISP
+- FSS
+- FSP
+- DSS
+- DSP
+- BOOTPC
+- BOOTCFG
+- PMC
 control_registers:
 - PTCR
 - ASCR

@@ -30,8 +30,16 @@ class SailProject:
 class SailProjectRenderer:
     def project(self, program: SailProgram, output_root: str | Path) -> SailProject:
         root = Path(output_root).resolve()
-        modules = [SailProjectModule("registry", (), ("generated/registry.sail",))]
+        registry_sources = (
+            *(
+                Path(os.path.relpath(source, root)).as_posix()
+                for source in _registry_type_sources(program)
+            ),
+            "generated/registry.sail",
+        )
+        modules = [SailProjectModule("registry", (), registry_sources)]
         selected = {unit.reference: unit for unit in program.sail_units}
+        control_register_semantics = _control_register_semantics(program)
         boundary = next(
             (
                 unit
@@ -52,9 +60,15 @@ class SailProjectRenderer:
                 for required in unit.requires
                 if required in selected
             )
+            owned_sources: list[Path] = []
+            for source in unit.sources:
+                owned_sources.append(source)
+                owned_sources.extend(
+                    control_register_semantics.get(source.resolve(), ())
+                )
             sources = tuple(
                 Path(os.path.relpath(source, root)).as_posix()
-                for source in unit.sources
+                for source in owned_sources
             )
             if unit.owner == "base" and unit.id == "decode":
                 sources = ("generated/catalog.sail", *sources)
@@ -74,7 +88,8 @@ class SailProjectRenderer:
                 Path(os.path.relpath(provider.provider, root)).as_posix(),
             )
         operation_requirements = [
-            "registry", *(_module_name(unit) for unit in ordinary_units)
+            "registry",
+            *(_module_name(unit) for unit in ordinary_units),
         ]
         modules.append(
             SailProjectModule(
@@ -116,8 +131,39 @@ def _render_sources(sources: tuple[str, ...]) -> list[str]:
         return [f"  files {sources[0]}"]
     return [
         "  files",
-        *(f"    {source}{',' if index + 1 < len(sources) else ''}" for index, source in enumerate(sources)),
+        *(
+            f"    {source}{',' if index + 1 < len(sources) else ''}"
+            for index, source in enumerate(sources)
+        ),
     ]
+
+
+def _registry_type_sources(program: SailProgram) -> tuple[Path, ...]:
+    project = getattr(program, "project", None)
+    model = getattr(project, "model", None)
+    base = getattr(model, "base", None)
+    if base is None:
+        return ()
+    return (base.root / "control_registers/semantics/types.sail",)
+
+
+def _control_register_semantics(
+    program: SailProgram,
+) -> dict[Path, tuple[Path, ...]]:
+    project = getattr(program, "project", None)
+    configuration = getattr(program, "configuration", None)
+    catalog = getattr(project, "control_registers", None)
+    if catalog is None or configuration is None:
+        return {}
+    return {
+        (
+            namespace.root / "control_registers/semantics/control_state.sail"
+        ).resolve(): tuple(
+            register.semantics for register in namespace.registers.values()
+        )
+        for owner, namespace in catalog.namespaces.items()
+        if owner in configuration.owners and namespace.registers
+    }
 
 
 def _module_name(unit: SailUnit) -> str:

@@ -29,19 +29,40 @@ ROUTE_CONSTRUCTORS = {
 }
 
 BASE_FAULT_CONSTRUCTORS = (
-    "NoFault", "IllegalInstruction", "PrivilegeFault", "ExtensionUnavailable",
-    "InvalidControlState", "InvalidControlSelectorFault",
-    "ReservedControlBitsFault", "InvalidControlImageFault",
-    "InvalidControlTransitionFault", "DivideByZero", "DivideOverflow",
-    "BoundsFault", "AlignmentFault", "TranslationFault", "AccessFault",
+    "NoFault",
+    "IllegalInstruction",
+    "PrivilegeFault",
+    "ExtensionUnavailable",
+    "InvalidControlState",
+    "InvalidControlSelectorFault",
+    "ReservedControlBitsFault",
+    "InvalidControlImageFault",
+    "InvalidControlTransitionFault",
+    "DivideByZero",
+    "DivideOverflow",
+    "BoundsFault",
+    "AlignmentFault",
+    "TranslationFault",
+    "AccessFault",
     "EventFault",
 )
 
 BASE_EFFECT_CONSTRUCTORS = (
-    "NoEffect", "ReadMemory", "WriteMemory", "AtomicMemory",
-    "TranslateAddress", "CacheOperation", "TlbOperation",
-    "ControlRegisterAccess", "EventDelivery", "TraceMarker", "HaltProcessor",
-    "ResetProcessor", "RepeatBody", "FenceOperation", "IntegerCompute",
+    "NoEffect",
+    "ReadMemory",
+    "WriteMemory",
+    "AtomicMemory",
+    "TranslateAddress",
+    "CacheOperation",
+    "TlbOperation",
+    "ControlRegisterAccess",
+    "EventDelivery",
+    "TraceMarker",
+    "HaltProcessor",
+    "ResetProcessor",
+    "RepeatBody",
+    "FenceOperation",
+    "IntegerCompute",
 )
 
 
@@ -144,9 +165,7 @@ class SailRegistryRenderer:
                 if declared_instruction_set is not None
                 else contribution.instruction_sets
             )
-            declared_faults = program.project.model.extensions[
-                extension_id
-            ].fault_kinds
+            declared_faults = program.project.model.extensions[extension_id].fault_kinds
             faults.extend(declared_faults or contribution.fault_kinds)
             effects.extend(contribution.effect_kinds)
         event_entries = program.project.events.resolved_events(
@@ -173,6 +192,13 @@ class SailRegistryRenderer:
                 key=lambda item: (owner_order[item.owner], item.selector),
             )
         )
+        generated_state_registers = frozenset(
+            (owner, register_id)
+            for owner in program.configuration.owners
+            for register_id in program.project.control_registers.namespace(
+                owner
+            ).inventory.generated_state_registers
+        )
         return SailRegistryProjection(
             cpuid_flags,
             tuple(instruction_sets),
@@ -195,10 +221,9 @@ class SailRegistryRenderer:
                     _control_register_constructor(item.owner, item.id),
                     item.selector,
                     (
-                        None
-                        if (item.owner, item.id)
-                        in _OPERATION_OWNED_CONTROL_REGISTERS
-                        else _control_register_state_field(item.owner, item.id)
+                        _control_register_state_field(item.owner, item.id)
+                        if (item.owner, item.id) in generated_state_registers
+                        else None
                     ),
                 )
                 for item in control_registers
@@ -219,60 +244,98 @@ class SailRegistryRenderer:
         projection = self.project(program)
         routes = tuple(dict.fromkeys(item.route for item in projection.operations))
         lines = [
-            "// Generated from instruction.yaml owners. Do not edit.", "",
-            "default Order dec", "", "$include <prelude.sail>",
-            "$include <generic_equality.sail>", "",
-            *catalog_id_declarations(program), "",
-            "enum Cpuid_flag =", *_constructors(f"CpuidFlag_{flag}" for flag in projection.cpuid_flags), "",
+            "// Generated from selected ISA catalogs. Do not edit.",
+            "",
+            *catalog_id_declarations(program),
+            "",
+            "enum Cpuid_flag =",
+            *_constructors(f"CpuidFlag_{flag}" for flag in projection.cpuid_flags),
+            "",
             "enum Semantic_route =",
-            *_constructors(ROUTE_CONSTRUCTORS[route] for route in routes), "",
-            "enum Instruction_set =", *_constructors(projection.instruction_sets), "",
-            "enum Fault_kind =", *_constructors(projection.fault_kinds), "",
-            "enum Effect_kind =", *_constructors(projection.effect_kinds), "",
+            *_constructors(ROUTE_CONSTRUCTORS[route] for route in routes),
+            "",
+            "enum Instruction_set =",
+            *_constructors(projection.instruction_sets),
+            "",
+            "enum Fault_kind =",
+            *_constructors(projection.fault_kinds),
+            "",
+            "enum Effect_kind =",
+            *_constructors(projection.effect_kinds),
+            "",
             "enum Event_frame_type =",
-            *_constructors(("EventFrameBasic", "EventFrameError", "EventFramePage", "EventFrameAuxiliary")), "",
-            "enum Event_family =",
-            *_constructors(("EventFamilyNone", *(f"EventFamily_{family}" for family in projection.event_families))), "",
-            "enum Architectural_event =",
-            *_constructors(f"Event_{item.event_id}" for item in projection.events), "",
-            "enum Control_register =",
             *_constructors(
-                item.constructor for item in projection.control_registers
-            ), "",
+                (
+                    "EventFrameBasic",
+                    "EventFrameError",
+                    "EventFramePage",
+                    "EventFrameAuxiliary",
+                )
+            ),
+            "",
+            "enum Event_family =",
+            *_constructors(
+                (
+                    "EventFamilyNone",
+                    *(f"EventFamily_{family}" for family in projection.event_families),
+                )
+            ),
+            "",
+            "enum Architectural_event =",
+            *_constructors(f"Event_{item.event_id}" for item in projection.events),
+            "",
+            "enum Control_register =",
+            *_constructors(item.constructor for item in projection.control_registers),
+            "",
             "struct Control_state = {",
             *(
                 f"  {item.state_field} : bits(64),"
                 for item in projection.control_registers
                 if item.state_field is not None
             ),
-            "}", "",
+            "  interrupt_file : Interrupt_file,",
+            "}",
+            "",
             "enum Semantic_operation =",
-            *_constructors(item.operation for item in projection.operations), "",
+            *_constructors(item.operation for item in projection.operations),
+            "",
             "function semantic_route(operation : Semantic_operation) -> Semantic_route = match operation {",
         ]
         lines.extend(
             f"  {item.operation} => {ROUTE_CONSTRUCTORS[item.route]},"
             for item in projection.operations
         )
-        lines.extend(["}", "", "function semantic_mnemonic(operation : Semantic_operation) -> string = match operation {"])
+        lines.extend(
+            [
+                "}",
+                "",
+                "function semantic_mnemonic(operation : Semantic_operation) -> string = match operation {",
+            ]
+        )
         lines.extend(
             f'  {item.operation} => "{item.mnemonic}",'
             for item in projection.operations
         )
-        lines.extend([
-            "}", "", "function all_semantic_operations() -> list(Semantic_operation) = [|",
-            "  " + ", ".join(item.operation for item in projection.operations),
-            "|]", "",
-            "function architectural_event_class(event : Architectural_event) -> bits(8) = match event {",
-        ])
+        lines.extend(
+            [
+                "}",
+                "",
+                "function all_semantic_operations() -> list(Semantic_operation) = [|",
+                "  " + ", ".join(item.operation for item in projection.operations),
+                "|]",
+                "",
+                "function architectural_event_class(event : Architectural_event) -> bits(8) = match event {",
+            ]
+        )
         for item in projection.events:
-            lines.append(
-                f"  Event_{item.event_id} => 0x{item.class_value:02x},"
-            )
-        lines.extend([
-            "}", "",
-            "function architectural_event_selector(event : Architectural_event) -> option(bits(24)) = match event {",
-        ])
+            lines.append(f"  Event_{item.event_id} => 0x{item.class_value:02x},")
+        lines.extend(
+            [
+                "}",
+                "",
+                "function architectural_event_selector(event : Architectural_event) -> option(bits(24)) = match event {",
+            ]
+        )
         lines.extend(
             f"  Event_{item.event_id} => "
             + (
@@ -283,10 +346,13 @@ class SailRegistryRenderer:
             + ","
             for item in projection.events
         )
-        lines.extend([
-            "}", "",
-            "function architectural_event_frame(event : Architectural_event) -> Event_frame_type = match event {",
-        ])
+        lines.extend(
+            [
+                "}",
+                "",
+                "function architectural_event_frame(event : Architectural_event) -> Event_frame_type = match event {",
+            ]
+        )
         frame_constructors = {
             "basic": "EventFrameBasic",
             "error": "EventFrameError",
@@ -297,24 +363,34 @@ class SailRegistryRenderer:
             f"  Event_{item.event_id} => {frame_constructors[item.frame]},"
             for item in projection.events
         )
-        lines.extend([
-            "}", "",
-            "function architectural_event_family(event : Architectural_event) -> Event_family = match event {",
-        ])
+        lines.extend(
+            [
+                "}",
+                "",
+                "function architectural_event_family(event : Architectural_event) -> Event_family = match event {",
+            ]
+        )
         lines.extend(
             f"  Event_{item.event_id} => "
             f"{f'EventFamily_{item.family}' if item.family is not None else 'EventFamilyNone'},"
             for item in projection.events
         )
-        lines.extend([
-            "}", "",
-            "function all_architectural_events() -> list(Architectural_event) = [|",
-            "  " + ", ".join(f"Event_{item.event_id}" for item in projection.events),
-            "|]", "",
-        ])
-        lines.extend([
-            "function control_register_from_selector(selector : int) -> option(Control_register) =",
-        ])
+        lines.extend(
+            [
+                "}",
+                "",
+                "function all_architectural_events() -> list(Architectural_event) = [|",
+                "  "
+                + ", ".join(f"Event_{item.event_id}" for item in projection.events),
+                "|]",
+                "",
+            ]
+        )
+        lines.extend(
+            [
+                "function control_register_from_selector(selector : int) -> option(Control_register) =",
+            ]
+        )
         for index, item in enumerate(projection.control_registers):
             prefix = "  if" if index == 0 else "  else if"
             lines.append(
@@ -327,30 +403,40 @@ class SailRegistryRenderer:
             for item in projection.control_registers
             if item.state_field is not None
         )
-        lines.extend(("}", "", "function control_state_value(state : Control_state, control : Control_register)",
-                      "  -> bits(64) = match control {"))
         lines.extend(
-            f"  {item.constructor} => "
-            + (
-                f"state.{item.state_field},"
-                if item.state_field is not None
-                else "0x0000000000000000,"
+            (
+                "  interrupt_file = initial_interrupt_file(),",
+                "}",
+                "",
+                "val control_state_value : (Control_state, Control_register) -> bits(64)",
+                "",
+                "scattered function control_state_value",
+                "",
             )
-            for item in projection.control_registers
         )
-        lines.extend(("}", "", "function control_state_with_value(",
-                      "  state : Control_state, control : Control_register, value : bits(64)",
-                      ") -> Control_state = match control {"))
         lines.extend(
-            f"  {item.constructor} => "
-            + (
-                f"{{ state with {item.state_field} = value }},"
-                if item.state_field is not None
-                else "state,"
-            )
+            f"function clause control_state_value(state, {item.constructor}) = "
+            f"state.{item.state_field}"
             for item in projection.control_registers
+            if item.state_field is not None
         )
-        lines.extend(("}", ""))
+        lines.extend(
+            (
+                "",
+                "val control_state_with_value :",
+                "  (Control_state, Control_register, bits(64)) -> Control_state",
+                "",
+                "scattered function control_state_with_value",
+                "",
+            )
+        )
+        lines.extend(
+            f"function clause control_state_with_value(state, {item.constructor}, value) = "
+            f"{{ state with {item.state_field} = value }}"
+            for item in projection.control_registers
+            if item.state_field is not None
+        )
+        lines.extend(("",))
         return "\n".join(lines)
 
 
@@ -371,17 +457,6 @@ def _control_register_constructor(owner: str, register_id: str) -> str:
 
 def _control_register_state_field(owner: str, register_id: str) -> str:
     return f"{owner.lower()}_{register_id.lower()}"
-
-
-_OPERATION_OWNED_CONTROL_REGISTERS = frozenset(
-    {
-        ("base", "ICAP"),
-        ("base", "ITHRESH"),
-        ("base", "ITOP"),
-        ("base", "ISEL"),
-        ("base", "IDATA"),
-    }
-)
 
 
 def instruction_set_constructor(program: SailProgram, owner: str) -> str:

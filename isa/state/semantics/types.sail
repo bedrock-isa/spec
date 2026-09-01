@@ -16,14 +16,6 @@ struct Repeat_state = {
   fixed_body : list(bits(8)),
 }
 
-struct Interrupt_file = {
-  max_id : bits(24),
-  pending : list(bits(24)),
-  enabled : list(bits(24)),
-  threshold : bits(24),
-  selector : bits(20),
-}
-
 struct Cpu_state = {
   registers : Registers,
   floating_registers : Floating_registers,
@@ -31,7 +23,6 @@ struct Cpu_state = {
   predicate_registers : Predicate_registers,
   segments : Segment_registers,
   controls : Control_state,
-  interrupt_file : Interrupt_file,
   sp : bits(64),
   pc : bits(64),
   flags : bits(4),

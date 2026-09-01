@@ -348,9 +348,9 @@ bedrock_core_status bedrock_core_get_state(
   state->controls.cfi_cfictl = core->state.zcontrols.zcfi_cfictl;
   state->controls.cfi_cfiss = core->state.zcontrols.zcfi_cfiss;
   state->controls.cfi_cfisp = core->state.zcontrols.zcfi_cfisp;
-  state->interrupt_max_id = core->state.zinterrupt_file.zmax_id;
-  state->interrupt_threshold = core->state.zinterrupt_file.zthreshold;
-  state->interrupt_selector = core->state.zinterrupt_file.zselector;
+  state->interrupt_max_id = core->state.zcontrols.zinterrupt_file.zmax_id;
+  state->interrupt_threshold = core->state.zcontrols.zinterrupt_file.zthreshold;
+  state->interrupt_selector = core->state.zcontrols.zinterrupt_file.zselector;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     if (!bedrock_core_byte_list_to_array(
             core->state.zvector_registers.data[index],
@@ -430,11 +430,11 @@ bedrock_core_status bedrock_core_set_state(
   if (!bedrock_core_state_shape_valid(&core->state)
       || state->run_state < zRunning || state->run_state > zShutdown
       || state->vector_length_bytes != BEDROCK_CORE_VECTOR_LENGTH_BYTES
-      || state->interrupt_max_id != core->state.zinterrupt_file.zmax_id
+      || state->interrupt_max_id != core->state.zcontrols.zinterrupt_file.zmax_id
       || state->interrupt_threshold > UINT64_C(0xFFFFFF)
       || state->interrupt_selector > UINT64_C(0xFFFFF)
       || (state->interrupt_selector & UINT64_C(0x3FFFF))
-           > core->state.zinterrupt_file.zmax_id / UINT64_C(64)
+           > core->state.zcontrols.zinterrupt_file.zmax_id / UINT64_C(64)
       || state->repeat_fixed_body_length > BEDROCK_CORE_MAX_INSTRUCTION_BYTES)
     return BEDROCK_CORE_BAD_ARGUMENT;
   memcpy(core->state.zregisters.data, state->registers,
@@ -469,8 +469,8 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zcontrols.zcfi_cfictl = state->controls.cfi_cfictl;
   core->state.zcontrols.zcfi_cfiss = state->controls.cfi_cfiss;
   core->state.zcontrols.zcfi_cfisp = state->controls.cfi_cfisp;
-  core->state.zinterrupt_file.zthreshold = state->interrupt_threshold;
-  core->state.zinterrupt_file.zselector = state->interrupt_selector;
+  core->state.zcontrols.zinterrupt_file.zthreshold = state->interrupt_threshold;
+  core->state.zcontrols.zinterrupt_file.zselector = state->interrupt_selector;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     bedrock_core_replace_byte_list(&core->state.zvector_registers.data[index],
                                    state->vector_registers[index],

@@ -25,8 +25,13 @@ function interrupt_file_post(file : Interrupt_file, identity : bits(24))
   if not_bool(interrupt_identity_implemented(file, identity)) then file
   else { file with pending = interrupt_identities_with(file.pending, identity) }
 
-function post_interrupt(state : Cpu_state, identity : bits(24)) -> Cpu_state =
-  { state with interrupt_file = interrupt_file_post(state.interrupt_file, identity) }
+function post_interrupt(state : Cpu_state, identity : bits(24)) -> Cpu_state = {
+  var updated = state;
+  updated.controls.interrupt_file = interrupt_file_post(
+    state.controls.interrupt_file, identity
+  );
+  updated
+}
 
 function interrupt_identity_eligible(file : Interrupt_file, identity : bits(24))
   -> bool =

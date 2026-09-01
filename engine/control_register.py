@@ -23,6 +23,7 @@ class ControlRegisterInventory:
     root: Path
     declared: tuple[str, ...]
     actual: tuple[str, ...]
+    generated_state_registers: tuple[str, ...]
     reset: ResetSpec | None
 
 
@@ -39,6 +40,7 @@ class ControlRegister:
     summary: str
     reset: ResetSpec | None
     layout: RegisterLayout | None
+    semantics: Path
 
     @property
     def width(self) -> int:
@@ -95,7 +97,10 @@ class ControlRegisterCatalog:
         selectors: dict[int, ControlRegister] = {}
         for owner, namespace_root in (
             ("base", root),
-            *((extension_id, extensions.root / extension_id) for extension_id in extensions.declared),
+            *(
+                (extension_id, extensions.root / extension_id)
+                for extension_id in extensions.declared
+            ),
         ):
             namespace = _load_namespace(owner, namespace_root, root, references)
             references.namespaces.register(namespace.reference, namespace)
@@ -146,7 +151,10 @@ def _load_namespace(
         if register_id in registers or not register_root.is_dir():
             continue
         register = _load_register(
-            owner, register_root, isa_root, inventory.reset
+            owner,
+            register_root,
+            isa_root,
+            inventory.reset,
         )
         references.registers.register(register.reference, register)
         registers[register_id] = register
@@ -162,11 +170,42 @@ def _load_namespace(
 def _load_inventory(owner: str, root: Path) -> ControlRegisterInventory:
     source = root / "control_registers.yaml"
     if not source.is_file():
-        return ControlRegisterInventory(owner, source, root, (), (), None)
+        return ControlRegisterInventory(owner, source, root, (), (), (), None)
     raw = _load_mapping(source)
     values = raw.get("control_registers")
-    if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
+    if not isinstance(values, list) or any(
+        not isinstance(value, str) for value in values
+    ):
         raise ValueError(f"{source}: expected a control_registers list of strings")
+    generated_state_registers = raw.get("generated_state_registers", values)
+    if not isinstance(generated_state_registers, list) or any(
+        not isinstance(value, str) for value in generated_state_registers
+    ):
+        raise ValueError(
+            f"{source}: expected a generated_state_registers list of strings"
+        )
+    unknown_state_registers = tuple(
+        register_id
+        for register_id in generated_state_registers
+        if register_id not in values
+    )
+    if unknown_state_registers:
+        raise ValueError(
+            f"{source}: generated-state control registers are not declared members: "
+            f"{unknown_state_registers}"
+        )
+    duplicate_state_registers = tuple(
+        dict.fromkeys(
+            register_id
+            for register_id in generated_state_registers
+            if generated_state_registers.count(register_id) > 1
+        )
+    )
+    if duplicate_state_registers:
+        raise ValueError(
+            f"{source}: generated-state control registers are listed more than once: "
+            f"{duplicate_state_registers}"
+        )
     actual = (
         tuple(
             sorted(
@@ -184,6 +223,7 @@ def _load_inventory(owner: str, root: Path) -> ControlRegisterInventory:
         root,
         tuple(values),
         actual,
+        tuple(generated_state_registers),
         _decode_reset(raw.get("reset")),
     )
 
@@ -214,6 +254,7 @@ def _load_register(
         raw["summary"],
         _decode_reset(raw["reset"]) if "reset" in raw else default_reset,
         _load_layout(root / "layout.yaml", isa_root / "schemas/register-layout.yaml"),
+        root / "semantics.sail",
     )
 
 

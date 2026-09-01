@@ -32,35 +32,3 @@ function cfi_shadow_pop_state_valid(state : Cpu_state) -> bool = {
   & (shadow_sp & 0x000000000000000F) == 0x0000000000000000
   & cfi_segment_range_valid(shadow_segment, shadow_sp, 16)
 }
-
-function control_register_write_fault(
-  control : Control_register, source : bits(64), before : Cpu_state,
-  candidate : Cpu_state
-) -> option(Fault_kind) = match base_control_register_write_fault(
-  control, source, before, candidate
-) {
-  Some(fault) => Some(fault),
-  None() =>
-    if control == ControlRegister_CFI_CFICTL
-       & (source & 0xFFFFFFFFFFFFFFFC) != 0x0000000000000000 then
-      Some(ReservedControlBitsFault)
-    else if control == ControlRegister_CFI_CFICTL
-       & source[1] == bitone
-       & not_bool(cfi_shadow_push_state_valid(candidate)) then
-      Some(InvalidControlTransitionFault)
-    else if control == ControlRegister_CFI_CFISS
-       & not_bool(cfi_shadow_segment_valid(source)) then
-      Some(InvalidControlImageFault)
-    else if control == ControlRegister_CFI_CFISS
-       & cfi_shadow_enabled(candidate)
-       & not_bool(cfi_shadow_push_state_valid(candidate)) then
-      Some(InvalidControlTransitionFault)
-    else if control == ControlRegister_CFI_CFISP
-       & (source & 0x000000000000000F) != 0x0000000000000000 then
-      Some(InvalidControlImageFault)
-    else if control == ControlRegister_CFI_CFISP
-       & cfi_shadow_enabled(candidate)
-       & not_bool(cfi_shadow_push_state_valid(candidate)) then
-      Some(InvalidControlTransitionFault)
-    else None(),
-}

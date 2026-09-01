@@ -98,7 +98,7 @@ function machine_check_state_valid(state : Cpu_state) -> bool =
 function admitted_async_event(state : Cpu_state) -> option(Event_record) = {
   let ecr = control_register_value(state, ControlRegister_BASE_ECR);
   let nmi = ecr[7] == bitone;
-  let top = interrupt_top(state.interrupt_file);
+  let top = interrupt_top(state.controls.interrupt_file);
   let interrupt = top != 0x000000;
   let max_depth = unsigned(ecr[11 .. 8]);
   if state.machine_check_pending & ecr[0] == bitone & status_event_depth(state.status) < 15 then

@@ -233,8 +233,8 @@ function committed_event_entry(before : Cpu_state, event : Event_record,
   else ();
   if event.code == 0x00000018 then updated.current_dfa = true else ();
   if event.kind == EventInterrupt then
-    updated.interrupt_file = interrupt_file_clear(
-      updated.interrupt_file, event.code[23 .. 0]
+    updated.controls.interrupt_file = interrupt_file_clear(
+      updated.controls.interrupt_file, event.code[23 .. 0]
     )
   else ();
   updated.supervisor = true;

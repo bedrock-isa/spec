@@ -34,7 +34,8 @@ properties:
         cold: {enum: [platform, implementation]}
         warm: {enum: [preserve]}
 x-interpretation-rules:
-- control_registers/definitions/control_registers.yaml declares owner-local membership and default reset state.
-- Each declared member owns control_registers/definitions/<ID>/register.yaml and an optional 64-bit layout.yaml.
+- control_registers/definitions/control_registers.yaml declares owner-local membership, default reset state, and the members projected as generated scalar Control_state fields.
+- Each declared member owns control_registers/definitions/<ID>/register.yaml, semantics.sail, and an optional 64-bit layout.yaml.
+- Members outside generated_state_registers own their Control_state access clauses in semantics.sail.
 - Base and selected extension members share one global 16-bit selector space.
 - Inventory order declares membership only; public selector order and executable storage order are separate projections.

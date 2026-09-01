@@ -268,10 +268,10 @@ class BundleValidator:
                             "overlaps",
                             index,
                         )
-                    elif (
-                        overlap.type == "same_value"
-                        and operand["access"] not in {"write", "read_write"}
-                    ):
+                    elif overlap.type == "same_value" and operand["access"] not in {
+                        "write",
+                        "read_write",
+                    }:
                         yield _error(
                             "overlap.access",
                             source,
@@ -449,9 +449,7 @@ class CatalogValidator:
 class EncodingReservationValidator:
     """Validate the closed reservation inventory and its allocation relations."""
 
-    def validate(
-        self, catalog: EncodingReservationCatalog
-    ) -> Iterator[Diagnostic]:
+    def validate(self, catalog: EncodingReservationCatalog) -> Iterator[Diagnostic]:
         inventory = catalog.inventory
         declared = set(inventory.declared)
         actual = set(inventory.actual)
@@ -663,9 +661,7 @@ class CpuidValidator:
         leaf_values: Mapping[Reference[CpuidLeaf], tuple[int, int]],
         leaf_roots: Mapping[Reference[CpuidLeaf], Reference[CpuidLeaf]],
     ) -> Iterator[Diagnostic]:
-        entries: list[
-            tuple[tuple[int, int], Reference[CpuidLeaf], CpuidQuery]
-        ] = []
+        entries: list[tuple[tuple[int, int], Reference[CpuidLeaf], CpuidQuery]] = []
         for namespace in catalog.namespaces.values():
             for cpuid_class in namespace.classes.values():
                 for leaf in cpuid_class.leaves.values():
@@ -785,9 +781,7 @@ class EventValidator:
     @staticmethod
     def _resolve_classes(
         catalog: EventCatalog,
-    ) -> tuple[
-        dict[Reference[EventClass], EventClass], tuple[Diagnostic, ...]
-    ]:
+    ) -> tuple[dict[Reference[EventClass], EventClass], tuple[Diagnostic, ...]]:
         roots: dict[Reference[EventClass], EventClass] = {}
         diagnostics: list[Diagnostic] = []
         active: list[Reference[EventClass]] = []
@@ -1121,7 +1115,9 @@ class RegisterValidator:
                             "register reset cycle: "
                             + " -> ".join(
                                 (
-                                    control_registers.references.registers.resolve(item).id
+                                    control_registers.references.registers.resolve(
+                                        item
+                                    ).id
                                     if item.path[:1] == ("control_registers",)
                                     else catalog.references.registers.resolve(item).id
                                 )
@@ -1300,6 +1296,12 @@ class ControlRegisterValidator:
 
     @staticmethod
     def _validate_register(register: ControlRegister) -> Iterator[Diagnostic]:
+        if not register.semantics.is_file():
+            yield _error(
+                "control-register.semantics.missing",
+                register.semantics,
+                f"control register {register.id!r} has no required semantics artifact",
+            )
         reset = register.reset
         if reset is not None and reset.value is not None and reset.value >= 1 << 64:
             yield _error(
@@ -1413,8 +1415,7 @@ class TerminologyValidator:
                     yield _error(
                         "terminology.definition.unavailable-form",
                         term.source,
-                        f"term {target.id!r} does not define form "
-                        f"{part.form.value!r}",
+                        f"term {target.id!r} does not define form {part.form.value!r}",
                         "definition",
                     )
 
@@ -1504,9 +1505,7 @@ class CatalogValidationRule(ValidationRule):
 
 
 class EncodingReservationValidationRule(ValidationRule):
-    def __init__(
-        self, validator: EncodingReservationValidator | None = None
-    ) -> None:
+    def __init__(self, validator: EncodingReservationValidator | None = None) -> None:
         self.validator = validator or EncodingReservationValidator()
 
     def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
@@ -1585,22 +1584,17 @@ class DocumentSourceValidationRule(ValidationRule):
         except (OSError, RuntimeError, ValueError) as error:
             yield _error("document.source", artifact_root, str(error))
             return
-        context = ArtifactGenerationContext.create(
-            workspace, project.root / ".check"
-        )
+        context = ArtifactGenerationContext.create(workspace, project.root / ".check")
         for artifact_id in registry.artifact_ids:
             generator = registry.generator(artifact_id)
             if not any(
-                output.suffix == ".tex"
-                for output in generator.definition.output_roots
+                output.suffix == ".tex" for output in generator.definition.output_roots
             ):
                 continue
             try:
                 registry.generate(artifact_id, workspace, context.output_root)
             except (OSError, RuntimeError, ValueError) as error:
-                yield _error(
-                    "document.source", generator.definition.source, str(error)
-                )
+                yield _error("document.source", generator.definition.source, str(error))
 
 
 class CheckService:
