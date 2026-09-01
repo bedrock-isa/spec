@@ -1,0 +1,4 @@
+id: ICAP
+selector: 0x0300
+summary: Implemented interrupt-identity capability.
+reset: {cold: implementation, warm: preserve}

@@ -63,11 +63,11 @@ assigned to a fixed code; the event's behavior, frame, and (:term:base.terms.pay
 \bottomrule
 \end{BedrockLongTable}
 
-Unassigned base-profile exception IDs are (:term:base.terms.reserved:). External interrupt IDs do not share a namespace with exception
-IDs. Interrupt-controller routing,
-native-ID mapping, ownership, acknowledgement, trigger mode, masking, and end-of-interrupt signaling belong to the
-platform ABI. An interrupt ID unknown to software still reaches the common entry;
-the platform dispatcher applies its unhandled or spurious-interrupt policy.
+Unassigned base-profile exception IDs are (:term:base.terms.reserved:). Interrupt identities do not share a namespace
+with exception IDs. Interrupt-controller routing, native-ID mapping, ownership, trigger mode, and any external
+acknowledgement or end-of-interrupt protocol belong to the platform ABI. A valid posted identity is recorded in the
+target logical processor's architectural interrupt file; the delivered event code has class \texttt{0x01} and that
+identity in its low 24 bits.
 
 A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the
 following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. A faulting repeat

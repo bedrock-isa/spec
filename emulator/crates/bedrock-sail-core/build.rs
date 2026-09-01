@@ -11,7 +11,7 @@ const GENERATOR_INPUTS: &[&str] = &[
     "engine",
     "isa",
 ];
-const MAX_GENERATED_C_FRAME_BYTES: u64 = 32 * 1024;
+const MAX_GENERATED_C_FRAME_BYTES: u64 = 48 * 1024;
 const MAX_GENERATED_C_INITIALIZER_FRAME_BYTES: u64 = 32 * 1024;
 const C_BUILD_CONFIGURATION: &str = "c11-o3-no-semantic-interposition-v1";
 

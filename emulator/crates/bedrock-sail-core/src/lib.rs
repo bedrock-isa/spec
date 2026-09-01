@@ -12,7 +12,6 @@ pub const MAX_INSTRUCTION_BYTES: usize = 18;
 pub const REGISTER_COUNT: usize = 16;
 pub const FLOATING_REGISTER_COUNT: usize = 16;
 pub const SEGMENT_COUNT: usize = 9;
-pub const CONTROL_COUNT: usize = 32;
 pub const VECTOR_REGISTER_COUNT: usize = 32;
 pub const PREDICATE_REGISTER_COUNT: usize = 16;
 pub const VECTOR_LENGTH_BYTES: usize = 16;
@@ -81,6 +80,38 @@ pub struct SailCoreFault {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[repr(C)]
+pub struct SailControlState {
+    pub base_ptcr: u64,
+    pub base_ascr: u64,
+    pub base_ecr: u64,
+    pub base_upc: u64,
+    pub base_usp: u64,
+    pub base_ucs: u64,
+    pub base_uds: u64,
+    pub base_uss: u64,
+    pub base_uctl: u64,
+    pub base_uinfo: u64,
+    pub base_epc: u64,
+    pub base_ecs: u64,
+    pub base_eds: u64,
+    pub base_sss: u64,
+    pub base_ssp: u64,
+    pub base_iss: u64,
+    pub base_isp: u64,
+    pub base_fss: u64,
+    pub base_fsp: u64,
+    pub base_dss: u64,
+    pub base_dsp: u64,
+    pub base_bootpc: u64,
+    pub base_bootcfg: u64,
+    pub base_pmc: u64,
+    pub cfi_cfictl: u64,
+    pub cfi_cfiss: u64,
+    pub cfi_cfisp: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[repr(C)]
 pub struct SailCoreState {
     pub registers: [u64; REGISTER_COUNT],
     pub floating_registers: [u64; FLOATING_REGISTER_COUNT],
@@ -91,7 +122,10 @@ pub struct SailCoreState {
     pub flags: u64,
     pub status: u64,
     pub segments: [u64; SEGMENT_COUNT],
-    pub controls: [u64; CONTROL_COUNT],
+    pub controls: SailControlState,
+    pub interrupt_max_id: u64,
+    pub interrupt_threshold: u64,
+    pub interrupt_selector: u64,
     pub fstatus: u64,
     pub fflags: u64,
     pub current_dfa: u8,
@@ -405,6 +439,18 @@ impl SailCore {
         })
     }
 
+    pub fn try_clone(&self) -> Result<Self, SailCoreCreateError> {
+        let _runtime = runtime_lock();
+        let raw = unsafe { ffi::bedrock_core_clone(self.raw) };
+        if raw.is_null() {
+            return Err(SailCoreCreateError::Status(SailCoreStatus::OutOfMemory));
+        }
+        Ok(Self {
+            raw,
+            environment: self.environment,
+        })
+    }
+
     pub fn reset(&mut self) -> SailCoreStatus {
         let _runtime = runtime_lock();
         let status = SailCoreStatus::from_raw(unsafe { ffi::bedrock_core_reset(self.raw) });
@@ -449,11 +495,15 @@ impl SailCore {
             ffi::bedrock_core_get_status(raw, value)
         })
     }
-    pub fn control(&self, index: u32) -> Result<u64, SailCoreStatus> {
+    pub fn control(&self, selector: u32) -> Result<u64, SailCoreStatus> {
         let _runtime = runtime_lock();
         read_value(self.raw, |raw, value| unsafe {
-            ffi::bedrock_core_get_control(raw, index, value)
+            ffi::bedrock_core_get_control(raw, selector, value)
         })
+    }
+    pub fn post_interrupt(&mut self, identity: u32) -> SailCoreStatus {
+        let _runtime = runtime_lock();
+        SailCoreStatus::from_raw(unsafe { ffi::bedrock_core_post_interrupt(self.raw, identity) })
     }
     pub fn is_supervisor(&self) -> Result<bool, SailCoreStatus> {
         let _runtime = runtime_lock();
@@ -584,6 +634,7 @@ mod ffi {
     unsafe extern "C" {
         pub fn bedrock_core_state_size() -> usize;
         pub fn bedrock_core_create() -> *mut c_void;
+        pub fn bedrock_core_clone(source: *mut c_void) -> *mut c_void;
         pub fn bedrock_core_destroy(core: *mut c_void);
         pub fn bedrock_core_reset(core: *mut c_void) -> i32;
         pub fn bedrock_core_get_pc(core: *mut c_void, value: *mut u64) -> i32;
@@ -593,7 +644,8 @@ mod ffi {
         pub fn bedrock_core_get_register(core: *mut c_void, index: u32, value: *mut u64) -> i32;
         pub fn bedrock_core_set_register(core: *mut c_void, index: u32, value: u64) -> i32;
         pub fn bedrock_core_get_status(core: *mut c_void, value: *mut u64) -> i32;
-        pub fn bedrock_core_get_control(core: *mut c_void, index: u32, value: *mut u64) -> i32;
+        pub fn bedrock_core_get_control(core: *mut c_void, selector: u32, value: *mut u64) -> i32;
+        pub fn bedrock_core_post_interrupt(core: *mut c_void, identity: u32) -> i32;
         pub fn bedrock_core_is_supervisor(core: *mut c_void, value: *mut u8) -> i32;
         pub fn bedrock_core_get_state(core: *mut c_void, state: *mut super::SailCoreState) -> i32;
         pub fn bedrock_core_set_state(core: *mut c_void, state: *const super::SailCoreState)
@@ -948,7 +1000,7 @@ mod tests {
             retryable.resume(SailCoreResponse {
                 kind: RESPONSE_VECTOR_MEMORY,
                 success: false,
-                fault_kind: 10,
+                fault_kind: crate::translation::FAULT_ACCESS,
                 fault_cause: 7,
                 detail: "store failed before the point of no return".to_owned(),
                 ..SailCoreResponse::default()
@@ -975,7 +1027,7 @@ mod tests {
             irrevocable.resume(SailCoreResponse {
                 kind: RESPONSE_VECTOR_MEMORY,
                 success: false,
-                fault_kind: 10,
+                fault_kind: crate::translation::FAULT_ACCESS,
                 fault_cause: 7,
                 detail: "store failed after the point of no return".to_owned(),
                 atomic_store_happened: true,
@@ -1006,7 +1058,7 @@ mod tests {
         state.flags = 0x0d;
         state.status = 0x101;
         state.segments[2] = 0x1234_5000;
-        state.controls[4] = 0xfeed_face_cafe_beef;
+        state.controls.base_bootcfg = 0xfeed_face_cafe_beef;
         state.fstatus = 0x123;
         state.fflags = 0x1f;
         let expected = state.clone();

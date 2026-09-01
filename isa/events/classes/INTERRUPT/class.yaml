@@ -1,5 +1,4 @@
 id: INTERRUPT
-name: Platform Interrupt
+name: Maskable Interrupt
 value: 0x01
-selector: {kind: platform, bits: 24}
-
+selector: {kind: identity, bits: 24}

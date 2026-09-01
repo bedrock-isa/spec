@@ -3,6 +3,11 @@ control_registers:
 - PTCR
 - ASCR
 - ECR
+- ICAP
+- ITHRESH
+- ITOP
+- ISEL
+- IDATA
 - UPC
 - USP
 - UCS

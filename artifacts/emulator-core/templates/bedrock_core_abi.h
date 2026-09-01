@@ -12,7 +12,6 @@ extern "C" {
 #define BEDROCK_CORE_REGISTER_COUNT 16u
 #define BEDROCK_CORE_FLOATING_REGISTER_COUNT 16u
 #define BEDROCK_CORE_SEGMENT_COUNT 9u
-#define BEDROCK_CORE_CONTROL_COUNT 32u
 #define BEDROCK_CORE_VECTOR_REGISTER_COUNT 32u
 #define BEDROCK_CORE_PREDICATE_REGISTER_COUNT 16u
 #define BEDROCK_CORE_VECTOR_LENGTH_BYTES 16u
@@ -38,6 +37,36 @@ typedef struct bedrock_core_fault {
   uint8_t bus_error;
 } bedrock_core_fault;
 
+typedef struct bedrock_core_control_state {
+  uint64_t base_ptcr;
+  uint64_t base_ascr;
+  uint64_t base_ecr;
+  uint64_t base_upc;
+  uint64_t base_usp;
+  uint64_t base_ucs;
+  uint64_t base_uds;
+  uint64_t base_uss;
+  uint64_t base_uctl;
+  uint64_t base_uinfo;
+  uint64_t base_epc;
+  uint64_t base_ecs;
+  uint64_t base_eds;
+  uint64_t base_sss;
+  uint64_t base_ssp;
+  uint64_t base_iss;
+  uint64_t base_isp;
+  uint64_t base_fss;
+  uint64_t base_fsp;
+  uint64_t base_dss;
+  uint64_t base_dsp;
+  uint64_t base_bootpc;
+  uint64_t base_bootcfg;
+  uint64_t base_pmc;
+  uint64_t cfi_cfictl;
+  uint64_t cfi_cfiss;
+  uint64_t cfi_cfisp;
+} bedrock_core_control_state;
+
 typedef struct bedrock_core_state {
   uint64_t registers[BEDROCK_CORE_REGISTER_COUNT];
   uint64_t floating_registers[BEDROCK_CORE_FLOATING_REGISTER_COUNT];
@@ -50,7 +79,10 @@ typedef struct bedrock_core_state {
   uint64_t flags;
   uint64_t status;
   uint64_t segments[BEDROCK_CORE_SEGMENT_COUNT];
-  uint64_t controls[BEDROCK_CORE_CONTROL_COUNT];
+  bedrock_core_control_state controls;
+  uint64_t interrupt_max_id;
+  uint64_t interrupt_threshold;
+  uint64_t interrupt_selector;
   uint64_t fstatus;
   uint64_t fflags;
   uint8_t current_dfa;
@@ -159,6 +191,7 @@ typedef struct bedrock_core_response {
 /* The generated Sail runtime owns process-global state. Serialize all calls. */
 size_t bedrock_core_state_size(void);
 bedrock_core *bedrock_core_create(void);
+bedrock_core *bedrock_core_clone(const bedrock_core *source);
 void bedrock_core_destroy(bedrock_core *core);
 bedrock_core_status bedrock_core_reset(bedrock_core *core);
 
@@ -173,7 +206,9 @@ bedrock_core_status bedrock_core_set_register(
 bedrock_core_status bedrock_core_get_status(
     const bedrock_core *core, uint64_t *value);
 bedrock_core_status bedrock_core_get_control(
-    const bedrock_core *core, uint32_t index, uint64_t *value);
+    const bedrock_core *core, uint32_t selector, uint64_t *value);
+bedrock_core_status bedrock_core_post_interrupt(
+    bedrock_core *core, uint32_t identity);
 bedrock_core_status bedrock_core_is_supervisor(
     const bedrock_core *core, uint8_t *value);
 bedrock_core_status bedrock_core_get_state(

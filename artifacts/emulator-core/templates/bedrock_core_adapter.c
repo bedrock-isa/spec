@@ -54,7 +54,6 @@ static bool bedrock_core_state_shape_valid(const struct zCpu_state *state) {
   if (state->zregisters.len != BEDROCK_CORE_REGISTER_COUNT
       || state->zfloating_registers.len != BEDROCK_CORE_FLOATING_REGISTER_COUNT
       || state->zsegments.len != BEDROCK_CORE_SEGMENT_COUNT
-      || state->zcontrols.len != BEDROCK_CORE_CONTROL_COUNT
       || state->zvector_registers.len != BEDROCK_CORE_VECTOR_REGISTER_COUNT
       || state->zpredicate_registers.len != BEDROCK_CORE_PREDICATE_REGISTER_COUNT
       || mpz_get_si(state->zvector_length_bytes)
@@ -166,6 +165,22 @@ bedrock_core *bedrock_core_create(void) {
   return core;
 }
 
+bedrock_core *bedrock_core_clone(const bedrock_core *source) {
+  if (source == NULL) return NULL;
+  bedrock_core *core = malloc(sizeof(*core));
+  if (core == NULL) return NULL;
+  CREATE(zCpu_state)(&core->state);
+  CREATE(zExecution_result)(&core->pending);
+  COPY(zCpu_state)(&core->state, source->state);
+  COPY(zExecution_result)(&core->pending, source->pending);
+  core->has_pending = source->has_pending;
+  core->fault = source->fault;
+  core->request = source->request;
+  core->last_status = source->last_status;
+  bedrock_core_instance_count += 1;
+  return core;
+}
+
 void bedrock_core_destroy(bedrock_core *core) {
   if (core == NULL) return;
   KILL(zExecution_result)(&core->pending);
@@ -237,11 +252,55 @@ bedrock_core_status bedrock_core_get_status(
   return BEDROCK_CORE_OK;
 }
 
+static bool bedrock_core_control_from_selector(
+    uint32_t selector, enum zControl_register *control) {
+  sail_int raw;
+  struct zoptionzIEControl_registerz5zK selected;
+  CREATE(sail_int)(&raw);
+  CREATE(zoptionzIEControl_registerz5zK)(&selected);
+  mpz_set_ui(raw, selector);
+  zcontrol_register_from_selector(&selected, raw);
+  bool found = selected.kind == Kind_zSomezIEControl_registerz5zK;
+  if (found)
+    *control = selected.variants.zSomezIEControl_registerz5zK;
+  KILL(zoptionzIEControl_registerz5zK)(&selected);
+  KILL(sail_int)(&raw);
+  return found;
+}
+
 bedrock_core_status bedrock_core_get_control(
-    const bedrock_core *core, uint32_t index, uint64_t *value) {
-  if (core == NULL || value == NULL || index >= core->state.zcontrols.len)
+    const bedrock_core *core, uint32_t selector, uint64_t *value) {
+  enum zControl_register control;
+  if (core == NULL || value == NULL
+      || !bedrock_core_control_from_selector(selector, &control))
     return BEDROCK_CORE_BAD_ARGUMENT;
-  *value = core->state.zcontrols.data[index];
+  *value = zcontrol_register_value(core->state, control);
+  return BEDROCK_CORE_OK;
+}
+
+bedrock_core_status bedrock_core_post_interrupt(
+    bedrock_core *core, uint32_t identity) {
+  if (core == NULL) return BEDROCK_CORE_BAD_ARGUMENT;
+  struct zCpu_state updated;
+  CREATE(zCpu_state)(&updated);
+  zpost_interrupt(&updated, core->state, identity);
+  COPY(zCpu_state)(&core->state, updated);
+  if (core->has_pending) {
+    COPY(zCpu_state)(&core->pending.zstate, updated);
+    if (core->pending.zpending.zafter.kind == Kind_zSomezIRCpu_statezK) {
+      struct zCpu_state updated_after;
+      CREATE(zCpu_state)(&updated_after);
+      zpost_interrupt(
+          &updated_after,
+          core->pending.zpending.zafter.variants.zSomezIRCpu_statezK,
+          identity);
+      COPY(zCpu_state)(
+          &core->pending.zpending.zafter.variants.zSomezIRCpu_statezK,
+          updated_after);
+      KILL(zCpu_state)(&updated_after);
+    }
+  }
+  KILL(zCpu_state)(&updated);
   return BEDROCK_CORE_OK;
 }
 
@@ -262,7 +321,36 @@ bedrock_core_status bedrock_core_get_state(
   memcpy(state->floating_registers, core->state.zfloating_registers.data,
          sizeof(state->floating_registers));
   memcpy(state->segments, core->state.zsegments.data, sizeof(state->segments));
-  memcpy(state->controls, core->state.zcontrols.data, sizeof(state->controls));
+  state->controls.base_ptcr = core->state.zcontrols.zbase_ptcr;
+  state->controls.base_ascr = core->state.zcontrols.zbase_ascr;
+  state->controls.base_ecr = core->state.zcontrols.zbase_ecr;
+  state->controls.base_upc = core->state.zcontrols.zbase_upc;
+  state->controls.base_usp = core->state.zcontrols.zbase_usp;
+  state->controls.base_ucs = core->state.zcontrols.zbase_ucs;
+  state->controls.base_uds = core->state.zcontrols.zbase_uds;
+  state->controls.base_uss = core->state.zcontrols.zbase_uss;
+  state->controls.base_uctl = core->state.zcontrols.zbase_uctl;
+  state->controls.base_uinfo = core->state.zcontrols.zbase_uinfo;
+  state->controls.base_epc = core->state.zcontrols.zbase_epc;
+  state->controls.base_ecs = core->state.zcontrols.zbase_ecs;
+  state->controls.base_eds = core->state.zcontrols.zbase_eds;
+  state->controls.base_sss = core->state.zcontrols.zbase_sss;
+  state->controls.base_ssp = core->state.zcontrols.zbase_ssp;
+  state->controls.base_iss = core->state.zcontrols.zbase_iss;
+  state->controls.base_isp = core->state.zcontrols.zbase_isp;
+  state->controls.base_fss = core->state.zcontrols.zbase_fss;
+  state->controls.base_fsp = core->state.zcontrols.zbase_fsp;
+  state->controls.base_dss = core->state.zcontrols.zbase_dss;
+  state->controls.base_dsp = core->state.zcontrols.zbase_dsp;
+  state->controls.base_bootpc = core->state.zcontrols.zbase_bootpc;
+  state->controls.base_bootcfg = core->state.zcontrols.zbase_bootcfg;
+  state->controls.base_pmc = core->state.zcontrols.zbase_pmc;
+  state->controls.cfi_cfictl = core->state.zcontrols.zcfi_cfictl;
+  state->controls.cfi_cfiss = core->state.zcontrols.zcfi_cfiss;
+  state->controls.cfi_cfisp = core->state.zcontrols.zcfi_cfisp;
+  state->interrupt_max_id = core->state.zinterrupt_file.zmax_id;
+  state->interrupt_threshold = core->state.zinterrupt_file.zthreshold;
+  state->interrupt_selector = core->state.zinterrupt_file.zselector;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     if (!bedrock_core_byte_list_to_array(
             core->state.zvector_registers.data[index],
@@ -342,6 +430,11 @@ bedrock_core_status bedrock_core_set_state(
   if (!bedrock_core_state_shape_valid(&core->state)
       || state->run_state < zRunning || state->run_state > zShutdown
       || state->vector_length_bytes != BEDROCK_CORE_VECTOR_LENGTH_BYTES
+      || state->interrupt_max_id != core->state.zinterrupt_file.zmax_id
+      || state->interrupt_threshold > UINT64_C(0xFFFFFF)
+      || state->interrupt_selector > UINT64_C(0xFFFFF)
+      || (state->interrupt_selector & UINT64_C(0x3FFFF))
+           > core->state.zinterrupt_file.zmax_id / UINT64_C(64)
       || state->repeat_fixed_body_length > BEDROCK_CORE_MAX_INSTRUCTION_BYTES)
     return BEDROCK_CORE_BAD_ARGUMENT;
   memcpy(core->state.zregisters.data, state->registers,
@@ -349,7 +442,35 @@ bedrock_core_status bedrock_core_set_state(
   memcpy(core->state.zfloating_registers.data, state->floating_registers,
          sizeof(state->floating_registers));
   memcpy(core->state.zsegments.data, state->segments, sizeof(state->segments));
-  memcpy(core->state.zcontrols.data, state->controls, sizeof(state->controls));
+  core->state.zcontrols.zbase_ptcr = state->controls.base_ptcr;
+  core->state.zcontrols.zbase_ascr = state->controls.base_ascr;
+  core->state.zcontrols.zbase_ecr = state->controls.base_ecr;
+  core->state.zcontrols.zbase_upc = state->controls.base_upc;
+  core->state.zcontrols.zbase_usp = state->controls.base_usp;
+  core->state.zcontrols.zbase_ucs = state->controls.base_ucs;
+  core->state.zcontrols.zbase_uds = state->controls.base_uds;
+  core->state.zcontrols.zbase_uss = state->controls.base_uss;
+  core->state.zcontrols.zbase_uctl = state->controls.base_uctl;
+  core->state.zcontrols.zbase_uinfo = state->controls.base_uinfo;
+  core->state.zcontrols.zbase_epc = state->controls.base_epc;
+  core->state.zcontrols.zbase_ecs = state->controls.base_ecs;
+  core->state.zcontrols.zbase_eds = state->controls.base_eds;
+  core->state.zcontrols.zbase_sss = state->controls.base_sss;
+  core->state.zcontrols.zbase_ssp = state->controls.base_ssp;
+  core->state.zcontrols.zbase_iss = state->controls.base_iss;
+  core->state.zcontrols.zbase_isp = state->controls.base_isp;
+  core->state.zcontrols.zbase_fss = state->controls.base_fss;
+  core->state.zcontrols.zbase_fsp = state->controls.base_fsp;
+  core->state.zcontrols.zbase_dss = state->controls.base_dss;
+  core->state.zcontrols.zbase_dsp = state->controls.base_dsp;
+  core->state.zcontrols.zbase_bootpc = state->controls.base_bootpc;
+  core->state.zcontrols.zbase_bootcfg = state->controls.base_bootcfg;
+  core->state.zcontrols.zbase_pmc = state->controls.base_pmc;
+  core->state.zcontrols.zcfi_cfictl = state->controls.cfi_cfictl;
+  core->state.zcontrols.zcfi_cfiss = state->controls.cfi_cfiss;
+  core->state.zcontrols.zcfi_cfisp = state->controls.cfi_cfisp;
+  core->state.zinterrupt_file.zthreshold = state->interrupt_threshold;
+  core->state.zinterrupt_file.zselector = state->interrupt_selector;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     bedrock_core_replace_byte_list(&core->state.zvector_registers.data[index],
                                    state->vector_registers[index],

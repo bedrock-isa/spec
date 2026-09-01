@@ -15,6 +15,10 @@
 \texttt{PTCR} & root\_page, LA57, and PE; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & the root frame fits the implementation PABITS value reported by CPUID ADDRESS\_WIDTHS & apply the translation-cache transition selected by the changed (:term:base.terms.field|plural:)\\
 \texttt{ASCR} & ASID and AE; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & the complete ASCR image is validated before commit & apply the translation-cache transition selected by the changed (:term:base.terms.field|plural:)\\
 \texttt{ECR} & MAX\_EDEPTH and V; NMI\_P is hardware managed and the supplied value is (:term:base.terms.ignored:) & setting V validates EPC, ECS, EDS, and all configured event stack pairs & replace the complete writable image atomically\\
+\texttt{ICAP}, \texttt{ITOP} & none & every write raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:) & no state change\\
+\texttt{ITHRESH} & THRESHOLD; bits 63 through 24 (:term:base.terms.must_be_zero:) & reject a nonzero (:term:base.terms.reserved:) bit & replace the threshold atomically\\
+\texttt{ISEL} & BANK and WORD; bits 63 through 20 (:term:base.terms.must_be_zero:) & WORD must select at least one implemented nonzero identity & replace the selector atomically\\
+\texttt{IDATA} & bank-dependent 64-bit word & reject pending-bank writes and bits outside the implemented identity range & apply W1S, W1C, or enable-word replacement atomically\\
 \texttt{EPC} & complete 64-bit entry address & 16-byte aligned, canonical, and executable under the matching code-segment image & replace the selected register atomically\\
 \texttt{ECS}, \texttt{EDS}, \texttt{SSS}, \texttt{ISS}, \texttt{FSS}, \texttt{DSS} & complete 64-bit segment image & apply the architectural segment-image validity rule & replace the selected register atomically\\
 \texttt{SSP}, \texttt{ISP}, \texttt{FSP}, \texttt{DSP} & complete 64-bit configured stack top & 64-byte aligned & replace the selected register atomically\\

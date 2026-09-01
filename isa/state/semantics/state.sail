@@ -43,16 +43,13 @@ function zero_segments() -> Segment_registers = [
   0x0000000000000000
 ]
 
-function zero_controls() -> Control_registers = [
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-  0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000
-]
+function initial_interrupt_file() -> Interrupt_file = struct {
+  max_id = 0xFFFFFF,
+  pending = [||],
+  enabled = [||],
+  threshold = 0x000000,
+  selector = 0x00000,
+}
 
 function initial_cpu() -> Cpu_state = struct {
   registers = zero_registers(),
@@ -60,7 +57,8 @@ function initial_cpu() -> Cpu_state = struct {
   vector_registers = zero_vector_registers(16),
   predicate_registers = zero_predicate_registers(16),
   segments = zero_segments(),
-  controls = zero_controls(),
+  controls = initial_control_state(),
+  interrupt_file = initial_interrupt_file(),
   sp = 0x0000000000000000,
   pc = 0x0000000000000000,
   flags = 0x0,

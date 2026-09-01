@@ -51,6 +51,9 @@ function machine_check_payload_valid(error_code : bits(64), fault_ea : bits(64),
 
 function latch_ingress(state : Cpu_state, ingress : Async_ingress) -> Cpu_state = {
   var updated = state;
+  if ingress.interrupt_posted then
+    updated = post_interrupt(updated, ingress.interrupt_identity)
+  else ();
   if ingress.nmi_pending then {
     if control_register_value(updated, ControlRegister_BASE_ECR)[7] == bitzero then
       updated.nmi_latched_source = ingress.nmi_source
@@ -92,11 +95,11 @@ function machine_check_state_valid(state : Cpu_state) -> bool =
     state.machine_check_fault_linear, state.machine_check_event_aux
   )
 
-function admitted_async_event(state : Cpu_state, ingress : Async_ingress)
-  -> option(Event_record) = {
+function admitted_async_event(state : Cpu_state) -> option(Event_record) = {
   let ecr = control_register_value(state, ControlRegister_BASE_ECR);
   let nmi = ecr[7] == bitone;
-  let interrupt = ingress.interrupt_pending;
+  let top = interrupt_top(state.interrupt_file);
+  let interrupt = top != 0x000000;
   let max_depth = unsigned(ecr[11 .. 8]);
   if state.machine_check_pending & ecr[0] == bitone & status_event_depth(state.status) < 15 then
     Some(machine_check_event(state))
@@ -107,7 +110,7 @@ function admitted_async_event(state : Cpu_state, ingress : Async_ingress)
   else if interrupt & ecr[0] == bitone & state.status[5] == bitone
           & status_event_depth(state.status) < max_depth
           & status_event_depth(state.status) < 15 then
-    Some(make_event(EventInterrupt, EventFrameBasic, 0x01 @ ingress.interrupt_id,
+    Some(make_event(EventInterrupt, EventFrameBasic, 0x01 @ top,
                     7, state.pc))
   else None()
 }
@@ -143,7 +146,7 @@ function execute_boundary(instruction : Decoded_instruction, state : Cpu_state,
           & (control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitzero
              | status_event_depth(latched.status) >= 15) then
     boundary_shutdown(latched)
-  else match admitted_async_event(latched, ingress) {
+  else match admitted_async_event(latched) {
     Some(event) => boundary_with_event(latched, event),
     None() =>
       if control_register_value(latched, ControlRegister_BASE_ECR)[7] == bitone
@@ -200,7 +203,7 @@ function resume_boundary(result : Execution_result, sampled_status : bits(64),
           if trace_unit & sampled_status[3] == bitone then
             after_rf.status = after_rf.status & 0xFFFFFFFFFFFFFFF7
           else ();
-          match admitted_async_event(after_rf, ingress) {
+          match admitted_async_event(after_rf) {
             Some(event) => boundary_with_event(after_rf, event),
             None() => {
               let updated_result = result_with_state(result, after_rf);

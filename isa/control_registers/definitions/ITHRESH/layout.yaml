@@ -1,0 +1,3 @@
+bits: 64
+fields:
+- {id: THRESHOLD, lsb: 0, bits: 24, summary: Interrupt-identity priority threshold.}

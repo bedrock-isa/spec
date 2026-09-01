@@ -11,6 +11,10 @@ transition. A newly observed NMI may set the latch again. An entry failure does 
 the specified delivery-failure result. When ERET successfully restores NI to zero, a pending NMI is delivered before
 the next instruction boundary.
 
+When maskable-interrupt entry commits, hardware clears exactly the delivered identity's pending bit in the same
+architectural transition. Entry validation, target probing, frame-address, or frame-store failure preserves that bit;
+a later posting of the same identity continues to coalesce while it remains pending.
+
 STATUS.EA, STATUS.EDEPTH, STATUS.UO, and STATUS.PM are hardware-managed transition state. WRSTATUS must preserve
 their current values. An attempted change raises (:ref:base.events.EXCEPTION.RESERVED_CONTROL_BITS:) without modifying STATUS. WRSTATUS may
 change IE, NI, TF, and RF. Clearing NI while ECR.NMI\_P is one admits the pending NMI at the next instruction

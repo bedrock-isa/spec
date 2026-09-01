@@ -7,7 +7,7 @@ function clause execute_uop(UopSystemState(operation), _, _, instruction, before
             Some(control) => uop_step_complete(write_local_destination(speculative, instruction.form.operation,
                                                                  destination, control_register_value(speculative, control)),
                                         CommitRegisters),
-            None() => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
+            None() => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlSelectorFault,
                                         "unknown control-register selector")),
         },
         _ => uop_step_fault(faulted(before, instruction.form.operation, IllegalInstruction,
@@ -71,7 +71,7 @@ function clause execute_uop(UopSystemState(operation), _, _, instruction, before
         (Some(source), Some(raw_selector)) => {
             let selector = unsigned(raw_selector[15 .. 0]);
             match control_register_from_selector(selector) {
-                None() => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlState,
+                None() => uop_step_fault(faulted(before, instruction.form.operation, InvalidControlSelectorFault,
                                             "unknown control-register selector")),
                 Some(control) => {
                     if control_register_write_needs_transition(control, source, speculative) then
@@ -85,13 +85,15 @@ function clause execute_uop(UopSystemState(operation), _, _, instruction, before
                       let candidate = control_register_with_value(
                         speculative, control, written
                       );
-                      if not_bool(control_register_write_valid(
-                           control, source, speculative, candidate
-                         )) then uop_step_fault(faulted(
-                           before, instruction.form.operation, InvalidControlState,
-                           "invalid control-register image"
-                         ))
-                      else uop_step_complete(candidate, CommitControl)
+                      match control_register_write_fault(
+                        control, source, speculative, candidate
+                      ) {
+                        Some(kind) => uop_step_fault(faulted(
+                          before, instruction.form.operation, kind,
+                          "invalid control-register write"
+                        )),
+                        None() => uop_step_complete(candidate, CommitControl),
+                      }
                     }
                 },
             }

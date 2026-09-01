@@ -4,7 +4,6 @@ type Floating_registers = vector(16, inc, bits(64))
 type Vector_registers = vector(32, inc, list(bits(8)))
 type Predicate_registers = vector(16, inc, list(bits(8)))
 type Segment_registers = vector(9, inc, bits(64))
-type Control_registers = vector(32, inc, bits(64))
 
 enum Run_state = Running | Halted | Shutdown
 struct Repeat_state = {
@@ -17,13 +16,22 @@ struct Repeat_state = {
   fixed_body : list(bits(8)),
 }
 
+struct Interrupt_file = {
+  max_id : bits(24),
+  pending : list(bits(24)),
+  enabled : list(bits(24)),
+  threshold : bits(24),
+  selector : bits(20),
+}
+
 struct Cpu_state = {
   registers : Registers,
   floating_registers : Floating_registers,
   vector_registers : Vector_registers,
   predicate_registers : Predicate_registers,
   segments : Segment_registers,
-  controls : Control_registers,
+  controls : Control_state,
+  interrupt_file : Interrupt_file,
   sp : bits(64),
   pc : bits(64),
   flags : bits(4),

@@ -27,6 +27,7 @@ _PRESERVED_FUNCTIONS = (
     "platform_reset",
     "decode_and_execute_full",
     "resume_transaction",
+    "post_interrupt",
 )
 
 

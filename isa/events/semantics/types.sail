@@ -20,6 +20,6 @@ struct Async_ingress = {
   machine_check_event_aux : bits(64),
   nmi_pending : bool,
   nmi_source : bits(24),
-  interrupt_pending : bool,
-  interrupt_id : bits(24),
+  interrupt_posted : bool,
+  interrupt_identity : bits(24),
 }

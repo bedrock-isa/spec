@@ -37,9 +37,15 @@ function base_event_from_fault(result : Execution_result) -> Event_record = matc
       else if fault.kind == DivideByZero | fault.kind == DivideOverflow then 0x0000000A
       else if fault.kind == VectorRangeFault then 0x0000000B
       else if fault.kind == FloatingPointFault then 0x0000000E
+      else if fault.kind == InvalidControlSelectorFault then 0x00000040
+      else if fault.kind == ReservedControlBitsFault then 0x00000041
+      else if fault.kind == InvalidControlImageFault then 0x00000042
+      else if fault.kind == InvalidControlTransitionFault then 0x00000043
       else if fault.bus_error then 0x0000001A
       else 0x0000000D;
-    let frame_type = if code == 0x00000008 then EventFrameBasic
+    let frame_type = if code == 0x00000008
+      | code == 0x00000040 | code == 0x00000041
+      | code == 0x00000042 | code == 0x00000043 then EventFrameBasic
       else if code == 0x00000009 | code == 0x0000000C then EventFramePage
       else if code == 0x0000001A then EventFrameAuxiliary
       else EventFrameError;
@@ -226,6 +232,11 @@ function committed_event_entry(before : Cpu_state, event : Event_record,
     updated.status = updated.status | 0x0000000000000002
   else ();
   if event.code == 0x00000018 then updated.current_dfa = true else ();
+  if event.kind == EventInterrupt then
+    updated.interrupt_file = interrupt_file_clear(
+      updated.interrupt_file, event.code[23 .. 0]
+    )
+  else ();
   updated.supervisor = true;
   updated.repeat_state = { updated.repeat_state with active = false };
   updated.run_state = Running;

@@ -24,7 +24,7 @@ properties:
     required: [kind, bits]
     properties:
       kind:
-        enum: [fixed, platform, source]
+        enum: [fixed, identity, platform, source]
       bits:
         const: 24
   extends:
@@ -34,4 +34,3 @@ x-interpretation-rules:
 - A definition owns an 8-bit architectural event class value and its 24-bit selector policy.
 - An extension overlay contributes events to an existing class and owns no second class allocation.
 - An overlay ID must match the class named by extends.
-

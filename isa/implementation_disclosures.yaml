@@ -17,3 +17,9 @@ disclosures:
   defining_rules:
   - Machine-check EVENT_AUX payload
   publication: Platform documentation or firmware interface documentation for the event source
+- id: INTERRUPT_MAX_ID
+  item: Maximum implemented interrupt identity
+  defining_rules:
+  - Interrupt File
+  - ICAP
+  publication: ICAP.MAX_ID

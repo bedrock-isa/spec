@@ -30,8 +30,11 @@ ROUTE_CONSTRUCTORS = {
 
 BASE_FAULT_CONSTRUCTORS = (
     "NoFault", "IllegalInstruction", "PrivilegeFault", "ExtensionUnavailable",
-    "InvalidControlState", "DivideByZero", "DivideOverflow", "BoundsFault",
-    "AlignmentFault", "TranslationFault", "AccessFault", "EventFault",
+    "InvalidControlState", "InvalidControlSelectorFault",
+    "ReservedControlBitsFault", "InvalidControlImageFault",
+    "InvalidControlTransitionFault", "DivideByZero", "DivideOverflow",
+    "BoundsFault", "AlignmentFault", "TranslationFault", "AccessFault",
+    "EventFault",
 )
 
 BASE_EFFECT_CONSTRUCTORS = (
@@ -70,7 +73,7 @@ class SailControlRegisterProjection:
     owner: str
     constructor: str
     selector: int
-    writable_mask: int
+    state_field: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,9 +173,6 @@ class SailRegistryRenderer:
                 key=lambda item: (owner_order[item.owner], item.selector),
             )
         )
-        if len(control_registers) > 32:
-            raise ValueError("selected Sail model exceeds 32 control registers")
-
         return SailRegistryProjection(
             cpuid_flags,
             tuple(instruction_sets),
@@ -194,7 +194,12 @@ class SailRegistryRenderer:
                     item.owner,
                     _control_register_constructor(item.owner, item.id),
                     item.selector,
-                    _control_register_writable_mask(item),
+                    (
+                        None
+                        if (item.owner, item.id)
+                        in _OPERATION_OWNED_CONTROL_REGISTERS
+                        else _control_register_state_field(item.owner, item.id)
+                    ),
                 )
                 for item in control_registers
             ),
@@ -234,6 +239,13 @@ class SailRegistryRenderer:
             *_constructors(
                 item.constructor for item in projection.control_registers
             ), "",
+            "struct Control_state = {",
+            *(
+                f"  {item.state_field} : bits(64),"
+                for item in projection.control_registers
+                if item.state_field is not None
+            ),
+            "}", "",
             "enum Semantic_operation =",
             *_constructors(item.operation for item in projection.operations), "",
             "function semantic_route(operation : Semantic_operation) -> Semantic_route = match operation {",
@@ -309,25 +321,33 @@ class SailRegistryRenderer:
                 f"{prefix} selector == {item.selector} then Some({item.constructor})"
             )
         lines.extend(("  else None()", ""))
-        control_register_owners = tuple(
-            dict.fromkeys(item.owner for item in projection.control_registers)
-        )
+        lines.extend(("function initial_control_state() -> Control_state = struct {",))
         lines.extend(
-            f"val {_control_register_index_provider(owner)} : Control_register -> bits(5)"
-            for owner in control_register_owners
+            f"  {item.state_field} = 0x0000000000000000,"
+            for item in projection.control_registers
+            if item.state_field is not None
         )
-        lines.extend(("", "function control_register_index(control : Control_register) -> bits(5) = match control {"))
+        lines.extend(("}", "", "function control_state_value(state : Control_state, control : Control_register)",
+                      "  -> bits(64) = match control {"))
         lines.extend(
             f"  {item.constructor} => "
-            f"{_control_register_index_provider(item.owner)}(control),"
+            + (
+                f"state.{item.state_field},"
+                if item.state_field is not None
+                else "0x0000000000000000,"
+            )
             for item in projection.control_registers
         )
-        lines.extend(("}", ""))
-        lines.extend([
-            "function control_register_writable_mask(control : Control_register) -> bits(64) = match control {",
-        ])
+        lines.extend(("}", "", "function control_state_with_value(",
+                      "  state : Control_state, control : Control_register, value : bits(64)",
+                      ") -> Control_state = match control {"))
         lines.extend(
-            f"  {item.constructor} => 0x{item.writable_mask:016X},"
+            f"  {item.constructor} => "
+            + (
+                f"{{ state with {item.state_field} = value }},"
+                if item.state_field is not None
+                else "state,"
+            )
             for item in projection.control_registers
         )
         lines.extend(("}", ""))
@@ -349,17 +369,19 @@ def _control_register_constructor(owner: str, register_id: str) -> str:
     return f"ControlRegister_{owner.upper()}_{register_id}"
 
 
-def _control_register_index_provider(owner: str) -> str:
-    return f"{owner.lower()}_control_register_index"
+def _control_register_state_field(owner: str, register_id: str) -> str:
+    return f"{owner.lower()}_{register_id.lower()}"
 
 
-def _control_register_writable_mask(register) -> int:
-    if register.layout is None:
-        return (1 << 64) - 1
-    return sum(
-        ((1 << field.bits) - 1) << field.lsb
-        for field in register.layout.fields
-    )
+_OPERATION_OWNED_CONTROL_REGISTERS = frozenset(
+    {
+        ("base", "ICAP"),
+        ("base", "ITHRESH"),
+        ("base", "ITOP"),
+        ("base", "ISEL"),
+        ("base", "IDATA"),
+    }
+)
 
 
 def instruction_set_constructor(program: SailProgram, owner: str) -> str:

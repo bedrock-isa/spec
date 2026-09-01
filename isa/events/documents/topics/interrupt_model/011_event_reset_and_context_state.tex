@@ -8,6 +8,8 @@ every other STATUS bit. It clears CS, DS, SS, GS0 through GS5, PTCR, ASCR, ECR, 
 context bank (UPC, USP, UCS, UDS, USS, UCTL, and UINFO), and the configured event stacks and segments (SSS, SSP,
 ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWALK. Clearing ECR clears its
 hardware-managed NMI\_P (:term:base.terms.field:) as part of the same transition.
+It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability
+reported by ICAP.MAX\_ID.
 
 Warm RESET invalidates hidden repeat state, the load reservation, local translation and page-walk caches, decoded
 instruction state, and local prefetch state. It clears the hidden current DFA. Coherent data- and instruction-cache
@@ -19,6 +21,6 @@ values before applying the same (:term:base.terms.processor_state_image:) to eac
 selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops
 before setting ECR.V or entering user mode.
 
-ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, and the user context bank are
+ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, the interrupt file, and the user context bank are
 per-logical-processor state. System software includes the applicable state when switching supervisor contexts.
 Payloads and full event frames reside in byte-addressed (:term:base.terms.normal_memory:) owned by the interrupted context.

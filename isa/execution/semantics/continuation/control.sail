@@ -18,7 +18,7 @@ function resume_control_phase(previous : Execution_result, response : Transactio
         completed(previous.state, pending_after(previous), CommitControl, [||])
       else match control_register_from_selector(unsigned(pending_transaction(previous.pending).captured_first[15 .. 0])) {
         None() => faulted(previous.state, previous.pending.operation,
-                          InvalidControlState, "unknown control-register selector"),
+                          InvalidControlSelectorFault, "unknown control-register selector"),
         Some(control) => {
           let updated = control_register_with_value(
             pending_after(previous), control,

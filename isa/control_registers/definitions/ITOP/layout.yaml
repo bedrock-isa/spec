@@ -1,0 +1,3 @@
+bits: 64
+fields:
+- {id: TOP, lsb: 0, bits: 24, summary: Highest-priority eligible interrupt identity.}

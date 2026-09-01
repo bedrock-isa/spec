@@ -13,40 +13,32 @@ function segment_image_valid(image : bits(64)) -> bool = {
 function sreg_index(operand : Decoded_operand) -> range(0, 8) =
   if operand.operand_type == OperandType_CS then 0 else unsigned(operand.value[2 .. 0]) + 1
 
-function base_control_register_index(control : Control_register) -> bits(5) =
-  if control == ControlRegister_BASE_PTCR then 0b00000
-  else if control == ControlRegister_BASE_ASCR then 0b00001
-  else if control == ControlRegister_BASE_ECR then 0b00010
-  else if control == ControlRegister_BASE_UPC then 0b00110
-  else if control == ControlRegister_BASE_USP then 0b00111
-  else if control == ControlRegister_BASE_UCS then 0b01000
-  else if control == ControlRegister_BASE_UDS then 0b01001
-  else if control == ControlRegister_BASE_USS then 0b01010
-  else if control == ControlRegister_BASE_UCTL then 0b01011
-  else if control == ControlRegister_BASE_EPC then 0b01100
-  else if control == ControlRegister_BASE_ECS then 0b01101
-  else if control == ControlRegister_BASE_EDS then 0b01110
-  else if control == ControlRegister_BASE_SSS then 0b01111
-  else if control == ControlRegister_BASE_SSP then 0b10000
-  else if control == ControlRegister_BASE_ISS then 0b10001
-  else if control == ControlRegister_BASE_ISP then 0b10010
-  else if control == ControlRegister_BASE_FSS then 0b10011
-  else if control == ControlRegister_BASE_FSP then 0b10100
-  else if control == ControlRegister_BASE_DSS then 0b10101
-  else if control == ControlRegister_BASE_DSP then 0b10110
-  else if control == ControlRegister_BASE_BOOTPC then 0b10111
-  else if control == ControlRegister_BASE_BOOTCFG then 0b11000
-  else if control == ControlRegister_BASE_PMC then 0b11001
-  else if control == ControlRegister_BASE_UINFO then 0b11010
-  else 0b00000
-
 function control_register_value(state : Cpu_state, control : Control_register)
-  -> bits(64) = state.controls[unsigned(control_register_index(control))]
+  -> bits(64) =
+  if control == ControlRegister_BASE_ICAP then
+    sail_zero_extend(state.interrupt_file.max_id, 64)
+  else if control == ControlRegister_BASE_ITHRESH then
+    sail_zero_extend(state.interrupt_file.threshold, 64)
+  else if control == ControlRegister_BASE_ITOP then
+    sail_zero_extend(interrupt_top(state.interrupt_file), 64)
+  else if control == ControlRegister_BASE_ISEL then
+    sail_zero_extend(state.interrupt_file.selector, 64)
+  else if control == ControlRegister_BASE_IDATA then
+    interrupt_idata_value(state.interrupt_file)
+  else control_state_value(state.controls, control)
 
 function control_register_with_value(state : Cpu_state, control : Control_register,
                                      value : bits(64)) -> Cpu_state = {
   var updated = state;
-  updated.controls[unsigned(control_register_index(control))] = value;
+  if control == ControlRegister_BASE_ITHRESH then
+    updated.interrupt_file.threshold = value[23 .. 0]
+  else if control == ControlRegister_BASE_ISEL then
+    updated.interrupt_file.selector = value[19 .. 0]
+  else if control == ControlRegister_BASE_IDATA then
+    updated.interrupt_file = interrupt_file_with_idata(updated.interrupt_file, value)
+  else if control == ControlRegister_BASE_ICAP
+       | control == ControlRegister_BASE_ITOP then ()
+  else updated.controls = control_state_with_value(updated.controls, control, value);
   updated
 }
 
@@ -172,23 +164,68 @@ function user_return_bank_image_valid(state : Cpu_state) -> bool = {
     ).in_bounds
 }
 
-function base_control_register_write_valid(
+function base_control_register_has_reserved_bits(
+  control : Control_register, source : bits(64), state : Cpu_state
+) -> bool =
+  if control == ControlRegister_BASE_PTCR then
+    (source & 0xFF00000000000F7E) != 0x0000000000000000
+  else if control == ControlRegister_BASE_ASCR then
+    (source & 0xFFFFFFFF0000FFFE) != 0x0000000000000000
+  else if control == ControlRegister_BASE_ECR then
+    (source & 0xFFFFFFFFFFFFF07E) != 0x0000000000000000
+  else if control == ControlRegister_BASE_ITHRESH then
+    source[63 .. 24] != 0x0000000000
+  else if control == ControlRegister_BASE_ISEL then
+    source[63 .. 20] != 0x00000000000
+  else if control == ControlRegister_BASE_IDATA then
+    interrupt_word_source_has_reserved_bit(
+      state.interrupt_file,
+      interrupt_selected_word(state.interrupt_file),
+      source,
+      0
+    )
+  else if control == ControlRegister_BASE_UCTL then
+    (source & 0xFFFFFFFE00000000) != 0x0000000000000000
+  else if control == ControlRegister_BASE_UINFO then
+    source[63 .. 32] != 0x00000000
+  else if control == ControlRegister_BASE_PMC then
+    (source & 0xFFFFFFFFFFFFFFFE) != 0x0000000000000000
+  else false
+
+function base_control_register_write_permitted(
+  control : Control_register, state : Cpu_state
+) -> bool =
+  control != ControlRegister_BASE_ICAP
+  & control != ControlRegister_BASE_ITOP
+  & (control != ControlRegister_BASE_IDATA
+     | interrupt_selected_bank(state.interrupt_file) != 0)
+
+function base_control_register_write_fault(
   control : Control_register, source : bits(64), before : Cpu_state,
   candidate : Cpu_state
-) -> bool =
-  (source & not_vec(control_register_writable_mask(control)))
-    == 0x0000000000000000
-  & (not_bool(control_segment_requires_valid_image(control))
-     | segment_image_valid(source))
-  & (not_bool(control_pointer_requires_alignment(control))
-     | (source & 0x000000000000003F) == 0x0000000000000000)
-  & (control != ControlRegister_BASE_ECR
-     | source[0] == bitzero
-     | control_register_value(before, ControlRegister_BASE_ECR)[0] == bitone
-     | event_control_bank_valid(candidate))
+) -> option(Fault_kind) =
+  if not_bool(base_control_register_write_permitted(control, before)) then
+    Some(InvalidControlSelectorFault)
+  else if base_control_register_has_reserved_bits(control, source, before) then
+    Some(ReservedControlBitsFault)
+  else if control == ControlRegister_BASE_ISEL
+    & not_bool(interrupt_word_valid(
+        before.interrupt_file, unsigned(source[17 .. 0])
+      )) then Some(InvalidControlSelectorFault)
+  else if control_segment_requires_valid_image(control)
+    & not_bool(segment_image_valid(source)) then Some(InvalidControlImageFault)
+  else if control_pointer_requires_alignment(control)
+    & (source & 0x000000000000003F) != 0x0000000000000000 then
+    Some(InvalidControlImageFault)
+  else if control == ControlRegister_BASE_ECR
+    & source[0] == bitone
+    & control_register_value(before, ControlRegister_BASE_ECR)[0] == bitzero
+    & not_bool(event_control_bank_valid(candidate)) then
+    Some(InvalidControlTransitionFault)
+  else None()
 
-val control_register_write_valid :
-  (Control_register, bits(64), Cpu_state, Cpu_state) -> bool
+val control_register_write_fault :
+  (Control_register, bits(64), Cpu_state, Cpu_state) -> option(Fault_kind)
 
 function control_register_written_value(control : Control_register,
                                         source : bits(64), state : Cpu_state)

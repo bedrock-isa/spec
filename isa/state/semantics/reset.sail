@@ -28,6 +28,7 @@ function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   reset.vector_component_size = state.vector_component_size;
   reset.vector_component_alignment = state.vector_component_alignment;
   reset.vector_component_init_policy = state.vector_component_init_policy;
+  reset.interrupt_file.max_id = state.interrupt_file.max_id;
   reset = control_register_with_value(
     reset, ControlRegister_BASE_BOOTPC,
     control_register_value(state, ControlRegister_BASE_BOOTPC));

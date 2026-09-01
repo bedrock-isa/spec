@@ -125,7 +125,8 @@ enum SailBusCompletion {
 impl SailCore {
     /// Fetches and executes one instruction at the current PC.
     pub fn step_on_bus(&mut self, bus: &mut impl Bus) -> Result<(), SailBusExecutionError> {
-        let monitoring_enabled = self.control(25).map_err(SailBusExecutionError::Core)? & 1 != 0;
+        let monitoring_enabled =
+            self.control(0x1100).map_err(SailBusExecutionError::Core)? & 1 != 0;
         if monitoring_enabled {
             self.environment.cycle_counter = self.environment.cycle_counter.wrapping_add(1);
         }
@@ -212,7 +213,7 @@ fn fetch_virtual_instruction(
     pc: u64,
 ) -> Result<Vec<u8>, SailBusExecutionError> {
     let state = core.state().map_err(SailBusExecutionError::Core)?;
-    let ptcr = state.controls[0];
+    let ptcr = state.controls.base_ptcr;
     fetch_instruction_with(pc, |effective| {
         let linear = translation::segment_linear(state.segments[0], effective)
             .map_err(|fault| fetch_translation_fault(fault, effective, effective))?;
@@ -709,7 +710,7 @@ mod tests {
         ram.write_u64(0x3000, 0x4000 | TABLE).unwrap();
         ram.write_u64(0x4040, 0x9000 | LEAF_RW).unwrap();
         let mut state = core.state().unwrap();
-        state.controls[0] = 0x1001;
+        state.controls.base_ptcr = 0x1001;
         state.status |= 1 << 4;
         state.supervisor = 1;
         state.sp = 0x8008;
@@ -728,7 +729,7 @@ mod tests {
         let mut core = SailCore::new().unwrap();
         let mut ram = Ram::new(0x10_000);
         let mut state = core.state().unwrap();
-        state.controls[0] = 0x1001;
+        state.controls.base_ptcr = 0x1001;
         state.status |= 1 << 4;
         state.supervisor = 1;
         state.sp = 0x0001_0000_0000_0008;
@@ -943,7 +944,7 @@ mod tests {
         let mut core = SailCore::new().unwrap();
         let mut ram = Ram::new(16);
         let mut state = core.state().unwrap();
-        state.controls[25] = 1;
+        state.controls.base_pmc = 1;
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
         ram.load(0, &[0x01, 0xcb, 0xb4, 0x51, 0x01, 0x00]).unwrap();
 
@@ -963,7 +964,7 @@ mod tests {
         ram.load(0, &VSCATTER_B_SCALAR_STRIDE).unwrap();
         ram.load(0x100, &[0xa0, 0xa1, 0xa2, 0xa3, 0xa4]).unwrap();
         let mut state = core.state().unwrap();
-        state.controls[25] = 1;
+        state.controls.base_pmc = 1;
         state.registers[1] = 0x100;
         state.registers[2] = 1;
         state.predicate_registers[0] = [0x05, 0x00];

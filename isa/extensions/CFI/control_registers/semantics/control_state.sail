@@ -1,9 +1,3 @@
-function cfi_control_register_index(control : Control_register) -> bits(5) =
-  if control == ControlRegister_CFI_CFICTL then 0b11011
-  else if control == ControlRegister_CFI_CFISS then 0b11100
-  else if control == ControlRegister_CFI_CFISP then 0b11101
-  else 0b00000
-
 function cfi_landing_enabled(state : Cpu_state) -> bool =
   control_register_value(state, ControlRegister_CFI_CFICTL)[0] == bitone
 
@@ -39,19 +33,34 @@ function cfi_shadow_pop_state_valid(state : Cpu_state) -> bool = {
   & cfi_segment_range_valid(shadow_segment, shadow_sp, 16)
 }
 
-function control_register_write_valid(
+function control_register_write_fault(
   control : Control_register, source : bits(64), before : Cpu_state,
   candidate : Cpu_state
-) -> bool =
-  base_control_register_write_valid(control, source, before, candidate)
-  & (if control == ControlRegister_CFI_CFICTL then
-       source[1] == bitzero | cfi_shadow_push_state_valid(candidate)
-     else if control == ControlRegister_CFI_CFISS then
-       cfi_shadow_segment_valid(source)
-       & (not_bool(cfi_shadow_enabled(candidate))
-          | cfi_shadow_push_state_valid(candidate))
-     else if control == ControlRegister_CFI_CFISP then
-       (source & 0x000000000000000F) == 0x0000000000000000
-       & (not_bool(cfi_shadow_enabled(candidate))
-          | cfi_shadow_push_state_valid(candidate))
-     else true)
+) -> option(Fault_kind) = match base_control_register_write_fault(
+  control, source, before, candidate
+) {
+  Some(fault) => Some(fault),
+  None() =>
+    if control == ControlRegister_CFI_CFICTL
+       & (source & 0xFFFFFFFFFFFFFFFC) != 0x0000000000000000 then
+      Some(ReservedControlBitsFault)
+    else if control == ControlRegister_CFI_CFICTL
+       & source[1] == bitone
+       & not_bool(cfi_shadow_push_state_valid(candidate)) then
+      Some(InvalidControlTransitionFault)
+    else if control == ControlRegister_CFI_CFISS
+       & not_bool(cfi_shadow_segment_valid(source)) then
+      Some(InvalidControlImageFault)
+    else if control == ControlRegister_CFI_CFISS
+       & cfi_shadow_enabled(candidate)
+       & not_bool(cfi_shadow_push_state_valid(candidate)) then
+      Some(InvalidControlTransitionFault)
+    else if control == ControlRegister_CFI_CFISP
+       & (source & 0x000000000000000F) != 0x0000000000000000 then
+      Some(InvalidControlImageFault)
+    else if control == ControlRegister_CFI_CFISP
+       & cfi_shadow_enabled(candidate)
+       & not_bool(cfi_shadow_push_state_valid(candidate)) then
+      Some(InvalidControlTransitionFault)
+    else None(),
+}

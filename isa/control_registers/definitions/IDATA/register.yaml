@@ -1,0 +1,3 @@
+id: IDATA
+selector: 0x0304
+summary: Selected interrupt-file pending or enable word.

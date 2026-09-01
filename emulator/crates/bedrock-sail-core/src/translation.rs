@@ -1,7 +1,7 @@
 use bedrock_bus::{Bus, BusError, PhysicalMemoryClass};
 
-pub(crate) const FAULT_TRANSLATION: i32 = 9;
-pub(crate) const FAULT_ACCESS: i32 = 10;
+pub(crate) const FAULT_TRANSLATION: i32 = 13;
+pub(crate) const FAULT_ACCESS: i32 = 14;
 
 const IMPLEMENTATION_PABITS: u32 = 56;
 const PHYSICAL_MASK: u64 = (1u64 << IMPLEMENTATION_PABITS) - 1;

@@ -31,7 +31,7 @@ properties:
       additionalProperties: false
       required: [cold, warm]
       properties:
-        cold: {enum: [platform]}
+        cold: {enum: [platform, implementation]}
         warm: {enum: [preserve]}
 x-interpretation-rules:
 - control_registers/definitions/control_registers.yaml declares owner-local membership and default reset state.

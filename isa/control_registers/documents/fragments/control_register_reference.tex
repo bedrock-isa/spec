@@ -102,6 +102,45 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \bottomrule
 \end{BedrockTabular}
 
+\begin{BedrockFormatDiagram}{Interrupt-File Control Formats}
+\BedrockFormatRow{ICAP[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{40}
+\BedrockFormatField{MAX\_ID}{24}
+}
+\BedrockFormatRow{ITHRESH[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{40}
+\BedrockFormatField{THRESHOLD}{24}
+}
+\BedrockFormatRow{ITOP[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{40}
+\BedrockFormatField{TOP}{24}
+}
+\BedrockFormatRow{ISEL[63:0]}{%
+\BedrockFormatReserved{(:term:base.terms.reserved:)}{44}
+\BedrockFormatField{BANK}{2}
+\BedrockFormatField{WORD}{18}
+}
+\end{BedrockFormatDiagram}
+
+Each logical processor owns an interrupt file for identities 1 through \texttt{ICAP.MAX\_ID}; identity zero is
+reserved. Each implemented identity has one pending bit and one enable bit. Posting a valid identity sets its pending
+bit, repeated postings coalesce, and posting zero or an identity above \texttt{MAX\_ID} has no effect.
+
+An identity is eligible when both bits are set and \texttt{ITHRESH.THRESHOLD} is zero or the identity is numerically
+less than the threshold. Lower identity numbers have higher priority. \texttt{ITOP.TOP} reads as the lowest eligible
+identity, or zero when none is eligible. \texttt{ICAP} and \texttt{ITOP} are read-only.
+
+\texttt{ISEL.WORD} selects a 64-identity word and \texttt{ISEL.BANK} selects its view through \texttt{IDATA}.
+Bank zero reads pending bits and is read-only. Bank one reads zero and writes pending bits with write-one-to-set
+semantics. Bank two reads zero and clears pending bits with write-one-to-clear semantics. Bank three reads enable
+bits and replaces the selected enable word on write. A selected word is valid only when it contains at least one
+implemented nonzero identity. Bits for identity zero or identities above \texttt{MAX\_ID} are reserved.
+
+Writing \texttt{ICAP}, \texttt{ITOP}, pending bank zero, or an invalid \texttt{ISEL.WORD} raises
+(:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:). Nonzero reserved bits in \texttt{ISEL}, \texttt{ITHRESH},
+or a writable \texttt{IDATA} bank raise (:ref:base.events.EXCEPTION.RESERVED_CONTROL_BITS:). Validation precedes the
+write, so a fault changes neither the interrupt file nor its selector.
+
 \begin{BedrockFormatDiagram}{UCTL Format}
 \BedrockFormatRow{UCTL[63:0]}{%
 \BedrockFormatReserved{(:term:base.terms.reserved:)}{31}

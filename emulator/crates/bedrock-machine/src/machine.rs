@@ -34,13 +34,10 @@ impl std::fmt::Debug for Machine {
 
 impl Clone for Machine {
     fn clone(&self) -> Self {
-        let raw = self
+        let core = self
             .core
-            .state()
-            .expect("Sail core rejected a state snapshot while cloning");
-        let mut core = new_core();
-        assert_eq!(core.set_state(raw), SailCoreStatus::Ok);
-        core.set_environment_state(self.core.environment_state());
+            .try_clone()
+            .expect("Sail core could not clone architectural state");
         Self {
             core,
             state: self.state.clone(),
@@ -120,6 +117,16 @@ impl Machine {
         let mut state = self.state.clone();
         state.write_register(register, value);
         self.set_state(state)
+    }
+
+    pub fn post_interrupt(&mut self, identity: u32) -> Result<(), SailCoreStatus> {
+        match self.core.post_interrupt(identity) {
+            SailCoreStatus::Ok => {
+                self.refresh_state()?;
+                Ok(())
+            }
+            status => Err(status),
+        }
     }
 
     pub fn board(&self) -> &Board {
@@ -204,30 +211,30 @@ fn snapshot_state(raw: &SailCoreState) -> CpuState {
         flags: Flags::from_bits_truncate(raw.flags as u16),
         status: Status::from_bits_truncate(raw.status as u16),
         segments,
-        ptcr: crate::PageTableControl::from_raw(raw.controls[0]),
-        ascr: crate::AddressSpaceControl::from_raw(raw.controls[1]),
-        ecr: crate::EventControl::from_raw(raw.controls[2]),
-        upc: raw.controls[6],
-        usp: raw.controls[7],
-        ucs: SegmentRegister::from_raw(raw.controls[8]),
-        uds: SegmentRegister::from_raw(raw.controls[9]),
-        uss: SegmentRegister::from_raw(raw.controls[10]),
-        uctl: raw.controls[11],
-        uinfo: raw.controls[26],
-        epc: raw.controls[12],
-        ecs: SegmentRegister::from_raw(raw.controls[13]),
-        eds: SegmentRegister::from_raw(raw.controls[14]),
-        sss: SegmentRegister::from_raw(raw.controls[15]),
-        ssp: raw.controls[16],
-        iss: SegmentRegister::from_raw(raw.controls[17]),
-        isp: raw.controls[18],
-        fss: SegmentRegister::from_raw(raw.controls[19]),
-        fsp: raw.controls[20],
-        dss: SegmentRegister::from_raw(raw.controls[21]),
-        dsp: raw.controls[22],
-        bootpc: raw.controls[23],
-        bootcfg: raw.controls[24],
-        pmc: raw.controls[25],
+        ptcr: crate::PageTableControl::from_raw(raw.controls.base_ptcr),
+        ascr: crate::AddressSpaceControl::from_raw(raw.controls.base_ascr),
+        ecr: crate::EventControl::from_raw(raw.controls.base_ecr),
+        upc: raw.controls.base_upc,
+        usp: raw.controls.base_usp,
+        ucs: SegmentRegister::from_raw(raw.controls.base_ucs),
+        uds: SegmentRegister::from_raw(raw.controls.base_uds),
+        uss: SegmentRegister::from_raw(raw.controls.base_uss),
+        uctl: raw.controls.base_uctl,
+        uinfo: raw.controls.base_uinfo,
+        epc: raw.controls.base_epc,
+        ecs: SegmentRegister::from_raw(raw.controls.base_ecs),
+        eds: SegmentRegister::from_raw(raw.controls.base_eds),
+        sss: SegmentRegister::from_raw(raw.controls.base_sss),
+        ssp: raw.controls.base_ssp,
+        iss: SegmentRegister::from_raw(raw.controls.base_iss),
+        isp: raw.controls.base_isp,
+        fss: SegmentRegister::from_raw(raw.controls.base_fss),
+        fsp: raw.controls.base_fsp,
+        dss: SegmentRegister::from_raw(raw.controls.base_dss),
+        dsp: raw.controls.base_dsp,
+        bootpc: raw.controls.base_bootpc,
+        bootcfg: raw.controls.base_bootcfg,
+        pmc: raw.controls.base_pmc,
         fstatus: raw.fstatus as u16,
         fflags: raw.fflags as u16,
         hidden_current_dfa: raw.current_dfa != 0,
@@ -246,30 +253,30 @@ fn write_state(raw: &mut SailCoreState, state: &CpuState) {
     for selector in SEGMENT_SELECTORS {
         raw.segments[selector as usize] = state.segments.get(selector).raw();
     }
-    raw.controls[0] = state.ptcr.raw();
-    raw.controls[1] = state.ascr.raw();
-    raw.controls[2] = state.ecr.raw();
-    raw.controls[6] = state.upc;
-    raw.controls[7] = state.usp;
-    raw.controls[8] = state.ucs.raw();
-    raw.controls[9] = state.uds.raw();
-    raw.controls[10] = state.uss.raw();
-    raw.controls[11] = state.uctl;
-    raw.controls[12] = state.epc;
-    raw.controls[13] = state.ecs.raw();
-    raw.controls[14] = state.eds.raw();
-    raw.controls[15] = state.sss.raw();
-    raw.controls[16] = state.ssp;
-    raw.controls[17] = state.iss.raw();
-    raw.controls[18] = state.isp;
-    raw.controls[19] = state.fss.raw();
-    raw.controls[20] = state.fsp;
-    raw.controls[21] = state.dss.raw();
-    raw.controls[22] = state.dsp;
-    raw.controls[23] = state.bootpc;
-    raw.controls[24] = state.bootcfg;
-    raw.controls[25] = state.pmc;
-    raw.controls[26] = state.uinfo;
+    raw.controls.base_ptcr = state.ptcr.raw();
+    raw.controls.base_ascr = state.ascr.raw();
+    raw.controls.base_ecr = state.ecr.raw();
+    raw.controls.base_upc = state.upc;
+    raw.controls.base_usp = state.usp;
+    raw.controls.base_ucs = state.ucs.raw();
+    raw.controls.base_uds = state.uds.raw();
+    raw.controls.base_uss = state.uss.raw();
+    raw.controls.base_uctl = state.uctl;
+    raw.controls.base_uinfo = state.uinfo;
+    raw.controls.base_epc = state.epc;
+    raw.controls.base_ecs = state.ecs.raw();
+    raw.controls.base_eds = state.eds.raw();
+    raw.controls.base_sss = state.sss.raw();
+    raw.controls.base_ssp = state.ssp;
+    raw.controls.base_iss = state.iss.raw();
+    raw.controls.base_isp = state.isp;
+    raw.controls.base_fss = state.fss.raw();
+    raw.controls.base_fsp = state.fsp;
+    raw.controls.base_dss = state.dss.raw();
+    raw.controls.base_dsp = state.dsp;
+    raw.controls.base_bootpc = state.bootpc;
+    raw.controls.base_bootcfg = state.bootcfg;
+    raw.controls.base_pmc = state.pmc;
     raw.fstatus = u64::from(state.fstatus);
     raw.fflags = u64::from(state.fflags);
     raw.current_dfa = u8::from(state.hidden_current_dfa);
@@ -318,27 +325,43 @@ fn fault_trap(
             pc,
             cause: InvalidControlCause::ReservedBits,
         }),
-        5 => StepResult::Trap(Trap::DivideError {
+        5 => StepResult::Trap(Trap::InvalidControlState {
+            pc,
+            cause: InvalidControlCause::InvalidSelector,
+        }),
+        6 => StepResult::Trap(Trap::InvalidControlState {
+            pc,
+            cause: InvalidControlCause::ReservedBits,
+        }),
+        7 => StepResult::Trap(Trap::InvalidControlState {
+            pc,
+            cause: InvalidControlCause::InvalidImage,
+        }),
+        8 => StepResult::Trap(Trap::InvalidControlState {
+            pc,
+            cause: InvalidControlCause::InvalidTransition,
+        }),
+        9 => StepResult::Trap(Trap::DivideError {
             pc,
             cause: DivideErrorCause::ZeroDivisor,
         }),
-        6 => StepResult::Trap(Trap::DivideError {
+        10 => StepResult::Trap(Trap::DivideError {
             pc,
             cause: DivideErrorCause::SignedOverflow,
         }),
-        9 => request.map_or_else(
+        13 => request.map_or_else(
             || illegal_trap(pc, IllegalInstructionCause::ExplicitIllegal),
             |request| page_fault_trap(pc, error_code, request, state),
         ),
-        10 => request.map_or_else(
+        14 => request.map_or_else(
             || illegal_trap(pc, IllegalInstructionCause::ExplicitIllegal),
             |request| access_fault_trap(pc, error_code, request, state),
         ),
-        12 => StepResult::Trap(Trap::FloatingPointFault {
+        16 => StepResult::Trap(Trap::FloatingPointFault {
             pc,
             causes: crate::FpCauses::from_bits_truncate(error_code as u8),
         }),
-        13 => StepResult::Trap(Trap::VectorRangeError {
+        17 => StepResult::Trap(Trap::VectorRangeError {
             pc,
             cause: VectorRangeErrorCause::LaneIndex,
         }),

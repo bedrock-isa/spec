@@ -1,5 +1,4 @@
 id: INTERRUPT
-name: Platform Interrupt
-summary: An opaque platform-assigned global interrupt source is admitted for delivery.
+name: Maskable Interrupt
+summary: An eligible architectural interrupt identity is admitted for delivery.
 frame: basic
-

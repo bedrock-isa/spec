@@ -1,0 +1,4 @@
+bits: 64
+fields:
+- {id: WORD, lsb: 0, bits: 18, summary: Selected 64-identity word.}
+- {id: BANK, lsb: 18, bits: 2, summary: Selected interrupt-file bank.}
