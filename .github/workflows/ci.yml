@@ -51,28 +51,28 @@ jobs:
       - name: Upload Programmer's Reference Manual
         uses: actions/upload-artifact@v7
         with:
-          path: build/isa_reference.pdf
+          path: output/pdf/isa-reference.pdf
           archive: false
           if-no-files-found: error
 
       - name: Upload Bedrock ELF ABI
         uses: actions/upload-artifact@v7
         with:
-          path: build/latex/bedrock-elf-abi/bedrock-elf-abi.pdf
+          path: output/site/downloads/bedrock-elf-abi.pdf
           archive: false
           if-no-files-found: error
 
       - name: Upload Bedrock C ABI
         uses: actions/upload-artifact@v7
         with:
-          path: build/latex/bedrock-c-abi/bedrock-c-abi.pdf
+          path: output/site/downloads/bedrock-c-abi.pdf
           archive: false
           if-no-files-found: error
 
       - name: Upload target intrinsics
         uses: actions/upload-artifact@v7
         with:
-          path: build/latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf
+          path: output/site/downloads/bedrock-target-intrinsics.pdf
           archive: false
           if-no-files-found: error
 
@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: reference-site
-          path: build/site
+          path: output/site
           if-no-files-found: error
           include-hidden-files: true
 

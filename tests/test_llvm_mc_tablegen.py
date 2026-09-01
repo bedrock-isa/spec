@@ -119,7 +119,7 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
                     ),
                 )
 
-    def test_register_selector_metadata_comes_from_register_catalog(self) -> None:
+    def test_selector_metadata_comes_from_register_catalogs(self) -> None:
         selector_group_references = {
             payload_type.register_group
             for payload_type in self.project.types.payload_types.values()
@@ -136,6 +136,16 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             }
             for group_reference in selector_group_references
         ]
+        if any(
+            payload_type.kind == PayloadTypeKind.CONTROL_REGISTER_SELECTOR
+            for payload_type in self.project.types.payload_types.values()
+        ):
+            expected_groups.append(
+                {
+                    (register.id.lower(), register.selector)
+                    for register in self.project.control_registers.references.registers.values()
+                }
+            )
         actual_groups: dict[int, set[tuple[str, int]]] = {}
         for selector in self.projection.register_selectors:
             actual_groups.setdefault(selector.group, set()).add(

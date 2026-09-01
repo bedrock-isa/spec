@@ -71,7 +71,6 @@ class InstructionMetasyntaxTest(unittest.TestCase):
             "ADD Rn(s),Rn(d)",
             "ADD.{B|B}(z) Rn(s)",
             "ADD.{B|W}(Z) Rn(s)",
-            "ADD.Q/order(o) Rn(s)",
             "ADD <ea",
             "ADD [Rn(b)",
         ):

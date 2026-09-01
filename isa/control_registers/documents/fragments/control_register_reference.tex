@@ -117,10 +117,11 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 }
 \BedrockFormatRow{ISEL[63:0]}{%
 \BedrockFormatReserved{(:term:base.terms.reserved:)}{44}
-\BedrockFormatField{BANK}{2}
+\BedrockFormatField{B}{2}
 \BedrockFormatField{WORD}{18}
 }
 \end{BedrockFormatDiagram}
+{\small In the ISEL row, \texttt{B} abbreviates \texttt{BANK}.\par}
 
 Each logical processor owns an interrupt file for identities 1 through \texttt{ICAP.MAX\_ID}; identity zero is
 reserved. Each implemented identity has one pending bit and one enable bit. Posting a valid identity sets its pending

@@ -95,6 +95,17 @@ class SystemVerilogArchitectureArtifactsTest(unittest.TestCase):
                             for field in register.layout.fields
                         ),
                     )
+        for owner, namespace in self.project.control_registers.namespaces.items():
+            for register in namespace.registers.values():
+                expected[(owner, "CONTROL_REGISTERS", register.id)] = (
+                    register.selector,
+                    (1 << 64) - 1
+                    if register.layout is None
+                    else sum(
+                        ((1 << field.bits) - 1) << field.lsb
+                        for field in register.layout.fields
+                    ),
+                )
 
         self.assertEqual(
             {
