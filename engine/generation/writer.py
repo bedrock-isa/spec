@@ -73,7 +73,9 @@ class ArtifactWriter:
             for relative_path in paths:
                 destination = self._destination(root, relative_path)
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                os.replace(stage / relative_path, destination)
+                staged = stage / relative_path
+                if not self._same_content(staged, destination):
+                    os.replace(staged, destination)
                 written.append(destination)
 
             for stale in sorted(previous - frozenset(paths), reverse=True):
@@ -103,6 +105,18 @@ class ArtifactWriter:
             os.replace(staged_manifest, manifest)
 
         return tuple(written)
+
+    @staticmethod
+    def _same_content(staged: Path, destination: Path) -> bool:
+        if not destination.is_file():
+            return False
+        if staged.stat().st_size != destination.stat().st_size:
+            return False
+        with staged.open("rb") as candidate, destination.open("rb") as current:
+            while candidate_chunk := candidate.read(1024 * 1024):
+                if candidate_chunk != current.read(len(candidate_chunk)):
+                    return False
+            return current.read(1) == b""
 
     @staticmethod
     def _safe_output_root(output_root: str | Path) -> Path:
