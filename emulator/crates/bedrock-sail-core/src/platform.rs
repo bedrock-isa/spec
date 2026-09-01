@@ -34,14 +34,14 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (BASE_CLASS, 0, 11..=18) => name_word(PROCESSOR_NAME, usize::from(index - 11)),
         (EXTENSION_CLASS, 0, 0) => header_with_leaf(3, 1),
         (EXTENSION_CLASS, 0, 1) => 0b1111,
-        (EXTENSION_CLASS, 1, 0) => 0x0044,
-        (EXTENSION_CLASS, 1, id) if FPTRANSA_CONTRACT_IDS.contains(&id) => {
+        (EXTENSION_CLASS, 1, 0) => 1,
+        (EXTENSION_CLASS, 1, 1) => 1,
+        (EXTENSION_CLASS, 2, 0) => 0x0044,
+        (EXTENSION_CLASS, 2, id) if FPTRANSA_CONTRACT_IDS.contains(&id) => {
             (1_u64 << 63) | (1_u64 << 32) | (0x0100_u64 << 16) | 0x0100
         }
-        (EXTENSION_CLASS, 2, 0) => 1,
-        (EXTENSION_CLASS, 2, 1) => 7,
         (EXTENSION_CLASS, 3, 0) => 1,
-        (EXTENSION_CLASS, 3, 1) => 1,
+        (EXTENSION_CLASS, 3, 1) => 7,
         (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(6, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,
@@ -94,9 +94,9 @@ mod tests {
     #[test]
     fn cpuid_reports_stable_identity_and_sparse_contracts() {
         assert_eq!(cpuid_query(selector(0, 0, 0)), 0x0000_0002_0000_0012);
-        assert_eq!(cpuid_query(selector(1, 1, 0)), 0x44);
-        assert_ne!(cpuid_query(selector(1, 1, 0x44)), 0);
-        assert_eq!(cpuid_query(selector(1, 1, 0x10)), 0);
+        assert_eq!(cpuid_query(selector(1, 2, 0)), 0x44);
+        assert_ne!(cpuid_query(selector(1, 2, 0x44)), 0);
+        assert_eq!(cpuid_query(selector(1, 2, 0x10)), 0);
         assert_eq!(cpuid_query(u64::MAX), 0);
     }
 
