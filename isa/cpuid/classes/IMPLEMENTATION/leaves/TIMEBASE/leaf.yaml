@@ -1,0 +1,12 @@
+id: TIMEBASE
+name: Architectural Timebase
+value: 0x0005
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: PARAMETERS
+  index: 1
+  fields:
+  - {id: TICKS_PER_SECOND, lsb: 0, bits: 64}

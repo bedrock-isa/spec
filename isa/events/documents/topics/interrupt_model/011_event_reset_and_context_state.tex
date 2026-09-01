@@ -10,6 +10,8 @@ ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWAL
 hardware-managed NMI\_P (:term:base.terms.field:) as part of the same transition.
 It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability
 reported by ICAP.MAX\_ID.
+It disarms the deadline timer while preserving the invariant timebase value and frequency. Timer reset does not
+independently clear interrupt-file state.
 
 Warm RESET invalidates hidden repeat state, the load reservation, local translation and page-walk caches, decoded
 instruction state, and local prefetch state. It clears the hidden current DFA. Coherent data- and instruction-cache

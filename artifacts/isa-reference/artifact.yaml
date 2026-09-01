@@ -96,6 +96,8 @@ body:
 - topic: base.privilege.privileged-programming-model.initial-event-stacks-and-payloads
 - topic: base.privilege.privileged-programming-model.event-entry-and-failure
 - topic: base.privilege.privileged-programming-model.eret-routing-and-atomicity
+- topic: base.time.architectural-time.architectural-time
+- topic: base.time.architectural-time.deadline-timer
 - topic: base.events.interrupt-model.architectural-event-processing-model
 - topic: base.events.interrupt-model.event-code-and-sources
 - topic: base.events.interrupt-model.event-priority-and-debug-trace
@@ -130,6 +132,7 @@ body:
 - topic: base.cpuid.cpuid-feature-discovery.performance-counter-discovery
 - topic: base.cpuid.cpuid-feature-discovery.address-width-discovery
 - topic: base.cpuid.cpuid-feature-discovery.save-area-layout-discovery
+- topic: base.cpuid.cpuid-feature-discovery.timebase-discovery
 - topic: base.state.save-restore-area.processor-state-save-and-restore
 - topic: base.state.save-restore-area.save-area-layout
 - topic: base.state.save-restore-area.fixed-architectural-state

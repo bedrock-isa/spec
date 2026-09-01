@@ -23,3 +23,9 @@ disclosures:
   - Interrupt File
   - ICAP
   publication: ICAP.MAX_ID
+- id: TIMEBASE_FREQUENCY
+  item: Architectural timebase frequency
+  defining_rules:
+  - Architectural Timebase
+  - Timebase Discovery
+  publication: CPUID TIMEBASE.TICKS_PER_SECOND

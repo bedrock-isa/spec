@@ -117,6 +117,7 @@ instructions:
 - RDCR
 - RDFLAGS
 - RDPMC
+- RDTIME
 - RDSEG
 - RDSTATUS
 - REPcc
@@ -144,6 +145,8 @@ instructions:
 - SWPTA
 - SYNCCACHE
 - SYSCALL
+- TARM
+- TCANCEL
 - TEST
 - TESTJcc
 - TRACE

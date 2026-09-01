@@ -1,0 +1,14 @@
+mnemonic: TARM
+name: Arm Deadline Timer
+summary: Atomically install an absolute deadline and interrupt identity.
+route: system_registers
+privileged: true
+operands:
+  deadline:
+    role: source
+    access: read
+    value_type: integer
+  identity:
+    role: source
+    access: read
+    value_type: integer

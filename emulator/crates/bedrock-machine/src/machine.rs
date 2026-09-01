@@ -129,6 +129,16 @@ impl Machine {
         }
     }
 
+    pub fn advance_time(&mut self, ticks: u64) -> Result<(), SailCoreStatus> {
+        match self.core.advance_time(ticks) {
+            SailCoreStatus::Ok => {
+                self.refresh_state()?;
+                Ok(())
+            }
+            status => Err(status),
+        }
+    }
+
     pub fn board(&self) -> &Board {
         &self.board
     }

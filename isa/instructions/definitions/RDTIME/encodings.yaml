@@ -1,0 +1,8 @@
+encodings:
+  rn_d:
+    pattern: 11101101001000dddd
+    syntax: RDTIME Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn

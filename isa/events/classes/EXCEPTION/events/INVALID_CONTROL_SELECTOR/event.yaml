@@ -1,7 +1,6 @@
 id: INVALID_CONTROL_SELECTOR
 name: Invalid Control Selector
-summary: A control or performance-monitor selector names no available architectural resource.
+summary: A control selector, performance-monitor selector, or interrupt identity names no available architectural resource.
 code: 0x40
 family: CONTROL_STATE
 frame: basic
-

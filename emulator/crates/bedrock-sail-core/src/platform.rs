@@ -9,6 +9,7 @@ const ARCHITECTURE_REVISION: u16 = 1;
 const IMPLEMENTATION_REVISION: u16 = 1;
 const VENDOR_NAME: &[u8] = b"Bedrock";
 const PROCESSOR_NAME: &[u8] = b"Bedrock Emulator";
+pub(crate) const TIMEBASE_TICKS_PER_SECOND: u64 = 1_000_000_000;
 
 const FPTRANSA_CONTRACT_IDS: &[u16] = &[
     0x0001, 0x0002, 0x0003, 0x0004, 0x0011, 0x0012, 0x0013, 0x0021, 0x0022, 0x0023, 0x0024, 0x0031,
@@ -41,7 +42,7 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (EXTENSION_CLASS, 2, 1) => 7,
         (EXTENSION_CLASS, 3, 0) => 1,
         (EXTENSION_CLASS, 3, 1) => 1,
-        (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(4, 0),
+        (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(5, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,
         (IMPLEMENTATION_CLASS, 2, 0) => 3,
@@ -55,6 +56,8 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (IMPLEMENTATION_CLASS, 4, 4) => 0x0001_0040_0000_00c0,
         (IMPLEMENTATION_CLASS, 4, 5) => 0x0000_0180_0001_0002,
         (IMPLEMENTATION_CLASS, 4, 6) => 0x0001_0040_0000_0240,
+        (IMPLEMENTATION_CLASS, 5, 0) => 1,
+        (IMPLEMENTATION_CLASS, 5, 1) => TIMEBASE_TICKS_PER_SECOND,
         _ => 0,
     }
 }
@@ -80,7 +83,7 @@ fn name_word(name: &[u8], word_index: usize) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::cpuid_query;
+    use super::{TIMEBASE_TICKS_PER_SECOND, cpuid_query};
 
     const fn selector(class: u32, leaf: u16, index: u16) -> u64 {
         ((class as u64) << 32) | ((leaf as u64) << 16) | index as u64
@@ -93,5 +96,11 @@ mod tests {
         assert_ne!(cpuid_query(selector(1, 1, 0x44)), 0);
         assert_eq!(cpuid_query(selector(1, 1, 0x10)), 0);
         assert_eq!(cpuid_query(u64::MAX), 0);
+    }
+
+    #[test]
+    fn cpuid_reports_the_invariant_timebase_rate() {
+        assert_eq!(cpuid_query(selector(2, 0, 0)), 0x0005_0000);
+        assert_eq!(cpuid_query(selector(2, 5, 1)), TIMEBASE_TICKS_PER_SECOND);
     }
 }

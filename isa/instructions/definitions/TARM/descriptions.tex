@@ -1,0 +1,9 @@
+TARM atomically installs the absolute deadline from the first (:term:base.terms.rn_register:) and the interrupt
+identity from the second. The identity must be in the implemented range 1 through \texttt{ICAP.MAX\_ID}; otherwise
+TARM raises
+(:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:) without changing timer state.
+
+The signed modular distance from the current timebase to the supplied deadline determines whether the deadline is
+future. A positive distance arms the timer and replaces any prior arm. Zero or a negative distance immediately posts
+the identity to the executing logical processor\textquotesingle{}s interrupt file and leaves the timer disarmed.
+TARM does not clear pending state posted by an earlier expiry and does not order memory operations.

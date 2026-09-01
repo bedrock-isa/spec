@@ -28,6 +28,7 @@ sail:
     - base.decode
     - FP.contract
     sources:
+    - time/semantics/types.sail
     - state/semantics/types.sail
     - events/semantics/types.sail
     - execution/semantics/types.sail
@@ -40,6 +41,7 @@ sail:
     - execution/semantics/primitives/integer_logical.sail
     - instructions/semantics/integer/operands.sail
     - control_registers/semantics/interrupt_file.sail
+    - time/semantics/time.sail
     - control_registers/semantics/control_state.sail
     - instructions/semantics/integer/arithmetic.sail
     - instructions/semantics/integer/data_control.sail
@@ -47,6 +49,7 @@ sail:
     - state/semantics/reset.sail
     - memory/access/semantics/transactions.sail
     - execution/semantics/uops.sail
+    - time/semantics/uops.sail
     - execution/semantics/uops/primitives/calc_ea.sail
     - execution/semantics/uops/primitives/integer_add.sail
     - execution/semantics/uops/primitives/integer_alu.sail
@@ -249,6 +252,10 @@ documents:
     source: privilege/documents/topics/privileged_programming_model/005_event_entry_and_failure.tex
   - id: privilege.privileged-programming-model.eret-routing-and-atomicity
     source: privilege/documents/topics/privileged_programming_model/006_eret_routing_and_atomicity.tex
+  - id: time.architectural-time.architectural-time
+    source: time/documents/topics/architectural_time/001_architectural_time.tex
+  - id: time.architectural-time.deadline-timer
+    source: time/documents/topics/architectural_time/002_deadline_timer.tex
   - id: events.interrupt-model.architectural-event-processing-model
     source: events/documents/topics/interrupt_model/001_architectural_event_processing_model.tex
   - id: events.interrupt-model.event-code-and-sources
@@ -301,6 +308,8 @@ documents:
     source: cpuid/documents/topics/cpuid_feature_discovery/013_address_width_discovery.tex
   - id: cpuid.cpuid-feature-discovery.save-area-layout-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/014_save_area_layout_discovery.tex
+  - id: cpuid.cpuid-feature-discovery.timebase-discovery
+    source: cpuid/documents/topics/cpuid_feature_discovery/015_timebase_discovery.tex
   - id: state.save-restore-area.processor-state-save-and-restore
     source: state/documents/topics/save_restore_area/001_processor_state_save_and_restore.tex
   - id: state.save-restore-area.save-area-layout

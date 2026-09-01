@@ -28,6 +28,7 @@ _PRESERVED_FUNCTIONS = (
     "decode_and_execute_full",
     "resume_transaction",
     "post_interrupt",
+    "advance_time",
 )
 
 

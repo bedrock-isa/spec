@@ -23,6 +23,7 @@ struct Cpu_state = {
   predicate_registers : Predicate_registers,
   segments : Segment_registers,
   controls : Control_state,
+  time : Time_state,
   sp : bits(64),
   pc : bits(64),
   flags : bits(4),

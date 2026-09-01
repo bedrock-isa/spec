@@ -8,3 +8,6 @@ It does not modify memory. An ordinary store is not required to wake a waiter; s
 the condition with a release operation and then executes WAKE. A waiter always rechecks its condition because WAIT
 may return spuriously. These rules prevent a wake from being lost between the comparison and monitor arm without
 turning WAKE itself into a memory-ordering operation.
+
+Blocking in WAIT does not stop the base architectural timebase. A deadline-timer interrupt may become pending while
+the monitor remains armed; ordinary interrupt admission determines when it is delivered.

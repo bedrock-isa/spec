@@ -1,0 +1,6 @@
+\subsection{Timebase Discovery}
+The mandatory architectural timebase advances at the exact nonzero integer rate reported by
+\texttt{TICKS\_PER\_SECOND}. The value is invariant for one cold-reset epoch and is preserved by warm RESET.
+Software uses this rate to convert differences between RDTIME results and absolute deadline values into elapsed time.
+
+(:cpuid-leaf:base.cpuid.IMPLEMENTATION.TIMEBASE:)

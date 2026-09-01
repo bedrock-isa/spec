@@ -396,6 +396,8 @@ enum System_state_uop_operation = {
   SystemWriteStatus,
 }
 
+enum Time_uop_operation = { TimeRead, TimeArm, TimeCancel }
+
 enum Tlb_context_uop_operation = {
   TlbInvalidateAsid, TlbInvalidatePage, TlbInvalidateAll, TlbPageTableQuery,
   TlbStateRestore, TlbStateSave, TlbSwitchPageTable, TlbSwitchPageTableAsid,

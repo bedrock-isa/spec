@@ -304,6 +304,32 @@ bedrock_core_status bedrock_core_post_interrupt(
   return BEDROCK_CORE_OK;
 }
 
+bedrock_core_status bedrock_core_advance_time(
+    bedrock_core *core, uint64_t ticks) {
+  if (core == NULL) return BEDROCK_CORE_BAD_ARGUMENT;
+  struct zCpu_state updated;
+  CREATE(zCpu_state)(&updated);
+  zadvance_time(&updated, core->state, ticks);
+  COPY(zCpu_state)(&core->state, updated);
+  if (core->has_pending) {
+    COPY(zCpu_state)(&core->pending.zstate, updated);
+    if (core->pending.zpending.zafter.kind == Kind_zSomezIRCpu_statezK) {
+      struct zCpu_state updated_after;
+      CREATE(zCpu_state)(&updated_after);
+      zadvance_time(
+          &updated_after,
+          core->pending.zpending.zafter.variants.zSomezIRCpu_statezK,
+          ticks);
+      COPY(zCpu_state)(
+          &core->pending.zpending.zafter.variants.zSomezIRCpu_statezK,
+          updated_after);
+      KILL(zCpu_state)(&updated_after);
+    }
+  }
+  KILL(zCpu_state)(&updated);
+  return BEDROCK_CORE_OK;
+}
+
 bedrock_core_status bedrock_core_is_supervisor(
     const bedrock_core *core, uint8_t *value) {
   if (core == NULL || value == NULL) return BEDROCK_CORE_BAD_ARGUMENT;
@@ -351,6 +377,11 @@ bedrock_core_status bedrock_core_get_state(
   state->interrupt_max_id = core->state.zcontrols.zinterrupt_file.zmax_id;
   state->interrupt_threshold = core->state.zcontrols.zinterrupt_file.zthreshold;
   state->interrupt_selector = core->state.zcontrols.zinterrupt_file.zselector;
+  state->time_value = core->state.ztime.zvalue;
+  state->time_ticks_per_second = core->state.ztime.zticks_per_second;
+  state->timer_deadline = core->state.ztime.zdeadline;
+  state->timer_interrupt_identity = core->state.ztime.zinterrupt_identity;
+  state->timer_armed = core->state.ztime.zarmed ? 1 : 0;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     if (!bedrock_core_byte_list_to_array(
             core->state.zvector_registers.data[index],
@@ -431,10 +462,13 @@ bedrock_core_status bedrock_core_set_state(
       || state->run_state < zRunning || state->run_state > zShutdown
       || state->vector_length_bytes != BEDROCK_CORE_VECTOR_LENGTH_BYTES
       || state->interrupt_max_id != core->state.zcontrols.zinterrupt_file.zmax_id
+      || state->time_ticks_per_second != core->state.ztime.zticks_per_second
       || state->interrupt_threshold > UINT64_C(0xFFFFFF)
       || state->interrupt_selector > UINT64_C(0xFFFFF)
       || (state->interrupt_selector & UINT64_C(0x3FFFF))
            > core->state.zcontrols.zinterrupt_file.zmax_id / UINT64_C(64)
+      || state->timer_interrupt_identity > core->state.zcontrols.zinterrupt_file.zmax_id
+      || (state->timer_armed != 0 && state->timer_interrupt_identity == 0)
       || state->repeat_fixed_body_length > BEDROCK_CORE_MAX_INSTRUCTION_BYTES)
     return BEDROCK_CORE_BAD_ARGUMENT;
   memcpy(core->state.zregisters.data, state->registers,
@@ -471,6 +505,10 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zcontrols.zcfi_cfisp = state->controls.cfi_cfisp;
   core->state.zcontrols.zinterrupt_file.zthreshold = state->interrupt_threshold;
   core->state.zcontrols.zinterrupt_file.zselector = state->interrupt_selector;
+  core->state.ztime.zvalue = state->time_value;
+  core->state.ztime.zdeadline = state->timer_deadline;
+  core->state.ztime.zinterrupt_identity = state->timer_interrupt_identity;
+  core->state.ztime.zarmed = state->timer_armed != 0;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     bedrock_core_replace_byte_list(&core->state.zvector_registers.data[index],
                                    state->vector_registers[index],

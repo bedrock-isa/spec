@@ -126,6 +126,11 @@ pub struct SailCoreState {
     pub interrupt_max_id: u64,
     pub interrupt_threshold: u64,
     pub interrupt_selector: u64,
+    pub time_value: u64,
+    pub time_ticks_per_second: u64,
+    pub timer_deadline: u64,
+    pub timer_interrupt_identity: u64,
+    pub timer_armed: u8,
     pub fstatus: u64,
     pub fflags: u64,
     pub current_dfa: u8,
@@ -505,6 +510,10 @@ impl SailCore {
         let _runtime = runtime_lock();
         SailCoreStatus::from_raw(unsafe { ffi::bedrock_core_post_interrupt(self.raw, identity) })
     }
+    pub fn advance_time(&mut self, ticks: u64) -> SailCoreStatus {
+        let _runtime = runtime_lock();
+        SailCoreStatus::from_raw(unsafe { ffi::bedrock_core_advance_time(self.raw, ticks) })
+    }
     pub fn is_supervisor(&self) -> Result<bool, SailCoreStatus> {
         let _runtime = runtime_lock();
         let mut value = 0;
@@ -646,6 +655,7 @@ mod ffi {
         pub fn bedrock_core_get_status(core: *mut c_void, value: *mut u64) -> i32;
         pub fn bedrock_core_get_control(core: *mut c_void, selector: u32, value: *mut u64) -> i32;
         pub fn bedrock_core_post_interrupt(core: *mut c_void, identity: u32) -> i32;
+        pub fn bedrock_core_advance_time(core: *mut c_void, ticks: u64) -> i32;
         pub fn bedrock_core_is_supervisor(core: *mut c_void, value: *mut u8) -> i32;
         pub fn bedrock_core_get_state(core: *mut c_void, state: *mut super::SailCoreState) -> i32;
         pub fn bedrock_core_set_state(core: *mut c_void, state: *const super::SailCoreState)
@@ -730,6 +740,127 @@ mod tests {
         assert_eq!(core.execute(&[0x82, 0x01]), SailCoreStatus::Ok);
         assert_eq!(core.register(1), Ok(5));
         assert_eq!(core.pc(), Ok(2));
+    }
+
+    #[test]
+    fn timebase_reads_advance_only_by_explicit_host_ticks() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.time_value = u64::MAX - 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        // RDTIME R3
+        assert_eq!(core.execute(&[0xc3, 0xb4, 0x83]), SailCoreStatus::Ok);
+        assert_eq!(core.register(3), Ok(u64::MAX - 1));
+        assert_eq!(core.state().unwrap().time_value, u64::MAX - 1);
+
+        assert_eq!(core.advance_time(3), SailCoreStatus::Ok);
+        // RDTIME R4
+        assert_eq!(core.execute(&[0xc3, 0xb4, 0x84]), SailCoreStatus::Ok);
+        assert_eq!(core.register(4), Ok(1));
+    }
+
+    #[test]
+    fn deadline_timer_posts_at_a_wrapped_deadline_and_disarms() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.time_value = u64::MAX - 2;
+        state.registers[1] = 2;
+        state.registers[2] = 5;
+        state.supervisor = 1;
+        state.status |= 1 << 4;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        // TARM R1, R2
+        assert_eq!(core.execute(&[0xc3, 0x04, 0x12]), SailCoreStatus::Ok);
+        assert_eq!(core.state().unwrap().timer_armed, 1);
+
+        assert_eq!(core.advance_time(4), SailCoreStatus::Ok);
+        assert_eq!(core.state().unwrap().time_value, 1);
+        assert_eq!(core.state().unwrap().timer_armed, 1);
+        assert_eq!(core.control(0x0304), Ok(0));
+
+        assert_eq!(core.advance_time(1), SailCoreStatus::Ok);
+        assert_eq!(core.state().unwrap().time_value, 2);
+        assert_eq!(core.state().unwrap().timer_armed, 0);
+        assert_eq!(core.control(0x0304), Ok(1 << 5));
+    }
+
+    #[test]
+    fn half_range_deadline_is_already_reached_and_posts_without_arming() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.time_value = 10;
+        state.timer_deadline = 100;
+        state.timer_interrupt_identity = 7;
+        state.timer_armed = 1;
+        state.registers[1] = 10 + (1 << 63);
+        state.registers[2] = 6;
+        state.supervisor = 1;
+        state.status |= 1 << 4;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        // TARM R1, R2
+        assert_eq!(core.execute(&[0xc3, 0x04, 0x12]), SailCoreStatus::Ok);
+        assert_eq!(core.state().unwrap().timer_armed, 0);
+        assert_eq!(core.control(0x0304), Ok(1 << 6));
+    }
+
+    #[test]
+    fn timer_cancel_disarms_without_clearing_a_pending_identity() {
+        let mut core = SailCore::new().unwrap();
+        assert_eq!(core.post_interrupt(5), SailCoreStatus::Ok);
+        let mut state = core.state().unwrap();
+        state.timer_deadline = 100;
+        state.timer_interrupt_identity = 7;
+        state.timer_armed = 1;
+        state.supervisor = 1;
+        state.status |= 1 << 4;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        // TCANCEL
+        assert_eq!(core.execute(&[0xae, 0x02]), SailCoreStatus::Ok);
+        assert_eq!(core.state().unwrap().timer_armed, 0);
+        assert_eq!(core.control(0x0304), Ok(1 << 5));
+    }
+
+    #[test]
+    fn invalid_timer_identity_faults_without_replacing_the_arm() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.timer_deadline = 100;
+        state.timer_interrupt_identity = 7;
+        state.timer_armed = 1;
+        state.registers[1] = 200;
+        state.registers[2] = 1 << 24;
+        state.supervisor = 1;
+        state.status |= 1 << 4;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        // TARM R1, R2
+        assert_eq!(core.execute(&[0xc3, 0x04, 0x12]), SailCoreStatus::Fault);
+        let state = core.state().unwrap();
+        assert_eq!(state.timer_deadline, 100);
+        assert_eq!(state.timer_interrupt_identity, 7);
+        assert_eq!(state.timer_armed, 1);
+    }
+
+    #[test]
+    fn warm_reset_preserves_time_and_disarms_the_timer() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        let ticks_per_second = state.time_ticks_per_second;
+        state.time_value = 0x1122_3344_5566_7788;
+        state.timer_deadline = 0x2233_4455_6677_8899;
+        state.timer_interrupt_identity = 9;
+        state.timer_armed = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        assert_eq!(core.reset(), SailCoreStatus::Ok);
+        let state = core.state().unwrap();
+        assert_eq!(state.time_value, 0x1122_3344_5566_7788);
+        assert_eq!(state.time_ticks_per_second, ticks_per_second);
+        assert_eq!(state.timer_armed, 0);
     }
 
     #[test]

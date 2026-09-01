@@ -50,6 +50,7 @@ function initial_cpu() -> Cpu_state = struct {
   predicate_registers = zero_predicate_registers(16),
   segments = zero_segments(),
   controls = initial_control_state(),
+  time = initial_time_state(),
   sp = 0x0000000000000000,
   pc = 0x0000000000000000,
   flags = 0x0,

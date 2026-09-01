@@ -83,6 +83,11 @@ typedef struct bedrock_core_state {
   uint64_t interrupt_max_id;
   uint64_t interrupt_threshold;
   uint64_t interrupt_selector;
+  uint64_t time_value;
+  uint64_t time_ticks_per_second;
+  uint64_t timer_deadline;
+  uint64_t timer_interrupt_identity;
+  uint8_t timer_armed;
   uint64_t fstatus;
   uint64_t fflags;
   uint8_t current_dfa;
@@ -209,6 +214,8 @@ bedrock_core_status bedrock_core_get_control(
     const bedrock_core *core, uint32_t selector, uint64_t *value);
 bedrock_core_status bedrock_core_post_interrupt(
     bedrock_core *core, uint32_t identity);
+bedrock_core_status bedrock_core_advance_time(
+    bedrock_core *core, uint64_t ticks);
 bedrock_core_status bedrock_core_is_supervisor(
     const bedrock_core *core, uint8_t *value);
 bedrock_core_status bedrock_core_get_state(

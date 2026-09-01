@@ -1,0 +1,3 @@
+TCANCEL atomically disarms the executing (:term:base.terms.logical_processor:)\textquotesingle{}s deadline timer.
+Executing TCANCEL while the timer is already disarmed is a valid no-op. TCANCEL does not clear or claim any pending
+interrupt-file identity and does not order memory operations.

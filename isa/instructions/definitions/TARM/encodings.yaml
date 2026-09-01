@@ -1,0 +1,11 @@
+encodings:
+  rn_d_rn_i:
+    pattern: 1100000100ddddiiii
+    syntax: TARM Rn(d), Rn(i)
+    fields:
+      d:
+        role: deadline
+        type: base.field_types.Rn
+      i:
+        role: identity
+        type: base.field_types.Rn
