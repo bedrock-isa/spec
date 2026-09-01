@@ -27,8 +27,10 @@ class EntityKind(StrEnum):
     EVENT = "event"
     REGISTER_GROUP = "register-group"
     REGISTER = "register"
+    REGISTER_FIELD = "register-field"
     CONTROL_REGISTER_NAMESPACE = "control-register-namespace"
     CONTROL_REGISTER = "control-register"
+    CONTROL_REGISTER_FIELD = "control-register-field"
     TERM_GROUP = "term-group"
     TERM = "term"
     ELF_RELOCATION = "elf-relocation"
@@ -153,14 +155,24 @@ class EntityCatalog:
             (EntityKind.EVENT, events.references.events),
             (EntityKind.REGISTER_GROUP, registers.references.groups),
             (EntityKind.REGISTER, registers.references.registers),
+            (EntityKind.REGISTER_FIELD, registers.references.fields),
             (
                 EntityKind.CONTROL_REGISTER_NAMESPACE,
                 control_registers.references.namespaces,
             ),
             (EntityKind.CONTROL_REGISTER, control_registers.references.registers),
+            (
+                EntityKind.CONTROL_REGISTER_FIELD,
+                control_registers.references.fields,
+            ),
         ):
             for reference, value in typed_index.items():
                 display = getattr(value, "name", None) or getattr(value, "id", None)
+                if kind in {
+                    EntityKind.REGISTER_FIELD,
+                    EntityKind.CONTROL_REGISTER_FIELD,
+                }:
+                    display = f"{reference.path[-1]}.{value.id}"
                 add(
                     reference,
                     kind,
@@ -188,6 +200,8 @@ class EntityCatalog:
                             EntityKind.CPUID_LEAF,
                             EntityKind.CPUID_QUERY,
                             EntityKind.CPUID_FIELD,
+                            EntityKind.REGISTER_FIELD,
+                            EntityKind.CONTROL_REGISTER_FIELD,
                         }
                         else EntityDisplayStyle.TEXT
                     ),

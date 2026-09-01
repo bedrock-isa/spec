@@ -55,6 +55,8 @@ class ResetSpec:
 class RegisterField:
     """One named field in an architectural register image."""
 
+    reference: Reference["RegisterField"]
+    source: Path
     id: str
     lsb: int
     bits: int
@@ -136,10 +138,11 @@ class RegisterNamespace:
 
 @dataclass(frozen=True, slots=True)
 class RegisterReferenceIndexes:
-    """Typed logical-reference indexes for groups and registers."""
+    """Typed logical-reference indexes for groups, registers, and fields."""
 
     groups: ReferenceIndex[RegisterGroup]
     registers: ReferenceIndex[Register]
+    fields: ReferenceIndex[RegisterField]
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,7 +176,9 @@ class RegisterCatalog:
             else {}
         )
         references = RegisterReferenceIndexes(
-            ReferenceIndex[RegisterGroup](), ReferenceIndex[Register]()
+            ReferenceIndex[RegisterGroup](),
+            ReferenceIndex[Register](),
+            ReferenceIndex[RegisterField](),
         )
         namespaces: dict[str, RegisterNamespace] = {}
         for owner, namespace_root in owner_roots:
@@ -230,7 +235,10 @@ def _load_group(
     )
     width = _decode_width(raw["width"], source)
     reset = _decode_reset(raw.get("reset"))
-    layout = _load_layout(root / "layout.yaml", schemas["layout"])
+    layout = _load_layout(root / "layout.yaml", schemas["layout"], reference)
+    if layout is not None:
+        for field in layout.fields:
+            references.fields.register(field.reference, field)
     registers_root = root / "registers"
     has_series = "series" in raw
     has_explicit = registers_root.is_dir()
@@ -280,6 +288,9 @@ def _load_group(
                 schemas,
             )
             references.registers.register(register.reference, register)
+            if register.layout is not None and register.layout is not layout:
+                for field in register.layout.fields:
+                    references.fields.register(field.reference, field)
             registers[register_id] = register
 
     return RegisterGroup(
@@ -314,13 +325,18 @@ def _load_register(
         raise ValueError(
             f"{source}: register ID {register_id!r} does not match directory {root.name!r}"
         )
-    local_layout = _load_layout(root / "layout.yaml", schemas["layout"])
+    reference: Reference[Register] = Reference(
+        owner, ("registers", group_id), register_id
+    )
+    local_layout = _load_layout(
+        root / "layout.yaml", schemas["layout"], reference
+    )
     if group_layout is not None and local_layout is not None:
         raise ValueError(
             f"{root}: register-local layout cannot replace the group's fixed layout"
         )
     return Register(
-        reference=Reference(owner, ("registers", group_id), register_id),
+        reference=reference,
         source=source,
         root=root,
         owner=owner,
@@ -350,7 +366,11 @@ def _decode_width(raw: Any, source: Path) -> RegisterWidth:
     return VariableRegisterWidth(expression, values)
 
 
-def _load_layout(source: Path, schema: Mapping[str, object]) -> RegisterLayout | None:
+def _load_layout(
+    source: Path,
+    schema: Mapping[str, object],
+    owner: Reference[object],
+) -> RegisterLayout | None:
     if not source.is_file():
         return None
     raw = _load_validated(source, schema)
@@ -359,7 +379,16 @@ def _load_layout(source: Path, schema: Mapping[str, object]) -> RegisterLayout |
         bits=raw["bits"],
         fields=tuple(
             RegisterField(
-                field["id"], field["lsb"], field["bits"], field.get("summary")
+                reference=Reference(
+                    owner.owner,
+                    (*owner.path, owner.element),
+                    field["id"],
+                ),
+                source=source,
+                id=field["id"],
+                lsb=field["lsb"],
+                bits=field["bits"],
+                summary=field.get("summary"),
             )
             for field in raw["fields"]
         ),

@@ -64,10 +64,11 @@ class ControlRegisterNamespace:
 
 @dataclass(frozen=True, slots=True)
 class ControlRegisterReferenceIndexes:
-    """Typed logical references for namespaces and control registers."""
+    """Typed logical references for namespaces, registers, and fields."""
 
     namespaces: ReferenceIndex[ControlRegisterNamespace]
     registers: ReferenceIndex[ControlRegister]
+    fields: ReferenceIndex[RegisterField]
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +89,7 @@ class ControlRegisterCatalog:
         references = ControlRegisterReferenceIndexes(
             ReferenceIndex[ControlRegisterNamespace](),
             ReferenceIndex[ControlRegister](),
+            ReferenceIndex[RegisterField](),
         )
         namespaces: dict[str, ControlRegisterNamespace] = {}
         selectors: dict[int, ControlRegister] = {}
@@ -147,6 +149,9 @@ def _load_namespace(
             inventory.reset,
         )
         references.registers.register(register.reference, register)
+        if register.layout is not None:
+            for field in register.layout.fields:
+                references.fields.register(field.reference, field)
         registers[register_id] = register
     return ControlRegisterNamespace(
         Reference(owner, (), "control_registers"),
@@ -237,8 +242,11 @@ def _load_register(
             f"{source}: control-register ID {register_id!r} does not match "
             f"directory {root.name!r}"
         )
+    reference: Reference[ControlRegister] = Reference(
+        owner, ("control_registers",), register_id
+    )
     return ControlRegister(
-        Reference(owner, ("control_registers",), register_id),
+        reference,
         source,
         root,
         owner,
@@ -246,12 +254,20 @@ def _load_register(
         raw["selector"],
         raw["summary"],
         _decode_reset(raw["reset"]) if "reset" in raw else default_reset,
-        _load_layout(root / "layout.yaml", isa_root / "schemas/register-layout.yaml"),
+        _load_layout(
+            root / "layout.yaml",
+            isa_root / "schemas/register-layout.yaml",
+            reference,
+        ),
         root / "semantics.sail",
     )
 
 
-def _load_layout(source: Path, schema: Path) -> RegisterLayout | None:
+def _load_layout(
+    source: Path,
+    schema: Path,
+    owner: Reference[object],
+) -> RegisterLayout | None:
     if not source.is_file():
         return None
     raw = SchemaValidatedYamlLoader().load(source, schema)
@@ -262,7 +278,16 @@ def _load_layout(source: Path, schema: Path) -> RegisterLayout | None:
         raw["bits"],
         tuple(
             RegisterField(
-                field["id"], field["lsb"], field["bits"], field.get("summary")
+                reference=Reference(
+                    owner.owner,
+                    (*owner.path, owner.element),
+                    field["id"],
+                ),
+                source=source,
+                id=field["id"],
+                lsb=field["lsb"],
+                bits=field["bits"],
+                summary=field.get("summary"),
             )
             for field in raw["fields"]
         ),
