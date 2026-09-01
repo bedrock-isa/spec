@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from .encoding_reservation import (
     EncodingReservationRegion,
 )
 from .event import EventCatalog, EventClass
+from .observability import log_phase
 from .project import IsaProject, InstructionBundle
 from .reference import Reference, ReferenceError
 from .register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
@@ -27,6 +29,9 @@ from .semantic_text import TermReferenceText
 from .terminology import Term, TermCatalog, TerminologyInventory
 from .type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
 from .validation import SailEntryValidator
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _error(
@@ -1577,8 +1582,19 @@ class CheckService:
         targets: Iterable[str | Path] = (),
     ) -> DiagnosticBag:
         requested = tuple(targets)
-        scope = ValidationScope(project, project.select(requested), not requested)
-        diagnostics = DiagnosticBag()
-        for rule in self.rules:
-            diagnostics.extend(rule.validate(scope))
-        return diagnostics
+        with log_phase(_LOGGER, "check", targets=len(requested)) as phase:
+            scope = ValidationScope(project, project.select(requested), not requested)
+            diagnostics = DiagnosticBag()
+            for rule in self.rules:
+                before = len(diagnostics)
+                with log_phase(
+                    _LOGGER,
+                    "check.rule",
+                    level=logging.DEBUG,
+                    rule=type(rule).__name__,
+                ) as rule_phase:
+                    diagnostics.extend(rule.validate(scope))
+                    rule_phase["diagnostics"] = len(diagnostics) - before
+            phase["complete"] = scope.complete
+            phase["diagnostics"] = len(diagnostics)
+            return diagnostics

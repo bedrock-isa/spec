@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
+import logging
 from pathlib import Path
 from types import MappingProxyType
 from typing import TypeVar, cast
@@ -22,6 +23,7 @@ from .extension import ExtensionMetadata, ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .instruction import Instruction
 from .model import ModelCatalog
+from .observability import log_phase
 from .register import RegisterCatalog
 from .reference import (
     QualifiedReference,
@@ -35,6 +37,7 @@ from .vector_diagram import VectorDiagram, VectorDiagramCatalog
 
 
 _T = TypeVar("_T")
+_LOGGER = logging.getLogger(__name__)
 
 
 class ProjectLookupReason(StrEnum):
@@ -727,34 +730,94 @@ class IsaProjectLoader:
 
     def load(self, root: str | Path) -> IsaProject:
         isa_root = Path(root).resolve()
-        extension_catalog = ExtensionSetCatalog.load(isa_root)
-        types = TypeSystem.load(isa_root, extension_catalog)
-        encoding_reservations = EncodingReservationCatalog.load(isa_root)
-        cpuid = CpuidCatalog.load(isa_root, extension_catalog)
-        events = EventCatalog.load(isa_root, extension_catalog)
-        registers = RegisterCatalog.load(isa_root, extension_catalog)
-        control_registers = ControlRegisterCatalog.load(isa_root, extension_catalog)
-        terminology = TermCatalog.load(isa_root, extension_catalog)
-        catalog = SourceCatalog.discover(isa_root, types, cpuid, extension_catalog)
-        model = ModelCatalog.load(
-            isa_root,
-            extension_catalog,
-            {
-                extension_id: extension.metadata
-                for extension_id, extension in catalog.extensions.items()
-            },
-        )
-        disclosures = ImplementationDisclosureCatalog.load(isa_root, extension_catalog)
-        entities = EntityCatalog.build(
-            types,
-            catalog,
-            cpuid,
-            events,
-            registers,
-            control_registers,
-            terminology,
-            model,
-        )
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="extensions",
+        ):
+            extension_catalog = ExtensionSetCatalog.load(isa_root)
+        with log_phase(
+            _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="types"
+        ):
+            types = TypeSystem.load(isa_root, extension_catalog)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="encoding-reservations",
+        ):
+            encoding_reservations = EncodingReservationCatalog.load(isa_root)
+        with log_phase(
+            _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="cpuid"
+        ):
+            cpuid = CpuidCatalog.load(isa_root, extension_catalog)
+        with log_phase(
+            _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="events"
+        ):
+            events = EventCatalog.load(isa_root, extension_catalog)
+        with log_phase(
+            _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="registers"
+        ):
+            registers = RegisterCatalog.load(isa_root, extension_catalog)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="control-registers",
+        ):
+            control_registers = ControlRegisterCatalog.load(
+                isa_root, extension_catalog
+            )
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="terminology",
+        ):
+            terminology = TermCatalog.load(isa_root, extension_catalog)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="instructions",
+        ):
+            catalog = SourceCatalog.discover(
+                isa_root, types, cpuid, extension_catalog
+            )
+        with log_phase(
+            _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="model"
+        ):
+            model = ModelCatalog.load(
+                isa_root,
+                extension_catalog,
+                {
+                    extension_id: extension.metadata
+                    for extension_id, extension in catalog.extensions.items()
+                },
+            )
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="disclosures",
+        ):
+            disclosures = ImplementationDisclosureCatalog.load(
+                isa_root, extension_catalog
+            )
+        with log_phase(
+            _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="entities"
+        ):
+            entities = EntityCatalog.build(
+                types,
+                catalog,
+                cpuid,
+                events,
+                registers,
+                control_registers,
+                terminology,
+                model,
+            )
         return IsaProject(
             isa_root,
             types,

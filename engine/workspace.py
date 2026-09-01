@@ -4,15 +4,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 from types import MappingProxyType
 from typing import Protocol, TypeVar
 
 from .dependency import EntityDependency
 from .entity import EntityCatalog
+from .observability import log_phase
 from .reference import QualifiedReference, Reference
 
 _T = TypeVar("_T")
+_LOGGER = logging.getLogger(__name__)
 
 
 class SpecificationProvider(Protocol):
@@ -52,23 +55,39 @@ class SpecWorkspace:
         from .project import IsaProject
 
         repository = Path(root).resolve()
-        isa = IsaProject.load(repository / "isa")
-        elf = ElfAbiProject.load(repository / "abi/elf", isa)
-        c_abi = CAbiProject.load(repository / "abi/c")
-        interface = CInterfaceProject.load(repository / "interfaces/c")
-        workspace = cls.create(
-            repository,
-            {
-                "isa": isa,
-                "abi.elf": elf,
-                "abi.c": c_abi,
-                "interfaces.c": interface,
-            },
-        )
-        elf.validate(workspace)
-        c_abi.validate(workspace)
-        interface.validate(workspace)
-        return workspace
+        with log_phase(_LOGGER, "workspace.load", root=repository) as phase:
+            with log_phase(_LOGGER, "workspace.provider.load", provider="isa"):
+                isa = IsaProject.load(repository / "isa")
+            with log_phase(_LOGGER, "workspace.provider.load", provider="abi.elf"):
+                elf = ElfAbiProject.load(repository / "abi/elf", isa)
+            with log_phase(_LOGGER, "workspace.provider.load", provider="abi.c"):
+                c_abi = CAbiProject.load(repository / "abi/c")
+            with log_phase(
+                _LOGGER, "workspace.provider.load", provider="interfaces.c"
+            ):
+                interface = CInterfaceProject.load(repository / "interfaces/c")
+            workspace = cls.create(
+                repository,
+                {
+                    "isa": isa,
+                    "abi.elf": elf,
+                    "abi.c": c_abi,
+                    "interfaces.c": interface,
+                },
+            )
+            for provider_name, provider in (
+                ("abi.elf", elf),
+                ("abi.c", c_abi),
+                ("interfaces.c", interface),
+            ):
+                with log_phase(
+                    _LOGGER,
+                    "workspace.provider.validate",
+                    provider=provider_name,
+                ):
+                    provider.validate(workspace)
+            phase["providers"] = len(workspace.providers)
+            return workspace
 
     def require_provider(self, name: str) -> SpecificationProvider:
         try:

@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 import re
 import tempfile
 
+from ..observability import log_phase
 from .artifact import GeneratedArtifactSet
 
 
 _OWNERSHIP_DIRECTORY = ".artifact-ownership"
 _ARTIFACT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+_LOGGER = logging.getLogger(__name__)
 
 
 class ArtifactWriter:
@@ -24,6 +27,17 @@ class ArtifactWriter:
     """
 
     def write(
+        self, artifacts: GeneratedArtifactSet, output_root: str | Path
+    ) -> tuple[Path, ...]:
+        with log_phase(
+            _LOGGER,
+            "artifact.write",
+            artifact=artifacts.artifact_id,
+            files=len(artifacts.artifacts),
+        ):
+            return self._write(artifacts, output_root)
+
+    def _write(
         self, artifacts: GeneratedArtifactSet, output_root: str | Path
     ) -> tuple[Path, ...]:
         root = self._safe_output_root(output_root)

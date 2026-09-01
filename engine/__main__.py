@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 from pathlib import Path
 import sys
@@ -14,8 +15,12 @@ from .check import CheckService
 from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .document import DocumentBuilder
 from .generation import ArtifactGeneratorRegistry, ArtifactWriter
+from .observability import configure_logging, log_caught_exception, log_phase
 from .project import IsaProject, ProjectLookupError
 from .workspace import SpecWorkspace
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -25,6 +30,17 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path(__file__).resolve().parents[1] / "isa",
         help="ISA source root (default: repository/isa)",
+    )
+    logging_group = parser.add_mutually_exclusive_group()
+    logging_group.add_argument(
+        "--verbose",
+        action="store_true",
+        help="report major execution phases and elapsed time on stderr",
+    )
+    logging_group.add_argument(
+        "--debug",
+        action="store_true",
+        help="report detailed phases and caught exception tracebacks on stderr",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     check = subparsers.add_parser("check", help="validate ISA authoring sources")
@@ -137,6 +153,7 @@ def _load_failure(root: Path, error: Exception) -> DiagnosticBag:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    configure_logging(verbose=args.verbose, debug=args.debug, stream=sys.stderr)
     try:
         workspace = SpecWorkspace.load(args.isa_root.resolve().parent)
         provider = workspace.require_provider("isa")
@@ -144,36 +161,33 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise TypeError("workspace isa provider must be an IsaProject")
         project = provider
     except (OSError, ValueError) as error:
+        log_caught_exception(_LOGGER, "workspace.load", error)
         diagnostics = _load_failure(args.isa_root, error)
-        rendered = (
-            diagnostics.render_json()
-            if getattr(args, "output_format", "text") == "json"
-            else diagnostics.render_text()
-        )
-        print(rendered, file=sys.stderr)
+        _emit_diagnostics(args, diagnostics)
         return 1
 
-    if args.command == "alloc":
-        return _run_allocation(args, project)
-    if args.command == "docs":
-        return _run_docs(args, workspace)
-    if args.command == "artifacts":
-        return _run_artifacts(args, workspace)
+    with log_phase(_LOGGER, "command.run", command=args.command) as phase:
+        if args.command == "alloc":
+            result = _run_allocation(args, project)
+        elif args.command == "docs":
+            result = _run_docs(args, workspace)
+        elif args.command == "artifacts":
+            result = _run_artifacts(args, workspace)
+        else:
+            result = _run_check(args, project)
+        phase["status"] = result
+    return result
 
+
+def _run_check(args: argparse.Namespace, project: IsaProject) -> int:
     try:
         diagnostics = CheckService().check(project, args.targets)
     except (OSError, ValueError) as error:
+        log_caught_exception(_LOGGER, "check", error)
         diagnostics = _load_failure(args.isa_root, error)
 
-    rendered = (
-        diagnostics.render_json()
-        if args.output_format == "json"
-        else diagnostics.render_text()
-    )
-    if rendered:
-        print(rendered, file=sys.stderr if diagnostics.has_errors else sys.stdout)
-    elif args.output_format == "json":
-        print("[]")
+    if diagnostics or args.output_format == "json":
+        _emit_diagnostics(args, diagnostics)
     else:
         selected = project.select(args.targets)
         instruction_count = len(selected)
@@ -187,6 +201,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 1 if diagnostics.has_errors else 0
 
 
+def _emit_diagnostics(args: argparse.Namespace, diagnostics: DiagnosticBag) -> None:
+    output_format = getattr(args, "output_format", "text")
+    if output_format == "json":
+        print(diagnostics.render_json())
+        return
+    rendered = diagnostics.render_text()
+    if rendered:
+        print(rendered, file=sys.stderr if diagnostics.has_errors else sys.stdout)
+
+
 def _run_docs(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
     try:
         result = DocumentBuilder().build(
@@ -196,6 +220,7 @@ def _run_docs(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
             latexmk=args.latexmk,
         )
     except (OSError, RuntimeError, ValueError) as error:
+        log_caught_exception(_LOGGER, "document.build", error)
         print(f"document build failed: {error}", file=sys.stderr)
         return 1
     print(f"TeX validation: {'passed' if result.report.passed else 'failed'}")
@@ -225,6 +250,7 @@ def _run_artifacts(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
                 print(f"  {path}")
         return 0
     except (NotImplementedError, OSError, ValueError) as error:
+        log_caught_exception(_LOGGER, "artifact.command", error)
         print(f"artifact generation failed: {error}", file=sys.stderr)
         return 1
 
@@ -392,13 +418,9 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                 )
         return 0
     except (OSError, ValueError) as error:
+        log_caught_exception(_LOGGER, "allocation.command", error)
         diagnostics = _load_failure(args.isa_root, error)
-        rendered = (
-            diagnostics.render_json()
-            if args.output_format == "json"
-            else diagnostics.render_text()
-        )
-        print(rendered, file=sys.stderr)
+        _emit_diagnostics(args, diagnostics)
         return 1
 
 

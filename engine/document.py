@@ -6,6 +6,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 import json
+import logging
 from pathlib import Path
 import re
 import tempfile
@@ -22,6 +23,7 @@ from .generation import (
     GeneratedArtifact,
     GeneratedArtifactSet,
 )
+from .observability import log_phase
 from .project import IsaProject
 from .workspace import SpecWorkspace
 
@@ -38,6 +40,7 @@ LISTED_DIAGRAM_TARGET_RE = re.compile(
     re.MULTILINE,
 )
 SUMMARY_REFERENCE_RE = re.compile(r"\\BedrockSummaryMnemonic\{([^{}]+)\}")
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,6 +172,27 @@ class DocumentBuilder:
         compile_pdf: bool,
         latexmk: str = "latexmk",
     ) -> DocumentBuildResult:
+        with log_phase(
+            _LOGGER, "document.build", compile_pdf=compile_pdf
+        ) as phase:
+            result = self._build(
+                workspace,
+                output_root,
+                compile_pdf=compile_pdf,
+                latexmk=latexmk,
+            )
+            phase["validation"] = "passed" if result.report.passed else "failed"
+            phase["pdf"] = result.pdf is not None
+            return result
+
+    def _build(
+        self,
+        workspace: SpecWorkspace,
+        output_root: str | Path,
+        *,
+        compile_pdf: bool,
+        latexmk: str,
+    ) -> DocumentBuildResult:
         provider = workspace.require_provider("isa")
         if not isinstance(provider, IsaProject):
             raise TypeError("workspace isa provider must be an IsaProject")
@@ -183,13 +207,19 @@ class DocumentBuilder:
             )
             generator = discovered
         context = ArtifactGenerationContext.create(workspace, output)
-        generated = generator.generate(context)
-        generator.definition.validate_generated(generated)
+        with log_phase(
+            _LOGGER, "document.generate", artifact=generator.artifact_id
+        ) as phase:
+            generated = generator.generate(context)
+            generator.definition.validate_generated(generated)
+            phase["files"] = len(generated.artifacts)
         document_output = generator.definition.outputs["document"]
         tex = generated.artifact(document_output).content
         if not isinstance(tex, str):
             raise TypeError("ISA reference TeX artifact must be text")
-        report = self.validator.validate(tex)
+        with log_phase(_LOGGER, "document.tex.validate") as phase:
+            report = self.validator.validate(tex)
+            phase["issues"] = len(report.issues)
         derived = generator.definition.derived_outputs
         validated = GeneratedArtifactSet(
             (
@@ -206,10 +236,13 @@ class DocumentBuilder:
         if not compile_pdf or not report.passed:
             return result
         with tempfile.TemporaryDirectory(prefix="bedrock-document-build-") as directory:
-            compiled = self.compiler.compile(
-                tex_path, Path(directory), repository, latexmk
-            )
-            pdf_metrics = self.pdf_validator.validate(compiled)
+            with log_phase(_LOGGER, "document.latex.compile", executable=latexmk):
+                compiled = self.compiler.compile(
+                    tex_path, Path(directory), repository, latexmk
+                )
+            with log_phase(_LOGGER, "document.pdf.validate") as phase:
+                pdf_metrics = self.pdf_validator.validate(compiled)
+                phase["pages"] = pdf_metrics["pages"]
             published = GeneratedArtifactSet(
                 (
                     *validated.artifacts,

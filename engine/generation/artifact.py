@@ -6,10 +6,15 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
 import importlib.util
+import logging
 from pathlib import Path
 from types import MappingProxyType
+from ..observability import log_phase
 from ..yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 from ..workspace import SpecWorkspace, SpecificationProvider
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,20 +216,29 @@ class ArtifactGeneratorRegistry:
         cls,
         workspace: SpecWorkspace,
     ) -> "ArtifactGeneratorRegistry":
-        schema_path = workspace.root / "artifacts/schema.yaml"
-        schema_raw = YamlDocumentLoader().mapping(schema_path)
-        artifact_root = workspace.root / "artifacts"
-        definitions = tuple(sorted(artifact_root.glob("*/artifact.yaml")))
-        generators: list[ArtifactGenerator] = []
-        for path in definitions:
-            definition = ArtifactDefinition.load(path, schema_raw)
-            missing_inputs = sorted(set(definition.inputs) - set(workspace.providers))
-            if missing_inputs:
-                raise ValueError(
-                    f"{path}: unavailable artifact inputs {missing_inputs}"
+        with log_phase(
+            _LOGGER,
+            "artifact.registry.discover",
+            level=logging.DEBUG,
+        ) as phase:
+            schema_path = workspace.root / "artifacts/schema.yaml"
+            schema_raw = YamlDocumentLoader().mapping(schema_path)
+            artifact_root = workspace.root / "artifacts"
+            definitions = tuple(sorted(artifact_root.glob("*/artifact.yaml")))
+            generators: list[ArtifactGenerator] = []
+            for path in definitions:
+                definition = ArtifactDefinition.load(path, schema_raw)
+                missing_inputs = sorted(
+                    set(definition.inputs) - set(workspace.providers)
                 )
-            generators.append(cls._load_generator(definition))
-        return cls(tuple(generators))
+                if missing_inputs:
+                    raise ValueError(
+                        f"{path}: unavailable artifact inputs {missing_inputs}"
+                    )
+                generators.append(cls._load_generator(definition))
+            registry = cls(tuple(generators))
+            phase["artifacts"] = len(registry.artifact_ids)
+            return registry
 
     @staticmethod
     def _load_generator(definition: ArtifactDefinition) -> ArtifactGenerator:
@@ -265,11 +279,15 @@ class ArtifactGeneratorRegistry:
         workspace: SpecWorkspace,
         output_root: str | Path,
     ) -> GeneratedArtifactSet:
-        context = ArtifactGenerationContext.create(workspace, output_root)
-        generator = self.generator(artifact_id)
-        artifacts = generator.generate(context)
-        generator.definition.validate_generated(artifacts)
-        return artifacts
+        with log_phase(
+            _LOGGER, "artifact.generate", artifact=artifact_id
+        ) as phase:
+            context = ArtifactGenerationContext.create(workspace, output_root)
+            generator = self.generator(artifact_id)
+            artifacts = generator.generate(context)
+            generator.definition.validate_generated(artifacts)
+            phase["files"] = len(artifacts.artifacts)
+            return artifacts
 
     def _validate_dependencies(self) -> None:
         active: list[str] = []
