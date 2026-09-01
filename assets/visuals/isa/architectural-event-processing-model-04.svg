@@ -237,15 +237,18 @@
 <g fill="rgb(0%, 0%, 0%)" fill-opacity="1">
 <use xlink:href="#glyph-1-8" x="370.450586" y="10.207358"/>
 </g>
-<path fill-rule="nonzero" fill="rgb(96.998596%, 96.998596%, 96.998596%)" fill-opacity="1" stroke-width="0.3487" stroke-linecap="butt" stroke-linejoin="miter" stroke="rgb(17.999268%, 17.999268%, 17.999268%)" stroke-opacity="1" stroke-miterlimit="10" d="M 350.811774 0.00145491 L 350.811774 15.840789 L 400.926645 15.840789 L 400.926645 0.00145491 Z M 350.811774 0.00145491 " transform="matrix(0.998799, 0, 0, -0.998799, 18.254052, 29.075672)"/>
+<path fill-rule="nonzero" fill="rgb(93.998718%, 93.998718%, 93.998718%)" fill-opacity="1" stroke-width="0.3487" stroke-linecap="butt" stroke-linejoin="miter" stroke="rgb(17.999268%, 17.999268%, 17.999268%)" stroke-opacity="1" stroke-dasharray="2.98883 1.99255" stroke-miterlimit="10" d="M 350.811774 0.00145491 L 350.811774 15.840789 L 400.926645 15.840789 L 400.926645 0.00145491 Z M 350.811774 0.00145491 " transform="matrix(0.998799, 0, 0, -0.998799, 18.254052, 29.075672)"/>
 <g fill="rgb(0%, 0%, 0%)" fill-opacity="1">
-<use xlink:href="#glyph-2-15" x="383.218235" y="23.184755"/>
-<use xlink:href="#glyph-2-13" x="387.39749" y="23.184755"/>
-<use xlink:href="#glyph-2-14" x="391.576745" y="23.184755"/>
-<use xlink:href="#glyph-2-5" x="395.756" y="23.184755"/>
-<use xlink:href="#glyph-2-9" x="399.935255" y="23.184755"/>
+<use xlink:href="#glyph-2-0" x="376.948773" y="23.337571"/>
+<use xlink:href="#glyph-2-1" x="381.128028" y="23.337571"/>
+<use xlink:href="#glyph-2-2" x="385.307283" y="23.337571"/>
+<use xlink:href="#glyph-2-1" x="389.486538" y="23.337571"/>
+<use xlink:href="#glyph-2-0" x="393.665793" y="23.337571"/>
+<use xlink:href="#glyph-2-3" x="397.845048" y="23.337571"/>
+<use xlink:href="#glyph-2-1" x="402.024303" y="23.337571"/>
+<use xlink:href="#glyph-2-4" x="406.203558" y="23.337571"/>
 </g>
 <g fill="rgb(0%, 0%, 0%)" fill-opacity="1">
-<use xlink:href="#glyph-1-7" x="414.248925" y="10.0895"/>
+<use xlink:href="#glyph-1-7" x="414.249924" y="10.0895"/>
 </g>
 </svg>

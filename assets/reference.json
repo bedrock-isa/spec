@@ -1,0 +1,15 @@
+{
+  "documents": [
+    "Programmer's Reference Manual",
+    "ELF ABI",
+    "C ABI",
+    "Target Intrinsics"
+  ],
+  "metrics": {
+    "anchored_targets": 111,
+    "downloads": 4,
+    "pages": 428,
+    "targets": 539,
+    "visuals": 922
+  }
+}

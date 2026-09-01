@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../privileged-execution-model/">
+        <link rel="prev" href="../architectural-time/">
       
       
-        <link rel="next" href="../cpuid-feature-discovery/">
+        <link rel="next" href="../architectural-debug/">
       
       
         
@@ -371,8 +371,6 @@
       
         
       
-        
-      
     
     
     
@@ -459,42 +457,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../terminology-and-compatibility/" class="md-nav__link">
+      <a href="../terminology/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Terminology and Compatibility
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../conformance/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Conformance
+    Terminology
   
 
     
@@ -877,6 +847,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -943,6 +917,34 @@
     
   
     Privileged Execution Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architectural-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Time
   
 
     
@@ -1034,10 +1036,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#event-priority-and-debug-trace" class="md-nav__link">
+  <a href="#event-priority-and-debug-stops" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Event Priority and Debug Trace
+        Event Priority and Debug Stops
       
     </span>
   </a>
@@ -1101,10 +1103,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#address-context-error-code" class="md-nav__link">
+  <a href="#address-context-payload" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Address-Context Error Code
+        Address-Context Payload
       
     </span>
   </a>
@@ -1112,15 +1114,54 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#other-exception-error-codes" class="md-nav__link">
+  <a href="#other-exception-payloads" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Other Exception Error Codes
+        Other Exception Payloads
       
     </span>
   </a>
   
 </li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-event-payloads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Event Payloads
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#floating-point-exception-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Floating-Point Exception Payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#control-flow-integrity-violation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control-Flow Integrity Violation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Control-Flow Integrity Violation">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#auxiliary-payloads" class="md-nav__link">
@@ -1175,6 +1216,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architectural-debug/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Debug Triggers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1323,6 +1392,12 @@
       
         
           
+        
+      
+        
+      
+        
+      
         
       
         
@@ -1703,6 +1778,54 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1717,7 +1840,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/base/" class="md-nav__link ">
+            <a href="../instructions/groups/base/" class="md-nav__link ">
               
   
   
@@ -1929,6 +2052,90 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/bfexts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BFEXTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bfextu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BFEXTU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bfins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BFINS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/bclr/" class="md-nav__link">
         
   
@@ -1937,6 +2144,34 @@
     
   
     BCLR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BIC
   
 
     
@@ -2545,6 +2780,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/cmpxchgp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMPXCHGP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/cpuid/" class="md-nav__link">
         
   
@@ -2553,6 +2816,62 @@
     
   
     CPUID
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/crc32/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRC32
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/crc32c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRC32C
   
 
     
@@ -3105,6 +3424,146 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/fetchandn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHANDN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchmaxs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHMAXS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchmaxu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHMAXU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchmins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHMINS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchminu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHMINU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/fetchor/" class="md-nav__link">
         
   
@@ -3141,6 +3600,34 @@
     
   
     FETCHSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchxchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHXCHG
   
 
     
@@ -3581,6 +4068,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/ldp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LDP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/lea/" class="md-nav__link">
         
   
@@ -3645,6 +4160,34 @@
     
   
     LRET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/madd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MADD
   
 
     
@@ -3861,6 +4404,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/movacq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVACQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/movcc/" class="md-nav__link">
         
   
@@ -3945,6 +4516,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/movrel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVREL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/movuc/" class="md-nav__link">
         
   
@@ -3981,6 +4580,34 @@
     
   
     MOVUU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/msub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MSUB
   
 
     
@@ -4561,6 +5188,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/rdtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDTIME
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/rdseg/" class="md-nav__link">
         
   
@@ -4709,6 +5364,34 @@
     
   
     RET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/revbit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REVBIT
   
 
     
@@ -5037,6 +5720,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/specfence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPECFENCE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/shl/" class="md-nav__link">
         
   
@@ -5101,6 +5812,34 @@
     
   
     SUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/stp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STP
   
 
     
@@ -5233,6 +5972,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/tarm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TARM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/tcancel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TCANCEL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/test/" class="md-nav__link">
         
   
@@ -5345,14 +6140,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wait/" class="md-nav__link">
+      <a href="../instructions/relax/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    WAIT
+    RELAX
   
 
     
@@ -5643,6 +6438,248 @@
       
         
       
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../instructions/groups/wait/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Address Wait Instructions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_5_2_4" id="__nav_2_1_5_2_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_5_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Address Wait Instructions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wait/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAIT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wake/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAKE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../instructions/groups/cfi/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control-Flow Integrity Instructions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_5_2_5" id="__nav_2_1_5_2_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_5_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Control-Flow Integrity Instructions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cfiland/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CFILAND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
         
       
         
@@ -5739,11 +6776,11 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/fpu/" class="md-nav__link ">
+            <a href="../instructions/groups/fp/" class="md-nav__link ">
               
   
   
@@ -5761,14 +6798,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_1_5_2_4" id="__nav_2_1_5_2_4_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_1_5_2_6" id="__nav_2_1_5_2_6_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_1_5_2_4">
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_5_2_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -6095,14 +7132,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvt/" class="md-nav__link">
+      <a href="../instructions/fcvtd/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FCVT
+    FCVTD
   
 
     
@@ -6123,14 +7160,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvtu/" class="md-nav__link">
+      <a href="../instructions/fcvth/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FCVTU
+    FCVTH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcvts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCVTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcvtud/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCVTUD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcvtuh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCVTUH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcvtus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCVTUS
   
 
     
@@ -7109,11 +8258,11 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_7" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/fpu-transcendental-approx/" class="md-nav__link ">
+            <a href="../instructions/groups/fptransa/" class="md-nav__link ">
               
   
   
@@ -7131,14 +8280,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_1_5_2_5" id="__nav_2_1_5_2_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_1_5_2_7" id="__nav_2_1_5_2_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_1_5_2_5">
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_5_2_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -7901,58 +9050,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
     
     
     
@@ -7963,11 +9060,11 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_8" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/vector/" class="md-nav__link ">
+            <a href="../instructions/groups/vector/" class="md-nav__link ">
               
   
   
@@ -7985,14 +9082,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_1_5_2_6" id="__nav_2_1_5_2_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_1_5_2_8" id="__nav_2_1_5_2_8_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_1_5_2_6">
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_5_2_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -8515,14 +9612,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vgather1/" class="md-nav__link">
+      <a href="../instructions/vgather/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    VGATHER1
+    VGATHER
   
 
     
@@ -8543,14 +9640,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vscatter1/" class="md-nav__link">
+      <a href="../instructions/vscatter/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    VSCATTER1
+    VSCATTER
   
 
     
@@ -8971,174 +10068,6 @@
     
   
     VREVBYTE
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vsqrt/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VSQRT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vround/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VROUND
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vtrunc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VTRUNC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vfloor/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VFLOOR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vceil/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCEIL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vclass/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCLASS
   
 
     
@@ -9831,118 +10760,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmin/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VMIN
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vmax/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VMAX
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vdiv/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VDIV
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcopysign/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCOPYSIGN
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/vextzw/" class="md-nav__link">
         
   
@@ -10195,230 +11012,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vcvts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtd/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTD
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtus/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTUS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtud/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTUD
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtl/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtul/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTUL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtq/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTQ
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtuq/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTUQ
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/vperm/" class="md-nav__link">
         
   
@@ -10595,174 +11188,6 @@
     
   
     VTRNHI
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvth/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTH
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vcvtuh/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VCVTUH
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vmadd/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VMADD
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vmsub/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VMSUB
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vnmadd/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VNMADD
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vnmsub/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VNMSUB
   
 
     
@@ -11147,62 +11572,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredmin/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VREDMIN
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/vredmax/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    VREDMAX
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/psel/" class="md-nav__link">
         
   
@@ -11512,6 +11881,1158 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_9" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../instructions/groups/vectorfp/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scalable-Vector Floating-Point Instructions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_5_2_9" id="__nav_2_1_5_2_9_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_5_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scalable-Vector Floating-Point Instructions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfdup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFDUP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfneg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFNEG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFABS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfsqrt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFSQRT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfround/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFROUND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vftrunc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFTRUNC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vffloor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFFLOOR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfceil/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCEIL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfclass/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCLASS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcmpcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCMPcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfmul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFMUL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfmin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFMIN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfmax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFMAX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfdiv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFDIV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcopysign/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCOPYSIGN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTUS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtud/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTUD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTUL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtuq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTUQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfcvtuh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFCVTUH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfmadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFMADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfmsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfnmadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFNMADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfnmsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfextract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFEXTRACT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfinsert/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFINSERT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfredadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFREDADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfredmin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFREDMIN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vfredmax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VFREDMAX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -11660,6 +13181,8 @@
       
         
       
+        
+      
     
     
     
@@ -11718,14 +13241,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/scope-and-conformance/" class="md-nav__link">
+      <a href="../../elf-abi/scope/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Scope and Conformance
+    Scope
   
 
     
@@ -11970,6 +13493,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../elf-abi/debugging-and-unwind/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugging and Unwind Encoding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../elf-abi/assembler-contract/" class="md-nav__link">
         
   
@@ -12091,8 +13642,6 @@
       
         
       
-        
-      
     
     
     
@@ -12151,14 +13700,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/scope-and-conformance/" class="md-nav__link">
+      <a href="../../c-abi/scope/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Scope and Conformance
+    Scope
   
 
     
@@ -12355,34 +13904,6 @@
     
   
     Calling Convention Examples
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../c-abi/system-interface-boundary/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    System Interface Boundary
   
 
     
@@ -12734,10 +14255,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#event-priority-and-debug-trace" class="md-nav__link">
+  <a href="#event-priority-and-debug-stops" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Event Priority and Debug Trace
+        Event Priority and Debug Stops
       
     </span>
   </a>
@@ -12801,10 +14322,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#address-context-error-code" class="md-nav__link">
+  <a href="#address-context-payload" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Address-Context Error Code
+        Address-Context Payload
       
     </span>
   </a>
@@ -12812,15 +14333,54 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#other-exception-error-codes" class="md-nav__link">
+  <a href="#other-exception-payloads" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Other Exception Error Codes
+        Other Exception Payloads
       
     </span>
   </a>
   
 </li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-event-payloads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Event Payloads
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#floating-point-exception-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Floating-Point Exception Payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#control-flow-integrity-violation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control-Flow Integrity Violation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Control-Flow Integrity Violation">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#auxiliary-payloads" class="md-nav__link">
@@ -12889,11 +14449,11 @@
 
 
 <h1 id="architectural-event-processing-model">Architectural Event Processing Model</h1>
-<p>An <em>architectural event</em> is a synchronous or asynchronous condition delivered through the common event-entry mechanism. Synchronous exceptions are faults or traps. Asynchronous events are maskable interrupts or NMIs. A fault and a trap are exception subtypes, not peers of exception. SYSCALL produces the explicit synchronous SYSTEM_CALL exception (EXC:0x20) and uses this same mechanism.</p>
-<p>Every event transfers to the exact program counter in EPC after loading ECS and EDS. Hardware supplies an event code and either a user-bank payload or a full supervisor frame whose layout is fixed by the event source. Software begins at one common entry point and dispatches by the event code.</p>
+<p>An <em>architectural event</em> is a synchronous or asynchronous condition delivered through the common event-entry mechanism. Synchronous exceptions are faults or traps. Asynchronous events are maskable interrupts or NMIs. Fault and trap are the two exception subtypes. SYSCALL produces the explicit synchronous <a href="#event-system-call"><code>SYSTEM_CALL</code></a> exception (event code <code>0x00000003</code>) and uses this same mechanism.</p>
+<p>Every event transfers to the exact <a href="../terminology/#term-program-counter">program counter</a> in EPC after loading ECS and EDS. Hardware supplies an event code and either a user-bank <a href="../terminology/#term-payload">payload</a> or a full supervisor frame whose layout is fixed by the event source. Software begins at one common entry point and dispatches by the event code.</p>
 <p>Related normative instruction entries are <a href="../instructions/bkpt/"><code>BKPT</code></a>, <a href="../instructions/syscall/"><code>SYSCALL</code></a>, <a href="../instructions/eret/"><code>ERET</code></a>, and <a href="../instructions/reset/"><code>RESET</code></a>.</p>
 <h2 id="event-code-and-sources">Event Code and Sources <a href="#section-event-code-and-sources" id="section-event-code-and-sources"></a></h2>
-<p>Every delivered event carries a 32-bit code. The high byte is the event class and the low 24 bits are an ID in that class’s namespace.</p>
+<p>Every delivered event carries a 32-bit code. The high byte is the event class and the low 24 bits are an ID in that class's namespace.</p>
 <p><img alt="Architectural Event Code" src="../../assets/visuals/isa/architectural-event-processing-model-01.svg" /></p>
 <p><strong>Architectural Event Code</strong></p>
 <p><strong>Architectural Event Classes</strong></p>
@@ -12902,361 +14462,236 @@
 <tr>
 <th style="text-align: left;"><strong>Value</strong></th>
 <th style="text-align: left;"><strong>Class</strong></th>
-<th style="text-align: left;"><strong>ID interpretation</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Selector policy</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><code>0x00</code></td>
-<td style="text-align: left;">EXCEPTION</td>
-<td style="text-align: left;">architecture-defined exception ID</td>
+<td style="text-align: left;"><code>EXCEPTION</code></td>
+<td style="text-align: left;">Synchronous Exception</td>
+<td style="text-align: left;">fixed 24-bit selector</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0x01</code></td>
-<td style="text-align: left;">INTERRUPT</td>
-<td style="text-align: left;">opaque platform-assigned global interrupt ID</td>
+<td style="text-align: left;"><code>INTERRUPT</code></td>
+<td style="text-align: left;">Maskable Interrupt</td>
+<td style="text-align: left;">identity 24-bit selector</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0x02</code></td>
-<td style="text-align: left;">NMI</td>
-<td style="text-align: left;">zero or an architecturally/platform-defined NMI source ID</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x03..0xFF</code></td>
-<td style="text-align: left;">reserved</td>
-<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>NMI</code></td>
+<td style="text-align: left;">Non-Maskable Interrupt</td>
+<td style="text-align: left;">source 24-bit selector</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Assigned Base Exception IDs</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>ID</strong></th>
-<th style="text-align: left;"><strong>Name</strong></th>
-<th style="text-align: left;"><strong>Subtype or source</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>0x00</code></td>
-<td style="text-align: left;">DEBUG_TRACE</td>
-<td style="text-align: left;">debug trace trap</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x02</code></td>
-<td style="text-align: left;">BREAKPOINT</td>
-<td style="text-align: left;">breakpoint trap</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x03</code></td>
-<td style="text-align: left;">ILLEGAL_INSTRUCTION</td>
-<td style="text-align: left;">illegal-instruction fault</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x08</code></td>
-<td style="text-align: left;">PRIVILEGE_FAULT</td>
-<td style="text-align: left;">privilege fault</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x09</code></td>
-<td style="text-align: left;">PAGE_FAULT</td>
-<td style="text-align: left;">address-translation, access, or atomic-alignment fault</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x0A</code></td>
-<td style="text-align: left;">DIVIDE_ERROR</td>
-<td style="text-align: left;">integer divide fault</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x0D</code></td>
-<td style="text-align: left;">INVALID_CONTROL_STATE</td>
-<td style="text-align: left;">invalid control-state fault</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x0E</code></td>
-<td style="text-align: left;">FLOATING_POINT_FAULT</td>
-<td style="text-align: left;">enabled floating-point exception condition</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x18</code></td>
-<td style="text-align: left;">DOUBLE_FAULT</td>
-<td style="text-align: left;">event-delivery failure</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x19</code></td>
-<td style="text-align: left;">MACHINE_CHECK</td>
-<td style="text-align: left;">corrected trap or recoverable/fatal machine-check exception</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x1A</code></td>
-<td style="text-align: left;">BUS_ERROR</td>
-<td style="text-align: left;">synchronous precise bus-error fault</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Architectural Event Boundaries and Priority</strong></p>
+<p>Class values not listed above are reserved. Fixed selectors are allocated by this specification; platform and source selectors are supplied by the corresponding event source.</p>
+<p>The following fixed event codes are allocated by this specification. Each row answers only which symbolic event is assigned to a fixed code; the event’s behavior, frame, and <a href="../terminology/#term-payload">payload</a> are defined by the topic that owns that behavior.</p>
+<p><strong>Fixed Architectural Event-Code Allocations</strong></p>
+<p><a href="#event-machine-check" id="event-machine-check"></a></p>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;"><strong>Code</strong></th>
 <th style="text-align: left;"><strong>Event</strong></th>
-<th style="text-align: left;"><strong>Kind</strong></th>
-<th style="text-align: left;"><strong>Saved PC</strong></th>
-<th style="text-align: left;"><strong>Priority</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>EXC:00</code></td>
-<td style="text-align: left;"><code>DEBUG_TRACE</code></td>
-<td style="text-align: left;">trap</td>
-<td style="text-align: left;">next trace unit</td>
-<td style="text-align: left;">5</td>
+<td style="text-align: left;"><code>0x00000000</code> <a href="#event-single-step" id="event-single-step"></a></td>
+<td style="text-align: left;"><code>SINGLE_STEP</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:02</code></td>
-<td style="text-align: left;"><code>BREAKPOINT</code></td>
-<td style="text-align: left;">explicit trap</td>
-<td style="text-align: left;">following instruction</td>
-<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>0x00000001</code> <a href="#event-explicit-breakpoint" id="event-explicit-breakpoint"></a></td>
+<td style="text-align: left;"><code>EXPLICIT_BREAKPOINT</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:03</code></td>
-<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>0x00000006</code> <a href="#event-execution-breakpoint" id="event-execution-breakpoint"></a></td>
+<td style="text-align: left;"><code>EXECUTION_BREAKPOINT</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:08</code></td>
-<td style="text-align: left;"><code>PRIVILEGE_FAULT</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>0x00000007</code> <a href="#event-memory-read-watchpoint" id="event-memory-read-watchpoint"></a></td>
+<td style="text-align: left;"><code>MEMORY_READ_WATCHPOINT</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:09</code></td>
-<td style="text-align: left;"><code>PAGE_FAULT</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>0x00000008</code> <a href="#event-memory-write-watchpoint" id="event-memory-write-watchpoint"></a></td>
+<td style="text-align: left;"><code>MEMORY_WRITE_WATCHPOINT</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:0a</code></td>
-<td style="text-align: left;"><code>DIVIDE_ERROR</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>0x00000009</code> <a href="#event-atomic-memory-watchpoint" id="event-atomic-memory-watchpoint"></a></td>
+<td style="text-align: left;"><code>ATOMIC_MEMORY_WATCHPOINT</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:0b</code></td>
-<td style="text-align: left;"><code>VECTOR_RANGE_ERROR</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>0x00000002</code></td>
+<td style="text-align: left;"><code>PRIVILEGE_VIOLATION</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EXC:0c</code></td>
-<td style="text-align: left;"><code>ACCESS_FAULT</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EXC:0d</code></td>
-<td style="text-align: left;"><code>INVALID_CONTROL_STATE</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EXC:0e</code></td>
-<td style="text-align: left;"><code>FLOATING_POINT_FAULT</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EXC:18</code></td>
-<td style="text-align: left;"><code>DOUBLE_FAULT</code></td>
-<td style="text-align: left;">delivery failure</td>
-<td style="text-align: left;">interrupted event boundary</td>
-<td style="text-align: left;">1</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EXC:19</code></td>
-<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
-<td style="text-align: left;">machine check</td>
-<td style="text-align: left;">selected by PRECISE and corrected status</td>
-<td style="text-align: left;">2</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EXC:1a</code></td>
-<td style="text-align: left;"><code>BUS_ERROR</code></td>
-<td style="text-align: left;">fault</td>
-<td style="text-align: left;">faulting instruction</td>
-<td style="text-align: left;">3</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EXC:20</code></td>
+<td style="text-align: left;"><code>0x00000003</code> <a href="#event-system-call" id="event-system-call"></a></td>
 <td style="text-align: left;"><code>SYSTEM_CALL</code></td>
-<td style="text-align: left;">explicit trap</td>
-<td style="text-align: left;">following instruction</td>
-<td style="text-align: left;">4</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>NMI:source</code></td>
-<td style="text-align: left;"><code>NMI</code></td>
-<td style="text-align: left;">asynchronous</td>
-<td style="text-align: left;">next instruction or repeat-prefix address</td>
-<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>0x00000004</code> <a href="#event-divide-by-zero" id="event-divide-by-zero"></a></td>
+<td style="text-align: left;"><code>DIVIDE_BY_ZERO</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>INTERRUPT:platform</code></td>
-<td style="text-align: left;"><code>INTERRUPT</code></td>
-<td style="text-align: left;">asynchronous</td>
-<td style="text-align: left;">next instruction or repeat-prefix address</td>
-<td style="text-align: left;">7</td>
+<td style="text-align: left;"><code>0x00000005</code> <a href="#event-signed-divide-overflow" id="event-signed-divide-overflow"></a></td>
+<td style="text-align: left;"><code>SIGNED_DIVIDE_OVERFLOW</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000010</code></td>
+<td style="text-align: left;"><code>INVALID_OPCODE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000011</code></td>
+<td style="text-align: left;"><code>INVALID_ADDRESSING_FORM</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000012</code></td>
+<td style="text-align: left;"><code>RESERVED_INSTRUCTION_ENCODING</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000013</code> <a href="#event-unavailable-instruction-extension" id="event-unavailable-instruction-extension"></a></td>
+<td style="text-align: left;"><code>UNAVAILABLE_INSTRUCTION_EXTENSION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000014</code></td>
+<td style="text-align: left;"><code>EXPLICIT_ILLEGAL_INSTRUCTION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000015</code> <a href="#event-truncated-instruction" id="event-truncated-instruction"></a></td>
+<td style="text-align: left;"><code>TRUNCATED_INSTRUCTION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000016</code> <a href="#event-invalid-operand-relation" id="event-invalid-operand-relation"></a></td>
+<td style="text-align: left;"><code>INVALID_OPERAND_RELATION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000020</code></td>
+<td style="text-align: left;"><code>PAGE_NOT_PRESENT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000021</code></td>
+<td style="text-align: left;"><code>PAGE_PERMISSION_VIOLATION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000022</code> <a href="#event-malformed-page-table-entry" id="event-malformed-page-table-entry"></a></td>
+<td style="text-align: left;"><code>MALFORMED_PAGE_TABLE_ENTRY</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000023</code> <a href="#event-noncanonical-address" id="event-noncanonical-address"></a></td>
+<td style="text-align: left;"><code>NONCANONICAL_ADDRESS</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000024</code> <a href="#event-segment-bounds-violation" id="event-segment-bounds-violation"></a></td>
+<td style="text-align: left;"><code>SEGMENT_BOUNDS_VIOLATION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000025</code> <a href="#event-atomic-alignment-fault" id="event-atomic-alignment-fault"></a></td>
+<td style="text-align: left;"><code>ATOMIC_ALIGNMENT_FAULT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000026</code> <a href="#event-memory-type-fault" id="event-memory-type-fault"></a></td>
+<td style="text-align: left;"><code>MEMORY_TYPE_FAULT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000030</code> <a href="#event-physical-address-fault" id="event-physical-address-fault"></a></td>
+<td style="text-align: left;"><code>PHYSICAL_ADDRESS_FAULT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000031</code> <a href="#event-mmio-alignment-fault" id="event-mmio-alignment-fault"></a></td>
+<td style="text-align: left;"><code>MMIO_ALIGNMENT_FAULT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000032</code> <a href="#event-unsupported-mmio-operation" id="event-unsupported-mmio-operation"></a></td>
+<td style="text-align: left;"><code>UNSUPPORTED_MMIO_OPERATION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000040</code> <a href="#event-invalid-control-selector" id="event-invalid-control-selector"></a></td>
+<td style="text-align: left;"><code>INVALID_CONTROL_SELECTOR</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000041</code> <a href="#event-reserved-control-bits" id="event-reserved-control-bits"></a></td>
+<td style="text-align: left;"><code>RESERVED_CONTROL_BITS</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000042</code> <a href="#event-invalid-control-image" id="event-invalid-control-image"></a></td>
+<td style="text-align: left;"><code>INVALID_CONTROL_IMAGE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000043</code> <a href="#event-invalid-control-transition" id="event-invalid-control-transition"></a></td>
+<td style="text-align: left;"><code>INVALID_CONTROL_TRANSITION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000044</code> <a href="#event-control-flow-integrity-violation" id="event-control-flow-integrity-violation"></a></td>
+<td style="text-align: left;"><code>CONTROL_FLOW_INTEGRITY_VIOLATION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000050</code></td>
+<td style="text-align: left;"><code>VECTOR_LOOP_OFFSET_OUT_OF_RANGE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000051</code> <a href="#event-vector-lane-index-out-of-range" id="event-vector-lane-index-out-of-range"></a></td>
+<td style="text-align: left;"><code>VECTOR_LANE_INDEX_OUT_OF_RANGE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000060</code> <a href="#event-floating-point-exception" id="event-floating-point-exception"></a></td>
+<td style="text-align: left;"><code>FLOATING_POINT_EXCEPTION</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000070</code></td>
+<td style="text-align: left;"><code>BUS_NO_RESPONDER</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000071</code></td>
+<td style="text-align: left;"><code>BUS_ACCESS_DENIED</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000072</code></td>
+<td style="text-align: left;"><code>BUS_TIMEOUT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000073</code></td>
+<td style="text-align: left;"><code>BUS_DATA_ERROR</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000074</code></td>
+<td style="text-align: left;"><code>BUS_OTHER_ERROR</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000078</code></td>
+<td style="text-align: left;"><code>EVENT_ENTRY_STATE_FAILURE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000079</code></td>
+<td style="text-align: left;"><code>EVENT_STACK_STATE_FAILURE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0000007A</code> <a href="#event-event-frame-address-failure" id="event-event-frame-address-failure"></a></td>
+<td style="text-align: left;"><code>EVENT_FRAME_ADDRESS_FAILURE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0000007B</code> <a href="#event-event-frame-store-failure" id="event-event-frame-store-failure"></a></td>
+<td style="text-align: left;"><code>EVENT_FRAME_STORE_FAILURE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0000007C</code></td>
+<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Architectural Event Producers and Delivery State</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Event</strong></th>
-<th style="text-align: left;"><strong>Producer</strong></th>
-<th style="text-align: left;"><strong>Committed State</strong></th>
-<th style="text-align: left;"><strong>Frame</strong></th>
-<th style="text-align: left;"><strong>Payload</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>DEBUG_TRACE</code></td>
-<td style="text-align: left;">completion of a TF-selected trace unit</td>
-<td style="text-align: left;">completed trace unit</td>
-<td style="text-align: left;"><code>BASIC</code></td>
-<td style="text-align: left;">none</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>BREAKPOINT</code></td>
-<td style="text-align: left;">BKPT</td>
-<td style="text-align: left;">BKPT completed</td>
-<td style="text-align: left;"><code>BASIC</code></td>
-<td style="text-align: left;">none</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code></td>
-<td style="text-align: left;">decode or instruction-validity check</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>ERROR</code></td>
-<td style="text-align: left;">error code</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>PRIVILEGE_FAULT</code></td>
-<td style="text-align: left;">privilege check</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>BASIC</code></td>
-<td style="text-align: left;">none</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>PAGE_FAULT</code></td>
-<td style="text-align: left;">segment, translation, memory-type, or atomic-alignment check</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>PAGE_FAULT</code></td>
-<td style="text-align: left;">error code, fault EA, and linear address</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>DIVIDE_ERROR</code></td>
-<td style="text-align: left;">integer divide operation</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>ERROR</code></td>
-<td style="text-align: left;">error code</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>VECTOR_RANGE_ERROR</code></td>
-<td style="text-align: left;">PLOOP offset or vector lane-index validation</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>ERROR</code></td>
-<td style="text-align: left;">error code</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ACCESS_FAULT</code></td>
-<td style="text-align: left;">physical-address-width or MMIO access-rule check</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>PAGE_FAULT</code></td>
-<td style="text-align: left;">error code, fault EA, and linear address</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>INVALID_CONTROL_STATE</code></td>
-<td style="text-align: left;">control-state validation</td>
-<td style="text-align: left;">no effects of the faulting instruction</td>
-<td style="text-align: left;"><code>ERROR</code></td>
-<td style="text-align: left;">error code</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>FLOATING_POINT_FAULT</code></td>
-<td style="text-align: left;">enabled floating-point exception condition</td>
-<td style="text-align: left;">no destination or accrued-flag effects of the faulting instruction</td>
-<td style="text-align: left;"><code>ERROR</code></td>
-<td style="text-align: left;">error code</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>DOUBLE_FAULT</code></td>
-<td style="text-align: left;">architectural event-delivery failure</td>
-<td style="text-align: left;">no partial first delivery state</td>
-<td style="text-align: left;"><code>AUXILIARY</code></td>
-<td style="text-align: left;">delivery-failure auxiliary state</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
-<td style="text-align: left;">processor or memory-system machine-check source</td>
-<td style="text-align: left;">selected by PRECISE and RETRY_SAFE</td>
-<td style="text-align: left;"><code>AUXILIARY</code></td>
-<td style="text-align: left;">machine-check auxiliary state</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>BUS_ERROR</code></td>
-<td style="text-align: left;">synchronous acknowledged bus failure</td>
-<td style="text-align: left;">no architectural-state effects of the faulting instruction</td>
-<td style="text-align: left;"><code>AUXILIARY</code></td>
-<td style="text-align: left;">bus-error auxiliary state</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>SYSTEM_CALL</code></td>
-<td style="text-align: left;">SYSCALL</td>
-<td style="text-align: left;">SYSCALL completed</td>
-<td style="text-align: left;"><code>BASIC</code></td>
-<td style="text-align: left;">none</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>NMI</code></td>
-<td style="text-align: left;">admitted non-maskable interrupt source</td>
-<td style="text-align: left;">all earlier committed state</td>
-<td style="text-align: left;"><code>BASIC</code></td>
-<td style="text-align: left;">none</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>INTERRUPT</code></td>
-<td style="text-align: left;">admitted maskable interrupt source</td>
-<td style="text-align: left;">all earlier committed state</td>
-<td style="text-align: left;"><code>BASIC</code></td>
-<td style="text-align: left;">none</td>
-</tr>
-</tbody>
-</table>
-<p>Unassigned base-profile exception IDs are reserved. External interrupt IDs do not share a namespace with exception IDs. Interrupt-controller routing, native-ID mapping, ownership, acknowledgement, trigger mode, masking, and end-of-interrupt signaling belong to the platform ABI. An interrupt ID unknown to software still reaches the common entry; the platform dispatcher applies its unhandled or spurious-interrupt policy.</p>
-<p>A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. A faulting repeat iteration rolls back without decrementing its counter, then saves the repeat-prefix address. After a successful repeat iteration, the counter decrement commits before an event may be admitted between iterations; that event also saves the repeat-prefix address. Event entry clears hidden repeat state, and ERET executes the saved prefix normally without restoring repeat continuation.</p>
-<h2 id="event-priority-and-debug-trace">Event Priority and Debug Trace <a href="#section-event-priority-and-debug-trace" id="section-event-priority-and-debug-trace"></a></h2>
-<p>When events compete at one architectural boundary, the lower priority number in the event table wins. This orders delivery failure before machine check, current synchronous faults, explicit traps, DEBUG_TRACE, NMI, and maskable interrupt. A lower-priority asynchronous event remains pending after a higher-priority event is selected.</p>
-<p>A trace unit is one ordinary committed instruction or one committed REP or REPcc body iteration. Completion of a zero-count REP or REPcc is also one trace unit. TF is sampled at the start of the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then delivers DEBUG_TRACE with the following trace-unit boundary as its saved PC.</p>
-<p>The <a href="../instructions/trace/"><code>TRACE</code></a> marker instruction is an ordinary instruction for this trace-unit rule and separately records the marker described by its instruction entry. The <a href="../terminology-and-compatibility/#section-tracing-terminology">tracing terminology</a> distinguishes the instruction, trace unit, and event.</p>
-<p>RF is a one-shot DEBUG_TRACE suppressor. If sampled RF is one, successful trace-unit completion clears RF and does not produce DEBUG_TRACE. A synchronous fault or asynchronous event before that completion preserves RF. WRSTATUS, ERET changes to TF or RF apply to the next trace unit. Event entry saves the old STATUS image and then clears live TF and RF. RF does not suppress an explicit trap such as BKPT.</p>
+<p>Unassigned base-profile exception IDs are <a href="../terminology/#term-reserved">reserved</a>. Interrupt identities do not share a namespace with exception IDs. Interrupt-controller routing, native-ID mapping, ownership, trigger mode, and any external acknowledgement or end-of-interrupt protocol belong to the platform ABI. A valid posted identity is recorded in the target logical processor’s architectural interrupt file; the delivered event code has class <code>0x01</code> and that identity in its low 24 bits.</p>
+<p>Deadline-timer expiry uses the same posting operation with the identity supplied by TARM. It does not allocate a fixed timer identity or a separate interrupt-source catalog member.</p>
+<p>A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. A faulting repeat iteration rolls back without decrementing its counter, then saves the repeat-prefix address. After a successful repeat iteration, the counter decrement commits before an event may be admitted between iterations; that event also saves the repeat-prefix address. Event entry clears hidden repeat state, and ERET executes the saved prefix normally without restoring repeat <a href="../terminology/#term-continuation">continuation</a>.</p>
+<h2 id="event-priority-and-debug-stops">Event Priority and Debug Stops <a href="#section-event-priority-and-debug" id="section-event-priority-and-debug"></a></h2>
+<p>When events compete at one architectural boundary, delivery failure is selected before machine check. Instruction and operand validation, address formation, translation, permission, alignment, and other higher-priority synchronous faults precede debug-trigger evaluation. A pre-effect execution breakpoint or memory watchpoint is selected before any result of the stopped instruction and before NMI or a maskable interrupt at the same boundary. After successful completion, an explicit <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> is selected before <a href="#event-single-step"><code>SINGLE_STEP</code></a>; NMI and maskable interrupts follow automatic debug events. An asynchronous event that is not selected remains pending.</p>
+<p>A <a href="../terminology/#term-trace-unit">trace unit</a> is one <a href="../terminology/#term-ordinary">ordinary</a> committed instruction or one committed REP or REPcc body iteration. Completion of a zero-count REP or REPcc is also one <a href="../terminology/#term-trace-unit">trace unit</a>. TF is sampled at the start of the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then delivers <a href="#event-single-step"><code>SINGLE_STEP</code></a> with the following trace-unit boundary as its saved PC.</p>
+<p>The <a href="../instructions/trace/"><code>TRACE</code></a> marker instruction is an <a href="../terminology/#term-ordinary">ordinary</a> instruction for this rule. Its marker is recorded before a pending SINGLE_STEP is delivered. The <a href="../terminology/#term-group-tracing">Tracing Terms</a> section distinguishes the marker instruction, <a href="../terminology/#term-trace-unit">trace unit</a>, and SINGLE_STEP event.</p>
+<p>RF suppresses SINGLE_STEP and every automatic execution or memory trigger for one trace unit. It does not suppress <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> or the TRACE marker. If sampled RF is one, successful trace-unit completion clears RF. A fault or asynchronous event before successful completion preserves it. Event entry saves the old STATUS image and clears live TF and RF. Entry for a pre-effect hardware-trigger event first sets RF in the saved return STATUS image, allowing a normal return to retry the instruction once without an immediate retrigger. A handler may clear that saved RF bit to request deliberate retriggering.</p>
 <h2 id="entry-admission-and-event-depth">Entry Admission and Event Depth</h2>
-<p>The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V, STATUS.IE, and the depth limit all permit it: the current event depth must be less than ECR.MAX_EDEPTH. Otherwise the interrupt remains pending at the interrupt controller. A synchronous exception that requires delivery while ECR.V is clear cannot be deferred and enters SHUTDOWN. An NMI observed while ECR.V is clear sets the hardware-managed ECR.NMI_P latch and is not admitted. After ECR.V becomes one, hardware admits that pending NMI before the next instruction boundary when STATUS.NI is clear. While STATUS.NI remains set, the NMI remains pending. Multiple NMI observations coalesce in ECR.NMI_P.</p>
-<p>Event depth is zero outside event handling. A successful entry saves STATUS in the selected return context and increments STATUS.EDEPTH. ECR.MAX_EDEPTH equal to zero prevents maskable interrupt admission; values 1 through 15 limit only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal: any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create a DOUBLE_FAULT frame; at depth 15 there is no representable child frame.</p>
+<p>The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V, STATUS.IE, and the depth limit all permit it: the current event depth must be less than ECR.MAX_EDEPTH. The interrupt file additionally requires a pending and enabled identity that passes ITHRESH; ITOP chooses the numerically lowest such identity. Otherwise the identity remains pending in the interrupt file. A synchronous exception that requires delivery while ECR.V is clear cannot be deferred and enters SHUTDOWN. An NMI observed while ECR.V is clear sets the hardware-managed ECR.NMI_P latch and is not admitted. After ECR.V becomes one, hardware admits that pending NMI before the next instruction boundary when STATUS.NI is clear. While STATUS.NI remains set, the NMI remains pending. Multiple NMI observations coalesce in ECR.NMI_P.</p>
+<p>Event depth is zero outside event handling. A successful entry saves STATUS in the selected return context and increments STATUS.EDEPTH. ECR.MAX_EDEPTH equal to zero prevents maskable interrupt admission; values 1 through 15 limit only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal: any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create an <code>EVENT_DELIVERY_FAILURE</code> family frame; at depth 15 there is no representable child frame.</p>
 <h2 id="supervisor-event-stacks-and-nesting">Supervisor Event Stacks and Nesting</h2>
 <p>The configured supervisor stack pairs select only the first user-origin entry and delivery-failure recovery.</p>
 <p><strong>Supervisor Stack Roles</strong></p>
@@ -13287,17 +14722,18 @@
 <tr>
 <td style="text-align: left;"><code>DSS:DSP</code></td>
 <td style="text-align: left;">recovery</td>
-<td style="text-align: left;">DOUBLE_FAULT after delivery failure</td>
+<td style="text-align: left;"><code>EVENT_DELIVERY_FAILURE</code> family event</td>
 </tr>
 </tbody>
 </table>
 <p>A first user-origin entry loads the applicable configured pair. Supervisor-origin and all nested entries retain the current SS:SP and push a full frame there; event class never promotes an active handler to another configured stack. Delivery failure uses DSS:DSP when the hidden current-DFA bit is clear. Failure with current DFA set enters shutdown.</p>
-<p>For user-origin entry, hardware rounds only the event payload to 16 bytes and subtracts it from the configured top. BASIC events have zero payload and perform no stack access. For supervisor or nested entry, hardware subtracts the complete full-frame size from current SP. Each nonzero range is validated and stored atomically before the new SP commits; configured tops are never modified.</p>
-<p>DOUBLE_FAULT and event-delivery failure use DSS:DSP. Supervisor-origin and nested events retain the current SS:SP; ERET validates and restores the saved STATUS depth and origin chain.</p>
+<p>For user-origin entry, hardware rounds only the event <a href="../terminology/#term-payload">payload</a> to 16 bytes and subtracts it from the configured top. BASIC events have zero <a href="../terminology/#term-payload">payload</a> and perform no stack access. For supervisor or nested entry, hardware subtracts the complete full-frame size from current SP. Each nonzero range is validated and stored atomically before the new SP commits; configured tops are never modified.</p>
+<p>Events in the <code>EVENT_DELIVERY_FAILURE</code> family use DSS:DSP. Supervisor-origin and nested events retain the current SS:SP; ERET validates and restores the saved STATUS depth and origin chain.</p>
 <h2 id="event-entry-state">Event Entry State</h2>
 <p>Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame storage range. It then stores the frame, loads the entry segments and PC, sets STATUS.PM and STATUS.EA, and clears STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged; the common entry code preserves whatever its software ABI requires.</p>
 <p>NMI entry additionally sets STATUS.NI. Other event classes preserve NI. A further NMI observed while NI is set is recorded by setting ECR.NMI_P. ECR.NMI_P is hardware managed, so WRCR ignores the supplied value for that bit. When entry of an NMI admitted from ECR.NMI_P commits, hardware clears ECR.NMI_P as part of the same architectural transition. A newly observed NMI may set the latch again. An entry failure does not clear the latch before committing the specified delivery-failure result. When ERET successfully restores NI to zero, a pending NMI is delivered before the next instruction boundary.</p>
-<p>STATUS.EA, STATUS.EDEPTH, STATUS.UO, and STATUS.PM are hardware-managed transition state. WRSTATUS must preserve their current values. An attempted change raises INVALID_CONTROL_STATE without modifying STATUS. WRSTATUS may change IE, NI, TF, and RF. Clearing NI while ECR.NMI_P is one admits the pending NMI at the next instruction boundary. ERET classifies direct U-bank, outer U-bank, and stacked returns before any stack access; an invalid combination raises INVALID_CONTROL_STATE without consuming either return source.</p>
+<p>When maskable-interrupt entry commits, hardware clears exactly the delivered identity’s pending bit in the same architectural transition. Entry validation, target probing, frame-address, or frame-store failure preserves that bit; a later posting of the same identity continues to coalesce while it remains pending.</p>
+<p>STATUS.EA, STATUS.EDEPTH, STATUS.UO, and STATUS.PM are hardware-managed transition state. WRSTATUS must preserve their current values. An attempted change raises <a href="#event-reserved-control-bits"><code>RESERVED_CONTROL_BITS</code></a> without modifying STATUS. WRSTATUS may change IE, NI, TF, and RF. Clearing NI while ECR.NMI_P is one admits the pending NMI at the next instruction boundary. ERET classifies direct U-bank, outer U-bank, and stacked returns before any stack access; an invalid combination raises <a href="#event-invalid-control-transition"><code>INVALID_CONTROL_TRANSITION</code></a> without consuming either return source.</p>
 <h2 id="architectural-event-frame">Architectural Event Frame</h2>
 <p>Every event frame begins with exactly eight 64-bit slots. EVENT_INFO contains the event code in bits 31 through 0; its upper half is zero. FRAME_CONTROL contains only frame shape, saved nesting state, saved FLAGS, and saved STATUS. Event classification is carried exclusively by EVENT_INFO.</p>
 <p><img alt="Architectural Event Frame" src="../../assets/visuals/isa/architectural-event-processing-model-02.svg" /></p>
@@ -13325,7 +14761,7 @@
 <tr>
 <td style="text-align: left;">+0x10</td>
 <td style="text-align: left;">SAVED_PC</td>
-<td style="text-align: left;">saved program counter</td>
+<td style="text-align: left;">saved <a href="../terminology/#term-program-counter">program counter</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x18</td>
@@ -13350,7 +14786,7 @@
 <tr>
 <td style="text-align: left;">+0x38</td>
 <td style="text-align: left;">PADDING</td>
-<td style="text-align: left;">ignored by ERET; software may write any value</td>
+<td style="text-align: left;"><a href="../terminology/#term-ignored">ignored</a> by ERET; software may write any value</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x40</td>
@@ -13360,17 +14796,17 @@
 <tr>
 <td style="text-align: left;">+0x48</td>
 <td style="text-align: left;">FAULT_EA</td>
-<td style="text-align: left;">numeric effective address before segment pre-translation</td>
+<td style="text-align: left;">numeric <a href="../terminology/#term-effective-address">effective address</a> before <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x50</td>
 <td style="text-align: left;">FAULT_LINEAR</td>
-<td style="text-align: left;">address after segment pre-translation</td>
+<td style="text-align: left;">address after <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x58</td>
 <td style="text-align: left;">EVENT_AUX</td>
-<td style="text-align: left;">double-fault, machine-check, or bus-error auxiliary information</td>
+<td style="text-align: left;">delivery-failure, machine-check, or bus-failure auxiliary information</td>
 </tr>
 </tbody>
 </table>
@@ -13395,17 +14831,17 @@
 <tr>
 <td style="text-align: left;">frame_type</td>
 <td style="text-align: left;">8..11</td>
-<td style="text-align: left;">optional payload layout code; it does not classify the event</td>
+<td style="text-align: left;">optional <a href="../terminology/#term-payload">payload</a> layout code; it does not classify the event</td>
 </tr>
 <tr>
 <td style="text-align: left;">saved_dfa</td>
 <td style="text-align: left;">12</td>
-<td style="text-align: left;">prior hidden double-fault-active state</td>
+<td style="text-align: left;">prior hidden delivery-failure-active state</td>
 </tr>
 <tr>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">13..31</td>
-<td style="text-align: left;">reserved; must be zero</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a>; <a href="../terminology/#term-must-be-zero">must be zero</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">flags</td>
@@ -13418,16 +14854,16 @@
 <td style="text-align: left;">saved STATUS image, including EDEPTH and UO</td>
 </tr>
 <tr>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">52..63</td>
-<td style="text-align: left;">reserved; must be zero</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a>; <a href="../terminology/#term-must-be-zero">must be zero</a></td>
 </tr>
 </tbody>
 </table>
-<p>ERET first validates the frame shape and nesting metadata. BASIC requires frame_size 8, ERROR requires 10, and PAGE_FAULT and AUXILIARY require 12. It requires saved STATUS.PM=1, saved STATUS.EDEPTH plus one to equal the current depth, and saved STATUS.UO to match the active outer-origin chain.</p>
-<p>Only after those checks does ERET validate the saved control state, segment images, SP, and PC. On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the fixed-header padding slot at +0x38 and restores no hidden repeat state. EVENT_INFO and the event-specific payload remain available to software.</p>
+<p>ERET first validates the frame shape and nesting metadata. BASIC requires frame_size 8, ERROR requires 10, and PAGE and AUXILIARY require 12. It requires saved STATUS.PM=1, saved STATUS.EDEPTH plus one to equal the current depth, and saved STATUS.UO to match the active outer-origin chain.</p>
+<p>Only after those checks does ERET validate the saved control state, segment images, SP, and PC. On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the fixed-header <a href="../terminology/#term-padding">padding</a> slot at +0x38 and restores no hidden repeat state. EVENT_INFO and the event-specific <a href="../terminology/#term-payload">payload</a> remain available to software.</p>
 <h2 id="event-payloads">Event Payloads</h2>
-<p>Payload starts at offset +0x40. Hardware allocates only the defined payload prefix, rounds it up to a 16-byte boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.</p>
+<p>Payload starts at offset +0x40. Hardware allocates only the defined <a href="../terminology/#term-payload">payload</a> prefix, rounds it up to a 16-byte boundary, and zeros the <a href="../terminology/#term-padding">padding</a>. The frame-size unit remains one 8-byte slot.</p>
 <p><strong>Architectural Event Frame Types and Sizes</strong></p>
 <table>
 <thead>
@@ -13462,7 +14898,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">0x2</td>
-<td style="text-align: left;">PAGE_FAULT</td>
+<td style="text-align: left;">PAGE</td>
 <td style="text-align: left;">24</td>
 <td style="text-align: left;">32</td>
 <td style="text-align: left;">96</td>
@@ -13480,44 +14916,15 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Event-to-Frame-Type Assignment</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Delivered event</strong></th>
-<th style="text-align: left;"><strong>Frame type</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>DEBUG_TRACE</code>, <code>BREAKPOINT</code>, <code>PRIVILEGE_FAULT</code>, <code>SYSTEM_CALL</code></td>
-<td style="text-align: left;">BASIC</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code>, <code>DIVIDE_ERROR</code>, <code>VECTOR_RANGE_ERROR</code>, <code>INVALID_CONTROL_STATE</code>, <code>FLOATING_POINT_FAULT</code></td>
-<td style="text-align: left;">ERROR</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>PAGE_FAULT</code>, <code>ACCESS_FAULT</code></td>
-<td style="text-align: left;">PAGE_FAULT</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>DOUBLE_FAULT</code>, <code>MACHINE_CHECK</code>, <code>BUS_ERROR</code></td>
-<td style="text-align: left;">AUXILIARY</td>
-</tr>
-<tr>
-<td style="text-align: left;">interrupt and NMI</td>
-<td style="text-align: left;">BASIC</td>
-</tr>
-</tbody>
-</table>
-<p>The delivered event determines the frame type. ERROR_CODE is defined separately by each exception and has zero in every unassigned bit. PAGE_FAULT and ACCESS_FAULT extend that slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT_AUX to describe double-fault, machine-check, or bus-error state.</p>
-<p>A misaligned atomic memory operand uses the PAGE_FAULT frame with ERROR_CODE subtype <code>ATOMIC_ALIGNMENT</code>. FAULT_EA identifies the misaligned effective-address operand and FAULT_LINEAR contains its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory read, memory write, or architectural result update.</p>
-<h3 id="address-context-error-code">Address-Context Error Code</h3>
-<p><img alt="PAGE_FAULT and ACCESS_FAULT ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-04.svg" /></p>
-<p><strong>PAGE_FAULT and ACCESS_FAULT ERROR_CODE Format</strong></p>
+<p>The delivered leaf event determines the frame type. ERROR_CODE is defined separately by each event that uses it and has zero in every unassigned bit. PAGE frames extend that slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT_AUX to describe delivery-failure, machine-check, or bus-failure state.</p>
+<p>A misaligned atomic memory operand raises <a href="#event-atomic-alignment-fault"><code>ATOMIC_ALIGNMENT_FAULT</code></a> and uses the PAGE frame. FAULT_EA identifies the misaligned effective-address operand and FAULT_LINEAR contains its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory read, memory write, or architectural result update.</p>
+<p>Execution-breakpoint and memory-watchpoint payloads are defined in the debug-event payload format. Their pre-effect timing is part of the <a href="../architectural-debug/">Architectural Debug Triggers</a> contract.</p>
+<h3 id="address-context-payload">Address-Context Payload</h3>
+<p>Events in the <code>ADDRESS_TRANSLATION</code> and <code>PHYSICAL_ACCESS</code> families use the PAGE frame. The leaf event code identifies the failure; ERROR_CODE carries only the access context common to those events.</p>
+<p><img alt="PAGE Event ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-04.svg" /></p>
+<p><strong>PAGE Event ERROR_CODE Format</strong></p>
 <p><code>SZ</code>, <code>L</code>, <code>E</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <code>ACCESS_SIZE</code>, <code>FAULT_LINEAR_VALID</code>, <code>FAULT_EA_VALID</code>, <code>OPERAND</code>, <code>WALK_LEVEL</code>, and <code>ACCESS</code>; <code>A</code> and <code>U</code> denote <code>ATOMIC</code> and <code>USER_DOMAIN</code>.</p>
-<p><strong>Address-Context ERROR_CODE Fields</strong></p>
+<p><strong>PAGE Event ERROR_CODE Fields</strong></p>
 <table>
 <thead>
 <tr>
@@ -13529,8 +14936,8 @@
 <tbody>
 <tr>
 <td style="text-align: left;">7..0</td>
-<td style="text-align: left;"><code>CAUSE</code></td>
-<td style="text-align: left;">cause in the selected exception’s cause space</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
+<td style="text-align: left;">zero; failure identity is carried by EVENT_CODE</td>
 </tr>
 <tr>
 <td style="text-align: left;">9..8</td>
@@ -13554,7 +14961,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">15</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 <tr>
@@ -13574,7 +14981,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">26</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 <tr>
@@ -13584,238 +14991,85 @@
 </tr>
 <tr>
 <td style="text-align: left;">63..30</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 </tbody>
 </table>
-<p><strong>PAGE_FAULT Causes</strong></p>
+<p>Saved <code>STATUS.PM</code> records the originating privilege. <code>USER_DOMAIN</code> distinguishes the <a href="../terminology/#term-ordinary">ordinary</a> user permission path from the checked user-access path used by supervisor instructions such as <a href="../instructions/movuc/"><code>MOVUC</code></a>, <a href="../instructions/movcu/"><code>MOVCU</code></a>, and <a href="../instructions/movuu/"><code>MOVUU</code></a>. An atomic read-modify-write reports <code>ACCESS=write</code>. Events detected during a page-table walk report the applicable level; events detected before a walk and every event in the <code>PHYSICAL_ACCESS</code> family report level zero.</p>
+<p><code>ACCESS_SIZE</code> records the architectural transfer width when one of the B, W, L, or Q widths applies. It is zero when no such width is available or applicable. <code>FAULT_EA</code> is the numeric <a href="../terminology/#term-effective-address">effective address</a> before <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. <code>FAULT_LINEAR</code> is the result after <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. A value not produced is zero and has its corresponding validity bit clear.</p>
+<h3 id="other-exception-payloads">Other Exception Payloads</h3>
+<p>Integer-divide, instruction-validation, control-state, and privilege failures are independently allocated leaf events. Their event code identifies the precise condition, so events without a defined payload use BASIC frames and do not repeat a cause number in ERROR_CODE.</p>
+<p>The bounds instructions report comparison failure through <code>FLAGS.V</code>. Segment bounds failures raise <a href="#event-segment-bounds-violation"><code>SEGMENT_BOUNDS_VIOLATION</code></a>. Debug-event payloads are defined separately for their distinct event identities.</p>
+<h3 id="debug-event-payloads">Debug Event Payloads</h3>
+<p><a href="#event-single-step"><code>SINGLE_STEP</code></a> and <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> use BASIC frames and carry no address payload. <a href="#event-execution-breakpoint"><code>EXECUTION_BREAKPOINT</code></a> uses an ERROR frame; ERROR_CODE bits 15 through 0 contain the zero-based winning trigger-slot number and all other bits are zero. Its saved PC is the matched address.</p>
+<p>The three memory-watchpoint events use PAGE frames. FAULT_EA contains the matched pre-segment effective address and FAULT_LINEAR contains its segment-pretranslated linear address. ERROR_CODE has the following event-specific format.</p>
+<p><img alt="Memory-Watchpoint ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-05.svg" /></p>
+<p><strong>Memory-Watchpoint ERROR_CODE Format</strong></p>
+<p><code>L</code>, <code>M</code>, and <code>U</code> abbreviate <code>LINEAR_VALID</code>, <code>MMIO</code>, and <code>USER_DOMAIN</code>.</p>
+<p><strong>Memory-Watchpoint ERROR_CODE Fields</strong></p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"><strong>Value</strong></th>
-<th style="text-align: left;"><strong>Cause</strong></th>
-<th style="text-align: left;"><strong>Detection class</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>NOT_PRESENT</code></td>
-<td style="text-align: left;">required PTE is not present</td>
-</tr>
-<tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>PERMISSION</code></td>
-<td style="text-align: left;">accumulated permission excludes the access</td>
-</tr>
-<tr>
-<td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>MALFORMED_PTE</code></td>
-<td style="text-align: left;">structurally invalid PTE</td>
-</tr>
-<tr>
-<td style="text-align: left;">3</td>
-<td style="text-align: left;"><code>NONCANONICAL</code></td>
-<td style="text-align: left;">noncanonical address</td>
-</tr>
-<tr>
-<td style="text-align: left;">4</td>
-<td style="text-align: left;"><code>SEGMENT_BOUNDS</code></td>
-<td style="text-align: left;">segment bounds failure</td>
-</tr>
-<tr>
-<td style="text-align: left;">5</td>
-<td style="text-align: left;"><code>ATOMIC_ALIGNMENT</code></td>
-<td style="text-align: left;">misaligned atomic operand</td>
-</tr>
-<tr>
-<td style="text-align: left;">6</td>
-<td style="text-align: left;"><code>MEMORY_TYPE</code></td>
-<td style="text-align: left;">physical Device memory is selected by a Normal leaf AM</td>
-</tr>
-</tbody>
-</table>
-<p><strong>ACCESS_FAULT Causes</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Value</strong></th>
-<th style="text-align: left;"><strong>Cause</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
 <th style="text-align: left;"><strong>Meaning</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>PHYSICAL_ADDRESS</code></td>
-<td style="text-align: left;">paging-disabled physical address exceeds implementation PABITS</td>
+<td style="text-align: left;">15..0</td>
+<td style="text-align: left;"><code>TRIGGER_SLOT</code></td>
+<td style="text-align: left;">zero-based winning trigger-slot number</td>
 </tr>
 <tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>MMIO_ALIGNMENT</code></td>
-<td style="text-align: left;">permitted scalar MMIO operand is not naturally aligned</td>
+<td style="text-align: left;">23..16</td>
+<td style="text-align: left;"><code>OPERAND</code></td>
+<td style="text-align: left;">zero-based explicit memory-operand ordinal; <code>0xff</code> for an implicit data access</td>
 </tr>
 <tr>
-<td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>MMIO_OPERATION</code></td>
-<td style="text-align: left;">operation class is prohibited for MMIO</td>
+<td style="text-align: left;">39..24</td>
+<td style="text-align: left;"><code>ACCESS_SIZE</code></td>
+<td style="text-align: left;">number of bytes in the matched architectural access</td>
+</tr>
+<tr>
+<td style="text-align: left;">40</td>
+<td style="text-align: left;"><code>USER_DOMAIN</code></td>
+<td style="text-align: left;">access selected the user permission domain</td>
+</tr>
+<tr>
+<td style="text-align: left;">41</td>
+<td style="text-align: left;"><code>MMIO</code></td>
+<td style="text-align: left;">translated access was classified as MMIO rather than Normal</td>
+</tr>
+<tr>
+<td style="text-align: left;">42</td>
+<td style="text-align: left;"><code>LINEAR_VALID</code></td>
+<td style="text-align: left;">FAULT_LINEAR contains the segment-pretranslated address</td>
+</tr>
+<tr>
+<td style="text-align: left;">63..43</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
+<td style="text-align: left;">zero</td>
 </tr>
 </tbody>
 </table>
-<p>Saved <code>STATUS.PM</code> records the originating privilege. <code>USER_DOMAIN</code> distinguishes the ordinary user permission path from the checked user-access path used by supervisor instructions such as <code>MOVUC</code>, <code>MOVCU</code>, and <code>MOVUU</code>. An atomic read-modify-write reports <code>ACCESS=write</code>. <code>NOT_PRESENT</code> and <code>MALFORMED_PTE</code> identify the actual PTE level. <code>PERMISSION</code> identifies the first level, in root-to-leaf walk order, whose accumulated permissions exclude the requested access. A cause detected before a walk reports level zero. Every <code>ACCESS_FAULT</code> reports <code>WALK_LEVEL=0</code>; translation has already completed for MMIO causes, while <code>PHYSICAL_ADDRESS</code> applies with paging disabled.</p>
-<p><code>ACCESS_SIZE</code> records the architectural transfer width when one of the B, W, L, or Q widths applies. It is zero when no such width is available or applicable.</p>
-<p><code>FAULT_EA</code> is the numeric effective address before segment pre-translation. <code>FAULT_LINEAR</code> is the result after segment pre-translation. A value not produced is zero and has its corresponding validity bit clear.</p>
-<h3 id="other-exception-error-codes">Other Exception Error Codes</h3>
-<p><code>DIVIDE_ERROR.ERROR_CODE[7:0]</code> is 0 for <code>ZERO_DIVISOR</code> and 1 for <code>SIGNED_OVERFLOW</code>; bits 63..8 are zero.</p>
-<p><strong>ILLEGAL_INSTRUCTION Causes</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Value</strong></th>
-<th style="text-align: left;"><strong>Cause</strong></th>
-<th style="text-align: left;"><strong>Meaning</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>INVALID_OPCODE</code></td>
-<td style="text-align: left;">opcode is not assigned</td>
-</tr>
-<tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>INVALID_EA_FORM</code></td>
-<td style="text-align: left;">effective-address form is not legal for the instruction</td>
-</tr>
-<tr>
-<td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>RESERVED_ENCODING</code></td>
-<td style="text-align: left;">assigned instruction uses a reserved field value</td>
-</tr>
-<tr>
-<td style="text-align: left;">3</td>
-<td style="text-align: left;"><code>UNAVAILABLE_EXTENSION</code></td>
-<td style="text-align: left;">required extension is unavailable</td>
-</tr>
-<tr>
-<td style="text-align: left;">4</td>
-<td style="text-align: left;"><code>EXPLICIT_ILLEGAL</code></td>
-<td style="text-align: left;">architected ILLEGAL instruction</td>
-</tr>
-<tr>
-<td style="text-align: left;">5</td>
-<td style="text-align: left;"><code>INSUFFICIENT_LENGTH</code></td>
-<td style="text-align: left;">encoded instruction length is shorter than the selected encoding requires</td>
-</tr>
-<tr>
-<td style="text-align: left;">6</td>
-<td style="text-align: left;"><code>INVALID_OPERAND_RELATION</code></td>
-<td style="text-align: left;">writable operands use a prohibited overlap relation</td>
-</tr>
-</tbody>
-</table>
-<p><strong>INVALID_CONTROL_STATE Causes</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Value</strong></th>
-<th style="text-align: left;"><strong>Cause</strong></th>
-<th style="text-align: left;"><strong>Meaning</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>INVALID_SELECTOR</code></td>
-<td style="text-align: left;">selector names no available resource</td>
-</tr>
-<tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>RESERVED_BITS</code></td>
-<td style="text-align: left;">reserved bits are nonzero or changed illegally</td>
-</tr>
-<tr>
-<td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>INVALID_IMAGE</code></td>
-<td style="text-align: left;">supplied register or processor-state image is invalid</td>
-</tr>
-<tr>
-<td style="text-align: left;">3</td>
-<td style="text-align: left;"><code>INVALID_TRANSITION</code></td>
-<td style="text-align: left;">requested state transition is illegal</td>
-</tr>
-</tbody>
-</table>
-<p><strong>VECTOR_RANGE_ERROR Causes</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Value</strong></th>
-<th style="text-align: left;"><strong>Cause</strong></th>
-<th style="text-align: left;"><strong>Meaning</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>LOOP_OFFSET</code></td>
-<td style="text-align: left;">PLOOP receives an invalid unsigned logical-lane Roffset/index</td>
-</tr>
-<tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>LANE_INDEX</code></td>
-<td style="text-align: left;">a scalar lane index is outside the selected vector element count</td>
-</tr>
-</tbody>
-</table>
-<p>An unavailable <code>RDPMC</code> ID reports <code>INVALID_SELECTOR</code>; an illegal reserved-bit update reports <code>RESERVED_BITS</code>; an invalid segment, control-register, or SAVE/RESTORE image reports <code>INVALID_IMAGE</code>; and an illegal <code>ERET</code> or privilege-state transition reports <code>INVALID_TRANSITION</code>.</p>
-<p><code>FLOATING_POINT_FAULT.ERROR_CODE[4:0]</code> is a cause bitmap: bits 4 through 0 are <code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, and <code>NX</code>. All causes generated by the operation are reported together; bits 63..5 are zero.</p>
-<p><img alt="Simple Exception ERROR_CODE Formats" src="../../assets/visuals/isa/architectural-event-processing-model-05.svg" /></p>
-<p><strong>Simple Exception ERROR_CODE Formats</strong></p>
-<p>The cause-code row applies to <code>DIVIDE_ERROR</code>, <code>ILLEGAL_INSTRUCTION</code>, <code>VECTOR_RANGE_ERROR</code>, and <code>INVALID_CONTROL_STATE</code>. In the floating-point row, <code>I</code>, <code>Z</code>, <code>O</code>, <code>U</code>, and <code>X</code> abbreviate <code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, and <code>NX</code>.</p>
-<p>The bounds instructions report failure through <code>FLAGS.V</code>. Segment bounds failures use <code>PAGE_FAULT</code>. <code>BKPT</code> raises <code>BREAKPOINT</code>; <code>DEBUG_TRACE</code> is generated by the architectural trace mechanism.</p>
+<h3 id="floating-point-exception-payload">Floating-Point Exception Payload</h3>
+<p>The <a href="#event-floating-point-exception"><code>FLOATING_POINT_EXCEPTION</code></a> event uses an ERROR frame because one operation may raise several enabled floating-point conditions together. ERROR_CODE[4:0] is a bitmap: bits 4 through 0 are <code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, and <code>NX</code>; bits 63 through 5 are zero.</p>
+<p><img alt="FLOATING_POINT_EXCEPTION ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-06.svg" /></p>
+<p><strong>FLOATING_POINT_EXCEPTION ERROR_CODE Format</strong></p>
+<p><code>I</code>, <code>Z</code>, <code>O</code>, <code>U</code>, and <code>X</code> abbreviate <code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, and <code>NX</code>.</p>
+<h2 id="control-flow-integrity-violation">Control-Flow Integrity Violation <a href="#section-cfi-violation" id="section-cfi-violation"></a></h2>
+<p>The <a href="#event-control-flow-integrity-violation"><code>CONTROL_FLOW_INTEGRITY_VIOLATION</code></a> event uses an error frame. ERROR_CODE values 1, 2, 3, and 4 identify a missing landing marker, a shadow PC mismatch, a shadow code-segment mismatch, and invalid configured CFI state respectively. A failed check commits neither the control transfer nor CFISP.</p>
 <h3 id="auxiliary-payloads">Auxiliary Payloads</h3>
 <p>For an AUXILIARY frame, <code>ERROR_CODE</code> bit 26 is <code>EVENT_AUX_VALID</code>. Bits 24 and 25 are <code>FAULT_EA_VALID</code> and <code>FAULT_LINEAR_VALID</code> when the event can supply those addresses. Every unassigned bit is zero, and an auxiliary or address value not produced is zero with its validity bit clear.</p>
-<p>For <code>DOUBLE_FAULT</code>, <code>ERROR_CODE[7:0]</code> identifies the delivery stage:</p>
-<p><img alt="DOUBLE_FAULT Auxiliary Formats" src="../../assets/visuals/isa/architectural-event-processing-model-06.svg" /></p>
-<p><strong>DOUBLE_FAULT Auxiliary Formats</strong></p>
+<p>Delivery-failure stages are independently allocated leaf events. Their EVENT_CODE identifies the failed stage; the auxiliary <a href="../terminology/#term-payload">payload</a> records the event whose delivery failed.</p>
+<p><img alt="Delivery-Failure Auxiliary Format" src="../../assets/visuals/isa/architectural-event-processing-model-07.svg" /></p>
+<p><strong>Delivery-Failure Auxiliary Format</strong></p>
 <p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>.</p>
-<p><strong>DOUBLE_FAULT Delivery Stages</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Value</strong></th>
-<th style="text-align: left;"><strong>Stage</strong></th>
-<th style="text-align: left;"><strong>Failure</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>ENTRY_STATE</code></td>
-<td style="text-align: left;">entry code or segment state validation</td>
-</tr>
-<tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>STACK_STATE</code></td>
-<td style="text-align: left;">selected event-stack state</td>
-</tr>
-<tr>
-<td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>FRAME_ADDRESS</code></td>
-<td style="text-align: left;">complete frame-address formation or translation</td>
-</tr>
-<tr>
-<td style="text-align: left;">3</td>
-<td style="text-align: left;"><code>FRAME_STORE</code></td>
-<td style="text-align: left;">complete frame storage</td>
-</tr>
-</tbody>
-</table>
-<p>When valid, <code>EVENT_AUX[31:0]</code> contains the event code whose delivery failed and bits 63..32 are zero. A <code>FRAME_ADDRESS</code> or <code>FRAME_STORE</code> failure supplies <code>FAULT_EA</code> and <code>FAULT_LINEAR</code> when those values were produced.</p>
-<p>For <code>MACHINE_CHECK</code>, the error code has this layout:</p>
-<p><img alt="MACHINE_CHECK ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-07.svg" /></p>
+<p>When valid, <code>EVENT_AUX[31:0]</code> contains the event code whose delivery failed and bits 63..32 are zero. A <a href="#event-event-frame-address-failure"><code>EVENT_FRAME_ADDRESS_FAILURE</code></a> or <a href="#event-event-frame-store-failure"><code>EVENT_FRAME_STORE_FAILURE</code></a> supplies <code>FAULT_EA</code> and <code>FAULT_LINEAR</code> when those values were produced.</p>
+<p>For <a href="#event-machine-check"><code>MACHINE_CHECK</code></a>, the error code has this layout:</p>
+<p><img alt="MACHINE_CHECK ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-08.svg" /></p>
 <p><strong>MACHINE_CHECK ERROR_CODE Format</strong></p>
 <p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>; <code>P</code>, <code>R</code>, <code>SV</code>, and <code>SRC</code> denote <code>PRECISE</code>, <code>RETRY_SAFE</code>, <code>SEVERITY</code>, and <code>SOURCE</code>.</p>
 <p><strong>MACHINE_CHECK ERROR_CODE Fields</strong></p>
@@ -13836,12 +15090,12 @@
 <tr>
 <td style="text-align: left;">9..8</td>
 <td style="text-align: left;"><code>SEVERITY</code></td>
-<td style="text-align: left;">0 corrected; 1 recoverable; 2 fatal; 3 reserved</td>
+<td style="text-align: left;">0 corrected; 1 recoverable; 2 fatal; 3 <a href="../terminology/#term-reserved">reserved</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">10</td>
 <td style="text-align: left;"><code>PRECISE</code></td>
-<td style="text-align: left;">saved PC identifies the responsible instruction and saved architectural state precedes it</td>
+<td style="text-align: left;">saved PC identifies the responsible instruction and saved <a href="../terminology/#term-architectural-state">architectural state</a> precedes it</td>
 </tr>
 <tr>
 <td style="text-align: left;">11</td>
@@ -13850,7 +15104,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">23..12</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 <tr>
@@ -13870,13 +15124,13 @@
 </tr>
 <tr>
 <td style="text-align: left;">63..27</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 </tbody>
 </table>
 <p>When valid, <code>EVENT_AUX</code> contains an implementation-defined syndrome. Associated effective and linear addresses are supplied when available.</p>
-<p><code>RETRY_SAFE=1</code> requires <code>PRECISE=1</code>. The valid severity and continuation combinations are:</p>
+<p><code>RETRY_SAFE=1</code> requires <code>PRECISE=1</code>. The valid severity and <a href="../terminology/#term-continuation">continuation</a> combinations are:</p>
 <p><strong>MACHINE_CHECK Valid Continuation Combinations</strong></p>
 <table>
 <thead>
@@ -13884,7 +15138,7 @@
 <th style="text-align: left;"><strong>Severity</strong></th>
 <th style="text-align: left;"><strong>PRECISE</strong></th>
 <th style="text-align: left;"><strong>RETRY_SAFE</strong></th>
-<th style="text-align: left;"><strong>Saved PC and continuation meaning</strong></th>
+<th style="text-align: left;"><strong>Saved PC and <a href="../terminology/#term-continuation">continuation</a> meaning</strong></th>
 </tr>
 </thead>
 <tbody>
@@ -13898,19 +15152,19 @@
 <td style="text-align: left;">recoverable</td>
 <td style="text-align: left;">0</td>
 <td style="text-align: left;">0</td>
-<td style="text-align: left;">Saved PC is the next instruction that would execute at the delivery boundary; saved architectural state is the state at that boundary. It does not identify the responsible operation.</td>
+<td style="text-align: left;">Saved PC is the next instruction that would execute at the delivery boundary; saved <a href="../terminology/#term-architectural-state">architectural state</a> is the state at that boundary. It does not identify the responsible operation.</td>
 </tr>
 <tr>
 <td style="text-align: left;">recoverable</td>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;">0</td>
-<td style="text-align: left;">Saved PC identifies the responsible instruction and architectural state precedes it; retry may duplicate an external effect.</td>
+<td style="text-align: left;">Saved PC identifies the responsible instruction and <a href="../terminology/#term-architectural-state">architectural state</a> precedes it; retry may duplicate an external effect.</td>
 </tr>
 <tr>
 <td style="text-align: left;">recoverable</td>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;">1</td>
-<td style="text-align: left;">Saved PC identifies the responsible instruction and architectural state precedes it; retry cannot duplicate an external effect.</td>
+<td style="text-align: left;">Saved PC identifies the responsible instruction and <a href="../terminology/#term-architectural-state">architectural state</a> precedes it; retry cannot duplicate an external effect.</td>
 </tr>
 <tr>
 <td style="text-align: left;">fatal</td>
@@ -13922,16 +15176,16 @@
 <td style="text-align: left;">fatal</td>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;">0</td>
-<td style="text-align: left;">Saved PC identifies the responsible instruction and pre-instruction architectural state for diagnosis only.</td>
+<td style="text-align: left;">Saved PC identifies the responsible instruction and pre-instruction <a href="../terminology/#term-architectural-state">architectural state</a> for diagnosis only.</td>
 </tr>
 </tbody>
 </table>
-<p>All other combinations are invalid and are not generated. In particular, corrected machine checks never set either bit, <code>PRECISE=0, RETRY_SAFE=1</code> is invalid for every severity, fatal machine checks never set <code>RETRY_SAFE</code>, and severity 3 is reserved. A fatal event provides no reliable continuation even when its diagnostic state is precise.</p>
-<p>For <code>BUS_ERROR</code>, the error code has this layout:</p>
-<p><img alt="BUS_ERROR ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-08.svg" /></p>
-<p><strong>BUS_ERROR ERROR_CODE Format</strong></p>
+<p>All other combinations are invalid and are not generated. In particular, corrected machine checks never set either bit, <code>PRECISE=0, RETRY_SAFE=1</code> is invalid for every severity, fatal machine checks never set <code>RETRY_SAFE</code>, and severity 3 is <a href="../terminology/#term-reserved">reserved</a>. A fatal event provides no reliable <a href="../terminology/#term-continuation">continuation</a> even when its diagnostic state is precise.</p>
+<p>For an event in the <code>BUS_FAILURE</code> family, the error code has this layout:</p>
+<p><img alt="BUS_FAILURE ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-09.svg" /></p>
+<p><strong>BUS_FAILURE ERROR_CODE Format</strong></p>
 <p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>; <code>SZ</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <code>ACCESS_SIZE</code>, <code>OPERAND</code>, <code>WALK_LEVEL</code>, and <code>ACCESS</code>; <code>A</code>, <code>U</code>, and <code>R</code> denote <code>ATOMIC</code>, <code>USER_DOMAIN</code>, and <code>RETRY_SAFE</code>.</p>
-<p><strong>BUS_ERROR ERROR_CODE Fields</strong></p>
+<p><strong>BUS_FAILURE ERROR_CODE Fields</strong></p>
 <table>
 <thead>
 <tr>
@@ -13943,8 +15197,8 @@
 <tbody>
 <tr>
 <td style="text-align: left;">7..0</td>
-<td style="text-align: left;"><code>CAUSE</code></td>
-<td style="text-align: left;">0 no responder; 1 access denied; 2 timeout; 3 data error; 4 other</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
+<td style="text-align: left;">zero; failure identity is carried by EVENT_CODE</td>
 </tr>
 <tr>
 <td style="text-align: left;">9..8</td>
@@ -13968,7 +15222,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">15</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 <tr>
@@ -14003,139 +15257,24 @@
 </tr>
 <tr>
 <td style="text-align: left;">63..31</td>
-<td style="text-align: left;">reserved</td>
+<td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
 <td style="text-align: left;">zero</td>
 </tr>
 </tbody>
 </table>
 <p>A bus error during a page walk reports the level whose PTE access failed. When valid, <code>EVENT_AUX</code> contains the final byte address available for the failed access.</p>
 <h2 id="machine-check-and-bus-error-continuation">Machine-Check and Bus-Error Continuation</h2>
-<p>A corrected <code>MACHINE_CHECK</code> is a trap, has both <code>PRECISE</code> and <code>RETRY_SAFE</code> clear, and saves the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table. When <code>PRECISE</code> is one, the saved PC identifies the responsible instruction boundary and logical-processor architectural state is the state from before that instruction. When it is zero, the saved PC is the next instruction that would execute at the delivery boundary and architectural state corresponds to that boundary; neither identifies the responsible operation. <code>RETRY_SAFE</code> may be one only with <code>PRECISE=1</code> and additionally guarantees that returning to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears <code>RETRY_SAFE</code>; <code>PRECISE</code> then describes diagnostic location quality and never guarantees reliable continuation.</p>
-<p><code>BUS_ERROR</code> is a synchronous precise fault. Logical-processor architectural state remains uncommitted and the saved PC identifies the responsible instruction boundary. Its separate <code>RETRY_SAFE</code> bit states whether an external effect might already have occurred. Page-walk and ordinary memory bus errors are retry-safe.</p>
-<p>Software interprets the machine-check continuation fields before choosing a return or recovery action.</p>
+<p>A corrected <a href="#event-machine-check"><code>MACHINE_CHECK</code></a> is a trap, has both <code>PRECISE</code> and <code>RETRY_SAFE</code> clear, and saves the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table. When <code>PRECISE</code> is one, the saved PC identifies the responsible instruction boundary and logical-processor <a href="../terminology/#term-architectural-state">architectural state</a> is the state from before that instruction. When it is zero, the saved PC is the next instruction that would execute at the delivery boundary and <a href="../terminology/#term-architectural-state">architectural state</a> corresponds to that boundary; neither identifies the responsible operation. <code>RETRY_SAFE</code> may be one only with <code>PRECISE=1</code> and additionally guarantees that returning to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears <code>RETRY_SAFE</code>; <code>PRECISE</code> then describes diagnostic location quality and never guarantees reliable <a href="../terminology/#term-continuation">continuation</a>.</p>
+<p>Every event in the <code>BUS_FAILURE</code> family is a synchronous precise fault. Logical-processor <a href="../terminology/#term-architectural-state">architectural state</a> remains uncommitted and the saved PC identifies the responsible instruction boundary. Its separate <code>RETRY_SAFE</code> bit states whether an external effect might already have occurred. Page-walk and <a href="../terminology/#term-ordinary">ordinary</a> memory bus errors are retry-safe.</p>
+<p>Software interprets the machine-check <a href="../terminology/#term-continuation">continuation</a> <a href="../terminology/#term-field">fields</a> before choosing a return or recovery action.</p>
 <h2 id="delivery-failure-and-shutdown">Delivery Failure and Shutdown</h2>
-<p>Failure to validate the common entry context, establish the selected stack, or store a complete event frame is delivered as DOUBLE_FAULT on DSS:DSP. Failure while DOUBLE_FAULT is already being delivered enters SHUTDOWN. SHUTDOWN retires no further instructions and can be exited only by a platform reset. The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored frame or partially changed execution context.</p>
-<h2 id="event-reset-and-context-state">Event Reset and Context State</h2>
-<p><strong>Warm RESET Contract</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Property</strong></th>
-<th style="text-align: left;"><strong>Architectural Rule</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Scope</td>
-<td style="text-align: left;">executing logical processor</td>
-</tr>
-<tr>
-<td style="text-align: left;">Required privilege</td>
-<td style="text-align: left;">supervisor</td>
-</tr>
-<tr>
-<td style="text-align: left;">Serialization</td>
-<td style="text-align: left;">complete prior memory effects and pending write-combining stores before reset state commits</td>
-</tr>
-<tr>
-<td style="text-align: left;">Restart</td>
-<td style="text-align: left;">running at BOOTPC after instruction-fetch synchronization</td>
-</tr>
-<tr>
-<td style="text-align: left;">Other logical processors</td>
-<td style="text-align: left;">unchanged</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Architectural Reset State</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>State</strong></th>
-<th style="text-align: left;"><strong>Reset Value</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, SP</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">FLAGS</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">STATUS</td>
-<td style="text-align: left;">PM=1; all other STATUS bits 0</td>
-</tr>
-<tr>
-<td style="text-align: left;">CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">PC</td>
-<td style="text-align: left;">BOOTPC</td>
-</tr>
-<tr>
-<td style="text-align: left;">PTCR, ASCR, ECR</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">EPC, ECS, EDS</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">UPC, USP, UCS, UDS, USS, UCTL, UINFO</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">SSS, SSP, ISS, ISP, FSS, FSP, DSS, DSP</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">PMC, CYCLE, INSTRET, PTWALK</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">F0–F15, FSTATUS, FFLAGS, extension_state</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">V0_V31, P0_P15</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">hidden_repeat_state, hidden_load_reservation</td>
-<td style="text-align: left;">invalid</td>
-</tr>
-<tr>
-<td style="text-align: left;">hidden current DFA</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">ECR.NMI_P</td>
-<td style="text-align: left;">0</td>
-</tr>
-<tr>
-<td style="text-align: left;">local_translation_cache, local_page_walk_cache, local_prefetch_state</td>
-<td style="text-align: left;">invalid</td>
-</tr>
-<tr>
-<td style="text-align: left;">coherent_data_and_instruction_cache_contents</td>
-<td style="text-align: left;">retained as coherent contents</td>
-</tr>
-<tr>
-<td style="text-align: left;">execution_state</td>
-<td style="text-align: left;">running at BOOTPC</td>
-</tr>
-<tr>
-<td style="text-align: left;">BOOTPC, BOOTCFG</td>
-<td style="text-align: left;">platform supplied on cold reset; preserved by warm RESET</td>
-</tr>
-</tbody>
-</table>
-<p>Warm RESET applies the processor-state image shown in the preceding table to the executing logical processor only. Cold reset initializes BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V or entering user mode.</p>
-<p>ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, and the user context bank are per-logical-processor state. System software includes the applicable state when switching supervisor contexts. Payloads and full event frames reside in byte-addressed normal memory owned by the interrupted context.</p>
+<p>Failure to validate the common entry context, establish the selected stack, or store a complete event frame is delivered as the corresponding <code>EVENT_DELIVERY_FAILURE</code> leaf event on DSS:DSP. Failure while such an event is already being delivered enters SHUTDOWN. SHUTDOWN retires no further instructions and can be exited only by a platform reset. The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored frame or partially changed execution context.</p>
+<h2 id="event-reset-and-context-state">Event Reset and Context State <a href="#section-event-reset-and-context-state" id="section-event-reset-and-context-state"></a></h2>
+<p>Warm RESET is supervisor-only and affects only the executing <a href="../terminology/#term-logical-processor">logical processor</a>. Before the reset-state transition commits, all earlier <a href="../terminology/#term-memory-effect">memory effects</a> and pending write-combining stores from that <a href="../terminology/#term-logical-processor">logical processor</a> complete. Other <a href="../terminology/#term-logical-processor">logical processors</a> are unchanged.</p>
+<p>The transition clears R0 through R15, SP, and FLAGS. It sets PC to BOOTPC and sets STATUS.PM to one while clearing every other STATUS bit. It clears CS, DS, SS, GS0 through GS5, PTCR, ASCR, ECR, EPC, ECS, EDS, the complete user context bank (UPC, USP, UCS, UDS, USS, UCTL, and UINFO), and the configured event stacks and segments (SSS, SSP, ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWALK. Clearing ECR clears its hardware-managed NMI_P <a href="../terminology/#term-field">field</a> as part of the same transition. It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability reported by ICAP.MAX_ID. It resets DTRSEL and disables every architectural debug-trigger slot. It disarms the deadline timer while preserving the invariant timebase value and frequency. Timer reset does not independently clear interrupt-file state.</p>
+<p>Warm RESET invalidates hidden repeat state, the load reservation, local translation and page-walk caches, decoded instruction state, and local prefetch state. It clears the hidden current DFA. Coherent data- and instruction-cache contents remain coherent. Instruction-fetch synchronization completes before the first instruction at BOOTPC is fetched, at which point the processor is running at BOOTPC.</p>
+<p>BOOTPC and BOOTCFG are <a href="../terminology/#term-preserved">preserved</a> by warm RESET. Cold reset initializes them from platform-supplied values before applying the same <a href="../terminology/#term-processor-state-image">processor-state image</a> to each <a href="../terminology/#term-logical-processor">logical processor</a> selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V or entering user mode.</p>
+<p>ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, the interrupt file, the debug-trigger array, and the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software includes the applicable non-debug state when switching supervisor contexts; debug-trigger state is managed separately. Payloads and full event frames reside in byte-addressed <a href="../terminology/#term-normal-memory">normal memory</a> owned by the interrupted context.</p>
 
 
 
