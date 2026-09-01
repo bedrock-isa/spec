@@ -77,31 +77,22 @@ _SEMANTIC_REFERENCE_RE = re.compile(
 )
 
 
-def _authored_semantic_references(
+def _authored_sources(
     composition: DocumentComposition, project
-) -> frozenset[Reference[object]]:
-    """Collect references actually authored into this document projection."""
+) -> tuple[Path, ...]:
+    """Collect the repository-local source tree selected by this document."""
 
-    references: set[Reference[object]] = set()
     repository = project.root.parent.resolve()
     visited: set[Path] = set()
-
-    def collect_semantic(semantic: SemanticText) -> None:
-        for part in semantic.parts:
-            if isinstance(part, (EntityReferenceText, TermReferenceText)):
-                references.add(part.reference)
+    sources: list[Path] = []
 
     def collect_source(source: Path) -> None:
         path = source.resolve()
         if path in visited:
             return
         visited.add(path)
+        sources.append(path)
         text = path.read_text(encoding="utf-8")
-        if path.suffix != ".sty":
-            for match in _SEMANTIC_REFERENCE_RE.finditer(text):
-                collect_semantic(
-                    SemanticText.parse(match.group(0), origin=TextOrigin(path))
-                )
         for match in _LOCAL_INPUT_RE.finditer(text):
             included = (repository / match.group(1)).resolve()
             if included.suffix == "":
@@ -116,14 +107,37 @@ def _authored_semantic_references(
     for block in composition.blocks:
         if isinstance(block, TopicBlock):
             collect_source(block.topic.document)
-        elif isinstance(block, TermGroupBlock):
-            for term in block.group.terms.values():
-                collect_semantic(term.definition)
         elif isinstance(block, InstructionSetBlock):
             for topic in block.introduction:
                 collect_source(topic.document)
             for bundle in block.instructions:
                 collect_source(bundle.artifacts.description)
+    return tuple(sources)
+
+
+def _authored_semantic_references(
+    composition: DocumentComposition, sources: tuple[Path, ...]
+) -> frozenset[Reference[object]]:
+    """Collect references actually authored into this document projection."""
+
+    references: set[Reference[object]] = set()
+
+    def collect_semantic(semantic: SemanticText) -> None:
+        for part in semantic.parts:
+            if isinstance(part, (EntityReferenceText, TermReferenceText)):
+                references.add(part.reference)
+
+    for source in sources:
+        if source.suffix != ".sty":
+            text = source.read_text(encoding="utf-8")
+            for match in _SEMANTIC_REFERENCE_RE.finditer(text):
+                collect_semantic(
+                    SemanticText.parse(match.group(0), origin=TextOrigin(source))
+                )
+    for block in composition.blocks:
+        if isinstance(block, TermGroupBlock):
+            for term in block.group.terms.values():
+                collect_semantic(term.definition)
     return frozenset(references)
 
 
@@ -131,7 +145,8 @@ def _document_public_targets(
     composition: DocumentComposition, project
 ) -> PublicTargetCatalog:
     targets: list[tuple[Reference[object], str]] = []
-    referenced = _authored_semantic_references(composition, project)
+    sources = _authored_sources(composition, project)
+    referenced = _authored_semantic_references(composition, sources)
 
     for block in composition.blocks:
         if isinstance(block, TermGroupBlock):
@@ -146,8 +161,10 @@ def _document_public_targets(
     # module.  It owns its public row labels; this composer only supplies the
     # references actually requested by authored prose.
     from .event_reference import EventReferenceRenderer
+    from .register_field_target import RegisterFieldTargetRenderer
 
     targets.extend(EventReferenceRenderer.public_targets(project, referenced))
+    targets.extend(RegisterFieldTargetRenderer.public_targets(project, sources))
 
     return PublicTargetCatalog.create(project.entities, targets)
 

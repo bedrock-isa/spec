@@ -1,6 +1,6 @@
 \textbf{Performance-Counter IDs}\par
 RDPMC selects a 64-bit counter with its 16-bit immediate ID. The three standard counters are mandatory and wrap
-modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls whether they increment.
+modulo $2^{64}$. Cold reset and warm RESET clear them to zero. (:ref:base.control_registers.PMC.EN:) controls whether they increment.
 
 \Needspace{1.25in}
 \BedrockTableCaption{Standard Performance Counters}
@@ -14,7 +14,7 @@ modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls w
 \rowcolor{BedrockHeaderFill}
 \textbf{ID} & \textbf{Name} & \textbf{Increment event}\\
 \midrule
-\texttt{1} & \texttt{CYCLE} & each implementation cycle while PMC.EN is set\\
+\texttt{1} & \texttt{CYCLE} & each implementation cycle while (:ref:base.control_registers.PMC.EN:) is set\\
 \texttt{2} & \texttt{INSTRET} & each successfully committed architectural instruction\\
 \texttt{3} & \texttt{PTWALK} & start of a hardware page walk after a paging-enabled TLB miss\\
 \bottomrule
@@ -29,6 +29,6 @@ common discovery (:term:base.terms.header:). Other IDs beyond the standard set a
 leaf.
 
 \begin{BedrockRaggedBlock}
-Every privilege level may read every implemented counter. Clearing PMC.EN freezes the current counter values
+Every privilege level may read every implemented counter. Clearing (:ref:base.control_registers.PMC.EN:) freezes the current counter values
 without clearing them.
 \end{BedrockRaggedBlock}

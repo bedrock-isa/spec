@@ -3,6 +3,6 @@ Integer-divide, instruction-validation, control-state, and privilege failures ar
 Their event code identifies the precise condition, so events without a defined payload use BASIC frames and do not
 repeat a cause number in ERROR\_CODE.
 
-The bounds instructions report comparison failure through \texttt{FLAGS.V}. Segment bounds failures raise
+The bounds instructions report comparison failure through (:ref:base.registers.STATE.FLAGS.V:). Segment bounds failures raise
 (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:). Debug-event payloads are defined separately for their distinct
 event identities.

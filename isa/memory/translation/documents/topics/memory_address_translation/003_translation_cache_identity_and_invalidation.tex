@@ -1,7 +1,7 @@
 \subsection{Translation-Cache Identity and Invalidation}
 A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it
 maps. Translation-cache identity excludes PTCR \texttt{root\_page}.
-While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the
+While (:ref:base.control_registers.ASCR.AE:) is one, system software binds one ASID to one PTCR root and translation geometry; it completes the
 required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged
 context is invalidated when PTCR changes.
 

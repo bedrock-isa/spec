@@ -1,8 +1,8 @@
 \subsection{Trigger-Slot Array and Programming Model}
 Each logical processor owns an array of at least four trigger slots. The implementation reports the exact count through
 CPUID \texttt{DEBUG\_TRIGGERS.SLOT\_COUNT}. Trigger state is accessed by the supervisor-only
-\texttt{DTRSEL}/\texttt{DTRDATA} selector-data pair. \texttt{DTRSEL.SLOT} selects a slot and
-\texttt{DTRSEL.BANK} selects the word read or written through \texttt{DTRDATA}.
+\texttt{DTRSEL}/\texttt{DTRDATA} selector-data pair. (:register-field-target:base.control_registers.DTRSEL.SLOT:)\texttt{DTRSEL.SLOT} selects a slot and
+(:register-field-target:base.control_registers.DTRSEL.BANK:)\texttt{DTRSEL.BANK} selects the word read or written through \texttt{DTRDATA}.
 
 \BedrockTableCaption{DTRSEL Bank Selection}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{3.75in}@{}}

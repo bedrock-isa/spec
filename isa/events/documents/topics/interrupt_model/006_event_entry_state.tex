@@ -1,12 +1,12 @@
 \subsection{Event Entry State}
 Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame
-storage range. It then stores the frame, loads the entry segments and PC, sets STATUS.PM and STATUS.EA, and clears
-STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged;
+storage range. It then stores the frame, loads the entry segments and PC, sets (:ref:base.registers.STATE.STATUS.PM:) and (:ref:base.registers.STATE.STATUS.EA:), and clears
+(:ref:base.registers.STATE.STATUS.IE:), (:ref:base.registers.STATE.STATUS.TF:), and (:ref:base.registers.STATE.STATUS.RF:) as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged;
 the common entry code preserves whatever its software ABI requires.
 
-NMI entry additionally sets STATUS.NI. Other event classes preserve NI. A further NMI observed while NI is set is
-recorded by setting ECR.NMI\_P. ECR.NMI\_P is hardware managed, so WRCR ignores the supplied value for that bit.
-When entry of an NMI admitted from ECR.NMI\_P commits, hardware clears ECR.NMI\_P as part of the same architectural
+NMI entry additionally sets (:ref:base.registers.STATE.STATUS.NI:). Other event classes preserve NI. A further NMI observed while NI is set is
+recorded by setting (:ref:base.control_registers.ECR.NMI_P:). (:ref:base.control_registers.ECR.NMI_P:) is hardware managed, so WRCR ignores the supplied value for that bit.
+When entry of an NMI admitted from (:ref:base.control_registers.ECR.NMI_P:) commits, hardware clears (:ref:base.control_registers.ECR.NMI_P:) as part of the same architectural
 transition. A newly observed NMI may set the latch again. An entry failure does not clear the latch before committing
 the specified delivery-failure result. When ERET successfully restores NI to zero, a pending NMI is delivered before
 the next instruction boundary.
@@ -15,9 +15,9 @@ When maskable-interrupt entry commits, hardware clears exactly the delivered ide
 architectural transition. Entry validation, target probing, frame-address, or frame-store failure preserves that bit;
 a later posting of the same identity continues to coalesce while it remains pending.
 
-STATUS.EA, STATUS.EDEPTH, STATUS.UO, and STATUS.PM are hardware-managed transition state. WRSTATUS must preserve
+(:ref:base.registers.STATE.STATUS.EA:), (:ref:base.registers.STATE.STATUS.EDEPTH:), (:ref:base.registers.STATE.STATUS.UO:), and (:ref:base.registers.STATE.STATUS.PM:) are hardware-managed transition state. WRSTATUS must preserve
 their current values. An attempted change raises (:ref:base.events.EXCEPTION.RESERVED_CONTROL_BITS:) without modifying STATUS. WRSTATUS may
-change IE, NI, TF, and RF. Clearing NI while ECR.NMI\_P is one admits the pending NMI at the next instruction
+change IE, NI, TF, and RF. Clearing NI while (:ref:base.control_registers.ECR.NMI_P:) is one admits the pending NMI at the next instruction
 boundary. ERET classifies direct U-bank, outer U-bank, and stacked returns before any stack access; an invalid
 combination raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_TRANSITION:) without consuming either return source.
 

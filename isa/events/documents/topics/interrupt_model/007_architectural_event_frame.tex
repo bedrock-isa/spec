@@ -12,8 +12,8 @@ Event classification is carried exclusively by EVENT\_INFO.
 \input{isa/events/documents/fragments/frame_control_table.tex}
 
 ERET first validates the frame shape and nesting metadata. BASIC requires frame\_size 8, ERROR requires 10, and
-PAGE and AUXILIARY require 12. It requires saved STATUS.PM=1, saved STATUS.EDEPTH plus one to equal the
-current depth, and saved STATUS.UO to match the active outer-origin chain.
+PAGE and AUXILIARY require 12. It requires saved (:ref:base.registers.STATE.STATUS.PM:)=1, saved (:ref:base.registers.STATE.STATUS.EDEPTH:) plus one to equal the
+current depth, and saved (:ref:base.registers.STATE.STATUS.UO:) to match the active outer-origin chain.
 
 Only after those checks does ERET validate the saved control state, segment images, SP, and PC.
 On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the

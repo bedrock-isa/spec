@@ -24,8 +24,8 @@
 \texttt{EPC} & complete 64-bit entry address & 16-byte aligned, canonical, and executable under the matching code-segment image & replace the selected register atomically\\
 \texttt{ECS}, \texttt{EDS}, \texttt{SSS}, \texttt{ISS}, \texttt{FSS}, \texttt{DSS} & complete 64-bit segment image & apply the architectural segment-image validity rule & replace the selected register atomically\\
 \texttt{SSP}, \texttt{ISP}, \texttt{FSP}, \texttt{DSP} & complete 64-bit configured stack top & 64-byte aligned & replace the selected register atomically\\
-\texttt{UPC}, \texttt{USP}, \texttt{UCS}, \texttt{UDS}, \texttt{USS} & complete 64-bit saved user-return value & defer complete-bank validation until UCTL.V is set & replace the selected register atomically\\
-\texttt{UINFO} & EVENT\_CODE in bits 31 through 0; bits 63 through 32 (:term:base.terms.must_be_zero:) & reject a nonzero (:term:base.terms.reserved:) bit; validate the event-code-dependent bank when UCTL.V is set & replace UINFO atomically\\
+\texttt{UPC}, \texttt{USP}, \texttt{UCS}, \texttt{UDS}, \texttt{USS} & complete 64-bit saved user-return value & defer complete-bank validation until (:ref:base.control_registers.UCTL.V:) is set & replace the selected register atomically\\
+\texttt{UINFO} & EVENT\_CODE in bits 31 through 0; bits 63 through 32 (:term:base.terms.must_be_zero:) & reject a nonzero (:term:base.terms.reserved:) bit; validate the event-code-dependent bank when (:ref:base.control_registers.UCTL.V:) is set & replace UINFO atomically\\
 \texttt{UCTL} & V, STATUS, and FLAGS; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & setting V validates the complete user-return bank and requires saved PM, EA, EDEPTH, and UO to be zero & replace UCTL atomically after complete-bank validation\\
 \texttt{BOOTPC} & complete 64-bit warm-reset target & the value is used as the exact PC after warm RESET & replace BOOTPC atomically\\
 \texttt{BOOTCFG} & complete opaque 64-bit platform boot configuration & no image transformation & replace BOOTCFG atomically\\

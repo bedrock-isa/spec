@@ -1,8 +1,8 @@
 \subsection{LA57 Five-Level Paging}
 
-When \texttt{PTCR.LA57} is one, bits \texttt{63..57} of the (:term:base.terms.linear_address:) must equal the sign extension of bit
+When (:ref:base.control_registers.PTCR.LA57:) is one, bits \texttt{63..57} of the (:term:base.terms.linear_address:) must equal the sign extension of bit
 \texttt{56}. Bits \texttt{56..48} select an additional L5 entry. A table pointer continues into the same
 L4-through-L1 hierarchy used by LA48, while a byte-addressed leaf at any selected level terminates the walk and uses
-all lower linear-address bits as its offset. The L5 table is the root table named by \texttt{PTCR.root\_page}.
+all lower linear-address bits as its offset. The L5 table is the root table named by (:ref:base.control_registers.PTCR.ROOT_PAGE:).
 
 \input{isa/memory/translation/documents/fragments/la57_page_walk_figure.tex}

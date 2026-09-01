@@ -22,6 +22,6 @@ after computing their exact mathematical result.
 An encoded FEA source \texttt{immsf} is an exact IEEE 754 binary32 (:term:base.terms.payload:), and \texttt{immdf} is an exact
 binary64 (:term:base.terms.payload:). Either immediate may be used by either an S or D instruction. If the (:term:base.terms.payload:) format differs from
 the operation format selected by the suffix, the source is converted to the operation format using the current
-\texttt{FSTATUS.RM} before the operation. All conversion causes, including causes from NaN handling and narrowing,
+(:ref:FP.registers.STATE.FSTATUS.RM:) before the operation. All conversion causes, including causes from NaN handling and narrowing,
 are combined with the operation\textquotesingle{}s causes. The combined cause set follows the same enabled-cause fault test, FFLAGS
 accrual, and all-or-nothing destination commit rules below. Floating-point immediate forms are source-only.

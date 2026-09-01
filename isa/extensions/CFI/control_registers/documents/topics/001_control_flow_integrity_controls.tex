@@ -1,5 +1,6 @@
 \subsection{Control-Flow Integrity Controls}\label{section:cfi-control-registers}
-CFICTL bit 0 enables indirect-landing enforcement and bit 1 enables shadow-return enforcement; every other bit is
+(:register-field-target:CFI.control_registers.CFICTL.L:)\texttt{CFICTL.L} enables indirect-landing enforcement and
+(:register-field-target:CFI.control_registers.CFICTL.S:)\texttt{CFICTL.S} enables shadow-return enforcement; every other bit is
 reserved and must be zero. CFISS is a validated segment image used only by implicit shadow-stack accesses. CFISP is
 16-byte aligned. A shadow frame stores the continuation PC at offset 0 and its code-segment image at offset 8.
 

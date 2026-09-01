@@ -12,7 +12,7 @@ TARM observes the current time and classifies its absolute deadline by signed mo
 A positive distance arms the timer and atomically replaces any previous arm. Software can therefore schedule at
 most $2^{63}-1$ ticks into the future with one operation. A zero or negative distance is already reached: TARM posts
 the supplied identity to the local interrupt file and leaves the timer disarmed. The supplied 64-bit identity value
-must be from 1 through ICAP.MAX\_ID. An invalid identity raises
+must be from 1 through (:ref:base.control_registers.ICAP.MAX_ID:). An invalid identity raises
 (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:) without changing timer state.
 
 When time reaches an armed deadline, posting the configured identity and clearing armed state are one atomic
@@ -20,7 +20,7 @@ transition. Expiry is one-shot; periodic behavior requires software to install a
 atomically clears armed state and is a no-op when already disarmed. Neither TARM nor TCANCEL clears a pending bit
 created by an earlier expiry.
 
-Expiry posts pending state regardless of the identity\textquotesingle{}s enable bit, ITHRESH, STATUS.IE, ECR.V, or
+Expiry posts pending state regardless of the identity\textquotesingle{}s enable bit, ITHRESH, (:ref:base.registers.STATE.STATUS.IE:), (:ref:base.control_registers.ECR.V:), or
 event depth. Those gates remain owned by the interrupt file and event-admission model. A halted logical processor
 leaves HALT only if the resulting interrupt becomes admissible; otherwise the identity remains pending. A WAIT may
 return spuriously so that an admissible interrupt can be processed, while time advancement and posting remain

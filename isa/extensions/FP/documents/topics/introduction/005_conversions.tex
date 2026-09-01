@@ -17,7 +17,7 @@ selected number of low bits. A signed Rn result is sign-extended to 64 bits and 
 An EA access transfers exactly the selected number of bytes. Floating-format EA conversion operands are memory
 operands; floating immediates are not accepted by these forms.
 
-Integer-to-floating and floating-to-floating conversion uses \texttt{FSTATUS.RM}. Floating-to-integer conversion
+Integer-to-floating and floating-to-floating conversion uses (:ref:FP.registers.STATE.FSTATUS.RM:). Floating-to-integer conversion
 truncates toward zero. A valid conversion that discards a fractional part generates NX. An invalid conversion
 generates NV without OF or NX. When NV is not enabled, a signed negative overflow or negative infinity produces
 the least value of the selected signed width, a signed positive overflow or positive infinity produces the greatest

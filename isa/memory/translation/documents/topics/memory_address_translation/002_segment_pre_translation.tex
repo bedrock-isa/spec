@@ -26,7 +26,7 @@ linear-address order after canonicality checks. With paging disabled, the same b
 Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range
 failure raises (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:) before the instruction\textquotesingle{}s target (:term:base.terms.memory_access:) begins.
 
-The segment result is the (:term:base.terms.linear_address:). With PTCR.PE set, the page-table walker consumes that address and applies
+The segment result is the (:term:base.terms.linear_address:). With (:ref:base.control_registers.PTCR.PE:) set, the page-table walker consumes that address and applies
 the selected PTE frame and attributes. With paging disabled, the (:term:base.terms.linear_address:) is the physical byte address and
 must fit the implementation PABITS value. An out-of-range direct address raises
 (:ref:base.events.EXCEPTION.PHYSICAL_ADDRESS_FAULT:). An invalid segment image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:) when written; a failed segment bound or

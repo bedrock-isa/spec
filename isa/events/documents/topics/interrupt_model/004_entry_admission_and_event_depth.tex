@@ -1,15 +1,15 @@
 \subsection{Entry Admission and Event Depth}
-The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V,
-STATUS.IE, and the depth limit all permit it: the current event depth must be less than ECR.MAX\_EDEPTH. The
+The event-entry state is usable only while (:ref:base.control_registers.ECR.V:) is set. A maskable interrupt is admitted only when (:ref:base.control_registers.ECR.V:),
+(:ref:base.registers.STATE.STATUS.IE:), and the depth limit all permit it: the current event depth must be less than (:ref:base.control_registers.ECR.MAX_EDEPTH:). The
 interrupt file additionally requires a pending and enabled identity that passes ITHRESH; ITOP chooses the numerically
-lowest such identity. Otherwise the identity remains pending in the interrupt file. A synchronous exception that requires delivery while ECR.V is
-clear cannot be deferred and enters SHUTDOWN. An NMI observed while ECR.V is clear sets the hardware-managed
-ECR.NMI\_P latch and is not admitted. After ECR.V becomes one, hardware admits that pending NMI before the next
-instruction boundary when STATUS.NI is clear. While STATUS.NI remains set, the NMI remains pending. Multiple NMI
-observations coalesce in ECR.NMI\_P.
+lowest such identity. Otherwise the identity remains pending in the interrupt file. A synchronous exception that requires delivery while (:ref:base.control_registers.ECR.V:) is
+clear cannot be deferred and enters SHUTDOWN. An NMI observed while (:ref:base.control_registers.ECR.V:) is clear sets the hardware-managed
+(:ref:base.control_registers.ECR.NMI_P:) latch and is not admitted. After (:ref:base.control_registers.ECR.V:) becomes one, hardware admits that pending NMI before the next
+instruction boundary when (:ref:base.registers.STATE.STATUS.NI:) is clear. While (:ref:base.registers.STATE.STATUS.NI:) remains set, the NMI remains pending. Multiple NMI
+observations coalesce in (:ref:base.control_registers.ECR.NMI_P:).
 
 Event depth is zero outside event handling. A successful entry saves STATUS in the selected return context and
-increments STATUS.EDEPTH. ECR.MAX\_EDEPTH equal to zero prevents maskable interrupt admission; values 1 through 15 limit
+increments (:ref:base.registers.STATE.STATUS.EDEPTH:). (:ref:base.control_registers.ECR.MAX_EDEPTH:) equal to zero prevents maskable interrupt admission; values 1 through 15 limit
 only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal:
 any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create an
 \texttt{EVENT\_DELIVERY\_FAILURE} family frame; at depth 15 there is no representable child frame.

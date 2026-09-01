@@ -18,6 +18,7 @@ from .register_model_figure import (
     RegisterFigureProjection,
     RegisterModelFigureRenderer,
 )
+from .register_field_target import RegisterFieldTargetRenderer
 from .latex_document import (
     DocumentProjection,
     InstructionBitSegment,
@@ -75,6 +76,7 @@ __all__ = [
     "ImplementationDisclosureRenderer",
     "RegisterModelFigureRenderer",
     "RegisterFigureProjection",
+    "RegisterFieldTargetRenderer",
     "InstructionEntryRenderer",
     "InstructionBitSegment",
     "InstructionByteProjection",

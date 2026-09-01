@@ -1,7 +1,7 @@
 \subsection{FPTRANSA Common Model}\label{section:fptransa-common-model}
-For an approximate transcendental instruction, $x'$ is the source after \texttt{FSTATUS.DAZ}, $y=f(x')$ is the
+For an approximate transcendental instruction, $x'$ is the source after (:ref:FP.registers.STATE.FSTATUS.DAZ:), $y=f(x')$ is the
 exact real reference value named by its accuracy contract, and $a$ is the approximate result before
-\texttt{FSTATUS.FTZ}. For a format with precision $p$ and minimum normal exponent $e_{\min}$, define
+(:ref:FP.registers.STATE.FSTATUS.FTZ:). For a format with precision $p$ and minimum normal exponent $e_{\min}$, define
 
 \[
   \operatorname{ulp}_F(y) =
@@ -21,12 +21,12 @@ An approximate transcendental operation is available only when CPUID reports \te
 instruction\textquotesingle{}s accuracy-contract ID present.
 
 FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
-It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.
+It ignores (:ref:FP.registers.STATE.FSTATUS.RM:) and formats its implementation-defined approximation with nearest-even rounding.
 The same implementation, input, format, and relevant FSTATUS mode produce a deterministic approximation.
 Different implementations may produce different bit patterns within the applicable accuracy contract.
 
-A signaling NaN generates NV. NaN results are quieted and then processed by \texttt{FSTATUS.DN}.
-\texttt{FSTATUS.FTZ} replaces a subnormal result with the required signed zero and generates UF. Each instruction
+A signaling NaN generates NV. NaN results are quieted and then processed by (:ref:FP.registers.STATE.FSTATUS.DN:).
+(:ref:FP.registers.STATE.FSTATUS.FTZ:) replaces a subnormal result with the required signed zero and generates UF. Each instruction
 generates NV and DZ according to its special-value rules, and generates OF and UF when required by its exact result;
 NX is never generated, remains unchanged in FFLAGS, and cannot cause the (:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:)
 architectural event. Overflow means that the exact result magnitude exceeds the selected

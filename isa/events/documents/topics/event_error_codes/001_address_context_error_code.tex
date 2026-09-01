@@ -53,7 +53,7 @@ event code identifies the failure; ERROR\_CODE carries only the access context c
 \bottomrule
 \end{BedrockLongTable}
 
-Saved \texttt{STATUS.PM} records the originating privilege. \texttt{USER\_DOMAIN} distinguishes the (:term:base.terms.ordinary:) user
+Saved (:ref:base.registers.STATE.STATUS.PM:) records the originating privilege. \texttt{USER\_DOMAIN} distinguishes the (:term:base.terms.ordinary:) user
 permission path from the checked user-access path used by supervisor instructions such as (:ref:base.instructions.MOVUC:),
 (:ref:base.instructions.MOVCU:), and (:ref:base.instructions.MOVUU:). An atomic read-modify-write reports \texttt{ACCESS=write}. Events detected
 during a page-table walk report the applicable level; events detected before a walk and every event in the

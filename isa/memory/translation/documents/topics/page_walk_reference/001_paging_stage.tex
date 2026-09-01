@@ -1,13 +1,13 @@
 \subsection{Paging Stage}
 
-Paging is enabled by \texttt{PTCR.PE} and translates the (:term:base.terms.linear_address:) produced by (:term:base.terms.segment_pre_translation:). Before
+Paging is enabled by (:ref:base.control_registers.PTCR.PE:) and translates the (:term:base.terms.linear_address:) produced by (:term:base.terms.segment_pre_translation:). Before
 the walk can produce a translation, the (:term:base.terms.linear_address:) must be canonical for the mode selected by
-\texttt{PTCR.LA57}. A noncanonical address raises (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:). With paging disabled, the memory system uses
+(:ref:base.control_registers.PTCR.LA57:). A noncanonical address raises (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:). With paging disabled, the memory system uses
 the (:term:base.terms.linear_address:) directly.
 
 Each page-table level uses a nine-bit address (:term:base.terms.field:) to select one of 512 64-bit entries in a 4-KiB table page. For a
 table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical
-table page named by \texttt{PTCR.root\_page}. At each active level, a present selected entry with \texttt{T=1} points to the
+table page named by (:ref:base.control_registers.PTCR.ROOT_PAGE:). At each active level, a present selected entry with \texttt{T=1} points to the
 next table page; this form is valid only above L1. A selected entry with \texttt{T=0} terminates the walk. A
 terminating entry is a byte-addressed leaf at any active level. If its level is $L$, its naturally
 aligned physical base is combined with the low $12+9(L-1)$ linear-address bits:

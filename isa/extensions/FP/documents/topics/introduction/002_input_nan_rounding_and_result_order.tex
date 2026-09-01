@@ -4,15 +4,15 @@ Each (:term:base.terms.ordinary:) floating-point operation applies the following
 
 \begin{enumerate}
 \item Read all operands and classify zero, subnormal, normal, infinity, quiet NaN, and signaling NaN.
-\item If \texttt{FSTATUS.DAZ} is set, replace each subnormal input with a zero having the same sign.
+\item If (:ref:FP.registers.STATE.FSTATUS.DAZ:) is set, replace each subnormal input with a zero having the same sign.
 \item Determine signaling-NaN and operation-specific floating-point exception causes and form the exact mathematical result.
 \item For a NaN result, select the first signaling NaN in source-operand order, or the first quiet NaN when there is
 no signaling NaN, and set its quiet bit. If the operation produces a NaN without a NaN operand, use the default
-quiet NaN. When \texttt{FSTATUS.DN} is set, replace the selected NaN with the default quiet NaN.
-\item Round a numeric result to the selected format using \texttt{FSTATUS.RM}, except where an instruction names a
+quiet NaN. When (:ref:FP.registers.STATE.FSTATUS.DN:) is set, replace the selected NaN with the default quiet NaN.
+\item Round a numeric result to the selected format using (:ref:FP.registers.STATE.FSTATUS.RM:), except where an instruction names a
 fixed rounding direction.
 \item Detect overflow and tininess after rounding. UF is generated when the rounded result is tiny and inexact.
-\item If \texttt{FSTATUS.FTZ} is set and the rounded result is a nonzero subnormal, replace it with a zero of the
+\item If (:ref:FP.registers.STATE.FSTATUS.FTZ:) is set and the rounded result is a nonzero subnormal, replace it with a zero of the
 same sign and generate both UF and NX.
 \item Test all generated causes against their FSTATUS enable bits and then perform the architectural commit.
 \end{enumerate}

@@ -1,4 +1,4 @@
 \subsection{User Context Bank}
 The user context bank consists of UPC, USP, UCS, UDS, USS, UCTL, and UINFO. UCTL contains saved FLAGS in bits 15..0, saved STATUS in bits 31..16, and V in bit 32. UINFO contains the 32-bit event code; its upper half is zero. A saved user STATUS image has PM, EA, EDEPTH, and UO clear.
 
-Software stages a context by writing UPC, USP, UCS, UDS, USS, and UINFO before writing UCTL.V=1. That final write validates the complete bank. The bank belongs to the interrupted user (:term:base.terms.thread:) and must be saved with its supervisor context across preemption or migration.
+Software stages a context by writing UPC, USP, UCS, UDS, USS, and UINFO before writing (:ref:base.control_registers.UCTL.V:)=1. That final write validates the complete bank. The bank belongs to the interrupted user (:term:base.terms.thread:) and must be saved with its supervisor context across preemption or migration.
