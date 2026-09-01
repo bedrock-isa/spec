@@ -8,7 +8,7 @@ function clause execute_uop(UopVectorMemoryStore(), uop, values, instruction, be
                 (Some(address), Some(output)) => uop_step_wait(
                     0 - 1,
                     vector_uop_memory_request_make(
-                        VectorMemoryWrite,
+                        Write,
                         instruction,
                         speculative,
                         address,

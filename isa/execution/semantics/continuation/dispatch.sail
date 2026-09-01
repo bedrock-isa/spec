@@ -5,7 +5,7 @@ function irrevocable_resumable_scatter_failure(
     bool
 ) =
        not_bool(response.success)
-    &  previous.request.kind == VectorMemoryWrite
+    &  previous.request.kind == Write
     &  previous.request.selector == 0x0000000000000001
     &  response.atomic_store_happened
 

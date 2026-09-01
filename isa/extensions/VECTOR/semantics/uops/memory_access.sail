@@ -47,9 +47,11 @@ function vector_memory_request(
         debug_validation = false,
         debug_validated = false,
         physical_address = 0x0000000000000000,
-        debug_ranges = vector_memory_debug_ranges(
+        memory_ranges = vector_memory_ranges(
             predicate_move, predicate, evaluation.effective_address,
             evaluation.linear_address, length, element_bytes),
+        read_completion = ReadCompletionData,
+        memory_cache_hint = MemoryCacheDefault,
         commit_point = true,
         memory_order = 0,
         cache_policy = 0,
@@ -59,8 +61,8 @@ function vector_memory_request(
         expected = 0x0000000000000000,
         desired = 0x0000000000000000,
         auxiliary = get_slice_int(64, element_bytes, 0),
-        body_length = length,
-        payload_bytes = append_bytes(predicate, values),
+        body_length = if kind == Read then length else 0,
+        payload_bytes = if kind == Write then values else [||],
     }
 }
 
@@ -132,9 +134,11 @@ function vector_uop_memory_request_make(
         debug_validation = false,
         debug_validated = false,
         physical_address = 0x0000000000000000,
-        debug_ranges = vector_memory_debug_ranges(
+        memory_ranges = vector_memory_ranges(
             predicate_move, vector_memory_predicate(instruction, state),
             address.effective_address, address.linear_address, length, element_bytes),
+        read_completion = ReadCompletionData,
+        memory_cache_hint = MemoryCacheDefault,
         commit_point = true,
         memory_order = 0,
         cache_policy = 0,
@@ -144,8 +148,8 @@ function vector_uop_memory_request_make(
         expected = 0x0000000000000000,
         desired = 0x0000000000000000,
         auxiliary = get_slice_int(64, element_bytes, 0),
-        body_length = length,
-        payload_bytes = append_bytes(vector_memory_predicate(instruction, state), values),
+        body_length = if kind == Read then length else 0,
+        payload_bytes = if kind == Write then values else [||],
     }
 }
 
@@ -207,7 +211,7 @@ function clause execute_uop(UopVectorMemoryLoad(), uop, values, instruction, bef
                     Some(address) => uop_step_wait(
                         uop.destination.index,
                         vector_uop_memory_request_make(
-                            VectorMemoryRead,
+                            Read,
                             instruction,
                             speculative,
                             address,

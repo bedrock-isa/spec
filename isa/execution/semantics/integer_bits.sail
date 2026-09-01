@@ -103,3 +103,12 @@ function shift_result(operation : Shift_kind, value : bits(64), raw_count : bits
 }
 
 val route_environment : (Decoded_instruction, Cpu_state, Transaction_family, Primitive_request_kind, Effect_kind, Commit_kind, bool) -> Execution_result
+function append_bytes(left : list(bits(8)), right : list(bits(8))) -> list(bits(8)) =
+  match left {
+    [||] => right,
+    byte :: tail => byte :: append_bytes(tail, right),
+  }
+
+function memory_value_bytes(value : bits(64), count : int) -> list(bits(8)) =
+    if count <= 0 then [||]
+    else value[7 .. 0] :: memory_value_bytes(sail_shiftright(value, 8), count - 1)

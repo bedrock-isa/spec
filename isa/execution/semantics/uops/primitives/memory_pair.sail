@@ -6,7 +6,7 @@ function clause execute_uop(UopMemoryLoadPair(), uop, values, instruction, befor
     match uop_value_get(values, uop.source0.index) {
         Some(address) => uop_step_wait(
             uop.destination.index,
-            uop_memory_request_make(MemoryRead, address, 16, AccessLoad,
+            uop_memory_request_make(Read, address, 16, AccessLoad,
                                     0x0000000000000000, false),
             0x0000000000000000,
         ),
@@ -40,8 +40,9 @@ function clause execute_uop(UopMemoryStorePair(), uop, values, instruction, befo
            uop_value_get(values, uop.source2.index)) {
         (Some(low), Some(high), Some(address)) => uop_step_wait(
             0 - 1,
-            { uop_memory_request_make(CompoundMemoryStore, address, 16, AccessStore,
-                                      low, true) with auxiliary = high },
+            { uop_memory_request_make(Write, address, 16, AccessStore,
+                                      low, true) with
+              payload_bytes = append_bytes(memory_value_bytes(low, 8), memory_value_bytes(high, 8)) },
             low,
         ),
         _ => uop_step_fault(faulted(before, instruction.form.operation,

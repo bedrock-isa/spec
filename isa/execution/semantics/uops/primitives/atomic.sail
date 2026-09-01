@@ -34,7 +34,7 @@ function clause execute_uop(UopAtomicIssue(operation), uop, values, instruction,
             ) {
                 (Some(expected_high), Some(desired_high)) => {
                     let request = { uop_memory_request_make(
-                        AtomicReadModifyWrite, address, 16, AccessReadModifyWrite,
+                        Atomic, address, 16, AccessReadModifyWrite,
                         desired_high, true) with
                         memory_order = unsigned(order_value[2 .. 0]),
                         selector = uop_atomic_selector(operation),
@@ -49,7 +49,7 @@ function clause execute_uop(UopAtomicIssue(operation), uop, values, instruction,
                 )),
             }
             else {
-                let request = { uop_memory_request_make(AtomicReadModifyWrite, address, uop.width,
+                let request = { uop_memory_request_make(Atomic, address, uop.width,
                     AccessReadModifyWrite, if compare then 0x0000000000000000 else first, true) with
                     memory_order = unsigned(order_value[2 .. 0]),
                     selector = uop_atomic_selector(operation),

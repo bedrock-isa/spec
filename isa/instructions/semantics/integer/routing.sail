@@ -14,55 +14,17 @@ function route_environment(
         None() => 0x0000000000000000,
     };
     let width = operation_width(instruction);
-    let phase = if kind == CacheMaintenanceBlock | kind == PrefetchHint then {
-                PhaseCacheMaintenance
-            } else {
-                if kind == FenceCompletion then {
-                    PhaseFenceCompletion
-                } else {
-                    if kind == TlbInvalidateRequest then {
-                        PhaseTlbOperation
-                    } else {
-                        if kind == TranslationQueryRequest then {
-                            PhaseTranslationQuery
-                        } else {
-                            if kind == ContextSwitchRequest then {
-                                PhaseContextSwitch
-                            } else {
-                                if kind == StateSaveRequest then {
-                                    PhaseStateSave
-                                } else {
-                                    if kind == StateRestoreRequest then {
-                                        PhaseStateRestore
-                                    } else {
-                                        if kind == RepeatBodyFetch then {
-                                            PhaseRepeatFetch
-                                        } else {
-                                            if kind == CpuidQueryRequest then {
-                                                PhaseCpuidQuery
-                                            } else {
-                                                if kind == PerformanceCounterRequest then {
-                                                    PhasePerformanceCounter
-                                                } else {
-                                                    if kind == ControlTransitionRequest then {
-                                                        PhaseControlTransition
-                                                    } else {
-                                                        if kind == ResetSerializeRequest then {
-                                                            PhaseResetSerialize
-                                                        } else {
-                                                            PhaseIntegerExternal
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            };
+    let phase = if kind == CacheMaintenanceBlock | kind == PrefetchHint then PhaseCacheMaintenance
+        else if kind == FenceCompletion then PhaseFenceCompletion
+        else if kind == TlbInvalidateRequest then PhaseTlbOperation
+        else if kind == TranslationQueryRequest then PhaseTranslationQuery
+        else if kind == ContextSwitchRequest then PhaseContextSwitch
+        else if kind == RepeatBodyFetch then PhaseRepeatFetch
+        else if kind == CpuidQueryRequest then PhaseCpuidQuery
+        else if kind == PerformanceCounterRequest then PhasePerformanceCounter
+        else if kind == ControlTransitionRequest then PhaseControlTransition
+        else if kind == ResetSerializeRequest then PhaseResetSerialize
+        else PhaseIntegerExternal;
     struct {
         state = state,
         pending =

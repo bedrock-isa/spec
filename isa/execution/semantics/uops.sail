@@ -43,6 +43,17 @@ function uop_location_make_immediate(value : bits(64)) -> Uop_location =
 function uop_location_make_temporary(index : int) -> Uop_location =
     uop_location_make_plain(UopLocationTemporary, index, 0x0000000000000000)
 
+function memory_bytes_value(
+    bytes : list(bits(8)), offset : int, count : int
+) -> bits(64) =
+    if count <= 0 then 0x0000000000000000
+    else match bytes {
+        [||] => 0x0000000000000000,
+        byte :: tail => if offset > 0 then memory_bytes_value(tail, offset - 1, count)
+                        else sail_zero_extend(byte, 64)
+                           | sail_shiftleft(memory_bytes_value(tail, 0, count - 1), 8),
+    }
+
 function uop_location_make_ea_update_amount(
     difference : option(Ea_update_difference), width : int, negative : bool
 ) -> Uop_location = match difference {
@@ -215,12 +226,19 @@ function uop_memory_request_make(
         effective_address = address.effective_address,
         linear_address = address.linear_address,
         access = access,
-        value = value,
+        value = if kind == Write then 0x0000000000000000 else value,
         address_translation = true,
         debug_validation = false,
         debug_validated = false,
         physical_address = 0x0000000000000000,
-        debug_ranges = [||],
+        memory_ranges = [|struct {
+            effective_address = address.effective_address,
+            linear_address = address.linear_address,
+            width = width,
+            buffer_offset = 0,
+        }|],
+        read_completion = ReadCompletionData,
+        memory_cache_hint = MemoryCacheDefault,
         commit_point = commit_point,
         memory_order = 0,
         cache_policy = 0,
@@ -230,8 +248,8 @@ function uop_memory_request_make(
         expected = 0x0000000000000000,
         desired = 0x0000000000000000,
         auxiliary = 0x0000000000000000,
-        body_length = 0,
-        payload_bytes = [||],
+        body_length = if kind == Read then width else 0,
+        payload_bytes = if kind == Write then memory_value_bytes(value, width) else [||],
     }
 
 function uop_program_make_waiting_result(
@@ -448,13 +466,19 @@ function uop_program_preserve_parent(next : Execution_result, previous : Executi
 function uop_program_resume(previous : Execution_result, response : Transaction_response) -> Execution_result =
     match (previous.pending.instruction, uop_continuation_get(previous.pending)) {
         (Some(instruction), Some(continuation)) => {
+            let response_value = if previous.request.kind == Read
+                                 then memory_bytes_value(response.body_bytes, 0, 8)
+                                 else response.value;
+            let response_secondary_value = if previous.request.kind == Read
+                                           then memory_bytes_value(response.body_bytes, 8, 8)
+                                           else response.secondary_value;
             let values = if continuation.pending_destination >= 0 then {
                     uop_value_set(
                         continuation.values,
                         continuation.pending_destination,
                         struct {
-                            value = response.value,
-                            secondary_value = response.secondary_value,
+                            value = response_value,
+                            secondary_value = response_secondary_value,
                             flags = response.flags,
                             write_flags = response.write_flags,
                             generated_fflags = response.generated_fflags,

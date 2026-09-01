@@ -161,6 +161,12 @@ typedef struct bedrock_core_request {
   uint64_t range_start;
   uint64_t range_end;
   uint8_t address_translation;
+  uint8_t debug_validation;
+  uint8_t debug_validated;
+  uint64_t physical_address;
+  int32_t read_completion;
+  int32_t memory_cache_hint;
+  size_t memory_range_count;
   uint8_t commit_point;
   int64_t memory_order;
   int64_t cache_policy;
@@ -170,6 +176,13 @@ typedef struct bedrock_core_request {
   int64_t body_length;
   size_t payload_length;
 } bedrock_core_request;
+
+typedef struct bedrock_core_memory_range {
+  uint64_t effective_address;
+  uint64_t linear_address;
+  int64_t width;
+  int64_t buffer_offset;
+} bedrock_core_memory_range;
 
 typedef struct bedrock_core_response {
   int32_t kind;
@@ -231,6 +244,9 @@ bedrock_core_status bedrock_core_last_request(
     const bedrock_core *core, bedrock_core_request *request);
 bedrock_core_status bedrock_core_request_payload(
     const bedrock_core *core, uint8_t *buffer, size_t capacity, size_t *length);
+bedrock_core_status bedrock_core_request_memory_ranges(
+    const bedrock_core *core, bedrock_core_memory_range *buffer,
+    size_t capacity, size_t *count);
 bedrock_core_status bedrock_core_cancel(bedrock_core *core);
 bedrock_core_status bedrock_core_resume(
     bedrock_core *core, const bedrock_core_response *response);

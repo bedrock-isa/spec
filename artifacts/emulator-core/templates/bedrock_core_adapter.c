@@ -126,6 +126,15 @@ static bedrock_core_status bedrock_core_accept_execution(
     core->request.range_start = request->zrange_start;
     core->request.range_end = request->zrange_end;
     core->request.address_translation = request->zaddress_translation ? 1 : 0;
+    core->request.debug_validation = request->zdebug_validation ? 1 : 0;
+    core->request.debug_validated = request->zdebug_validated ? 1 : 0;
+    core->request.physical_address = request->zphysical_address;
+    core->request.read_completion = request->zread_completion;
+    core->request.memory_cache_hint = request->zmemory_cache_hint;
+    core->request.memory_range_count = 0;
+    for (zz5listz8z5structz0zzMemory_access_rangez9 cursor = request->zmemory_ranges;
+         cursor != NULL; cursor = cursor->tl)
+      core->request.memory_range_count += 1;
     core->request.commit_point = request->zcommit_point ? 1 : 0;
     core->request.memory_order = mpz_get_si(request->zmemory_order);
     core->request.cache_policy = mpz_get_si(request->zcache_policy);
@@ -634,6 +643,32 @@ bedrock_core_status bedrock_core_request_payload(
        cursor != NULL; cursor = cursor->tl)
     buffer[index++] =
         (uint8_t)CONVERT_OF(fbits, lbits)(cursor->hd, true);
+  return BEDROCK_CORE_NEEDS_ENVIRONMENT;
+}
+
+bedrock_core_status bedrock_core_request_memory_ranges(
+    const bedrock_core *core, bedrock_core_memory_range *buffer,
+    size_t capacity, size_t *count) {
+  if (core == NULL || count == NULL) return BEDROCK_CORE_BAD_ARGUMENT;
+  if (!core->has_pending || core->last_status != BEDROCK_CORE_NEEDS_ENVIRONMENT)
+    return core->last_status == BEDROCK_CORE_OK ? BEDROCK_CORE_BAD_STATE
+                                                : core->last_status;
+  size_t required = core->request.memory_range_count;
+  *count = required;
+  if (buffer == NULL && capacity == 0)
+    return BEDROCK_CORE_NEEDS_ENVIRONMENT;
+  if (required > capacity || (required != 0 && buffer == NULL))
+    return BEDROCK_CORE_BAD_ARGUMENT;
+  size_t index = 0;
+  for (zz5listz8z5structz0zzMemory_access_rangez9 cursor =
+           core->pending.zrequest.zmemory_ranges;
+       cursor != NULL; cursor = cursor->tl) {
+    buffer[index].effective_address = cursor->hd.zeffective_address;
+    buffer[index].linear_address = cursor->hd.zlinear_address;
+    buffer[index].width = mpz_get_si(cursor->hd.zwidth);
+    buffer[index].buffer_offset = mpz_get_si(cursor->hd.zbuffer_offset);
+    index += 1;
+  }
   return BEDROCK_CORE_NEEDS_ENVIRONMENT;
 }
 

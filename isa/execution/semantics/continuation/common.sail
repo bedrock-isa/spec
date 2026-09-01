@@ -5,14 +5,11 @@ function response_matches_request(
     match request.kind {
         TranslationExecuteProbe => kind == ResponseTranslation,
         MemoryProbe => kind == ResponseProbe,
-        MemoryRead => kind == ResponseRead,
-        MemoryStore => kind == ResponseStoreAck,
-        CompoundMemoryStore => kind == ResponseStoreAck,
-        NonTemporalStore => kind == ResponseStoreAck,
+        Read => kind == ResponseRead,
+        Write => kind == ResponseWrite,
         StackRange => kind == ResponseStackRange,
         SegmentBoundsPoint => kind == ResponseSegmentBounds,
-        AtomicReadModifyWrite => kind == ResponseAtomic,
-        AddressWait => kind == ResponseAddressWait,
+        Atomic => kind == ResponseAtomic,
         AddressWake => kind == ResponseAddressWake,
         AddressTranslateRequest => kind == ResponseAddressTranslation,
         PhysicalPteRead => kind == ResponsePteRead,
@@ -22,16 +19,12 @@ function response_matches_request(
         TlbInvalidateRequest => kind == ResponseTlbOperation,
         TranslationQueryRequest => kind == ResponseTranslationQuery,
         ContextSwitchRequest => kind == ResponseContextSwitch,
-        StateSaveRequest => kind == ResponseStateSave,
-        StateRestoreRequest => kind == ResponseStateRestore,
         RepeatBodyFetch => kind == ResponseRepeatFetch,
         EventFrameAccess => kind == ResponseEventFrame,
         CpuidQueryRequest => kind == ResponseCpuidQuery,
         PerformanceCounterRequest => kind == ResponsePerformanceCounter,
         ControlTransitionRequest => kind == ResponseControlTransition,
         ResetSerializeRequest => kind == ResponseResetSerialize,
-        VectorMemoryRead => kind == ResponseVectorMemory,
-        VectorMemoryWrite => kind == ResponseVectorMemory,
         ExternalIntegerRequest => kind == ResponseIntegerExternal,
         NoPrimitiveRequest => false,
     }
@@ -45,7 +38,7 @@ function response_matches_phase(
 ) =
     match phase {
         PhaseSourceRead => kind == ResponseRead,
-        PhaseDestinationProbe => if request.kind == MemoryRead then {
+        PhaseDestinationProbe => if request.kind == Read then {
             kind == ResponseRead
         } else {
             if request.kind == MemoryProbe then {
@@ -54,15 +47,15 @@ function response_matches_phase(
                 false
             }
         },
-        PhaseDestinationWrite => kind == ResponseStoreAck,
-        PhaseMemoryWriteFirst => kind == ResponseStoreAck,
-        PhaseMemoryWriteSecond => kind == ResponseStoreAck,
+        PhaseDestinationWrite => kind == ResponseWrite,
+        PhaseMemoryWriteFirst => kind == ResponseWrite,
+        PhaseMemoryWriteSecond => kind == ResponseWrite,
         PhaseTargetRead => kind == ResponseRead,
         PhaseTargetExecuteProbe => kind == ResponseTranslation,
         PhaseStackRange => kind == ResponseStackRange,
         PhaseStackReadFirst => kind == ResponseRead,
         PhaseStackReadSecond => kind == ResponseRead,
-        PhaseStackWriteFirst => kind == ResponseStoreAck,
+        PhaseStackWriteFirst => kind == ResponseWrite,
         PhaseIntegerExternal => kind == ResponseIntegerExternal,
         PhaseCacheTranslate => kind == ResponseAddressTranslation,
         PhaseCacheMaintenance => kind == ResponseCacheMaintenance,
@@ -71,10 +64,10 @@ function response_matches_phase(
         PhaseTranslationQuery => kind == ResponseTranslationQuery,
         PhasePteRead => kind == ResponsePteRead,
         PhaseContextSwitch => kind == ResponseContextSwitch,
-        PhaseStateSave => kind == ResponseStateSave,
-        PhaseStateRestoreHeader => kind == ResponseStateRestore,
-        PhaseStateRestoreRange => kind == ResponseStateRestore,
-        PhaseStateRestore => kind == ResponseStateRestore,
+        PhaseStateSave => kind == ResponseWrite,
+        PhaseStateRestoreHeader => kind == ResponseRead,
+        PhaseStateRestoreRange => kind == ResponseRead,
+        PhaseStateRestore => kind == ResponseRead,
         PhaseRepeatFetch => kind == ResponseRepeatFetch,
         PhaseEventFrameHeader => kind == ResponseEventFrame,
         PhaseEventFrame => kind == ResponseEventFrame,
@@ -171,18 +164,9 @@ function architectural_memory_fault(
 function mmio_scalar_request(previous : Execution_result) -> bool = {
     let request = previous.request;
        previous.pending.repeat_parent == None()
-    &  request.kind
-    != VectorMemoryRead
-    &  request.kind
-    != VectorMemoryWrite
-    &  (   request.kind
-       == MemoryRead
-       |  request.kind
-       == MemoryStore
-       |  request.kind
-       == MemoryProbe
-       |  request.kind
-       == NonTemporalStore)
+    &  (request.kind == Read | request.kind == Write | request.kind == MemoryProbe)
+    &  request.range_length == request.width
+    &  request.selector == 0x0000000000000000
     &  (request.width == 1 | request.width == 2 | request.width == 4 | request.width == 8)
 }
 

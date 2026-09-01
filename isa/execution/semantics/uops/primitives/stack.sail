@@ -27,12 +27,19 @@ function uop_stack_request_make(
         effective_address = address,
         linear_address = point.linear,
         access = access,
-        value = value,
+        value = if kind == Write then 0x0000000000000000 else value,
         address_translation = true,
         debug_validation = false,
         debug_validated = false,
         physical_address = 0x0000000000000000,
-        debug_ranges = [||],
+        memory_ranges = [|struct {
+            effective_address = address,
+            linear_address = point.linear,
+            width = unsigned(sub_bits(range_end, address)),
+            buffer_offset = 0,
+        }|],
+        read_completion = ReadCompletionData,
+        memory_cache_hint = MemoryCacheDefault,
         commit_point = commit_point,
         memory_order = 0,
         cache_policy = 0,
@@ -42,8 +49,10 @@ function uop_stack_request_make(
         expected = 0x0000000000000000,
         desired = 0x0000000000000000,
         auxiliary = 0x0000000000000000,
-        body_length = 0,
-        payload_bytes = [||],
+        body_length = if kind == Read then unsigned(sub_bits(range_end, address)) else 0,
+        payload_bytes = if kind == Write
+                        then memory_value_bytes(value, unsigned(sub_bits(range_end, address)))
+                        else [||],
     }
 }
 
@@ -81,7 +90,7 @@ function clause execute_uop(UopStackLoad(offset), uop, values, instruction, befo
             uop_step_wait(
                 uop.destination.index,
                 uop_stack_request_make(
-                    MemoryRead,
+                    Read,
                     speculative,
                     address,
                     add_bits(address, 0x0000000000000008),
@@ -104,7 +113,7 @@ function clause execute_uop(UopStackStore(), uop, values, instruction, before, s
     match (uop_location_read(uop.source0, speculative, values),
            uop_location_read(uop.source1, speculative, values)) {
         (Some(value), Some(address)) => uop_step_wait(0 - 1,
-            uop_stack_request_make(MemoryStore, speculative, address,
+            uop_stack_request_make(Write, speculative, address,
                 add_bits(address, 0x0000000000000008), AccessStackWrite, value, true), value),
         _ => uop_step_fault(faulted(before, instruction.form.operation,
             InvalidControlState, "uop stack store input is unavailable")),
@@ -120,7 +129,7 @@ function clause execute_uop(UopStackStorePair(), uop, values, instruction, befor
             let point = segment_point(speculative.segments[2], address);
             let request = {
                 uop_stack_request_make(
-                    CompoundMemoryStore,
+                    Write,
                     speculative,
                     address,
                     add_bits(address, 0x0000000000000010),
@@ -131,8 +140,8 @@ function clause execute_uop(UopStackStorePair(), uop, values, instruction, befor
                 linear_address = point.linear,
                 width = 16,
                 range_length = 16,
-                desired = first,
-                auxiliary = add_bits(address, 0x0000000000000008),
+                payload_bytes = append_bytes(
+                    memory_value_bytes(second, 8), memory_value_bytes(first, 8)),
             };
             uop_step_wait(0 - 1, request, second)
         },

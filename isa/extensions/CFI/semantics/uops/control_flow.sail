@@ -28,10 +28,18 @@ function cfi_shadow_request(kind : Primitive_request_kind, state : Cpu_state,
     effective_address = address,
     linear_address = point.linear,
     access = access,
-    value = low,
+    value = 0x0000000000000000,
     address_translation = true,
+    memory_ranges = [|struct {
+      effective_address = address,
+      linear_address = point.linear,
+      width = 16,
+      buffer_offset = 0,
+    }|],
     commit_point = commit,
-    auxiliary = high,
+    body_length = if kind == Read then 16 else 0,
+    payload_bytes = if kind == Write then append_bytes(
+      memory_value_bytes(low, 8), memory_value_bytes(high, 8)) else [||],
   }
 }
 
@@ -130,7 +138,7 @@ function clause execute_uop(UopCfiShadowPush(), uop, values, instruction,
         uop_step_wait(
           0 - 1,
           cfi_shadow_request(
-            CompoundMemoryStore, speculative,
+            Write, speculative,
             control_register_value(speculative, ControlRegister_CFI_CFISP),
             AccessStackWrite,
             return_pc, return_cs, true
@@ -152,7 +160,7 @@ function clause execute_uop(UopCfiShadowLoad(), uop, _, instruction,
   else uop_step_wait(
     uop.destination.index,
     cfi_shadow_request(
-      MemoryRead, speculative,
+      Read, speculative,
       control_register_value(speculative, ControlRegister_CFI_CFISP), AccessStackRead,
       0x0000000000000000, 0x0000000000000000, false
     ),

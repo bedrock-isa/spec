@@ -94,14 +94,13 @@ function debug_trigger_domain_matches(settings : bits(64), user_domain : bool) -
   if user_domain then settings[4] == bitone else settings[5] == bitone
 
 function debug_trigger_request_read(request : Primitive_request) -> bool =
-  request.kind == MemoryRead | request.kind == VectorMemoryRead
+  request.kind == Read
 
 function debug_trigger_request_write(request : Primitive_request) -> bool =
-  request.kind == MemoryStore | request.kind == CompoundMemoryStore
-  | request.kind == NonTemporalStore | request.kind == VectorMemoryWrite
+  request.kind == Write
 
 function debug_trigger_request_atomic(request : Primitive_request) -> bool =
-  request.kind == AtomicReadModifyWrite
+  request.kind == Atomic
 
 function debug_trigger_memory_request(request : Primitive_request) -> bool =
   debug_trigger_request_read(request) | debug_trigger_request_write(request)
@@ -117,33 +116,20 @@ function debug_trigger_access_matches(
   else false
 
 function debug_access_range_overlap(
-  accessed : Debug_access_range, low : bits(64), high : bits(64)
+  accessed : Memory_access_range, low : bits(64), high : bits(64)
 ) -> bool =
   accessed.width > 0
   & unsigned(accessed.effective_address) < unsigned(high)
   & unsigned(low) < unsigned(accessed.effective_address) + accessed.width
 
 function first_overlapping_debug_range(
-  ranges : list(Debug_access_range), low : bits(64), high : bits(64)
-) -> option(Debug_access_range) = match ranges {
+  ranges : list(Memory_access_range), low : bits(64), high : bits(64)
+) -> option(Memory_access_range) = match ranges {
   [||] => None(),
   accessed :: tail => if debug_access_range_overlap(accessed, low, high)
                       then Some(accessed)
                       else first_overlapping_debug_range(tail, low, high),
 }
-
-function scalar_debug_range(request : Primitive_request) -> list(Debug_access_range) =
-  if request.width <= 0 then [||]
-  else [|struct {
-    effective_address = request.effective_address,
-    linear_address = request.linear_address,
-    width = request.width,
-  }|]
-
-function debug_request_ranges(request : Primitive_request) -> list(Debug_access_range) =
-  if request.kind == VectorMemoryRead | request.kind == VectorMemoryWrite
-  then request.debug_ranges
-  else scalar_debug_range(request)
 
 function debug_trigger_find_memory(
   slots : list(Debug_trigger_slot), index : int, user_domain : bool,
@@ -153,7 +139,7 @@ function debug_trigger_find_memory(
   slot :: tail => if slot.settings[0] == bitone
                      & debug_trigger_domain_matches(slot.settings, user_domain)
                      & debug_trigger_access_matches(slot.settings, request) then
-    match first_overlapping_debug_range(debug_request_ranges(request), slot.low, slot.high) {
+    match first_overlapping_debug_range(request.memory_ranges, slot.low, slot.high) {
       Some(accessed) => Some(struct { slot = index, accessed = accessed }),
       None() => debug_trigger_find_memory(tail, index + 1, user_domain, request),
     }

@@ -42,13 +42,13 @@ function vector_ea_operand_ordinal(
 function vector_memory_operand_ordinal(instruction : Decoded_instruction) -> int =
     vector_ea_operand_ordinal(instruction, instruction.operands, 0)
 
-function vector_active_debug_ranges(
+function vector_active_memory_ranges(
     predicate : list(bits(8)), effective_address : bits(64), linear_address : bits(64),
     lane : int, lanes : int, element_bytes : int
-) -> list(Debug_access_range) =
+) -> list(Memory_access_range) =
     if lane >= lanes then [||]
     else {
-        let tail = vector_active_debug_ranges(
+        let tail = vector_active_memory_ranges(
             predicate, effective_address, linear_address,
             lane + 1, lanes, element_bytes);
         let offset = lane * element_bytes;
@@ -57,22 +57,24 @@ function vector_active_debug_ranges(
                 effective_address = add_bits(effective_address, bits_from_int(offset)),
                 linear_address = add_bits(linear_address, bits_from_int(offset)),
                 width = element_bytes,
+                buffer_offset = offset,
             } :: tail
         else tail
     }
 
-function vector_memory_debug_ranges(
+function vector_memory_ranges(
     predicate_move : bool, predicate : list(bits(8)),
     effective_address : bits(64), linear_address : bits(64),
     length : int, element_bytes : int
-) -> list(Debug_access_range) =
+) -> list(Memory_access_range) =
     if length <= 0 then [||]
     else if predicate_move then [|struct {
         effective_address = effective_address,
         linear_address = linear_address,
         width = length,
+        buffer_offset = 0,
     }|]
-    else vector_active_debug_ranges(
+    else vector_active_memory_ranges(
         predicate, effective_address, linear_address,
         0, tdiv_int(length, element_bytes), element_bytes)
 

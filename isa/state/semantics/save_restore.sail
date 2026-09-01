@@ -1,9 +1,3 @@
-function append_bytes(left : list(bits(8)), right : list(bits(8))) -> list(bits(8)) =
-  match left {
-    [||] => right,
-    byte :: tail => byte :: append_bytes(tail, right),
-  }
-
 function zero_byte_count(count : int) -> list(bits(8)) =
   if count <= 0 then [||] else 0x00 :: zero_byte_count(count - 1)
 

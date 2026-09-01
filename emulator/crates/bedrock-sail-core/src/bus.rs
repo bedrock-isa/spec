@@ -1,59 +1,52 @@
 use super::{SailCore, SailCoreFault, SailCoreRequest, SailCoreResponse, SailCoreStatus};
 use crate::translation::{self, TranslationAccess, TranslationError};
-use bedrock_bus::{Bus, BusError};
+use bedrock_bus::{Bus, BusError, PhysicalMemoryClass};
 use std::fmt;
 
 const REQUEST_TRANSLATION_EXECUTE_PROBE: i32 = 1;
 const REQUEST_MEMORY_PROBE: i32 = 2;
-const REQUEST_MEMORY_READ: i32 = 3;
-const REQUEST_MEMORY_STORE: i32 = 4;
-const REQUEST_COMPOUND_MEMORY_STORE: i32 = 5;
-const REQUEST_NON_TEMPORAL_STORE: i32 = 6;
-const REQUEST_STACK_RANGE: i32 = 7;
-const REQUEST_SEGMENT_BOUNDS: i32 = 8;
-const REQUEST_ATOMIC_RMW: i32 = 9;
-const REQUEST_ADDRESS_TRANSLATE: i32 = 10;
-const REQUEST_PHYSICAL_PTE_READ: i32 = 11;
-const REQUEST_CACHE_MAINTENANCE: i32 = 12;
-const REQUEST_PREFETCH_HINT: i32 = 13;
-const REQUEST_FENCE_COMPLETION: i32 = 14;
-const REQUEST_TLB_INVALIDATE: i32 = 15;
-const REQUEST_TRANSLATION_QUERY: i32 = 16;
-const REQUEST_CONTEXT_SWITCH: i32 = 17;
-const REQUEST_STATE_SAVE: i32 = 18;
-const REQUEST_STATE_RESTORE: i32 = 19;
-const REQUEST_REPEAT_BODY_FETCH: i32 = 20;
-const REQUEST_EVENT_FRAME_ACCESS: i32 = 21;
-const REQUEST_CPUID_QUERY: i32 = 22;
-const REQUEST_PERFORMANCE_COUNTER: i32 = 23;
-const REQUEST_CONTROL_TRANSITION: i32 = 24;
-const REQUEST_RESET_SERIALIZE: i32 = 25;
-const REQUEST_VECTOR_MEMORY_READ: i32 = 26;
-const REQUEST_VECTOR_MEMORY_WRITE: i32 = 27;
+const REQUEST_READ: i32 = 3;
+const REQUEST_WRITE: i32 = 4;
+const REQUEST_STACK_RANGE: i32 = 5;
+const REQUEST_SEGMENT_BOUNDS: i32 = 6;
+const REQUEST_ATOMIC: i32 = 7;
+const REQUEST_ADDRESS_WAKE: i32 = 8;
+const REQUEST_ADDRESS_TRANSLATE: i32 = 9;
+const REQUEST_PHYSICAL_PTE_READ: i32 = 10;
+const REQUEST_CACHE_MAINTENANCE: i32 = 11;
+const REQUEST_PREFETCH_HINT: i32 = 12;
+const REQUEST_FENCE_COMPLETION: i32 = 13;
+const REQUEST_TLB_INVALIDATE: i32 = 14;
+const REQUEST_TRANSLATION_QUERY: i32 = 15;
+const REQUEST_CONTEXT_SWITCH: i32 = 16;
+const REQUEST_REPEAT_BODY_FETCH: i32 = 17;
+const REQUEST_EVENT_FRAME_ACCESS: i32 = 18;
+const REQUEST_CPUID_QUERY: i32 = 19;
+const REQUEST_PERFORMANCE_COUNTER: i32 = 20;
+const REQUEST_CONTROL_TRANSITION: i32 = 21;
+const REQUEST_RESET_SERIALIZE: i32 = 22;
 
 const RESPONSE_TRANSLATION: i32 = 0;
 const RESPONSE_PROBE: i32 = 1;
 const RESPONSE_READ: i32 = 2;
-const RESPONSE_STORE_ACK: i32 = 3;
+const RESPONSE_WRITE: i32 = 3;
 const RESPONSE_STACK_RANGE: i32 = 4;
 const RESPONSE_SEGMENT_BOUNDS: i32 = 5;
 const RESPONSE_ATOMIC: i32 = 7;
-const RESPONSE_ADDRESS_TRANSLATION: i32 = 8;
-const RESPONSE_PTE_READ: i32 = 9;
-const RESPONSE_CACHE_MAINTENANCE: i32 = 10;
-const RESPONSE_FENCE_COMPLETION: i32 = 11;
-const RESPONSE_TLB_OPERATION: i32 = 12;
-const RESPONSE_TRANSLATION_QUERY: i32 = 13;
-const RESPONSE_CONTEXT_SWITCH: i32 = 14;
-const RESPONSE_STATE_SAVE: i32 = 15;
-const RESPONSE_STATE_RESTORE: i32 = 16;
-const RESPONSE_REPEAT_FETCH: i32 = 17;
-const RESPONSE_EVENT_FRAME: i32 = 18;
-const RESPONSE_CPUID_QUERY: i32 = 20;
-const RESPONSE_PERFORMANCE_COUNTER: i32 = 21;
-const RESPONSE_CONTROL_TRANSITION: i32 = 22;
-const RESPONSE_RESET_SERIALIZE: i32 = 23;
-const RESPONSE_VECTOR_MEMORY: i32 = 19;
+const RESPONSE_ADDRESS_WAKE: i32 = 8;
+const RESPONSE_ADDRESS_TRANSLATION: i32 = 9;
+const RESPONSE_PTE_READ: i32 = 10;
+const RESPONSE_CACHE_MAINTENANCE: i32 = 11;
+const RESPONSE_FENCE_COMPLETION: i32 = 12;
+const RESPONSE_TLB_OPERATION: i32 = 13;
+const RESPONSE_TRANSLATION_QUERY: i32 = 14;
+const RESPONSE_CONTEXT_SWITCH: i32 = 15;
+const RESPONSE_REPEAT_FETCH: i32 = 16;
+const RESPONSE_EVENT_FRAME: i32 = 17;
+const RESPONSE_CPUID_QUERY: i32 = 18;
+const RESPONSE_PERFORMANCE_COUNTER: i32 = 19;
+const RESPONSE_CONTROL_TRANSITION: i32 = 20;
+const RESPONSE_RESET_SERIALIZE: i32 = 21;
 
 const ACCESS_LOAD: i32 = 1;
 const ACCESS_STORE: i32 = 2;
@@ -336,13 +329,12 @@ fn service_request(
     let response_kind = match request.kind {
         REQUEST_TRANSLATION_EXECUTE_PROBE => RESPONSE_TRANSLATION,
         REQUEST_MEMORY_PROBE => RESPONSE_PROBE,
-        REQUEST_MEMORY_READ => RESPONSE_READ,
-        REQUEST_MEMORY_STORE | REQUEST_COMPOUND_MEMORY_STORE | REQUEST_NON_TEMPORAL_STORE => {
-            RESPONSE_STORE_ACK
-        }
+        REQUEST_READ => RESPONSE_READ,
+        REQUEST_WRITE => RESPONSE_WRITE,
         REQUEST_STACK_RANGE => RESPONSE_STACK_RANGE,
         REQUEST_SEGMENT_BOUNDS => RESPONSE_SEGMENT_BOUNDS,
-        REQUEST_ATOMIC_RMW => RESPONSE_ATOMIC,
+        REQUEST_ATOMIC => RESPONSE_ATOMIC,
+        REQUEST_ADDRESS_WAKE => RESPONSE_ADDRESS_WAKE,
         REQUEST_ADDRESS_TRANSLATE => RESPONSE_ADDRESS_TRANSLATION,
         REQUEST_PHYSICAL_PTE_READ => RESPONSE_PTE_READ,
         REQUEST_CACHE_MAINTENANCE | REQUEST_PREFETCH_HINT => RESPONSE_CACHE_MAINTENANCE,
@@ -350,15 +342,12 @@ fn service_request(
         REQUEST_TLB_INVALIDATE => RESPONSE_TLB_OPERATION,
         REQUEST_TRANSLATION_QUERY => RESPONSE_TRANSLATION_QUERY,
         REQUEST_CONTEXT_SWITCH => RESPONSE_CONTEXT_SWITCH,
-        REQUEST_STATE_SAVE => RESPONSE_STATE_SAVE,
-        REQUEST_STATE_RESTORE => RESPONSE_STATE_RESTORE,
         REQUEST_REPEAT_BODY_FETCH => RESPONSE_REPEAT_FETCH,
         REQUEST_EVENT_FRAME_ACCESS => RESPONSE_EVENT_FRAME,
         REQUEST_CPUID_QUERY => RESPONSE_CPUID_QUERY,
         REQUEST_PERFORMANCE_COUNTER => RESPONSE_PERFORMANCE_COUNTER,
         REQUEST_CONTROL_TRANSITION => RESPONSE_CONTROL_TRANSITION,
         REQUEST_RESET_SERIALIZE => RESPONSE_RESET_SERIALIZE,
-        REQUEST_VECTOR_MEMORY_READ | REQUEST_VECTOR_MEMORY_WRITE => RESPONSE_VECTOR_MEMORY,
         kind => return Err(SailBusExecutionError::UnsupportedRequest(kind)),
     };
 
@@ -401,7 +390,16 @@ fn service_request(
         return Ok(response);
     }
 
-    if request.address_translation {
+    let address = if request.debug_validated {
+        let physical_class = match bus.physical_memory_class(request.physical_address) {
+            PhysicalMemoryClass::Normal => 0,
+            PhysicalMemoryClass::Device => 1,
+        };
+        response.access_class = physical_class;
+        response.physical_class = physical_class;
+        response.cache_policy = request.cache_policy;
+        request.physical_address
+    } else if request.address_translation {
         let ptcr = core.control(0).map_err(SailBusExecutionError::Core)?;
         if ptcr & 1 != 0 {
             core.environment.page_walk_counter = core.environment.page_walk_counter.wrapping_add(1);
@@ -440,6 +438,7 @@ fn service_request(
             }
             Err(TranslationError::Bus(error)) => return Err(error.into()),
         }
+        response.value
     } else {
         match translation::translate(
             bus,
@@ -462,12 +461,13 @@ fn service_request(
             }
             Err(TranslationError::Bus(error)) => return Err(error.into()),
         }
-    }
-    let address = if request.address_translation {
-        response.value
-    } else {
         request.linear_address
     };
+
+    if request.debug_validation {
+        response.value = address;
+        return Ok(response);
+    }
 
     let operation = match request.kind {
         REQUEST_TRANSLATION_EXECUTE_PROBE | REQUEST_MEMORY_PROBE => Ok(()),
@@ -475,22 +475,25 @@ fn service_request(
             response.value = address;
             Ok(())
         }
-        REQUEST_MEMORY_READ | REQUEST_PHYSICAL_PTE_READ => {
+        REQUEST_PHYSICAL_PTE_READ => {
             read_width(bus, address, request.width).map(|value| response.value = value)
         }
-        REQUEST_MEMORY_STORE | REQUEST_NON_TEMPORAL_STORE => {
-            write_width(bus, address, request.width, request.value)
+        REQUEST_READ => service_read(bus, address, request, &mut response),
+        REQUEST_WRITE => {
+            let result = service_write(bus, address, request);
+            if result.is_ok() && request.selector == 1 {
+                response.atomic_store_happened = true;
+            }
+            result
         }
-        REQUEST_COMPOUND_MEMORY_STORE => write_compound(bus, address, request),
-        REQUEST_ATOMIC_RMW => service_atomic(bus, address, request, &mut response),
+        REQUEST_ATOMIC => service_atomic(bus, address, request, &mut response),
+        REQUEST_ADDRESS_WAKE => Ok(()),
         REQUEST_CACHE_MAINTENANCE
         | REQUEST_PREFETCH_HINT
         | REQUEST_FENCE_COMPLETION
         | REQUEST_TLB_INVALIDATE
         | REQUEST_TRANSLATION_QUERY
         | REQUEST_CONTEXT_SWITCH => Ok(()),
-        REQUEST_STATE_SAVE => write_payload(bus, address, &request.payload),
-        REQUEST_STATE_RESTORE => service_blob_access(bus, address, request, &mut response),
         REQUEST_REPEAT_BODY_FETCH => match fetch_instruction(bus, address) {
             Ok(body) => {
                 response.body = body;
@@ -503,16 +506,6 @@ fn service_request(
             }),
         },
         REQUEST_EVENT_FRAME_ACCESS => service_blob_access(bus, address, request, &mut response),
-        REQUEST_VECTOR_MEMORY_WRITE if request.selector == 1 && request.access == ACCESS_STORE => {
-            let result = write_payload(bus, address, &request.payload);
-            if result.is_ok() {
-                response.atomic_store_happened = true;
-            }
-            result
-        }
-        REQUEST_VECTOR_MEMORY_READ | REQUEST_VECTOR_MEMORY_WRITE => {
-            service_blob_access(bus, address, request, &mut response)
-        }
         _ => unreachable!(),
     };
     if let Err(error) = operation {
@@ -541,6 +534,93 @@ fn service_blob_access(
             start: address,
             end: address,
         }),
+    }
+}
+
+fn service_read(
+    bus: &mut impl Bus,
+    address: u64,
+    request: &SailCoreRequest,
+    response: &mut SailCoreResponse,
+) -> Result<(), BusError> {
+    if request.access == ACCESS_ADDRESS_ONLY {
+        return Ok(());
+    }
+    if request.access != ACCESS_LOAD
+        && request.access != ACCESS_READ_MODIFY_WRITE
+        && request.access != ACCESS_STACK_READ
+    {
+        return Err(invalid_request_range(address));
+    }
+    let length =
+        usize::try_from(request.body_length).map_err(|_| invalid_request_range(address))?;
+    let mut body = vec![0; length];
+    for range in &request.memory_ranges {
+        let offset =
+            usize::try_from(range.buffer_offset).map_err(|_| invalid_request_range(address))?;
+        let width = usize::try_from(range.width).map_err(|_| invalid_request_range(address))?;
+        if offset >= body.len() {
+            continue;
+        }
+        let count = width.min(body.len() - offset);
+        let range_address =
+            memory_range_address(address, request.linear_address, range.linear_address)?;
+        for index in 0..count {
+            let current = range_address
+                .checked_add(index as u64)
+                .ok_or(BusError::OutOfRange {
+                    addr: range_address,
+                })?;
+            body[offset + index] = bus.read_u8(current)?;
+        }
+    }
+    response.body = body;
+    Ok(())
+}
+
+fn service_write(
+    bus: &mut impl Bus,
+    address: u64,
+    request: &SailCoreRequest,
+) -> Result<(), BusError> {
+    if request.access != ACCESS_STORE && request.access != ACCESS_STACK_WRITE {
+        return Err(invalid_request_range(address));
+    }
+    for range in &request.memory_ranges {
+        let offset =
+            usize::try_from(range.buffer_offset).map_err(|_| invalid_request_range(address))?;
+        let width = usize::try_from(range.width).map_err(|_| invalid_request_range(address))?;
+        let end = offset
+            .checked_add(width)
+            .ok_or_else(|| invalid_request_range(address))?;
+        let bytes = request
+            .payload
+            .get(offset..end)
+            .ok_or_else(|| invalid_request_range(address))?;
+        let range_address =
+            memory_range_address(address, request.linear_address, range.linear_address)?;
+        write_payload(bus, range_address, bytes)?;
+    }
+    Ok(())
+}
+
+fn memory_range_address(
+    address: u64,
+    request_linear_address: u64,
+    range_linear_address: u64,
+) -> Result<u64, BusError> {
+    let offset = range_linear_address
+        .checked_sub(request_linear_address)
+        .ok_or_else(|| invalid_request_range(address))?;
+    address
+        .checked_add(offset)
+        .ok_or(BusError::OutOfRange { addr: address })
+}
+
+fn invalid_request_range(address: u64) -> BusError {
+    BusError::InvalidRange {
+        start: address,
+        end: address,
     }
 }
 
@@ -604,37 +684,6 @@ fn read_width(bus: &mut impl Bus, address: u64, width: i64) -> Result<u64, BusEr
     }
 }
 
-fn write_width(bus: &mut impl Bus, address: u64, width: i64, value: u64) -> Result<(), BusError> {
-    match width {
-        1 => bus.write_u8(address, value as u8),
-        2 => bus.write_u16(address, value as u16),
-        4 => bus.write_u32(address, value as u32),
-        8 => bus.write_u64(address, value),
-        _ => Err(BusError::InvalidRange {
-            start: address,
-            end: address,
-        }),
-    }
-}
-
-fn write_compound(
-    bus: &mut impl Bus,
-    address: u64,
-    request: &SailCoreRequest,
-) -> Result<(), BusError> {
-    if request.width != 16 {
-        return Err(BusError::InvalidRange {
-            start: address,
-            end: address,
-        });
-    }
-    bus.write_u64(address, request.value)?;
-    let high = address
-        .checked_add(8)
-        .ok_or(BusError::OutOfRange { addr: address })?;
-    bus.write_u64(high, request.desired)
-}
-
 fn service_atomic(
     bus: &mut impl Bus,
     address: u64,
@@ -679,8 +728,86 @@ fn service_atomic(
 
 #[cfg(test)]
 mod tests {
-    use crate::{SailCore, SailCoreStatus};
-    use bedrock_bus::{Bus, Ram};
+    use super::{
+        ACCESS_LOAD, ACCESS_READ_MODIFY_WRITE, ACCESS_STORE, REQUEST_ATOMIC, REQUEST_READ,
+        REQUEST_WRITE, service_request,
+    };
+    use crate::{SailCore, SailCoreMemoryRange, SailCoreRequest, SailCoreStatus};
+    use bedrock_bus::{Bus, BusResult, Ram};
+
+    struct RejectTargetAccessBus;
+
+    impl Bus for RejectTargetAccessBus {
+        fn begin_transaction(&mut self) -> BusResult<()> {
+            Ok(())
+        }
+
+        fn commit_transaction(&mut self) {}
+
+        fn rollback_transaction(&mut self) {}
+
+        fn read_u8(&mut self, addr: u64) -> BusResult<u8> {
+            panic!("validation-only request read target address {addr:#x}")
+        }
+
+        fn write_u8(&mut self, addr: u64, _value: u8) -> BusResult<()> {
+            panic!("validation-only request wrote target address {addr:#x}")
+        }
+    }
+
+    #[test]
+    fn debug_validation_completes_without_target_access() {
+        let mut core = SailCore::new().unwrap();
+        let mut bus = RejectTargetAccessBus;
+
+        for (kind, access) in [
+            (REQUEST_READ, ACCESS_LOAD),
+            (REQUEST_WRITE, ACCESS_STORE),
+            (REQUEST_ATOMIC, ACCESS_READ_MODIFY_WRITE),
+        ] {
+            let request = SailCoreRequest {
+                kind,
+                access,
+                width: 8,
+                linear_address: 0x40,
+                address_translation: true,
+                debug_validation: true,
+                ..SailCoreRequest::default()
+            };
+
+            let response = service_request(&mut core, &mut bus, &request).unwrap();
+            assert!(response.success);
+            assert_eq!(response.value, 0x40);
+        }
+    }
+
+    #[test]
+    fn debug_validated_access_uses_the_pretranslated_address() {
+        let mut core = SailCore::new().unwrap();
+        let mut ram = Ram::new(0x100);
+        ram.write_u64(0x20, 0x8877_6655_4433_2211).unwrap();
+        let request = SailCoreRequest {
+            kind: REQUEST_READ,
+            access: ACCESS_LOAD,
+            width: 8,
+            linear_address: u64::MAX,
+            debug_validated: true,
+            physical_address: 0x20,
+            body_length: 8,
+            memory_ranges: vec![SailCoreMemoryRange {
+                effective_address: 0,
+                linear_address: u64::MAX,
+                width: 8,
+                buffer_offset: 0,
+            }],
+            ..SailCoreRequest::default()
+        };
+
+        let response = service_request(&mut core, &mut ram, &request).unwrap();
+
+        assert!(response.success);
+        assert_eq!(response.body, 0x8877_6655_4433_2211u64.to_le_bytes());
+    }
 
     #[test]
     fn push_round_trips_through_ram_bus() {

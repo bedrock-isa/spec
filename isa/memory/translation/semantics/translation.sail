@@ -107,13 +107,13 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
              | tlb_operation == TlbInvalidateAll
     then TlbInvalidateRequest
     else if ptquery | vtop then PhysicalPteRead
-    else if save then StateSaveRequest
-    else if restore then StateRestoreRequest
+    else if save then Write
+    else if restore then Read
     else ContextSwitchRequest;
   let phase = if kind == TlbInvalidateRequest then PhaseTlbOperation
     else if kind == PhysicalPteRead then PhasePteRead
-    else if kind == StateSaveRequest then PhaseStateSave
-    else if kind == StateRestoreRequest then PhaseStateRestore
+    else if save then PhaseStateSave
+    else if restore then PhaseStateRestore
     else PhaseContextSwitch;
   let destination = commit_destination_for(instruction.operands, 8);
   let save_range = save | restore;
@@ -138,7 +138,13 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
            save_size > 0 & save_end == 0x0000000000000000
                          & address.effective_address != 0x0000000000000000
            else base_request.range_end_at_modulus,
-         body_length = if save_range then save_size else 0 };
+         memory_ranges = if save_range then [|struct {
+           effective_address = address.effective_address,
+           linear_address = address.linear_address,
+           width = save_size,
+           buffer_offset = 0
+         }|] else base_request.memory_ranges,
+         body_length = if restore then save_size else 0 };
   if ptquery | vtop then {
     let linear = value;
     let target_level = if ptquery then unsigned(selector[2 .. 0]) else 1;
@@ -188,7 +194,7 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
     if restore then PhaseStateRestoreHeader else phase,
     0, value, selector,
     if save then { request with
-      payload_bytes = save_image_bytes(state), body_length = save_size
+      payload_bytes = save_image_bytes(state), body_length = 0
     }
     else if restore then { request with
       range_end = add_bits(address.effective_address, 0x0000000000000010),

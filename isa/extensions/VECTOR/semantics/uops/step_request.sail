@@ -200,7 +200,7 @@ function vector_step_request(
     let point = segment_point(segment_image, address);
     let total = unsigned(address) + element_bytes;
     struct {
-        kind = if gather then VectorMemoryRead else VectorMemoryWrite,
+        kind = if gather then Read else Write,
         ordinal = 0,
         operand = vector_memory_operand_ordinal(instruction),
         role = RequestRoleValue,
@@ -221,11 +221,14 @@ function vector_step_request(
         debug_validation = false,
         debug_validated = false,
         physical_address = 0x0000000000000000,
-        debug_ranges = [|struct {
+        memory_ranges = [|struct {
             effective_address = address,
             linear_address = point.linear,
             width = element_bytes,
+            buffer_offset = 0,
         }|],
+        read_completion = ReadCompletionData,
+        memory_cache_hint = MemoryCacheDefault,
         commit_point = true,
         memory_order = 0,
         cache_policy = 0,
@@ -235,7 +238,7 @@ function vector_step_request(
         expected = 0x0000000000000000,
         desired = 0x0000000000000000,
         auxiliary = get_slice_int(64, element_bytes, 0),
-        body_length = element_bytes,
-        payload_bytes = values,
+        body_length = if gather then element_bytes else 0,
+        payload_bytes = if gather then [||] else values,
     }
 }

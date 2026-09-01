@@ -20,14 +20,11 @@ enum Primitive_request_kind = {
     NoPrimitiveRequest,
     TranslationExecuteProbe,
     MemoryProbe,
-    MemoryRead,
-    MemoryStore,
-    CompoundMemoryStore,
-    NonTemporalStore,
+    Read,
+    Write,
     StackRange,
     SegmentBoundsPoint,
-    AtomicReadModifyWrite,
-    AddressWait,
+    Atomic,
     AddressWake,
     AddressTranslateRequest,
     PhysicalPteRead,
@@ -37,16 +34,12 @@ enum Primitive_request_kind = {
     TlbInvalidateRequest,
     TranslationQueryRequest,
     ContextSwitchRequest,
-    StateSaveRequest,
-    StateRestoreRequest,
     RepeatBodyFetch,
     EventFrameAccess,
     CpuidQueryRequest,
     PerformanceCounterRequest,
     ControlTransitionRequest,
     ResetSerializeRequest,
-    VectorMemoryRead,
-    VectorMemoryWrite,
     ExternalIntegerRequest,
 }
 
@@ -63,11 +56,14 @@ enum Transaction_access = {
 
 enum Memory_access_class = { NormalAccess, MmioAccess }
 enum Physical_memory_class = { NormalPhysical, DevicePhysical }
+enum Read_completion = { ReadCompletionData, ReadCompletionWait }
+enum Memory_cache_hint = { MemoryCacheDefault, MemoryCacheNonTemporal }
 
-struct Debug_access_range = {
+struct Memory_access_range = {
   effective_address : bits(64),
   linear_address : bits(64),
   width : int,
+  buffer_offset : int,
 }
 
 enum Debug_stop_kind = {
@@ -91,7 +87,7 @@ struct Debug_stop = {
 
 struct Debug_trigger_match = {
   slot : int,
-  accessed : Debug_access_range,
+  accessed : Memory_access_range,
 }
 
 enum Continuation_phase = {
@@ -138,12 +134,11 @@ enum Transaction_response_kind = {
     ResponseTranslation,
     ResponseProbe,
     ResponseRead,
-    ResponseStoreAck,
+    ResponseWrite,
     ResponseStackRange,
     ResponseSegmentBounds,
     ResponseIntegerExternal,
     ResponseAtomic,
-    ResponseAddressWait,
     ResponseAddressWake,
     ResponseAddressTranslation,
     ResponsePteRead,
@@ -152,11 +147,8 @@ enum Transaction_response_kind = {
     ResponseTlbOperation,
     ResponseTranslationQuery,
     ResponseContextSwitch,
-    ResponseStateSave,
-    ResponseStateRestore,
     ResponseRepeatFetch,
     ResponseEventFrame,
-    ResponseVectorMemory,
     ResponseCpuidQuery,
     ResponsePerformanceCounter,
     ResponseControlTransition,
@@ -253,7 +245,9 @@ struct Primitive_request = {
   debug_validation : bool,
   debug_validated : bool,
   physical_address : bits(64),
-  debug_ranges : list(Debug_access_range),
+  memory_ranges : list(Memory_access_range),
+  read_completion : Read_completion,
+  memory_cache_hint : Memory_cache_hint,
   commit_point : bool,
   memory_order : int,
   cache_policy : int,

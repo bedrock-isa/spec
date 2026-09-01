@@ -24,14 +24,24 @@ function request_for_evaluation(kind : Primitive_request_kind, ordinal : int,
   range_end_at_modulus = unsigned(evaluation.effective_address) + evaluation.width
                          == 18446744073709551616,
   effective_address = evaluation.effective_address, linear_address = evaluation.linear_address,
-  access = access, value = value, address_translation = true,
+  access = access, value = if kind == Write then 0x0000000000000000 else value,
+  address_translation = true,
   debug_validation = false, debug_validated = false,
-  physical_address = 0x0000000000000000, debug_ranges = [||],
+  physical_address = 0x0000000000000000,
+  memory_ranges = [|struct {
+    effective_address = evaluation.effective_address,
+    linear_address = evaluation.linear_address,
+    width = evaluation.width,
+    buffer_offset = 0
+  }|],
+  read_completion = ReadCompletionData, memory_cache_hint = MemoryCacheDefault,
   commit_point = commit_point,
   memory_order = ordinal, cache_policy = 0, suppress_fault = false,
   staged_updates = evaluation.staged_updates, selector = 0x0000000000000000,
   expected = 0x0000000000000000, desired = 0x0000000000000000,
-  auxiliary = 0x0000000000000000, body_length = 0, payload_bytes = [||]
+  auxiliary = 0x0000000000000000,
+  body_length = if kind == Read then evaluation.width else 0,
+  payload_bytes = if kind == Write then memory_value_bytes(value, evaluation.width) else [||]
 }
 
 function waiting_transaction(family : Transaction_family,
@@ -47,7 +57,8 @@ function waiting_transaction(family : Transaction_family,
       empty_transaction_continuation() with phase = phase, ordinal = ordinal,
       captured_first = first, captured_second = second
     }) },
-  request = request, effects = [||], fault = None(), debug_stop = None(),
+  request = debug_trigger_prepare_request(before, request),
+  effects = [||], fault = None(), debug_stop = None(),
   awaiting_environment = true
 }
 

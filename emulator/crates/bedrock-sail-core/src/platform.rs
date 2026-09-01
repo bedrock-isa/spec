@@ -42,7 +42,7 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (EXTENSION_CLASS, 2, 1) => 7,
         (EXTENSION_CLASS, 3, 0) => 1,
         (EXTENSION_CLASS, 3, 1) => 1,
-        (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(5, 0),
+        (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(6, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,
         (IMPLEMENTATION_CLASS, 2, 0) => 3,
@@ -58,6 +58,8 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (IMPLEMENTATION_CLASS, 4, 6) => 0x0001_0040_0000_0240,
         (IMPLEMENTATION_CLASS, 5, 0) => 1,
         (IMPLEMENTATION_CLASS, 5, 1) => TIMEBASE_TICKS_PER_SECOND,
+        (IMPLEMENTATION_CLASS, 6, 0) => 1,
+        (IMPLEMENTATION_CLASS, 6, 1) => 4,
         _ => 0,
     }
 }
@@ -100,7 +102,13 @@ mod tests {
 
     #[test]
     fn cpuid_reports_the_invariant_timebase_rate() {
-        assert_eq!(cpuid_query(selector(2, 0, 0)), 0x0005_0000);
+        assert_eq!(cpuid_query(selector(2, 0, 0)), 0x0006_0000);
         assert_eq!(cpuid_query(selector(2, 5, 1)), TIMEBASE_TICKS_PER_SECOND);
+    }
+
+    #[test]
+    fn cpuid_reports_architectural_debug_trigger_capacity() {
+        assert_eq!(cpuid_query(selector(2, 6, 0)), 1);
+        assert_eq!(cpuid_query(selector(2, 6, 1)), 4);
     }
 }

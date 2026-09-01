@@ -89,7 +89,8 @@ function uinfo_event_code_valid(value : bits(64)) -> bool = {
   let class = unsigned(value[31 .. 24]);
   let id = value[23 .. 0];
   value[63 .. 32] == 0x00000000
-  & ((class == 0 & (id == 0x000000 | id == 0x000002 | id == 0x000003
+  & ((class == 0 & (id == 0x000000 | id == 0x000001 | id == 0x000002
+                    | id == 0x000003 | id == 0x000006 | id == 0x000007
                     | id == 0x000008 | id == 0x000009 | id == 0x00000A
                     | id == 0x00000B | id == 0x00000D | id == 0x00000E
                     | id == 0x000018 | id == 0x000019 | id == 0x00001A
@@ -150,7 +151,8 @@ function target_probe_request(ordinal : int, segment_image : bits(64), target : 
     range_end_at_modulus = target == 0xFFFFFFFFFFFFFFFF,
     linear_address = point.linear, access = AccessExecute, value = 0x0000000000000000,
     address_translation = true, debug_validation = false, debug_validated = false,
-    physical_address = 0x0000000000000000, debug_ranges = [||],
+    physical_address = 0x0000000000000000, memory_ranges = [||],
+    read_completion = ReadCompletionData, memory_cache_hint = MemoryCacheDefault,
     commit_point = false, memory_order = ordinal,
     cache_policy = 0, suppress_fault = false, staged_updates = [||],
     selector = 0x0000000000000000, expected = 0x0000000000000000,

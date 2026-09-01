@@ -6,7 +6,7 @@ function clause execute_uop(UopAddressWait(), uop, values, instruction, before, 
         (Some(address), Some(expected)) => {
             let request = {
                 uop_memory_request_make(
-                    AddressWait,
+                    Read,
                     address,
                     uop.width,
                     AccessLoad,
@@ -14,6 +14,7 @@ function clause execute_uop(UopAddressWait(), uop, values, instruction, before, 
                     false,
                 ) with
                 memory_order = 1,
+                read_completion = ReadCompletionWait,
                 expected = narrow_bits(expected, uop.width),
             };
             uop_step_wait(0 - 1, request, expected)
