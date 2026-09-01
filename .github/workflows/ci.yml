@@ -87,10 +87,6 @@ jobs:
   test:
     name: Run PR regression and decoder checks
     runs-on: ubuntu-latest
-    env:
-      BUILD_DIR: ${{ runner.temp }}/bedrock-build
-      EMULATOR_TARGET_DIR: ${{ runner.temp }}/bedrock-emulator-target
-      TMPDIR: ${{ runner.temp }}
 
     steps:
       - name: Check out repository
@@ -116,6 +112,10 @@ jobs:
           sudo apt-get install -y verilator
 
       - name: Run canonical PR test gate
+        env:
+          BUILD_DIR: ${{ runner.temp }}/bedrock-build
+          EMULATOR_TARGET_DIR: ${{ runner.temp }}/bedrock-emulator-target
+          TMPDIR: ${{ runner.temp }}
         run: make test-pr
 
   publish:
