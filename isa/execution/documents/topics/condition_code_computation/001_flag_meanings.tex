@@ -1,7 +1,7 @@
 \clearpage
 \subsection{Flag Meanings}
 Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction
-description explicitly defines a FLAGS write. Every FLAGS-writing instruction replaces the complete Z, N, C, and V
+description explicitly defines a FLAGS write. Every FLAGS-writing instruction replaces the complete (:ref:base.registers.STATE.FLAGS.Z:), (:ref:base.registers.STATE.FLAGS.N:), (:ref:base.registers.STATE.FLAGS.C:), and (:ref:base.registers.STATE.FLAGS.V:)
 image; partial FLAGS writes do not exist. An instruction that does not write FLAGS preserves the complete image.
 
 For an operand width of n bits, (:term:base.terms.ordinary:) integer ALU results are evaluated modulo 2\textasciicircum{}n unless the
@@ -18,9 +18,9 @@ rotates, moves, extensions, min/max, and multiply/divide instructions leave FLAG
 \rowcolor{BedrockHeaderFill}
 \textbf{Bit} & \textbf{Name} & \textbf{Meaning}\\
 \midrule
-Z & zero & Set when the result value is zero.\\
-N & negative & Set from the most significant result bit at the operand size.\\
-C & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for subtraction.\\
-V & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
+(:ref:base.registers.STATE.FLAGS.Z:) & zero & Set when the result value is zero.\\
+(:ref:base.registers.STATE.FLAGS.N:) & negative & Set from the most significant result bit at the operand size.\\
+(:ref:base.registers.STATE.FLAGS.C:) & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for subtraction.\\
+(:ref:base.registers.STATE.FLAGS.V:) & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
 \bottomrule
 \end{BedrockTabular}

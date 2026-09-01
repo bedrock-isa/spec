@@ -13,7 +13,6 @@ from engine.entity import (
     Entity,
     EntityCatalog,
     EntityDisplayStyle,
-    EntityKind,
 )
 from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
@@ -30,7 +29,7 @@ _T = TypeVar("_T")
 
 
 @dataclass(frozen=True, slots=True)
-class InterfaceGroup:
+class InterfaceGroup(Entity):
     reference: Reference["InterfaceGroup"]
     id: str
     title: str
@@ -39,7 +38,7 @@ class InterfaceGroup:
 
 
 @dataclass(frozen=True, slots=True)
-class InterfaceType:
+class InterfaceType(Entity):
     reference: Reference["InterfaceType"]
     id: str
     owner: str
@@ -52,7 +51,7 @@ class InterfaceType:
 
 
 @dataclass(frozen=True, slots=True)
-class InterfaceIntrinsic:
+class InterfaceIntrinsic(Entity):
     reference: Reference["InterfaceIntrinsic"]
     id: str
     owner: str
@@ -81,7 +80,7 @@ class InterfaceExtension:
 
 
 @dataclass(frozen=True, slots=True)
-class InterfaceUtility:
+class InterfaceUtility(Entity):
     reference: Reference["InterfaceUtility"]
     id: str
     owner: str
@@ -150,8 +149,10 @@ class CInterfaceProject:
         )
 
     def resolve(self, reference: Reference[_T]) -> _T:
-        entity = self.entities.resolve(cast(Reference[Entity], reference))
-        return cast(_T, entity.value)
+        return cast(
+            _T,
+            self.entities.resolve(cast(Reference[Entity], reference)),
+        )
 
     def entity_dependencies(self) -> tuple[EntityDependency, ...]:
         """Return target-interface relationships intentionally exposed to tooling."""
@@ -252,50 +253,21 @@ def _build_entities(
     intrinsics: ReferenceIndex[InterfaceIntrinsic],
     utilities: ReferenceIndex[InterfaceUtility],
 ) -> EntityCatalog:
-    index = ReferenceIndex[Entity]()
-    catalogs: tuple[tuple[EntityKind, ReferenceIndex[object], EntityDisplayStyle], ...] = (
-        (
-            EntityKind.INTERFACE_TYPE_GROUP,
-            cast(ReferenceIndex[object], type_groups),
-            EntityDisplayStyle.TEXT,
-        ),
-        (
-            EntityKind.INTERFACE_INTRINSIC_GROUP,
-            cast(ReferenceIndex[object], intrinsic_groups),
-            EntityDisplayStyle.TEXT,
-        ),
-        (
-            EntityKind.INTERFACE_UTILITY_GROUP,
-            cast(ReferenceIndex[object], utility_groups),
-            EntityDisplayStyle.TEXT,
-        ),
-        (
-            EntityKind.INTERFACE_TYPE,
-            cast(ReferenceIndex[object], types),
-            EntityDisplayStyle.CODE,
-        ),
-        (
-            EntityKind.INTERFACE_INTRINSIC,
-            cast(ReferenceIndex[object], intrinsics),
-            EntityDisplayStyle.CODE,
-        ),
-        (
-            EntityKind.INTERFACE_UTILITY,
-            cast(ReferenceIndex[object], utilities),
-            EntityDisplayStyle.CODE,
-        ),
-    )
-    for kind, values, style in catalogs:
-        for typed_reference, value in values.items():
-            reference = cast(Reference[Entity], typed_reference)
+    entries: list[tuple[Entity, str, EntityDisplayStyle]] = []
+    for values, style in (
+        (type_groups, EntityDisplayStyle.TEXT),
+        (intrinsic_groups, EntityDisplayStyle.TEXT),
+        (utility_groups, EntityDisplayStyle.TEXT),
+        (types, EntityDisplayStyle.CODE),
+        (intrinsics, EntityDisplayStyle.CODE),
+        (utilities, EntityDisplayStyle.CODE),
+    ):
+        for value in values.values():
             display = (
                 value.title if isinstance(value, InterfaceGroup) else value.id
             )
-            index.register(
-                reference,
-                Entity(reference, kind, display, value.source, value, style),
-            )
-    return EntityCatalog(index)
+            entries.append((value, display, style))
+    return EntityCatalog.create(entries)
 
 
 def _load_groups(

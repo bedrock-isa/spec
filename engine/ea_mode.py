@@ -14,6 +14,7 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+from .entity import Entity
 from .encoding_metasyntax import EncodingMetasyntax
 from .reference import Reference, ReferenceError
 from .type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
@@ -161,7 +162,7 @@ class EAModeCatalog:
         return self.source.parent / mode_id / "mode.yaml"
 
 
-class EAMode(MutableMapping[str, Any]):
+class EAMode(Entity, MutableMapping[str, Any]):
     """Encapsulate and validate one compact or extended ``mode.yaml``."""
 
     def __init__(

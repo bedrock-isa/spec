@@ -1,7 +1,7 @@
-Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V. The written destination result supplies the REPcc observed value.
+Subtracts the selected-width source value and incoming (:ref:base.registers.STATE.FLAGS.C:) borrow from the destination, writes the truncated difference, and updates (:ref:base.registers.STATE.FLAGS.Z:), (:ref:base.registers.STATE.FLAGS.N:), (:ref:base.registers.STATE.FLAGS.C:), and (:ref:base.registers.STATE.FLAGS.V:). The written destination result supplies the REPcc observed value.
 
-Let \(n\) be the selected width, \(d\) and \(s\) the unsigned operand bit patterns, and \(b\) the incoming borrow represented by the C flag. The written result is
+Let \(n\) be the selected width, \(d\) and \(s\) the unsigned operand bit patterns, and \(b\) the incoming borrow represented by (:ref:base.registers.STATE.FLAGS.C:). The written result is
 \[
   r = (d - s - b) \bmod 2^n .
 \]
-Z is set when \(r=0\), and N receives the most-significant bit of \(r\). C reports an unsigned borrow from either subtraction. V reports signed overflow for the complete \(d-s-b\) operation.
+(:ref:base.registers.STATE.FLAGS.Z:) is set when \(r=0\), and (:ref:base.registers.STATE.FLAGS.N:) receives the most-significant bit of \(r\). (:ref:base.registers.STATE.FLAGS.C:) reports an unsigned borrow from either subtraction. (:ref:base.registers.STATE.FLAGS.V:) reports signed overflow for the complete \(d-s-b\) operation.

@@ -1,0 +1,44 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/debug-trigger-slot
+title: Bedrock debug-trigger slot words
+type: object
+additionalProperties: false
+required: [id, word_bits, words]
+properties:
+  id:
+    const: TRIGGER_SLOT
+  word_bits:
+    const: 64
+  words:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [id, bank]
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Z][A-Z0-9_]*$
+        bank:
+          type: integer
+          minimum: 0
+        fields:
+          type: array
+          items:
+            $ref: '#/$defs/field'
+$defs:
+  field:
+    type: object
+    additionalProperties: false
+    required: [id, lsb, bits]
+    properties:
+      id:
+        type: string
+        pattern: ^[A-Z][A-Z0-9_]*$
+      lsb:
+        type: integer
+        minimum: 0
+      bits:
+        type: integer
+        minimum: 1

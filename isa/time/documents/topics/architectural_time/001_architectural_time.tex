@@ -1,7 +1,7 @@
 \section{Architectural Time}\label{page:architectural-time}
 Each (:term:base.terms.logical_processor:) owns one 64-bit invariant timebase. The value advances modulo $2^{64}$
 at the exact, nonzero integer number of ticks per second reported by CPUID
-\texttt{TIMEBASE.TICKS\_PER\_SECOND}. Its rate is independent of processor clock-frequency changes and the
+(:ref:base.cpuid.IMPLEMENTATION.TIMEBASE.PARAMETERS.TICKS_PER_SECOND:). Its rate is independent of processor clock-frequency changes and the
 implementation-cycle counter. In particular, (:ref:base.control_registers.PMC.EN:) does not affect the timebase, and CYCLE is not an elapsed-time
 substitute.
 

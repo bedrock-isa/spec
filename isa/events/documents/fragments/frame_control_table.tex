@@ -11,12 +11,12 @@
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \endhead
-frame\_size & 0..7 & total allocated frame size in 8-byte units\\
-frame\_type & 8..11 & optional (:term:base.terms.payload:) layout code; it does not classify the event\\
-saved\_dfa & 12 & prior hidden delivery-failure-active state\\
+(:event-structure-target:base.events.frame.EVENT_FRAME.FRAME_CONTROL.FRAME_SIZE:)\texttt{FRAME\_SIZE} & 0..7 & total allocated frame size in 8-byte units\\
+(:event-structure-target:base.events.frame.EVENT_FRAME.FRAME_CONTROL.FRAME_TYPE:)\texttt{FRAME\_TYPE} & 8..11 & optional (:term:base.terms.payload:) layout code; it does not classify the event\\
+(:event-structure-target:base.events.frame.EVENT_FRAME.FRAME_CONTROL.SAVED_DFA:)\texttt{SAVED\_DFA} & 12 & prior hidden delivery-failure-active state\\
 (:term:base.terms.reserved:) & 13..31 & (:term:base.terms.reserved:); (:term:base.terms.must_be_zero:)\\
-flags & 32..35 & saved FLAGS image\\
-status & 36..51 & saved STATUS image, including EDEPTH and UO\\
+(:event-structure-target:base.events.frame.EVENT_FRAME.FRAME_CONTROL.FLAGS:)\texttt{FLAGS} & 32..35 & saved FLAGS image\\
+(:event-structure-target:base.events.frame.EVENT_FRAME.FRAME_CONTROL.STATUS:)\texttt{STATUS} & 36..51 & saved STATUS image, including (:ref:base.registers.STATE.STATUS.EDEPTH:) and (:ref:base.registers.STATE.STATUS.UO:)\\
 (:term:base.terms.reserved:) & 52..63 & (:term:base.terms.reserved:); (:term:base.terms.must_be_zero:)\\
 \bottomrule
 \end{BedrockLongTable}

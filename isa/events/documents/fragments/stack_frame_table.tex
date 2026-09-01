@@ -11,17 +11,17 @@
 \textbf{Offset} & \textbf{Slot} & \textbf{Meaning}\\
 \midrule
 \endhead
-+0x00 & FRAME\_CONTROL & frame shape, nesting metadata, saved FLAGS, and saved STATUS\\
-+0x08 & EVENT\_INFO & event code in bits 31..0; bits 63..32 are zero\\
-+0x10 & SAVED\_PC & saved (:term:base.terms.program_counter:)\\
-+0x18 & SAVED\_SP & saved stack pointer\\
-+0x20 & SAVED\_CS & saved code-segment image\\
-+0x28 & SAVED\_DS & saved data-segment image\\
-+0x30 & SAVED\_SS & saved stack-segment image\\
-+0x38 & PADDING & (:term:base.terms.ignored:) by ERET; software may write any value\\
-+0x40 & ERROR\_CODE & exception-specific error code; unassigned bits are zero\\
-+0x48 & FAULT\_EA & numeric (:term:base.terms.effective_address:) before (:term:base.terms.segment_pre_translation:)\\
-+0x50 & FAULT\_LINEAR & address after (:term:base.terms.segment_pre_translation:)\\
-+0x58 & EVENT\_AUX & delivery-failure, machine-check, or bus-failure auxiliary information\\
++0x00 & (:event-structure-target:base.events.frame.EVENT_FRAME.FRAME_CONTROL:)\texttt{FRAME\_CONTROL} & frame shape, nesting metadata, saved FLAGS, and saved STATUS\\
++0x08 & (:event-structure-target:base.events.frame.EVENT_FRAME.EVENT_INFO:)\texttt{EVENT\_INFO} & (:event-structure-target:base.events.frame.EVENT_FRAME.EVENT_INFO.EVENT_CODE:)\texttt{EVENT\_CODE} in bits 31..0; bits 63..32 are zero\\
++0x10 & (:event-structure-target:base.events.frame.EVENT_FRAME.SAVED_PC:)\texttt{SAVED\_PC} & saved (:term:base.terms.program_counter:)\\
++0x18 & (:event-structure-target:base.events.frame.EVENT_FRAME.SAVED_SP:)\texttt{SAVED\_SP} & saved stack pointer\\
++0x20 & (:event-structure-target:base.events.frame.EVENT_FRAME.SAVED_CS:)\texttt{SAVED\_CS} & saved code-segment image\\
++0x28 & (:event-structure-target:base.events.frame.EVENT_FRAME.SAVED_DS:)\texttt{SAVED\_DS} & saved data-segment image\\
++0x30 & (:event-structure-target:base.events.frame.EVENT_FRAME.SAVED_SS:)\texttt{SAVED\_SS} & saved stack-segment image\\
++0x38 & (:event-structure-target:base.events.frame.EVENT_FRAME.PADDING:)\texttt{PADDING} & (:term:base.terms.ignored:) by ERET; software may write any value\\
++0x40 & (:event-structure-target:base.events.frame.EVENT_FRAME.ERROR_CODE:)\texttt{ERROR\_CODE} & exception-specific error code; unassigned bits are zero\\
++0x48 & (:event-structure-target:base.events.frame.EVENT_FRAME.FAULT_EA:)\texttt{FAULT\_EA} & numeric (:term:base.terms.effective_address:) before (:term:base.terms.segment_pre_translation:)\\
++0x50 & (:event-structure-target:base.events.frame.EVENT_FRAME.FAULT_LINEAR:)\texttt{FAULT\_LINEAR} & address after (:term:base.terms.segment_pre_translation:)\\
++0x58 & (:event-structure-target:base.events.frame.EVENT_FRAME.EVENT_AUX:)\texttt{EVENT\_AUX} & delivery-failure, machine-check, or bus-failure auxiliary information\\
 \bottomrule
 \end{BedrockLongTable}

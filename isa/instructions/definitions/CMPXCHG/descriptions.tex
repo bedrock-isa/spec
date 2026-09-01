@@ -1,4 +1,4 @@
-Compares memory with the expected (:term:base.terms.rn_register:) and conditionally stores the desired (:term:base.terms.rn_register:). After the operation, the expected register contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.
+Compares memory with the expected (:term:base.terms.rn_register:) and conditionally stores the desired (:term:base.terms.rn_register:). After the operation, the expected register contains the observed old memory value. (:ref:base.registers.STATE.FLAGS.Z:)\texttt{=1} means the store happened; (:ref:base.registers.STATE.FLAGS.Z:)\texttt{=0} means memory was left unchanged.
 
 
 The memory read, optional memory write, expected-register update, and flag update form one atomic read-modify-write operation.
@@ -9,8 +9,8 @@ the global SC order. On success, the memory write carries the same selected orde
 failed comparison contributes no memory write and creates no release sequence.
 
 \begin{itemize}
-\item If memory equals the original expected value, the desired value is stored and Z is set.
-\item Otherwise memory is unchanged and Z is cleared.
-\item In both cases the expected register receives the value originally read from memory, and N, C, and V are cleared.
+\item If memory equals the original expected value, the desired value is stored and (:ref:base.registers.STATE.FLAGS.Z:) is set.
+\item Otherwise memory is unchanged and (:ref:base.registers.STATE.FLAGS.Z:) is cleared.
+\item In both cases the expected register receives the value originally read from memory, and (:ref:base.registers.STATE.FLAGS.N:), (:ref:base.registers.STATE.FLAGS.C:), and (:ref:base.registers.STATE.FLAGS.V:) are cleared.
 \end{itemize}
 A memory-access fault exposes none of these updates.

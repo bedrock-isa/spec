@@ -128,6 +128,15 @@ def _bit_range(field: CpuidField) -> str:
     return str(field.lsb) if field.bits == 1 else f"{field.msb}:{field.lsb}"
 
 
+def _field_target_label(reference: Reference[object]) -> str:
+    slug = re.sub(
+        r"[^a-z0-9]+",
+        "-",
+        ".".join((reference.owner, *reference.path, reference.element)).lower(),
+    ).strip("-")
+    return f"cpuid-field:{slug}"
+
+
 def _query_diagram_label(
     query: ProjectedCpuidQuery,
     fields: tuple[CpuidField, ...], labels: dict[Reference[object], str]
@@ -153,7 +162,9 @@ def _query_diagram_label(
 
 
 def _format_fields(
-    fields: tuple[CpuidField, ...], labels: dict[Reference[object], str]
+    fields: tuple[CpuidField, ...],
+    labels: dict[Reference[object], str],
+    public_targets,
 ) -> tuple[str, ...]:
     parts: list[str] = []
     cursor = 64
@@ -161,8 +172,13 @@ def _format_fields(
         gap = cursor - field.msb - 1
         if gap:
             parts.append(rf"\BedrockFormatReserved{{reserved}}{{{gap}}}")
+        target = (
+            rf"\phantomsection\label{{{public_targets.label(field.reference)}}}"
+            if field.reference in public_targets.labels
+            else ""
+        )
         parts.append(
-            rf"\BedrockFormatField{{{tex_escape(labels[field.reference])}}}"
+            rf"\BedrockFormatField{{{target}{tex_escape(labels[field.reference])}}}"
             rf"{{{field.bits}}}"
         )
         cursor = field.lsb
@@ -224,12 +240,12 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
                     f"{context.source}: duplicate CPUID leaf placement {reference}"
                 )
             placed.add(reference)
-            return self.render(context.project.cpuid, leaf)
+            return self.render(context.project.cpuid, leaf, context.public_targets)
 
         return _DIRECTIVE_RE.sub(replacement, text)
 
     @staticmethod
-    def render(catalog, leaf: CpuidLeaf) -> str:
+    def render(catalog, leaf: CpuidLeaf, public_targets) -> str:
         projection = CpuidLeafProjection.create(catalog, leaf)
         queries = projection.queries
         labels = {query: _diagram_labels(query.fields) for query in queries}
@@ -244,7 +260,7 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
             diagram_rows.extend(
                 (
                     rf"\BedrockFormatRowRange{{{label}}}{{63}}{{0}}{{%",
-                    *_format_fields(query.fields, labels[query]),
+                    *_format_fields(query.fields, labels[query], public_targets),
                     "}",
                 )
             )
@@ -275,6 +291,16 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
                 r"\end{BedrockListedFormatDiagram}",
             )
         )
+
+    @staticmethod
+    def public_targets(
+        project, referenced: frozenset[Reference[object]]
+    ) -> tuple[tuple[Reference[object], str], ...]:
+        targets: list[tuple[Reference[object], str]] = []
+        for reference in sorted(referenced):
+            if reference in project.cpuid.references.fields:
+                targets.append((reference, _field_target_label(reference)))
+        return tuple(targets)
 
 
 __all__ = [

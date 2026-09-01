@@ -1,0 +1,29 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/event-payload
+title: Bedrock event-specific payload format
+type: object
+additionalProperties: false
+required: [id, bits, fields]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  bits:
+    const: 64
+  fields:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [id, lsb, bits]
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Z][A-Z0-9_]*$
+        lsb:
+          type: integer
+          minimum: 0
+        bits:
+          type: integer
+          minimum: 1

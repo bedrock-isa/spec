@@ -17,7 +17,7 @@ from 0..7 is valid.
 PTQUERY uses a 3-bit page-table level; assigned levels are 1..5, while encodings 0, 6, and 7
 are (:term:base.terms.reserved:).
 SETF interprets its 4-bit bitmap range 0..15 as a complete FLAGS
-image: bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V. Each one writes the corresponding flag to
+image: bit 3 writes (:ref:base.registers.STATE.FLAGS.Z:), bit 2 writes (:ref:base.registers.STATE.FLAGS.N:), bit 1 writes (:ref:base.registers.STATE.FLAGS.C:), and bit 0 writes (:ref:base.registers.STATE.FLAGS.V:). Each one writes the corresponding flag to
 one, and each zero writes it to zero.
 
 \begin{BedrockListedFormatDiagram}{SETF Flag Bitmap}

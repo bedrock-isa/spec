@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from types import MappingProxyType
 
+from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
@@ -47,7 +48,7 @@ class TermRelations:
 
 
 @dataclass(frozen=True, slots=True)
-class Term:
+class Term(Entity):
     """One canonical terminology entry owned by a terminology group."""
 
     reference: Reference["Term"]
@@ -65,7 +66,7 @@ class Term:
 
 
 @dataclass(frozen=True, slots=True)
-class TermGroup:
+class TermGroup(Entity):
     """A semantic group rendered as a subsection by the current manual."""
 
     reference: Reference["TermGroup"]

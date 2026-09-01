@@ -1,6 +1,6 @@
 \subsection{Trigger-Slot Array and Programming Model}
 Each logical processor owns an array of at least four trigger slots. The implementation reports the exact count through
-CPUID \texttt{DEBUG\_TRIGGERS.SLOT\_COUNT}. Trigger state is accessed by the supervisor-only
+CPUID (:ref:base.cpuid.IMPLEMENTATION.DEBUG_TRIGGERS.PARAMETERS.SLOT_COUNT:). Trigger state is accessed by the supervisor-only
 \texttt{DTRSEL}/\texttt{DTRDATA} selector-data pair. (:register-field-target:base.control_registers.DTRSEL.SLOT:)\texttt{DTRSEL.SLOT} selects a slot and
 (:register-field-target:base.control_registers.DTRSEL.BANK:)\texttt{DTRSEL.BANK} selects the word read or written through \texttt{DTRDATA}.
 
@@ -8,11 +8,11 @@ CPUID \texttt{DEBUG\_TRIGGERS.SLOT\_COUNT}. Trigger state is accessed by the sup
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{3.75in}@{}}
 \toprule
 \rowcolor{BedrockHeaderFill}
-\textbf{BANK} & \textbf{Word} & \textbf{Meaning}\\
+\textbf{(:ref:base.control_registers.DTRSEL.BANK:)} & \textbf{Word} & \textbf{Meaning}\\
 \midrule
-0 & \texttt{CONFIG} & validity, access-kind, and privilege-domain controls\\
-1 & \texttt{LOW} & inclusive low effective-address or PC bound\\
-2 & \texttt{HIGH} & exclusive high effective-address or PC bound\\
+0 & (:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG:)\texttt{CONFIG} & validity, access-kind, and privilege-domain controls\\
+1 & (:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.LOW:)\texttt{LOW} & inclusive low effective-address or PC bound\\
+2 & (:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.HIGH:)\texttt{HIGH} & exclusive high effective-address or PC bound\\
 3 & reserved & selection raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:)\\
 \bottomrule
 \end{BedrockTabular}
@@ -29,8 +29,8 @@ CPUID \texttt{DEBUG\_TRIGGERS.SLOT\_COUNT}. Trigger state is accessed by the sup
 }
 \end{BedrockListedFormatDiagram}
 {\small \texttt{V}, \texttt{X}, \texttt{R}, \texttt{W}, \texttt{U}, and \texttt{S} abbreviate
-\texttt{VALID}, \texttt{MATCH\_EXECUTE}, \texttt{MATCH\_READ}, \texttt{MATCH\_WRITE},
-\texttt{MATCH\_USER}, and \texttt{MATCH\_SUPERVISOR}.\par}
+(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:), (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_EXECUTE:), (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_READ:), (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_WRITE:),
+(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_USER:), and (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_SUPERVISOR:).\par}
 
 \BedrockTableCaption{Debug-Trigger CONFIG Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{3.65in}@{}}
@@ -38,18 +38,18 @@ CPUID \texttt{DEBUG\_TRIGGERS.SLOT\_COUNT}. Trigger state is accessed by the sup
 \rowcolor{BedrockHeaderFill}
 \textbf{Field} & \textbf{Bit} & \textbf{Meaning}\\
 \midrule
-\texttt{VALID} & 0 & slot participates in matching\\
-\texttt{MATCH\_EXECUTE} & 1 & match instruction execution at the architectural PC\\
-\texttt{MATCH\_READ} & 2 & match instruction-owned data reads\\
-\texttt{MATCH\_WRITE} & 3 & match instruction-owned data writes\\
-\texttt{MATCH\_USER} & 4 & match accesses in the user permission domain\\
-\texttt{MATCH\_SUPERVISOR} & 5 & match accesses in the supervisor permission domain\\
+(:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:)\texttt{VALID} & 0 & slot participates in matching\\
+(:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_EXECUTE:)\texttt{MATCH\_EXECUTE} & 1 & match instruction execution at the architectural PC\\
+(:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_READ:)\texttt{MATCH\_READ} & 2 & match instruction-owned data reads\\
+(:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_WRITE:)\texttt{MATCH\_WRITE} & 3 & match instruction-owned data writes\\
+(:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_USER:)\texttt{MATCH\_USER} & 4 & match accesses in the user permission domain\\
+(:debug-trigger-target:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_SUPERVISOR:)\texttt{MATCH\_SUPERVISOR} & 5 & match accesses in the supervisor permission domain\\
 (:term:base.terms.reserved:) & 63..6 & reads as zero and (:term:base.terms.must_be_zero:) when written\\
 \bottomrule
 \end{BedrockTabular}
 
-A slot is staged while \texttt{VALID=0}. Software writes CONFIG, LOW, and HIGH in any order, then writes
-\texttt{VALID=1} as the final operation. Activation atomically validates that LOW is less than HIGH, at least one of
-X/R/W is set, at least one of U/S is set, and every reserved bit is zero. To replace an active slot, software first
-writes its current CONFIG image with only VALID cleared. While active, no other CONFIG change and no LOW or HIGH write
+A slot is staged while (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:)\texttt{=0}. Software writes (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG:), (:ref:base.debug.triggers.TRIGGER_SLOT.LOW:), and (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:) in any order, then writes
+(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:)\texttt{=1} as the final operation. Activation atomically validates that (:ref:base.debug.triggers.TRIGGER_SLOT.LOW:) is less than (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:), at least one of
+(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_EXECUTE:)/(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_READ:)/(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_WRITE:) is set, at least one of (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_USER:)/(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_SUPERVISOR:) is set, and every reserved bit is zero. To replace an active slot, software first
+writes its current (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG:) image with only (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:) cleared. While active, no other (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG:) change and no (:ref:base.debug.triggers.TRIGGER_SLOT.LOW:) or (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:) write
 is permitted. A rejected write changes neither the slot nor the selector.

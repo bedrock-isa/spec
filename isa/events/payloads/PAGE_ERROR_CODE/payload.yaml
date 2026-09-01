@@ -1,0 +1,11 @@
+id: PAGE_ERROR_CODE
+bits: 64
+fields:
+- {id: ACCESS, lsb: 8, bits: 2}
+- {id: USER_DOMAIN, lsb: 10, bits: 1}
+- {id: ATOMIC, lsb: 11, bits: 1}
+- {id: WALK_LEVEL, lsb: 12, bits: 3}
+- {id: OPERAND, lsb: 16, bits: 8}
+- {id: FAULT_EA_VALID, lsb: 24, bits: 1}
+- {id: FAULT_LINEAR_VALID, lsb: 25, bits: 1}
+- {id: ACCESS_SIZE, lsb: 27, bits: 3}

@@ -18,9 +18,9 @@ FLAGS and STATUS are accessed through dedicated read/write instructions.
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{15..4} & reads as zero and (:term:base.terms.must_be_zero:) when written\\
-\texttt{Z} & \texttt{3} & result value is zero\\
-\texttt{N} & \texttt{2} & most significant result bit at the operand size\\
-\texttt{C} & \texttt{1} & unsigned carry out for addition or unsigned borrow for subtraction\\
+(:register-field-target:base.registers.STATE.FLAGS.Z:)\texttt{Z} & \texttt{3} & result value is zero\\
+(:register-field-target:base.registers.STATE.FLAGS.N:)\texttt{N} & \texttt{2} & most significant result bit at the operand size\\
+(:register-field-target:base.registers.STATE.FLAGS.C:)\texttt{C} & \texttt{1} & unsigned carry out for addition or unsigned borrow for subtraction\\
 (:register-field-target:base.registers.STATE.FLAGS.V:)\texttt{V} & \texttt{0} & signed overflow or an explicitly reported exceptional condition\\
 \bottomrule
 \end{BedrockTabular}
@@ -45,8 +45,8 @@ FLAGS and STATUS are accessed through dedicated read/write instructions.
 \end{BedrockListedFormatDiagram}
 {\small
 In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, \texttt{T}, \texttt{N}, and
-\texttt{E} abbreviate \texttt{UO}, \texttt{EDEPTH}, \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF},
-\texttt{NI}, and \texttt{EA}.
+\texttt{E} abbreviate (:ref:base.registers.STATE.STATUS.UO:), (:ref:base.registers.STATE.STATUS.EDEPTH:), (:ref:base.registers.STATE.STATUS.IE:), (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.RF:), (:ref:base.registers.STATE.STATUS.TF:),
+(:ref:base.registers.STATE.STATUS.NI:), and (:ref:base.registers.STATE.STATUS.EA:).
 \par}
 
 \BedrockTableCaption{STATUS Fields}
@@ -61,17 +61,17 @@ In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, 
 (:register-field-target:base.registers.STATE.STATUS.IE:)\texttt{IE} & \texttt{5} & permits maskable-interrupt admission when the other admission conditions hold\\
 (:register-field-target:base.registers.STATE.STATUS.PM:)\texttt{PM} & \texttt{4} & selects user mode when zero and supervisor mode when one\\
 (:register-field-target:base.registers.STATE.STATUS.RF:)\texttt{RF} & \texttt{3} & one-shot suppression of automatic single-step, execution-breakpoint, and memory-watchpoint stops\\
-(:register-field-target:base.registers.STATE.STATUS.TF:)\texttt{TF} & \texttt{2} & requests post-success (:ref:base.events.EXCEPTION.SINGLE_STEP:) for a (:term:base.terms.trace_unit:) when \texttt{RF} is clear\\
+(:register-field-target:base.registers.STATE.STATUS.TF:)\texttt{TF} & \texttt{2} & requests post-success (:ref:base.events.EXCEPTION.SINGLE_STEP:) for a (:term:base.terms.trace_unit:) when (:ref:base.registers.STATE.STATUS.RF:) is clear\\
 (:register-field-target:base.registers.STATE.STATUS.NI:)\texttt{NI} & \texttt{1} & inhibits NMI admission while preserving the NMI pending\\
 (:register-field-target:base.registers.STATE.STATUS.EA:)\texttt{EA} & \texttt{0} & hardware-managed architectural event-active state\\
 \bottomrule
 \end{BedrockTabular}
 
-In user mode, \texttt{PM}, \texttt{EA}, \texttt{EDEPTH}, and \texttt{UO} are always observed as zero.
+In user mode, (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.EA:), (:ref:base.registers.STATE.STATUS.EDEPTH:), and (:ref:base.registers.STATE.STATUS.UO:) are always observed as zero.
 
 (:ref:base.instructions.RDSTATUS:) is unprivileged; (:ref:base.instructions.WRSTATUS:) is
-supervisor-only. (:ref:base.instructions.WRSTATUS:) atomically updates \texttt{IE}, \texttt{NI}, \texttt{TF}, and \texttt{RF};
-(:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:), and supplied \texttt{PM}, \texttt{EA}, \texttt{EDEPTH}, and \texttt{UO} must equal
+supervisor-only. (:ref:base.instructions.WRSTATUS:) atomically updates (:ref:base.registers.STATE.STATUS.IE:), (:ref:base.registers.STATE.STATUS.NI:), (:ref:base.registers.STATE.STATUS.TF:), and (:ref:base.registers.STATE.STATUS.RF:);
+(:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:), and supplied (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.EA:), (:ref:base.registers.STATE.STATUS.EDEPTH:), and (:ref:base.registers.STATE.STATUS.UO:) must equal
 their current values. Privilege
 transitions are defined in the \hyperref[page:privileged-execution-model]{Privileged Execution Model}; event
 admission, tracing, and event-active transitions are defined in the

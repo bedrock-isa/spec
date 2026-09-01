@@ -4,13 +4,13 @@ boundary, and zeros the (:term:base.terms.padding:). The frame-size unit remains
 
 \input{isa/events/documents/fragments/frame_type_table.tex}
 
-The delivered leaf event determines the frame type. ERROR\_CODE is defined
+The delivered leaf event determines the frame type. (:ref:base.events.frame.EVENT_FRAME.ERROR_CODE:) is defined
 separately by each event that uses it and has zero in every unassigned bit. PAGE frames extend that slot with
-effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT\_AUX to
+effective-address and linear-address context. AUXILIARY includes all four named slots and permits (:ref:base.events.frame.EVENT_FRAME.EVENT_AUX:) to
 describe delivery-failure, machine-check, or bus-failure state.
 
 A misaligned atomic memory operand raises (:ref:base.events.EXCEPTION.ATOMIC_ALIGNMENT_FAULT:) and uses the PAGE frame.
-FAULT\_EA identifies the misaligned effective-address operand and FAULT\_LINEAR contains
+(:ref:base.events.frame.EVENT_FRAME.FAULT_EA:) identifies the misaligned effective-address operand and (:ref:base.events.frame.EVENT_FRAME.FAULT_LINEAR:) contains
 its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory
 read, memory write, or architectural result update.
 

@@ -5,10 +5,10 @@ mapping\textquotesingle{}s walk reaches its existing not-present, structural-val
 is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.
 
 Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation,
-permission or synchronous data-access fault leaves every destination byte and every leaf D bit
-unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
+permission or synchronous data-access fault leaves every destination byte and every leaf (:ref:base.memory.translation.PTE.D:) bit
+unchanged. (:ref:base.memory.translation.PTE.A:) updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
 set when a later mapping faults.
 
 Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault
 in a later mapping completes as an instruction-fetch fault before decode or operand evaluation, while earlier
-instruction-cache and PTE A effects retain their (:term:base.terms.ordinary:) rules.
+instruction-cache and (:ref:base.memory.translation.PTE.A:) effects retain their (:term:base.terms.ordinary:) rules.

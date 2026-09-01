@@ -8,6 +8,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
@@ -52,7 +53,7 @@ class ResetSpec:
 
 
 @dataclass(frozen=True, slots=True)
-class RegisterField:
+class RegisterField(Entity):
     """One named field in an architectural register image."""
 
     reference: Reference["RegisterField"]
@@ -80,7 +81,7 @@ class RegisterLayout:
 
 
 @dataclass(frozen=True, slots=True)
-class Register:
+class Register(Entity):
     """One architectural register, authored explicitly or expanded from a series."""
 
     reference: Reference["Register"]
@@ -109,7 +110,7 @@ class RegisterSeries:
 
 
 @dataclass(frozen=True, slots=True)
-class RegisterGroup:
+class RegisterGroup(Entity):
     """A homogeneous architectural register group."""
 
     reference: Reference["RegisterGroup"]

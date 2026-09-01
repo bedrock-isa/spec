@@ -1,0 +1,10 @@
+id: MACHINE_CHECK_ERROR_CODE
+bits: 64
+fields:
+- {id: SOURCE, lsb: 0, bits: 8}
+- {id: SEVERITY, lsb: 8, bits: 2}
+- {id: PRECISE, lsb: 10, bits: 1}
+- {id: RETRY_SAFE, lsb: 11, bits: 1}
+- {id: FAULT_EA_VALID, lsb: 24, bits: 1}
+- {id: FAULT_LINEAR_VALID, lsb: 25, bits: 1}
+- {id: EVENT_AUX_VALID, lsb: 26, bits: 1}

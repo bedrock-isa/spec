@@ -1,1 +1,1 @@
-BNDUII treats both bounds as inclusive. It sets V when unsigned(value) is outside [unsigned(lo), unsigned(hi)] and clears Z, N, and C. The B-sized 0 or 1 violation result supplies the REPcc observed value.
+BNDUII treats both bounds as inclusive. It sets (:ref:base.registers.STATE.FLAGS.V:) when unsigned(value) is outside [unsigned(lo), unsigned(hi)] and clears (:ref:base.registers.STATE.FLAGS.Z:), (:ref:base.registers.STATE.FLAGS.N:), and (:ref:base.registers.STATE.FLAGS.C:). The B-sized 0 or 1 violation result supplies the REPcc observed value.

@@ -1,11 +1,11 @@
 \subsubsection{Debug Event Payloads}
 (:ref:base.events.EXCEPTION.SINGLE_STEP:) and
 (:ref:base.events.EXCEPTION.EXPLICIT_BREAKPOINT:) use BASIC frames and carry no address payload.
-(:ref:base.events.EXCEPTION.EXECUTION_BREAKPOINT:) uses an ERROR frame; ERROR\_CODE bits 15 through 0 contain the
-zero-based winning trigger-slot number and all other bits are zero. Its saved PC is the matched address.
+(:ref:base.events.EXCEPTION.EXECUTION_BREAKPOINT:) uses an ERROR frame; (:ref:base.events.frame.EVENT_FRAME.ERROR_CODE:) bits 15 through 0 contain the
+(:event-structure-target:base.events.payloads.EXECUTION_BREAKPOINT_ERROR_CODE.TRIGGER_SLOT:)\texttt{TRIGGER\_SLOT} number and all other bits are zero. Its saved PC is the matched address.
 
-The three memory-watchpoint events use PAGE frames. FAULT\_EA contains the matched pre-segment effective address and
-FAULT\_LINEAR contains its segment-pretranslated linear address. ERROR\_CODE has the following event-specific format.
+The three memory-watchpoint events use PAGE frames. (:ref:base.events.frame.EVENT_FRAME.FAULT_EA:) contains the matched pre-segment effective address and
+(:ref:base.events.frame.EVENT_FRAME.FAULT_LINEAR:) contains its segment-pretranslated linear address. (:ref:base.events.frame.EVENT_FRAME.ERROR_CODE:) has the following event-specific format.
 
 \begin{BedrockListedFormatDiagram}{Memory-Watchpoint ERROR\_CODE Format}
 \BedrockFormatRowRange{ERROR\_CODE[63:0]}{63}{0}{%
@@ -18,8 +18,8 @@ FAULT\_LINEAR contains its segment-pretranslated linear address. ERROR\_CODE has
 \BedrockFormatField{SLOT}{16}
 }
 \end{BedrockListedFormatDiagram}
-{\small \texttt{L}, \texttt{M}, and \texttt{U} abbreviate \texttt{LINEAR\_VALID}, \texttt{MMIO}, and
-\texttt{USER\_DOMAIN}.\par}
+{\small \texttt{L}, \texttt{M}, and \texttt{U} abbreviate (:ref:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.LINEAR_VALID:), (:ref:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.MMIO:), and
+(:ref:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.USER_DOMAIN:).\par}
 
 \BedrockTableCaption{Memory-Watchpoint ERROR\_CODE Fields}
 \begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{1.40in}>{\raggedright\arraybackslash}p{3.35in}@{}}
@@ -34,12 +34,12 @@ FAULT\_LINEAR contains its segment-pretranslated linear address. ERROR\_CODE has
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endhead
-15..0 & \texttt{TRIGGER\_SLOT} & zero-based winning trigger-slot number\\
-23..16 & \texttt{OPERAND} & zero-based explicit memory-operand ordinal; \texttt{0xff} for an implicit data access\\
-39..24 & \texttt{ACCESS\_SIZE} & number of bytes in the matched architectural access\\
-40 & \texttt{USER\_DOMAIN} & access selected the user permission domain\\
-41 & \texttt{MMIO} & translated access was classified as MMIO rather than Normal\\
-42 & \texttt{LINEAR\_VALID} & FAULT\_LINEAR contains the segment-pretranslated address\\
+15..0 & (:event-structure-target:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.TRIGGER_SLOT:)\texttt{TRIGGER\_SLOT} & zero-based winning trigger-slot number\\
+23..16 & (:event-structure-target:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.OPERAND:)\texttt{OPERAND} & zero-based explicit memory-operand ordinal; \texttt{0xff} for an implicit data access\\
+39..24 & (:event-structure-target:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.ACCESS_SIZE:)\texttt{ACCESS\_SIZE} & number of bytes in the matched architectural access\\
+40 & (:event-structure-target:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.USER_DOMAIN:)\texttt{USER\_DOMAIN} & access selected the user permission domain\\
+41 & (:event-structure-target:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.MMIO:)\texttt{MMIO} & translated access was classified as MMIO rather than Normal\\
+42 & (:event-structure-target:base.events.payloads.MEMORY_WATCHPOINT_ERROR_CODE.LINEAR_VALID:)\texttt{LINEAR\_VALID} & (:ref:base.events.frame.EVENT_FRAME.FAULT_LINEAR:) contains the segment-pretranslated address\\
 63..43 & (:term:base.terms.reserved:) & zero\\
 \bottomrule
 \end{BedrockLongTable}

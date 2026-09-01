@@ -15,9 +15,9 @@ The measured error is $|a-y|/\operatorname{ulp}_F(y)$. The bound applies only to
 the selected format\textquotesingle{}s finite range; NaN, infinity, and overflow follow the instruction\textquotesingle{}s special-value rules.
 Every present contract guarantees at most 4 ULP for both S and D, corresponding to at least 21 and 50 worst-case
 relative precision bits respectively for nonzero normal results. CPUID may advertise a smaller certified bound.
-Each instruction names its required \texttt{FPTRANSA\_ACCURACY} contract. A clear \texttt{PRESENT} (:term:base.terms.field:) for that
+Each instruction names its required \texttt{FPTRANSA\_ACCURACY} contract. A clear (:ref:FPTRANSA.cpuid.EXTENSIONS.FPTRANSA_ACCURACY.ACCURACY.PRESENT:) for that
 contract raises (:ref:base.events.EXCEPTION.INVALID_OPERAND_RELATION:) before the instruction reads operands or floating-point state.
-An approximate transcendental operation is available only when CPUID reports \texttt{FPTRANSA} and marks that
+An approximate transcendental operation is available only when CPUID reports (:ref:FPTRANSA.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FPTRANSA:) and marks that
 instruction\textquotesingle{}s accuracy-contract ID present.
 
 FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.

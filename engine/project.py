@@ -8,22 +8,26 @@ from enum import StrEnum
 import logging
 from pathlib import Path
 from types import MappingProxyType
-from typing import TypeVar, cast
+from typing import Callable, TypeVar, cast
 
 from .cpuid import CpuidCatalog, CpuidField
 from .control_register import ControlRegisterCatalog
+from .debug_trigger import DebugTriggerCatalog
 from .dependency import EntityDependency
 from .disclosure import ImplementationDisclosureCatalog
 from .ea_mode import EAMode, EAModeCatalog
 from .encoding import EncodingCatalog, EncodingForm
 from .encoding_reservation import EncodingReservationCatalog
-from .entity import Entity, EntityCatalog
+from .entity import Entity, EntityCatalog, EntityDisplayStyle
 from .event import EventCatalog
+from .event_structure import EventFrameCatalog, EventPayloadCatalog
 from .extension import ExtensionMetadata, ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .instruction import Instruction
+from .instruction_header import InstructionHeaderCatalog
 from .model import ModelCatalog
 from .observability import log_phase
+from .page_table_entry import PageTableEntryCatalog
 from .register import RegisterCatalog
 from .reference import (
     QualifiedReference,
@@ -31,6 +35,7 @@ from .reference import (
     ReferenceIndex,
     UnknownReferenceError,
 )
+from .save_area import SaveAreaCatalog
 from .terminology import TermCatalog
 from .type_system import TypeNamespace, TypeSystem
 from .vector_diagram import VectorDiagram, VectorDiagramCatalog
@@ -104,7 +109,7 @@ class ArtifactSet:
 
 
 @dataclass(frozen=True, slots=True)
-class InstructionBundle:
+class InstructionBundle(Entity):
     """The complete authoring boundary for one instruction."""
 
     reference: Reference["InstructionBundle"]
@@ -114,6 +119,10 @@ class InstructionBundle:
     diagrams: VectorDiagramCatalog
     artifacts: ArtifactSet
     required_cpuid_flags: tuple[CpuidField, ...]
+
+    @property
+    def source(self) -> Path:
+        return self.instruction.source
 
     def required_cpuid_flags_for(
         self, form: EncodingForm
@@ -178,6 +187,138 @@ class _ExtensionComponents:
     types: TypeNamespace
     instruction_set: InstructionSet
     required_cpuid_flags: tuple[CpuidField, ...] = ()
+
+
+def _build_entities(
+    types,
+    sources,
+    cpuid,
+    events,
+    event_frames,
+    event_payloads,
+    registers,
+    control_registers,
+    debug_triggers,
+    page_table_entries,
+    save_areas,
+    instruction_headers,
+    terminology,
+    model,
+) -> EntityCatalog:
+    """Compose the ISA provider's typed indexes into its workspace catalog."""
+
+    entries: list[tuple[Entity, str, EntityDisplayStyle]] = []
+
+    def add(
+        reference: Reference[object],
+        value: object,
+        display: str,
+        style: EntityDisplayStyle = EntityDisplayStyle.TEXT,
+    ) -> None:
+        if not isinstance(value, Entity):
+            raise TypeError(
+                f"{reference!r}: referencable value must inherit Entity"
+            )
+        if value.reference != reference:
+            raise ValueError(
+                f"{reference!r}: entity reference disagrees with its typed index"
+            )
+        entries.append((value, display, style))
+
+    def add_index(
+        typed_index,
+        display: Callable[[Reference[object], object], str],
+        style: EntityDisplayStyle = EntityDisplayStyle.TEXT,
+    ) -> None:
+        for reference, value in typed_index.items():
+            normalized = cast(Reference[object], reference)
+            add(normalized, value, display(normalized, value), style)
+
+    def identifier(_reference: Reference[object], value: object) -> str:
+        return str(getattr(value, "id"))
+
+    def name_or_identifier(
+        _reference: Reference[object], value: object
+    ) -> str:
+        return str(getattr(value, "name", None) or getattr(value, "id"))
+
+    def qualified_field(
+        reference: Reference[object], value: object
+    ) -> str:
+        return f"{reference.path[-1]}.{getattr(value, 'id')}"
+
+    for topic in model.document_topics.values():
+        add(
+            cast(Reference[object], topic.reference),
+            topic,
+            topic.id.replace("-", " ").replace("_", " "),
+        )
+    for reference, bundle in sources.instructions.items():
+        add(
+            cast(Reference[object], reference),
+            bundle,
+            bundle.instruction.mnemonic,
+            EntityDisplayStyle.CODE,
+        )
+    for values in (
+        sources.ea_modes,
+        types.field_types,
+        types.payload_types,
+    ):
+        add_index(values, identifier, EntityDisplayStyle.CODE)
+
+    code = EntityDisplayStyle.CODE
+    for typed_index, display, style in (
+        (cpuid.references.classes, name_or_identifier, EntityDisplayStyle.TEXT),
+        (cpuid.references.leaves, identifier, code),
+        (cpuid.references.layouts, identifier, code),
+        (cpuid.references.queries, identifier, code),
+        (cpuid.references.fields, identifier, code),
+        (cpuid.references.layout_fields, identifier, code),
+        (cpuid.references.common_headers, identifier, code),
+        (cpuid.references.common_header_fields, qualified_field, code),
+        (events.references.classes, name_or_identifier, EntityDisplayStyle.TEXT),
+        (events.references.events, identifier, code),
+        (event_frames.references.frames, identifier, code),
+        (event_frames.references.slots, identifier, code),
+        (event_frames.references.fields, qualified_field, code),
+        (event_payloads.references.formats, identifier, code),
+        (event_payloads.references.fields, qualified_field, code),
+        (registers.references.groups, identifier, EntityDisplayStyle.TEXT),
+        (registers.references.registers, identifier, code),
+        (registers.references.fields, qualified_field, code),
+        (
+            control_registers.references.namespaces,
+            identifier,
+            EntityDisplayStyle.TEXT,
+        ),
+        (
+            control_registers.references.registers,
+            identifier,
+            EntityDisplayStyle.TEXT,
+        ),
+        (control_registers.references.fields, qualified_field, code),
+        (debug_triggers.references.slots, identifier, code),
+        (debug_triggers.references.words, identifier, code),
+        (debug_triggers.references.fields, qualified_field, code),
+        (page_table_entries.references.entries, identifier, code),
+        (page_table_entries.references.fields, qualified_field, code),
+        (save_areas.references.headers, identifier, code),
+        (save_areas.references.fields, qualified_field, code),
+        (instruction_headers.references.headers, identifier, code),
+        (instruction_headers.references.fields, qualified_field, code),
+    ):
+        add_index(typed_index, display, style)
+
+    for group in terminology.references.groups.values():
+        add(cast(Reference[object], group.reference), group, group.title)
+    for term in terminology.references.terms.values():
+        add(
+            cast(Reference[object], term.reference),
+            term,
+            term.forms.canonical,
+        )
+    return EntityCatalog.create(entries)
 
 
 @dataclass(frozen=True, slots=True)
@@ -483,8 +624,14 @@ class IsaProject:
     catalog: SourceCatalog
     cpuid: CpuidCatalog
     events: EventCatalog
+    event_frames: EventFrameCatalog
+    event_payloads: EventPayloadCatalog
     registers: RegisterCatalog
     control_registers: ControlRegisterCatalog
+    debug_triggers: DebugTriggerCatalog
+    page_table_entries: PageTableEntryCatalog
+    save_areas: SaveAreaCatalog
+    instruction_headers: InstructionHeaderCatalog
     terminology: TermCatalog
     model: ModelCatalog
     disclosures: ImplementationDisclosureCatalog
@@ -497,8 +644,10 @@ class IsaProject:
     def resolve(self, reference: Reference[_T]) -> _T:
         """Resolve one provider-local entity through the ISA entity catalog."""
 
-        entity = self.entities.resolve(cast(Reference[Entity], reference))
-        return cast(_T, entity.value)
+        return cast(
+            _T,
+            self.entities.resolve(cast(Reference[Entity], reference)),
+        )
 
     def entity_dependencies(
         self,
@@ -757,6 +906,20 @@ class IsaProjectLoader:
         ):
             events = EventCatalog.load(isa_root, extension_catalog)
         with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="event-frames",
+        ):
+            event_frames = EventFrameCatalog.load(isa_root)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="event-payloads",
+        ):
+            event_payloads = EventPayloadCatalog.load(isa_root)
+        with log_phase(
             _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="registers"
         ):
             registers = RegisterCatalog.load(isa_root, extension_catalog)
@@ -769,6 +932,34 @@ class IsaProjectLoader:
             control_registers = ControlRegisterCatalog.load(
                 isa_root, extension_catalog
             )
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="page-table-entries",
+        ):
+            page_table_entries = PageTableEntryCatalog.load(isa_root)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="debug-triggers",
+        ):
+            debug_triggers = DebugTriggerCatalog.load(isa_root)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="save-areas",
+        ):
+            save_areas = SaveAreaCatalog.load(isa_root)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
+            catalog="instruction-headers",
+        ):
+            instruction_headers = InstructionHeaderCatalog.load(isa_root)
         with log_phase(
             _LOGGER,
             "project.catalog.load",
@@ -808,13 +999,19 @@ class IsaProjectLoader:
         with log_phase(
             _LOGGER, "project.catalog.load", level=logging.DEBUG, catalog="entities"
         ):
-            entities = EntityCatalog.build(
+            entities = _build_entities(
                 types,
                 catalog,
                 cpuid,
                 events,
+                event_frames,
+                event_payloads,
                 registers,
                 control_registers,
+                debug_triggers,
+                page_table_entries,
+                save_areas,
+                instruction_headers,
                 terminology,
                 model,
             )
@@ -825,8 +1022,14 @@ class IsaProjectLoader:
             catalog,
             cpuid,
             events,
+            event_frames,
+            event_payloads,
             registers,
             control_registers,
+            debug_triggers,
+            page_table_entries,
+            save_areas,
+            instruction_headers,
             terminology,
             model,
             disclosures,

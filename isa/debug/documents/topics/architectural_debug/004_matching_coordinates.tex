@@ -1,8 +1,8 @@
 \subsection{Matching Coordinates and Selection}
-Each slot describes one non-wrapping half-open range $[\mathrm{LOW},\mathrm{HIGH})$. An execution trigger matches when
+Each slot describes one non-wrapping half-open range $[\mathrm{LOW},\mathrm{HIGH})$ using (:ref:base.debug.triggers.TRIGGER_SLOT.LOW:) and (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:). An execution trigger matches when
 the pre-segment architectural PC is in that range. A data trigger matches when the byte range of an instruction-owned
 memory operation overlaps it; the compared coordinate is the pre-segment effective address. An exact one-byte range
-is expressed by \texttt{HIGH=LOW+1}.
+is expressed by (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:)\texttt{=}(:ref:base.debug.triggers.TRIGGER_SLOT.LOW:)\texttt{+1}.
 
 Read and write matching may both be enabled. An atomic read-modify-write qualifies for both bits, but any winning
 match raises (:ref:base.events.EXCEPTION.ATOMIC_MEMORY_WATCHPOINT:). Trigger matching considers only range, access

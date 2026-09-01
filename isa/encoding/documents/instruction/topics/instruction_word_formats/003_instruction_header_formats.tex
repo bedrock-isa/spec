@@ -5,7 +5,7 @@ instructions use byte 0 and byte 1: byte 0 supplies the framing and encoded leng
 bits of those bytes carry the first fixed bits that select the (:term:base.terms.opcode:) and the first
 operand-selector (:term:base.terms.field|plural:).
 
-For an extended instruction, byte0[5:2] is \texttt{L} and the (:term:base.terms.encoded_instruction_length:) is $3+L$ bytes. The
+For an extended instruction, byte0[5:2] is (:instruction-header-field-target:base.encoding.instruction.EXTENDED_HEADER.L:)\texttt{L} and the (:term:base.terms.encoded_instruction_length:) is $3+L$ bytes. The
 (:term:base.terms.opcode_space:) contains fixed bits that select the (:term:base.terms.opcode:) and operand-selector (:term:base.terms.field|plural:);
 it occupies three bytes for medium instructions, four bytes for long instructions, five bytes for extralong
 instructions, and six bytes for xxlong instructions. An extended instruction is invalid when its encoded
@@ -40,7 +40,7 @@ the length; (:term:base.terms.padding:) byte values are not (:term:base.terms.pr
 Figure~\ref{fig:instruction-header-byte-formats} is read from high to low bit. \texttt{enc.} denotes
 instruction-specific bits within the (:term:base.terms.opcode_space:): fixed (:term:base.terms.opcode:) bits and operand-selector (:term:base.terms.field|plural:). In byte 0, bit 7
 selects extrashort framing; bits 7..6 select short (\texttt{10}) or extended (\texttt{11}) framing. For extended
-instructions, \texttt{L} directly encodes the (:term:base.terms.encoded_instruction_length:) as $3+L$ bytes.
+instructions, (:ref:base.encoding.instruction.EXTENDED_HEADER.L:) directly encodes the (:term:base.terms.encoded_instruction_length:) as $3+L$ bytes.
 
 The extended class selector is byte0[1:0] followed by byte1[7:4]. Values 0 through 59 select a medium
 (:term:base.terms.opcode_space:), and values 60 through 62 select a long (:term:base.terms.opcode_space:). When the selector is 63,

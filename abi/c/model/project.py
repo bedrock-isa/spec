@@ -12,7 +12,6 @@ from engine.entity import (
     Entity,
     EntityCatalog,
     EntityDisplayStyle,
-    EntityKind,
 )
 from engine.dependency import EntityDependency
 from engine.inventory import DirectoryInventory
@@ -28,7 +27,7 @@ _T = TypeVar("_T")
 
 
 @dataclass(frozen=True, slots=True)
-class CType:
+class CType(Entity):
     reference: Reference["CType"]
     source: Path
     root: Path
@@ -41,7 +40,7 @@ class CType:
 
 
 @dataclass(frozen=True, slots=True)
-class RegisterClass:
+class RegisterClass(Entity):
     reference: Reference["RegisterClass"]
     source: Path
     root: Path
@@ -63,7 +62,7 @@ class LocationPolicy:
 
 
 @dataclass(frozen=True, slots=True)
-class ValueClass:
+class ValueClass(Entity):
     reference: Reference["ValueClass"]
     source: Path
     root: Path
@@ -74,7 +73,7 @@ class ValueClass:
 
 
 @dataclass(frozen=True, slots=True)
-class Promotion:
+class Promotion(Entity):
     reference: Reference["Promotion"]
     source: Path
     root: Path
@@ -115,7 +114,7 @@ class CallingConvention:
 
 
 @dataclass(frozen=True, slots=True)
-class RuntimeHelper:
+class RuntimeHelper(Entity):
     reference: Reference["RuntimeHelper"]
     source: Path
     root: Path
@@ -126,7 +125,7 @@ class RuntimeHelper:
 
 
 @dataclass(frozen=True, slots=True)
-class MemoryOrderMapping:
+class MemoryOrderMapping(Entity):
     reference: Reference["MemoryOrderMapping"]
     source: Path
     root: Path
@@ -138,7 +137,7 @@ class MemoryOrderMapping:
 
 
 @dataclass(frozen=True, slots=True)
-class AtomicLowering:
+class AtomicLowering(Entity):
     reference: Reference["AtomicLowering"]
     source: Path
     root: Path
@@ -225,8 +224,10 @@ class CAbiProject:
         )
 
     def resolve(self, reference: Reference[_T]) -> _T:
-        entity = self.entities.resolve(cast(Reference[Entity], reference))
-        return cast(_T, entity.value)
+        return cast(
+            _T,
+            self.entities.resolve(cast(Reference[Entity], reference)),
+        )
 
     def entity_dependencies(self) -> tuple[EntityDependency, ...]:
         """Return the C ABI relationships intentionally exposed to tooling."""
@@ -736,28 +737,17 @@ def _matching_id(source: Path, expected: str, raw: Mapping[str, object]) -> None
 
 
 def _build_entities(indexes: _Indexes) -> EntityCatalog:
-    result = ReferenceIndex[Entity]()
-    for kind, values in (
-        (EntityKind.C_ABI_TYPE, indexes.types),
-        (EntityKind.C_REGISTER_CLASS, indexes.register_classes),
-        (EntityKind.C_VALUE_CLASS, indexes.value_classes),
-        (EntityKind.C_PROMOTION, indexes.promotions),
-        (EntityKind.C_RUNTIME_HELPER, indexes.runtime_helpers),
-        (EntityKind.C_MEMORY_ORDER, indexes.memory_orders),
-        (EntityKind.C_ATOMIC_LOWERING, indexes.atomic_lowerings),
+    entries: list[tuple[Entity, str, EntityDisplayStyle]] = []
+    for values in (
+        indexes.types,
+        indexes.register_classes,
+        indexes.value_classes,
+        indexes.promotions,
+        indexes.runtime_helpers,
+        indexes.memory_orders,
+        indexes.atomic_lowerings,
     ):
-        for reference, value in values.items():
+        for value in values.values():
             display = value.symbol if isinstance(value, RuntimeHelper) else value.id
-            entity_reference = cast(Reference[Entity], reference)
-            result.register(
-                entity_reference,
-                Entity(
-                    entity_reference,
-                    kind,
-                    display,
-                    value.source,
-                    value,
-                    EntityDisplayStyle.CODE,
-                ),
-            )
-    return EntityCatalog(result)
+            entries.append((value, display, EntityDisplayStyle.CODE))
+    return EntityCatalog.create(entries)

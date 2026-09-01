@@ -1,8 +1,8 @@
 \begin{BedrockListedFormatDiagram}{SAVE/RESTORE Base Header}
 \BedrockFormatRowRange{(:term:base.terms.header:)[63:0]}{63}{0}{%
 \BedrockFormatReserved{(:term:base.terms.reserved:)}{12}
-\BedrockFormatField{STATUS}{16}
-\BedrockFormatField{FLAGS}{16}
+\BedrockFormatField{(:save-area-field-target:base.state.save_area.BASE_HEADER.STATUS:)STATUS}{16}
+\BedrockFormatField{(:save-area-field-target:base.state.save_area.BASE_HEADER.FLAGS:)FLAGS}{16}
 \BedrockFormatReserved{(:term:base.terms.reserved:)}{9}
 \BedrockFormatField{D}{1}
 \BedrockFormatField{5}{1}
@@ -11,14 +11,14 @@
 \BedrockFormatField{2}{1}
 \BedrockFormatField{1}{1}
 \BedrockFormatField{0}{1}
-\BedrockFormatField{FMT}{4}
+\BedrockFormatField{(:save-area-field-target:base.state.save_area.BASE_HEADER.FMT:)FMT}{4}
 }
 \BedrockFormatRowRange{bitmap[63:0]}{63}{0}{%
 \BedrockFormatField{state block bitmap}{64}
 }
 \end{BedrockListedFormatDiagram}
-{\small The labels \texttt{5} through \texttt{0} are the six \texttt{GS\_VALID} bits. SAVE writes
-\texttt{GS\_VALID=0x3f} and \texttt{FMT=0}. The label \texttt{D} denotes \texttt{DFA}, which records the hidden
+{\small The labels \texttt{5} through \texttt{0} are the six (:save-area-field-target:base.state.save_area.BASE_HEADER.GS_VALID:)\texttt{GS\_VALID} bits. SAVE writes
+(:ref:base.state.save_area.BASE_HEADER.GS_VALID:)\texttt{=0x3f} and (:ref:base.state.save_area.BASE_HEADER.FMT:)\texttt{=0}. The label \texttt{D} denotes (:save-area-field-target:base.state.save_area.BASE_HEADER.DFA:)\texttt{DFA}, which records the hidden
 current double-fault-active bit.\par}
 \begin{BedrockListedStructLayout}
   {SAVE/RESTORE Fixed Base Block}
@@ -37,7 +37,7 @@ current double-fault-active bit.\par}
 }
 \BedrockStructRow{0x090--0x0bf}{%
   \BedrockStructSlotSeries{GS}{0}{6}
-  \BedrockStructAnnotationField{2}{RESTORE uses slots\\selected by \texttt{GS\_VALID}}
+  \BedrockStructAnnotationField{2}{\parbox{1.05in}{\raggedright RESTORE uses slots selected by (:ref:base.state.save_area.BASE_HEADER.GS_VALID:)}}
 }
 \BedrockStructTallRow{0x0c0+}{%
   \BedrockStructExtensionField{8}{EXTENSION STATE COMPONENTS\\CPUID-defined slots \textperiodcentered\ each component starts on a 64-byte boundary}

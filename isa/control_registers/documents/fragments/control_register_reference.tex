@@ -19,7 +19,7 @@ stack, and user-return registers are per-logical-processor (:term:base.terms.arc
 \end{BedrockFormatDiagram}
 {\small
 In the diagram, \texttt{L} and \texttt{P} abbreviate
-\texttt{LA57} and \texttt{PE}.
+(:ref:base.control_registers.PTCR.LA57:) and (:ref:base.control_registers.PTCR.PE:).
 \par}
 
 \BedrockTableCaption{PTCR Fields}
@@ -29,7 +29,7 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..56} & (:term:base.terms.must_be_zero:) in this page-table format\\
-(:register-field-target:base.control_registers.PTCR.ROOT_PAGE:)\texttt{ROOT\_PAGE} & \texttt{55..12} & (:term:base.terms.physical_frame_number:) of the page-table root; must fit implementation PABITS\\
+(:register-field-target:base.control_registers.PTCR.ROOT_PAGE:)\texttt{ROOT\_PAGE} & \texttt{55..12} & (:term:base.terms.physical_frame_number:) of the page-table root; must fit (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)\\
 (:term:base.terms.reserved:) & \texttt{11..8} & (:term:base.terms.must_be_zero:)\\
 (:register-field-target:base.control_registers.PTCR.LA57:)\texttt{LA57} & \texttt{7} & zero selects four levels; one selects five levels\\
 (:term:base.terms.reserved:) & \texttt{6..1} & (:term:base.terms.must_be_zero:)\\
@@ -51,7 +51,7 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..32} & (:term:base.terms.must_be_zero:)\\
-\texttt{EVENT\_CODE} & \texttt{31..0} & code for the outer user-origin event and its optional (:term:base.terms.payload:) shape\\
+(:register-field-target:base.control_registers.UINFO.EVENT_CODE:)\texttt{EVENT\_CODE} & \texttt{31..0} & code for the outer user-origin event and its optional (:term:base.terms.payload:) shape\\
 \bottomrule
 \end{BedrockTabular}
 
@@ -63,7 +63,7 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \BedrockFormatField{A}{1}
 }
 \end{BedrockFormatDiagram}
-{\small\texttt{A} abbreviates \texttt{AE} in the diagram.\par}
+{\small\texttt{A} abbreviates (:ref:base.control_registers.ASCR.AE:) in the diagram.\par}
 
 \BedrockTableCaption{ASCR Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
@@ -72,7 +72,7 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..32} & (:term:base.terms.must_be_zero:)\\
-\texttt{ASID} & \texttt{31..16} & current address-space identifier\\
+(:register-field-target:base.control_registers.ASCR.ASID:)\texttt{ASID} & \texttt{31..16} & current address-space identifier\\
 (:term:base.terms.reserved:) & \texttt{15..1} & (:term:base.terms.must_be_zero:)\\
 (:register-field-target:base.control_registers.ASCR.AE:)\texttt{AE} & \texttt{0} & address-space identifier matching enable\\
 \bottomrule
@@ -96,7 +96,7 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..12} & (:term:base.terms.must_be_zero:)\\
 (:register-field-target:base.control_registers.ECR.MAX_EDEPTH:)\texttt{MAX\_EDEPTH} & \texttt{11..8} & maximum depth at which a maskable interrupt may be admitted\\
-(:register-field-target:base.control_registers.ECR.NMI_P:)\texttt{NMI\_P} & \texttt{7} & hardware-managed coalesced pending-NMI state while entry is invalid or NI is set; WRCR ignores the supplied bit\\
+(:register-field-target:base.control_registers.ECR.NMI_P:)\texttt{NMI\_P} & \texttt{7} & hardware-managed coalesced pending-NMI state while entry is invalid or (:ref:base.registers.STATE.STATUS.NI:) is set; WRCR ignores the supplied bit\\
 (:term:base.terms.reserved:) & \texttt{6..1} & (:term:base.terms.must_be_zero:)\\
 (:register-field-target:base.control_registers.ECR.V:)\texttt{V} & \texttt{0} & architectural event-entry state is valid\\
 \bottomrule
@@ -121,11 +121,11 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \BedrockFormatField{WORD}{18}
 }
 \end{BedrockFormatDiagram}
-{\small In the ISEL row, \texttt{B} abbreviates \texttt{BANK}.\par}
+{\small In the ISEL row, \texttt{B} abbreviates (:ref:base.control_registers.ISEL.BANK:).\par}
 
 Each logical processor owns an interrupt file for identities 1 through (:register-field-target:base.control_registers.ICAP.MAX_ID:)\texttt{ICAP.MAX\_ID}; identity zero is
 reserved. Each implemented identity has one pending bit and one enable bit. Posting a valid identity sets its pending
-bit, repeated postings coalesce, and posting zero or an identity above \texttt{MAX\_ID} has no effect.
+bit, repeated postings coalesce, and posting zero or an identity above (:ref:base.control_registers.ICAP.MAX_ID:) has no effect.
 
 An identity is eligible when both bits are set and (:register-field-target:base.control_registers.ITHRESH.THRESHOLD:)\texttt{ITHRESH.THRESHOLD} is zero or the identity is numerically
 less than the threshold. Lower identity numbers have higher priority. (:register-field-target:base.control_registers.ITOP.TOP:)\texttt{ITOP.TOP} reads as the lowest eligible
@@ -135,7 +135,7 @@ identity, or zero when none is eligible. \texttt{ICAP} and \texttt{ITOP} are rea
 Bank zero reads pending bits and is read-only. Bank one reads zero and writes pending bits with write-one-to-set
 semantics. Bank two reads zero and clears pending bits with write-one-to-clear semantics. Bank three reads enable
 bits and replaces the selected enable word on write. A selected word is valid only when it contains at least one
-implemented nonzero identity. Bits for identity zero or identities above \texttt{MAX\_ID} are reserved.
+implemented nonzero identity. Bits for identity zero or identities above (:ref:base.control_registers.ICAP.MAX_ID:) are reserved.
 
 Writing \texttt{ICAP}, \texttt{ITOP}, pending bank zero, or an invalid (:ref:base.control_registers.ISEL.WORD:) raises
 (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:). Nonzero reserved bits in \texttt{ISEL}, \texttt{ITHRESH},
@@ -159,8 +159,8 @@ write, so a fault changes neither the interrupt file nor its selector.
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..33} & (:term:base.terms.must_be_zero:)\\
 (:register-field-target:base.control_registers.UCTL.V:)\texttt{V} & \texttt{32} & complete user-return bank contains a valid return context\\
-\texttt{STATUS} & \texttt{31..16} & saved user STATUS image\\
-\texttt{FLAGS} & \texttt{15..0} & saved user FLAGS image\\
+(:register-field-target:base.control_registers.UCTL.STATUS:)\texttt{STATUS} & \texttt{31..16} & saved user STATUS image\\
+(:register-field-target:base.control_registers.UCTL.FLAGS:)\texttt{FLAGS} & \texttt{15..0} & saved user FLAGS image\\
 \bottomrule
 \end{BedrockTabular}
 
@@ -170,7 +170,7 @@ write, so a fault changes neither the interrupt file nor its selector.
 \BedrockFormatField{E}{1}
 }
 \end{BedrockFormatDiagram}
-{\small\texttt{E} abbreviates \texttt{EN} in the diagram.\par}
+{\small\texttt{E} abbreviates (:ref:base.control_registers.PMC.EN:) in the diagram.\par}
 
 \BedrockTableCaption{PMC Fields}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
@@ -186,6 +186,6 @@ write, so a fault changes neither the interrupt file nor its selector.
 EPC is the exact common event-entry address, must be 16-byte aligned, and must be canonical and executable under
 ECS. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or return.
 ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100 through 0x0102 are (:term:base.terms.reserved:).
-A write that establishes (:ref:base.control_registers.UCTL.V:) validates the complete user bank and requires saved PM, EA, EDEPTH, and UO to be
+A write that establishes (:ref:base.control_registers.UCTL.V:) validates the complete user bank and requires saved (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.EA:), (:ref:base.registers.STATE.STATUS.EDEPTH:), and (:ref:base.registers.STATE.STATUS.UO:) to be
 zero. ERET revalidates the selected return source before committing.
 BOOTPC and BOOTCFG are initialized by the platform during cold reset and (:term:base.terms.preserved:) by RESET.

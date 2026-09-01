@@ -1,10 +1,10 @@
 \subsection{Address-Width Discovery}
-\texttt{PABITS} is the authoritative physical-address bound for the current
+(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) is the authoritative physical-address bound for the current
 (:term:base.terms.logical_processor:) and has a value from 32 through 56. A (:term:base.terms.physical_address:) is
-representable only when it is less than $2^{\mathtt{PABITS}}$. Page-table roots, every present PTE PFN, translated
+representable only when it is less than $2^{\text{(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)}}$. Page-table roots, every present (:ref:base.memory.translation.PTE.PFN:), translated
 results, and paging-disabled (:term:base.terms.physical_address|plural:) are subject to that bound.
 
-\texttt{PABITS} does not select page-table geometry or translation-cache identity. (:ref:base.control_registers.PTCR.LA57:) selects the
+(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) does not select page-table geometry or translation-cache identity. (:ref:base.control_registers.PTCR.LA57:) selects the
 walk geometry, while the translation-cache contract separately defines entry identity.
 
 (:cpuid-leaf:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS:)

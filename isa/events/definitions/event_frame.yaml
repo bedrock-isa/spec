@@ -1,0 +1,25 @@
+id: EVENT_FRAME
+slot_bits: 64
+slots:
+- id: FRAME_CONTROL
+  offset: 0x00
+  fields:
+  - {id: FRAME_SIZE, lsb: 0, bits: 8}
+  - {id: FRAME_TYPE, lsb: 8, bits: 4}
+  - {id: SAVED_DFA, lsb: 12, bits: 1}
+  - {id: FLAGS, lsb: 32, bits: 4}
+  - {id: STATUS, lsb: 36, bits: 16}
+- id: EVENT_INFO
+  offset: 0x08
+  fields:
+  - {id: EVENT_CODE, lsb: 0, bits: 32}
+- {id: SAVED_PC, offset: 0x10}
+- {id: SAVED_SP, offset: 0x18}
+- {id: SAVED_CS, offset: 0x20}
+- {id: SAVED_DS, offset: 0x28}
+- {id: SAVED_SS, offset: 0x30}
+- {id: PADDING, offset: 0x38}
+- {id: ERROR_CODE, offset: 0x40}
+- {id: FAULT_EA, offset: 0x48}
+- {id: FAULT_LINEAR, offset: 0x50}
+- {id: EVENT_AUX, offset: 0x58}

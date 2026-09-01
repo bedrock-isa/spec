@@ -1,4 +1,4 @@
-"""Unified logical-entity index assembled from typed ISA registries."""
+"""Common entity contract and unified logical-reference catalogs."""
 
 from __future__ import annotations
 
@@ -7,50 +7,9 @@ from enum import StrEnum
 from pathlib import Path
 import re
 from types import MappingProxyType
-from typing import Iterable, Mapping, TypeVar, cast
+from typing import Iterable, Mapping, cast
 
 from .reference import Reference, ReferenceIndex
-_T = TypeVar("_T")
-
-
-class EntityKind(StrEnum):
-    TOPIC = "topic"
-    INSTRUCTION = "instruction"
-    EA_MODE = "ea-mode"
-    FIELD_TYPE = "field-type"
-    PAYLOAD_TYPE = "payload-type"
-    CPUID_CLASS = "cpuid-class"
-    CPUID_LEAF = "cpuid-leaf"
-    CPUID_QUERY = "cpuid-query"
-    CPUID_FIELD = "cpuid-field"
-    EVENT_CLASS = "event-class"
-    EVENT = "event"
-    REGISTER_GROUP = "register-group"
-    REGISTER = "register"
-    REGISTER_FIELD = "register-field"
-    CONTROL_REGISTER_NAMESPACE = "control-register-namespace"
-    CONTROL_REGISTER = "control-register"
-    CONTROL_REGISTER_FIELD = "control-register-field"
-    TERM_GROUP = "term-group"
-    TERM = "term"
-    ELF_RELOCATION = "elf-relocation"
-    ELF_LINKAGE_PROTOCOL = "elf-linkage-protocol"
-    ELF_TLS_MODEL = "elf-tls-model"
-    ELF_CODE_MODEL = "elf-code-model"
-    ELF_DEBUG_REGISTER = "elf-debug-register"
-    C_ABI_TYPE = "c-abi-type"
-    C_REGISTER_CLASS = "c-register-class"
-    C_VALUE_CLASS = "c-value-class"
-    C_PROMOTION = "c-promotion"
-    C_RUNTIME_HELPER = "c-runtime-helper"
-    C_MEMORY_ORDER = "c-memory-order"
-    C_ATOMIC_LOWERING = "c-atomic-lowering"
-    INTERFACE_TYPE_GROUP = "interface-type-group"
-    INTERFACE_INTRINSIC_GROUP = "interface-intrinsic-group"
-    INTERFACE_UTILITY_GROUP = "interface-utility-group"
-    INTERFACE_TYPE = "interface-type"
-    INTERFACE_INTRINSIC = "interface-intrinsic"
-    INTERFACE_UTILITY = "interface-utility"
 
 
 class EntityDisplayStyle(StrEnum):
@@ -58,174 +17,65 @@ class EntityDisplayStyle(StrEnum):
     CODE = "code"
 
 
-@dataclass(frozen=True, slots=True)
 class Entity:
+    """Nominal parent of every provider-local referencable domain object."""
+
+    __slots__ = ()
+
     reference: Reference["Entity"]
-    kind: EntityKind
-    display: str
     source: Path
-    value: object
+
+
+@dataclass(frozen=True, slots=True)
+class EntityPresentation:
+    """Provider-owned default spelling used by explicit public projections."""
+
+    display: str
     display_style: EntityDisplayStyle = EntityDisplayStyle.TEXT
 
 
 @dataclass(frozen=True, slots=True)
 class EntityCatalog:
     references: ReferenceIndex[Entity]
+    presentations: Mapping[Reference[Entity], EntityPresentation]
 
     @classmethod
-    def build(
+    def create(
         cls,
-        types,
-        sources,
-        cpuid,
-        events,
-        registers,
-        control_registers,
-        terminology,
-        model,
+        entries: Iterable[
+            tuple[Entity, str, EntityDisplayStyle]
+            | tuple[Entity, str]
+        ],
     ) -> "EntityCatalog":
-        index = ReferenceIndex[Entity]()
-
-        def add(
-            reference: Reference[_T],
-            kind: EntityKind,
-            display: str,
-            source: Path,
-            value,
-            *,
-            style: EntityDisplayStyle = EntityDisplayStyle.TEXT,
-        ) -> None:
-            normalized = cast(Reference[Entity], reference)
-            index.register(
-                normalized,
-                Entity(normalized, kind, display, source, value, style),
+        references = ReferenceIndex[Entity]()
+        presentations: dict[Reference[Entity], EntityPresentation] = {}
+        for entry in entries:
+            entity, display = entry[:2]
+            style = (
+                entry[2]
+                if len(entry) == 3
+                else EntityDisplayStyle.TEXT
             )
-
-        for topic in model.document_topics.values():
-            reference = cast(Reference[Entity], topic.reference)
-            add(
-                reference,
-                EntityKind.TOPIC,
-                _humanize(topic.id),
-                topic.source,
-                topic,
-            )
-        for reference, bundle in sources.instructions.items():
-            add(
-                reference,
-                EntityKind.INSTRUCTION,
-                bundle.instruction.mnemonic,
-                bundle.instruction.source,
-                bundle,
-                style=EntityDisplayStyle.CODE,
-            )
-        for reference, mode in sources.ea_modes.items():
-            add(
-                reference,
-                EntityKind.EA_MODE,
-                mode.id,
-                mode.source,
-                mode,
-                style=EntityDisplayStyle.CODE,
-            )
-        for reference, definition in types.field_types.items():
-            add(
-                reference,
-                EntityKind.FIELD_TYPE,
-                definition.id,
-                definition.source,
-                definition,
-                style=EntityDisplayStyle.CODE,
-            )
-        for reference, definition in types.payload_types.items():
-            add(
-                reference,
-                EntityKind.PAYLOAD_TYPE,
-                definition.id,
-                definition.source,
-                definition,
-                style=EntityDisplayStyle.CODE,
-            )
-        for kind, typed_index in (
-            (EntityKind.CPUID_CLASS, cpuid.references.classes),
-            (EntityKind.CPUID_LEAF, cpuid.references.leaves),
-            (EntityKind.CPUID_QUERY, cpuid.references.queries),
-            (EntityKind.CPUID_FIELD, cpuid.references.fields),
-            (EntityKind.EVENT_CLASS, events.references.classes),
-            (EntityKind.EVENT, events.references.events),
-            (EntityKind.REGISTER_GROUP, registers.references.groups),
-            (EntityKind.REGISTER, registers.references.registers),
-            (EntityKind.REGISTER_FIELD, registers.references.fields),
-            (
-                EntityKind.CONTROL_REGISTER_NAMESPACE,
-                control_registers.references.namespaces,
-            ),
-            (EntityKind.CONTROL_REGISTER, control_registers.references.registers),
-            (
-                EntityKind.CONTROL_REGISTER_FIELD,
-                control_registers.references.fields,
-            ),
-        ):
-            for reference, value in typed_index.items():
-                display = getattr(value, "name", None) or getattr(value, "id", None)
-                if kind in {
-                    EntityKind.REGISTER_FIELD,
-                    EntityKind.CONTROL_REGISTER_FIELD,
-                }:
-                    display = f"{reference.path[-1]}.{value.id}"
-                add(
-                    reference,
-                    kind,
-                    str(
-                        value.id
-                        if kind
-                        in {
-                            EntityKind.REGISTER,
-                            EntityKind.CONTROL_REGISTER,
-                            EntityKind.EVENT,
-                            EntityKind.CPUID_LEAF,
-                            EntityKind.CPUID_QUERY,
-                            EntityKind.CPUID_FIELD,
-                        }
-                        else display
-                    ),
-                    value.source,
-                    value,
-                    style=(
-                        EntityDisplayStyle.CODE
-                        if kind
-                        in {
-                            EntityKind.REGISTER,
-                            EntityKind.EVENT,
-                            EntityKind.CPUID_LEAF,
-                            EntityKind.CPUID_QUERY,
-                            EntityKind.CPUID_FIELD,
-                            EntityKind.REGISTER_FIELD,
-                            EntityKind.CONTROL_REGISTER_FIELD,
-                        }
-                        else EntityDisplayStyle.TEXT
-                    ),
-                )
-        for reference, group in terminology.references.groups.items():
-            add(
-                reference,
-                EntityKind.TERM_GROUP,
-                group.title,
-                group.source,
-                group,
-            )
-        for reference, term in terminology.references.terms.items():
-            add(
-                reference,
-                EntityKind.TERM,
-                term.forms.canonical,
-                term.source,
-                term,
-            )
-        return cls(index)
+            if not isinstance(entity, Entity):
+                raise TypeError("entity catalog entries must inherit Entity")
+            if not isinstance(entity.reference, Reference):
+                raise TypeError("entity reference must be a Reference")
+            if not isinstance(entity.source, Path):
+                raise TypeError("entity source must be a Path")
+            reference = cast(Reference[Entity], entity.reference)
+            references.register(reference, entity)
+            presentations[reference] = EntityPresentation(display, style)
+        return cls(references, MappingProxyType(presentations))
 
     def resolve(self, reference: Reference[Entity]) -> Entity:
         return self.references.resolve(reference)
+
+    def presentation(
+        self, reference: Reference[object]
+    ) -> EntityPresentation:
+        normalized = cast(Reference[Entity], reference)
+        self.resolve(normalized)
+        return self.presentations[normalized]
 
 
 @dataclass(frozen=True, slots=True)
@@ -281,7 +131,3 @@ class PublicTargetCatalog:
 def instruction_label(mnemonic: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", mnemonic.lower()).strip("-")
     return f"instr:{slug}"
-
-
-def _humanize(value: str) -> str:
-    return value.replace("-", " ").replace("_", " ")

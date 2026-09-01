@@ -1,0 +1,9 @@
+id: MEMORY_WATCHPOINT_ERROR_CODE
+bits: 64
+fields:
+- {id: TRIGGER_SLOT, lsb: 0, bits: 16}
+- {id: OPERAND, lsb: 16, bits: 8}
+- {id: ACCESS_SIZE, lsb: 24, bits: 16}
+- {id: USER_DOMAIN, lsb: 40, bits: 1}
+- {id: MMIO, lsb: 41, bits: 1}
+- {id: LINEAR_VALID, lsb: 42, bits: 1}

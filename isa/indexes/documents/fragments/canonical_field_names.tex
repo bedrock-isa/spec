@@ -12,14 +12,14 @@
 \textbf{Owner} & \textbf{Canonical (:term:base.terms.field|plural:)} & \textbf{Normative definition}\\
 \midrule
 \endhead
-\texttt{FLAGS} & \texttt{Z}, \texttt{N}, \texttt{C}, \texttt{V} & \hyperref[section:state-register-formats]{definition} (p.~\pageref{section:state-register-formats})\\
-\texttt{STATUS} & \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF}, \texttt{NI}, \texttt{EA} & \hyperref[section:state-register-formats]{definition} (p.~\pageref{section:state-register-formats})\\
-\texttt{PTCR} & \texttt{root\_page}, \texttt{LA57}, \texttt{PE} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
-\texttt{ASCR} & \texttt{ASID}, \texttt{AE} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
-\texttt{ECR} & \texttt{MAX\_EDEPTH}, \texttt{NMI\_P}, \texttt{V} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
-\texttt{UCTL} & \texttt{V}, \texttt{STATUS}, \texttt{FLAGS} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
-\texttt{PMC} & \texttt{EN} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
-\texttt{PTE} & \texttt{P}, \texttt{T}, \texttt{AM}, \texttt{R}, \texttt{W}, \texttt{X}, \texttt{U}, \texttt{G}, \texttt{A}, \texttt{D}, \texttt{CP}, \texttt{SW}, \texttt{PFN} & \hyperref[section:page-table-entry-format]{definition} (p.~\pageref{section:page-table-entry-format})\\
-\texttt{instruction\_header} & \texttt{L} & \hyperref[section:instruction-header-formats]{definition} (p.~\pageref{section:instruction-header-formats})\\
+\texttt{FLAGS} & (:ref:base.registers.STATE.FLAGS.Z:), (:ref:base.registers.STATE.FLAGS.N:), (:ref:base.registers.STATE.FLAGS.C:), (:ref:base.registers.STATE.FLAGS.V:) & \hyperref[section:state-register-formats]{definition} (p.~\pageref{section:state-register-formats})\\
+\texttt{STATUS} & (:ref:base.registers.STATE.STATUS.IE:), (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.RF:), (:ref:base.registers.STATE.STATUS.TF:), (:ref:base.registers.STATE.STATUS.NI:), (:ref:base.registers.STATE.STATUS.EA:) & \hyperref[section:state-register-formats]{definition} (p.~\pageref{section:state-register-formats})\\
+\texttt{PTCR} & (:ref:base.control_registers.PTCR.ROOT_PAGE:), (:ref:base.control_registers.PTCR.LA57:), (:ref:base.control_registers.PTCR.PE:) & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{ASCR} & (:ref:base.control_registers.ASCR.ASID:), (:ref:base.control_registers.ASCR.AE:) & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{ECR} & (:ref:base.control_registers.ECR.MAX_EDEPTH:), (:ref:base.control_registers.ECR.NMI_P:), (:ref:base.control_registers.ECR.V:) & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{UCTL} & (:ref:base.control_registers.UCTL.V:), (:ref:base.control_registers.UCTL.STATUS:), (:ref:base.control_registers.UCTL.FLAGS:) & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{PMC} & (:ref:base.control_registers.PMC.EN:) & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{PTE} & (:ref:base.memory.translation.PTE.P:), (:ref:base.memory.translation.PTE.T:), (:ref:base.memory.translation.PTE.AM:), (:ref:base.memory.translation.PTE.R:), (:ref:base.memory.translation.PTE.W:), (:ref:base.memory.translation.PTE.X:), (:ref:base.memory.translation.PTE.U:), (:ref:base.memory.translation.PTE.G:), (:ref:base.memory.translation.PTE.A:), (:ref:base.memory.translation.PTE.D:), (:ref:base.memory.translation.PTE.CP:), (:ref:base.memory.translation.PTE.SW:), (:ref:base.memory.translation.PTE.PFN:) & \hyperref[section:page-table-entry-format]{definition} (p.~\pageref{section:page-table-entry-format})\\
+\texttt{instruction\_header} & (:ref:base.encoding.instruction.EXTENDED_HEADER.L:) & \hyperref[section:instruction-header-formats]{definition} (p.~\pageref{section:instruction-header-formats})\\
 \bottomrule
 \end{BedrockDenseLongTable}

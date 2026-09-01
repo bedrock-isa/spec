@@ -8,6 +8,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import cast
 
+from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
@@ -27,7 +28,7 @@ class EventSelector:
 
 
 @dataclass(frozen=True, slots=True)
-class ArchitecturalEvent:
+class ArchitecturalEvent(Entity):
     """One independently allocated leaf architectural event."""
 
     reference: Reference["ArchitecturalEvent"]
@@ -43,7 +44,7 @@ class ArchitecturalEvent:
 
 
 @dataclass(frozen=True, slots=True)
-class EventClass:
+class EventClass(Entity):
     """One event-code class definition or extension overlay."""
 
     reference: Reference["EventClass"]

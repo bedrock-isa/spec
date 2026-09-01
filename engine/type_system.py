@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .reference import Reference, ReferenceIndex
 
@@ -53,7 +54,7 @@ class FieldValue:
 
 
 @dataclass(frozen=True, slots=True)
-class FieldType:
+class FieldType(Entity):
     """A type that occupies bits inside the primary instruction encoding."""
 
     reference: Reference["FieldType"]
@@ -128,7 +129,7 @@ class FieldType:
 
 
 @dataclass(frozen=True, slots=True)
-class PayloadType:
+class PayloadType(Entity):
     """A byte-sized type appended after the primary instruction encoding."""
 
     reference: Reference["PayloadType"]

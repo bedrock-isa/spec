@@ -1,7 +1,7 @@
 \subsection{Architectural Event Frame}
-Every event frame begins with exactly eight 64-bit slots. EVENT\_INFO contains the event code in bits 31 through 0;
-its upper half is zero. FRAME\_CONTROL contains only frame shape, saved nesting state, saved FLAGS, and saved STATUS.
-Event classification is carried exclusively by EVENT\_INFO.
+Every event frame begins with exactly eight 64-bit slots. (:ref:base.events.frame.EVENT_FRAME.EVENT_INFO:) contains (:ref:base.events.frame.EVENT_FRAME.EVENT_INFO.EVENT_CODE:) in bits 31 through 0;
+its upper half is zero. (:ref:base.events.frame.EVENT_FRAME.FRAME_CONTROL:) contains only frame shape, saved nesting state, saved (:ref:base.events.frame.EVENT_FRAME.FRAME_CONTROL.FLAGS:), and saved (:ref:base.events.frame.EVENT_FRAME.FRAME_CONTROL.STATUS:).
+Event classification is carried exclusively by (:ref:base.events.frame.EVENT_FRAME.EVENT_INFO:).
 
 \input{isa/events/documents/fragments/supervisor_stack_frame_diagram.tex}
 
@@ -11,11 +11,11 @@ Event classification is carried exclusively by EVENT\_INFO.
 
 \input{isa/events/documents/fragments/frame_control_table.tex}
 
-ERET first validates the frame shape and nesting metadata. BASIC requires frame\_size 8, ERROR requires 10, and
-PAGE and AUXILIARY require 12. It requires saved (:ref:base.registers.STATE.STATUS.PM:)=1, saved (:ref:base.registers.STATE.STATUS.EDEPTH:) plus one to equal the
+ERET first validates the frame shape and nesting metadata. BASIC requires (:ref:base.events.frame.EVENT_FRAME.FRAME_CONTROL.FRAME_SIZE:)\texttt{=8}, ERROR requires \texttt{10}, and
+PAGE and AUXILIARY require \texttt{12}. It requires saved (:ref:base.registers.STATE.STATUS.PM:)\texttt{=1}, saved (:ref:base.registers.STATE.STATUS.EDEPTH:) plus one to equal the
 current depth, and saved (:ref:base.registers.STATE.STATUS.UO:) to match the active outer-origin chain.
 
 Only after those checks does ERET validate the saved control state, segment images, SP, and PC.
-On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the
-fixed-header (:term:base.terms.padding:) slot at +0x38 and restores no hidden repeat state. EVENT\_INFO and the event-specific (:term:base.terms.payload:)
+On success it restores (:ref:base.events.frame.EVENT_FRAME.FRAME_CONTROL.FLAGS:), (:ref:base.events.frame.EVENT_FRAME.FRAME_CONTROL.STATUS:), CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the
+fixed-header (:ref:base.events.frame.EVENT_FRAME.PADDING:) slot at +0x38 and restores no hidden repeat state. (:ref:base.events.frame.EVENT_FRAME.EVENT_INFO:) and the event-specific (:term:base.terms.payload:)
 remain available to software.

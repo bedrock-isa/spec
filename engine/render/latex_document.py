@@ -67,6 +67,14 @@ def tex_code(value: object) -> str:
     return r"\texttt{" + tex_escape(value).replace("--", r"{-}{-}") + "}"
 
 
+def tex_reference_code(value: object) -> str:
+    """Render a code entity with safe breakpoints at qualified-name separators."""
+
+    return tex_code(value).replace(r"\_", r"\_\allowbreak{}").replace(
+        ".", r".\allowbreak{}"
+    )
+
+
 def _label_slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
@@ -161,10 +169,31 @@ def _document_public_targets(
     # module.  It owns its public row labels; this composer only supplies the
     # references actually requested by authored prose.
     from .event_reference import EventReferenceRenderer
+    from .cpuid_leaf import CpuidLeafFragmentRenderer
+    from .page_table_entry_field_target import PageTableEntryFieldTargetRenderer
     from .register_field_target import RegisterFieldTargetRenderer
+    from .structured_field_target import (
+        CpuidFieldTargetRenderer,
+        DebugTriggerTargetRenderer,
+        EventStructureTargetRenderer,
+        InstructionHeaderFieldTargetRenderer,
+        SaveAreaFieldTargetRenderer,
+    )
 
     targets.extend(EventReferenceRenderer.public_targets(project, referenced))
+    targets.extend(CpuidLeafFragmentRenderer.public_targets(project, referenced))
+    targets.extend(
+        PageTableEntryFieldTargetRenderer.public_targets(project, sources)
+    )
     targets.extend(RegisterFieldTargetRenderer.public_targets(project, sources))
+    for renderer in (
+        CpuidFieldTargetRenderer,
+        DebugTriggerTargetRenderer,
+        EventStructureTargetRenderer,
+        InstructionHeaderFieldTargetRenderer,
+        SaveAreaFieldTargetRenderer,
+    ):
+        targets.extend(renderer.public_targets(project, sources))
 
     return PublicTargetCatalog.create(project.entities, targets)
 
@@ -187,10 +216,13 @@ class LatexSemanticTextRenderer:
                 continue
             if isinstance(part, EntityReferenceText):
                 entity, label = public_targets.resolve(part.reference)
+                presentation = public_targets.entities.presentation(
+                    entity.reference
+                )
                 display = (
-                    tex_code(entity.display)
-                    if entity.display_style is EntityDisplayStyle.CODE
-                    else tex_escape(entity.display)
+                    tex_reference_code(presentation.display)
+                    if presentation.display_style is EntityDisplayStyle.CODE
+                    else tex_escape(presentation.display)
                 )
                 parts.append(rf"\hyperref[{label}]{{{display}}}")
                 continue

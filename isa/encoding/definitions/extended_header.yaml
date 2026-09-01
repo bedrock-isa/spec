@@ -1,0 +1,4 @@
+id: EXTENDED_HEADER
+bits: 16
+fields:
+- {id: L, lsb: 2, bits: 4}

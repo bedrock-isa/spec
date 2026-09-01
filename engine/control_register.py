@@ -8,6 +8,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
@@ -24,7 +25,7 @@ class ControlRegisterInventory(DirectoryInventory):
 
 
 @dataclass(frozen=True, slots=True)
-class ControlRegister:
+class ControlRegister(Entity):
     """One register in the architectural RDCR/WRCR selector space."""
 
     reference: Reference["ControlRegister"]
@@ -44,7 +45,7 @@ class ControlRegister:
 
 
 @dataclass(frozen=True, slots=True)
-class ControlRegisterNamespace:
+class ControlRegisterNamespace(Entity):
     """Control registers owned by base or one declared extension."""
 
     reference: Reference["ControlRegisterNamespace"]

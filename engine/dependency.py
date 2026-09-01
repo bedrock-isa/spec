@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 from typing import cast
 
 from .reference import QualifiedReference, Reference
@@ -92,11 +93,12 @@ class DependencyGraph:
         nodes = []
         for reference in ordered_references:
             entity = entities.resolve(cast(Reference[Entity], reference))
+            presentation = entities.presentation(reference)
             nodes.append(
                 {
                     "id": node_ids[reference],
-                    "kind": entity.kind.value,
-                    "display": entity.display,
+                    "kind": _entity_type_name(entity),
+                    "display": presentation.display,
                     "incoming": incoming.get(reference, 0),
                     "outgoing": outgoing.get(reference, 0),
                     "degree": incoming.get(reference, 0) + outgoing.get(reference, 0),
@@ -113,3 +115,9 @@ def _relative(path: Path, root: Path) -> str:
         return str(resolved.relative_to(root.resolve()))
     except ValueError:
         return str(resolved)
+
+
+def _entity_type_name(entity: Entity) -> str:
+    """Return a diagnostic type name without a parallel kind discriminator."""
+
+    return re.sub(r"(?<!^)(?=[A-Z])", "-", type(entity).__name__).lower()

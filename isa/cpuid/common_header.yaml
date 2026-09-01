@@ -1,0 +1,6 @@
+id: COMMON_HEADER
+bits: 64
+fields:
+- {id: MAX_INDEX, lsb: 0, bits: 16}
+- {id: MAX_LEAF, lsb: 16, bits: 16}
+- {id: MAX_CLASS, lsb: 32, bits: 32}

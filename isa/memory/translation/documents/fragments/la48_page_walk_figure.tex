@@ -44,7 +44,7 @@
 \draw[->] (tbl2.east) -- node[above,align=center,font=\scriptsize] {L2 idx\\bits 29..21} (ent2.west);
 \draw[->,black,densely dashed,line width=0.35pt] (3.65,6.02) -- (3.65,5.78) -- (4.13,5.78) -- (4.13,3.44) -- (ent2.east);
 \node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl3) at (1.75,2.77) {L1\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent3) at (3.25,2.77) {selected\\L1 leaf PTE\\PFN + flags};
+\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent3) at (3.25,2.77) {selected\\L1 leaf PTE\\(:ref:base.memory.translation.PTE.PFN:) + flags};
 \draw[->] (ent2.south) -- (3.25,3.08) -- (1.75,3.08) -- (tbl3.north);
 \draw[->] (tbl3.east) -- node[above,align=center,font=\scriptsize] {L1 idx\\bits 20..12} (ent3.west);
 \draw[->,black,densely dashed,line width=0.35pt] (4.37,6.02) -- (4.37,5.74) -- (4.23,5.74) -- (4.23,2.77) -- (ent3.east);
@@ -52,10 +52,10 @@
 \draw[->] (ent3.south) -- (3.25,2.38) -- (1.75,2.38) -- (frame.north);
 \node[draw,circle,inner sep=1.8pt] (plus) at (3.12,2.03) {+};
 \node[draw,align=center,minimum width=1.03in,minimum height=0.36in] (phys) at (4.55,2.03) {physical\\address};
-\draw[->] (frame.east) -- node[above] {PFN} (plus.west);
+\draw[->] (frame.east) -- node[above] {(:ref:base.memory.translation.PTE.PFN:)} (plus.west);
 \draw[->] (plus.east) -- (phys.west);
 \draw[->,black,densely dashed,line width=0.35pt] (5.22,6.02) -- (5.22,5.70) -- (4.33,5.70) -- (4.33,2.23) -- (3.12,2.23) -- (plus.north);
-\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.45) {Maximum-depth walk shown. At L4 through L2, T=1 continues and T=0 terminates at an aligned byte leaf;\\the terminating level selects the offset width. L1 terminates as a byte leaf.};
+\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.45) {Maximum-depth walk shown. At L4 through L2, (:ref:base.memory.translation.PTE.T:)\texttt{=1} continues and (:ref:base.memory.translation.PTE.T:)\texttt{=0} terminates at an aligned byte leaf;\\the terminating level selects the offset width. L1 terminates as a byte leaf.};
 \end{tikzpicture}
 \BedrockFigureCaption{LA48 Four-Level Page Walk}
 \end{center}

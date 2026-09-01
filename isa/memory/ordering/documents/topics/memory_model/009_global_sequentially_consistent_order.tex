@@ -10,8 +10,8 @@ fences occupy their required positions in the same global order.
 
 Acquire and release operations may be strengthened with (:ref:base.instructions.AFENCE:); the resulting instruction sequence has the
 union of the ordering constraints imposed by its operations.
-Leaf AM and CP are orthogonal. An MMIO access retains its non-speculative,
-operation-class, alignment, and ordering rules under every CP value. MMIO
+Leaf (:ref:base.memory.translation.PTE.AM:) and (:ref:base.memory.translation.PTE.CP:) are orthogonal. An MMIO access retains its non-speculative,
+operation-class, alignment, and ordering rules under every (:ref:base.memory.translation.PTE.CP:) value. MMIO
 accesses from one (:term:base.terms.logical_processor:) are observed in program order relative to
 other MMIO accesses from that (:term:base.terms.logical_processor:). Normal-memory and MMIO
 accesses retain the baseline weak ordering between classes; (:ref:base.instructions.AFENCE:)

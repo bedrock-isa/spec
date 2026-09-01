@@ -21,20 +21,20 @@ The condition-code bits are the low four meaningful bits of FLAGS, as shown in t
 \endhead
 \texttt{0000} & \texttt{T} & \texttt{-} & true\\
 \texttt{0001} & \texttt{F} & \texttt{-} & false\\
-\texttt{0010} & \texttt{EQ} & \texttt{Z} & Z == 1\\
-\texttt{0011} & \texttt{NE} & \texttt{NZ} & Z == 0\\
-\texttt{0100} & \texttt{ULT} & \texttt{C} & C == 1\\
-\texttt{0101} & \texttt{UGE} & \texttt{NC} & C == 0\\
-\texttt{0110} & \texttt{MI} & \texttt{N} & N == 1\\
-\texttt{0111} & \texttt{PL} & \texttt{NN} & N == 0\\
-\texttt{1000} & \texttt{VS} & \texttt{V} & V == 1\\
-\texttt{1001} & \texttt{VC} & \texttt{NV} & V == 0\\
-\texttt{1010} & \texttt{ULE} & \texttt{-} & C == 1 \textbar{}\textbar{} Z == 1\\
-\texttt{1011} & \texttt{UGT} & \texttt{-} & C == 0 \&\& Z == 0\\
-\texttt{1100} & \texttt{LT} & \texttt{-} & N != V\\
-\texttt{1101} & \texttt{GE} & \texttt{-} & N == V\\
-\texttt{1110} & \texttt{LE} & \texttt{-} & Z == 1 \textbar{}\textbar{} N != V\\
-\texttt{1111} & \texttt{GT} & \texttt{-} & Z == 0 \&\& N == V\\
+\texttt{0010} & \texttt{EQ} & \texttt{Z} & (:ref:base.registers.STATE.FLAGS.Z:) \texttt{== 1}\\
+\texttt{0011} & \texttt{NE} & \texttt{NZ} & (:ref:base.registers.STATE.FLAGS.Z:) \texttt{== 0}\\
+\texttt{0100} & \texttt{ULT} & \texttt{C} & (:ref:base.registers.STATE.FLAGS.C:) \texttt{== 1}\\
+\texttt{0101} & \texttt{UGE} & \texttt{NC} & (:ref:base.registers.STATE.FLAGS.C:) \texttt{== 0}\\
+\texttt{0110} & \texttt{MI} & \texttt{N} & (:ref:base.registers.STATE.FLAGS.N:) \texttt{== 1}\\
+\texttt{0111} & \texttt{PL} & \texttt{NN} & (:ref:base.registers.STATE.FLAGS.N:) \texttt{== 0}\\
+\texttt{1000} & \texttt{VS} & \texttt{V} & (:ref:base.registers.STATE.FLAGS.V:) \texttt{== 1}\\
+\texttt{1001} & \texttt{VC} & \texttt{NV} & (:ref:base.registers.STATE.FLAGS.V:) \texttt{== 0}\\
+\texttt{1010} & \texttt{ULE} & \texttt{-} & (:ref:base.registers.STATE.FLAGS.C:) \texttt{== 1 ||} (:ref:base.registers.STATE.FLAGS.Z:) \texttt{== 1}\\
+\texttt{1011} & \texttt{UGT} & \texttt{-} & (:ref:base.registers.STATE.FLAGS.C:) \texttt{== 0 \&\&} (:ref:base.registers.STATE.FLAGS.Z:) \texttt{== 0}\\
+\texttt{1100} & \texttt{LT} & \texttt{-} & (:ref:base.registers.STATE.FLAGS.N:) \texttt{!=} (:ref:base.registers.STATE.FLAGS.V:)\\
+\texttt{1101} & \texttt{GE} & \texttt{-} & (:ref:base.registers.STATE.FLAGS.N:) \texttt{==} (:ref:base.registers.STATE.FLAGS.V:)\\
+\texttt{1110} & \texttt{LE} & \texttt{-} & (:ref:base.registers.STATE.FLAGS.Z:) \texttt{== 1 ||} (:ref:base.registers.STATE.FLAGS.N:) \texttt{!=} (:ref:base.registers.STATE.FLAGS.V:)\\
+\texttt{1111} & \texttt{GT} & \texttt{-} & (:ref:base.registers.STATE.FLAGS.Z:) \texttt{== 0 \&\&} (:ref:base.registers.STATE.FLAGS.N:) \texttt{==} (:ref:base.registers.STATE.FLAGS.V:)\\
 \bottomrule
 \end{BedrockLongTable}
 

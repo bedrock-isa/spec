@@ -1,0 +1,14 @@
+id: TRIGGER_SLOT
+word_bits: 64
+words:
+- id: CONFIG
+  bank: 0
+  fields:
+  - {id: VALID, lsb: 0, bits: 1}
+  - {id: MATCH_EXECUTE, lsb: 1, bits: 1}
+  - {id: MATCH_READ, lsb: 2, bits: 1}
+  - {id: MATCH_WRITE, lsb: 3, bits: 1}
+  - {id: MATCH_USER, lsb: 4, bits: 1}
+  - {id: MATCH_SUPERVISOR, lsb: 5, bits: 1}
+- {id: LOW, bank: 1}
+- {id: HIGH, bank: 2}

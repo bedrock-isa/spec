@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from ..entity import EntityKind
+from ..register import RegisterField
 from ..reference import Reference, UnknownReferenceError
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 
@@ -87,10 +87,8 @@ class RegisterFieldTargetRenderer(DocumentFragmentProvider):
             raise ValueError(
                 f"{source}: unknown register-field target reference"
             ) from error
-        if entity.kind not in {
-            EntityKind.REGISTER_FIELD,
-            EntityKind.CONTROL_REGISTER_FIELD,
-        }:
+        if not isinstance(entity, RegisterField):
             raise ValueError(
-                f"{source}: register-field target resolves to {entity.kind.value}"
+                f"{source}: register-field target resolves to "
+                f"{type(entity).__name__}"
             )

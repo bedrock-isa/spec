@@ -11,8 +11,8 @@
 \textbf{Identity Component} & \textbf{Applies To}\\
 \midrule
 \texttt{leaf-aligned linear mapping range} & every entry\\
-\texttt{LA57} & every entry\\
-\texttt{ASID} & non-global entry while (:ref:base.control_registers.ASCR.AE:) is one\\
+(:ref:base.control_registers.PTCR.LA57:) & every entry\\
+(:ref:base.control_registers.ASCR.ASID:) & non-global entry while (:ref:base.control_registers.ASCR.AE:) is one\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -33,14 +33,14 @@
 \textbf{Operation} & \textbf{Non-Global Entries} & \textbf{Global Entries}\\
 \midrule
 \endhead
-\texttt{WRCR PTCR with changed root\_\allowbreak{}page} & invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it & preserve only mappings whose complete leaf attributes are identical in every context\\
-\texttt{WRCR PTCR with changed LA57} & invalidate entries using the old translation geometry & invalidate entries using the old translation geometry\\
-\texttt{WRCR ASCR changing ASID while AE remains one} & select the new ASID-tagged entries & preserve\\
-\texttt{WRCR ASCR changing AE} & invalidate the old untagged context or select the new tagged context as applicable & preserve\\
+\texttt{WRCR with changed }(:ref:base.control_registers.PTCR.ROOT_PAGE:) & invalidate all current untagged entries when (:ref:base.control_registers.ASCR.AE:) is zero; when (:ref:base.control_registers.ASCR.AE:) is one software must invalidate the (:ref:base.control_registers.ASCR.ASID:) before rebinding it & preserve only mappings whose complete leaf attributes are identical in every context\\
+\texttt{WRCR with changed }(:ref:base.control_registers.PTCR.LA57:) & invalidate entries using the old translation geometry & invalidate entries using the old translation geometry\\
+\texttt{WRCR changing }(:ref:base.control_registers.ASCR.ASID:)\texttt{ while }(:ref:base.control_registers.ASCR.AE:)\texttt{ remains one} & select the new (:ref:base.control_registers.ASCR.ASID:)-tagged entries & preserve\\
+\texttt{WRCR changing }(:ref:base.control_registers.ASCR.AE:) & invalidate the old untagged context or select the new tagged context as applicable & preserve\\
 (:ref:base.instructions.SWPT:) & install PTCR and invalidate the current untagged context & preserve only identical global mappings\\
-(:ref:base.instructions.SWPTA:) & install PTCR and ASCR and select the new ASID-tagged context & preserve only identical global mappings\\
-(:ref:base.instructions.INVPAGE:) & invalidate every mapping containing the addressed linear value for the current ASID, or the current untagged context when AE is zero & invalidate every addressed global mapping containing that linear value\\
-(:ref:base.instructions.INVASID:) & invalidate every entry tagged with the selected ASID & preserve\\
+(:ref:base.instructions.SWPTA:) & install PTCR and ASCR and select the new (:ref:base.control_registers.ASCR.ASID:)-tagged context & preserve only identical global mappings\\
+(:ref:base.instructions.INVPAGE:) & invalidate every mapping containing the addressed linear value for the current (:ref:base.control_registers.ASCR.ASID:), or the current untagged context when (:ref:base.control_registers.ASCR.AE:) is zero & invalidate every addressed global mapping containing that linear value\\
+(:ref:base.instructions.INVASID:) & invalidate every entry tagged with the selected (:ref:base.control_registers.ASCR.ASID:) & preserve\\
 (:ref:base.instructions.INVTLB:) & invalidate every local entry & invalidate every local entry\\
 \bottomrule
 \end{BedrockLongTable}

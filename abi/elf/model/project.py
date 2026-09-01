@@ -13,7 +13,6 @@ from engine.entity import (
     Entity,
     EntityCatalog,
     EntityDisplayStyle,
-    EntityKind,
 )
 from engine.dependency import EntityDependency
 from engine.inventory import DirectoryInventory
@@ -67,7 +66,7 @@ class RelocationResult:
 
 
 @dataclass(frozen=True, slots=True)
-class Relocation:
+class Relocation(Entity):
     reference: Reference["Relocation"]
     source: Path
     root: Path
@@ -94,7 +93,7 @@ class StateContract:
 
 
 @dataclass(frozen=True, slots=True)
-class LinkageProtocol:
+class LinkageProtocol(Entity):
     reference: Reference["LinkageProtocol"]
     source: Path
     root: Path
@@ -105,7 +104,7 @@ class LinkageProtocol:
 
 
 @dataclass(frozen=True, slots=True)
-class TlsModel:
+class TlsModel(Entity):
     reference: Reference["TlsModel"]
     source: Path
     root: Path
@@ -117,7 +116,7 @@ class TlsModel:
 
 
 @dataclass(frozen=True, slots=True)
-class CodeModel:
+class CodeModel(Entity):
     reference: Reference["CodeModel"]
     source: Path
     root: Path
@@ -180,7 +179,7 @@ class EntryState:
 
 
 @dataclass(frozen=True, slots=True)
-class ElfRegisterGroup:
+class ElfRegisterGroup(Entity):
     reference: Reference["ElfRegisterGroup"]
     source: Path
     root: Path
@@ -266,8 +265,10 @@ class ElfAbiProject:
         )
 
     def resolve(self, reference: Reference[_T]) -> _T:
-        entity = self.entities.resolve(cast(Reference[Entity], reference))
-        return cast(_T, entity.value)
+        return cast(
+            _T,
+            self.entities.resolve(cast(Reference[Entity], reference)),
+        )
 
     def entity_dependencies(self) -> tuple[EntityDependency, ...]:
         """Return the ELF ABI relationships intentionally exposed to tooling."""
@@ -812,29 +813,17 @@ def _build_entities(
     code_models: ReferenceIndex[CodeModel],
     register_groups: ReferenceIndex[ElfRegisterGroup],
 ) -> EntityCatalog:
-    index = ReferenceIndex[Entity]()
-    catalogs: tuple[tuple[EntityKind, ReferenceIndex[object]], ...] = (
-        (EntityKind.ELF_RELOCATION, cast(ReferenceIndex[object], relocations)),
-        (EntityKind.ELF_LINKAGE_PROTOCOL, cast(ReferenceIndex[object], protocols)),
-        (EntityKind.ELF_TLS_MODEL, cast(ReferenceIndex[object], tls_models)),
-        (EntityKind.ELF_CODE_MODEL, cast(ReferenceIndex[object], code_models)),
-        (EntityKind.ELF_DEBUG_REGISTER, cast(ReferenceIndex[object], register_groups)),
-    )
-    for kind, values in catalogs:
-        for typed_reference, value in values.items():
-            reference = cast(Reference[Entity], typed_reference)
+    entries: list[tuple[Entity, str, EntityDisplayStyle]] = []
+    for values in (
+        relocations,
+        protocols,
+        tls_models,
+        code_models,
+        register_groups,
+    ):
+        for value in values.values():
             display = getattr(value, "id", None)
             if not isinstance(display, str):
                 raise ValueError("ELF entity must provide a display identifier")
-            index.register(
-                reference,
-                Entity(
-                    reference,
-                    kind,
-                    display,
-                    value.source,
-                    value,
-                    EntityDisplayStyle.CODE,
-                ),
-            )
-    return EntityCatalog(index)
+            entries.append((value, display, EntityDisplayStyle.CODE))
+    return EntityCatalog.create(entries)

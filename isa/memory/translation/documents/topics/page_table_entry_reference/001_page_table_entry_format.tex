@@ -4,40 +4,40 @@
 Every page-table entry is one naturally aligned 64-bit descriptor. Bits
 \texttt{55..12} are a fixed (:term:base.terms.physical_frame_number:) (:term:base.terms.field:), so this format has a
 56-bit architectural physical-address ceiling. An implementation reports its
-exact \texttt{PABITS} value, from 32 through 56, through CPUID
-\texttt{ADDRESS\_WIDTHS}. In a present descriptor, PFN bits at or above that
-value (:term:base.terms.must_be_zero:). Bits \texttt{57..56} are \texttt{SW[1:0]} and are (:term:base.terms.ignored:)
+exact (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) value, from 32 through 56, through CPUID
+\texttt{ADDRESS\_WIDTHS}. In a present descriptor, (:ref:base.memory.translation.PTE.PFN:) bits at or above that
+value (:term:base.terms.must_be_zero:). Bits \texttt{57..56} are (:ref:base.memory.translation.PTE.SW:)\texttt{[1:0]} and are (:term:base.terms.ignored:)
 by hardware; bits \texttt{63..58} are (:term:base.terms.reserved:) and (:term:base.terms.must_be_zero:).
 
-\texttt{P} in bit 0 is common. When \texttt{P=0}, the remaining bits are
-(:term:base.terms.ignored:) and the entry is not present. When \texttt{P=1}, \texttt{T} in bit 1
+(:pte-field-target:base.memory.translation.PTE.P:)\texttt{P} in bit 0 is common. When (:ref:base.memory.translation.PTE.P:)\texttt{=0}, the remaining bits are
+(:term:base.terms.ignored:) and the entry is not present. When (:ref:base.memory.translation.PTE.P:)\texttt{=1}, (:pte-field-target:base.memory.translation.PTE.T:)\texttt{T} in bit 1
 selects the leaf or table-pointer layout. A nonzero (:term:base.terms.reserved:) bit in a present
 descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 
-\BedrockTableCaption{Leaf Descriptor Fields (P=1, T=0)}
+\BedrockTableCaption{Leaf Descriptor Fields ((:ref:base.memory.translation.PTE.P:)\texttt{=1}, (:ref:base.memory.translation.PTE.T:)\texttt{=0})}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
 \rowcolor{BedrockHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
-\texttt{P} & \texttt{0} & present, one\\
-\texttt{T} & \texttt{1} & leaf selector, zero\\
-\texttt{AM} & \texttt{4..2} & permission and Normal/MMIO access class\\
-\texttt{U} & \texttt{5} & user-domain permission\\
-\texttt{G} & \texttt{6} & global translation\\
-\texttt{A} & \texttt{7} & accessed state\\
-\texttt{D} & \texttt{8} & exact dirty state\\
-\texttt{CP} & \texttt{10..9} & cache policy\\
+(:ref:base.memory.translation.PTE.P:) & \texttt{0} & present, one\\
+(:ref:base.memory.translation.PTE.T:) & \texttt{1} & leaf selector, zero\\
+(:pte-field-target:base.memory.translation.PTE.AM:)\texttt{AM} & \texttt{4..2} & permission and Normal/MMIO access class\\
+(:pte-field-target:base.memory.translation.PTE.U:)\texttt{U} & \texttt{5} & user-domain permission\\
+(:pte-field-target:base.memory.translation.PTE.G:)\texttt{G} & \texttt{6} & global translation\\
+(:pte-field-target:base.memory.translation.PTE.A:)\texttt{A} & \texttt{7} & accessed state\\
+(:pte-field-target:base.memory.translation.PTE.D:)\texttt{D} & \texttt{8} & exact dirty state\\
+(:pte-field-target:base.memory.translation.PTE.CP:)\texttt{CP} & \texttt{10..9} & cache policy\\
 (:term:base.terms.reserved:) & \texttt{11} & (:term:base.terms.must_be_zero:)\\
-\texttt{PFN} & \texttt{55..12} & mapped (:term:base.terms.physical_frame_number:)\\
-\texttt{SW[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
+(:pte-field-target:base.memory.translation.PTE.PFN:)\texttt{PFN} & \texttt{55..12} & mapped (:term:base.terms.physical_frame_number:)\\
+(:pte-field-target:base.memory.translation.PTE.SW:)\texttt{SW[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
 (:term:base.terms.reserved:) & \texttt{63..58} & (:term:base.terms.must_be_zero:)\\
 \bottomrule
 \end{BedrockTabular}
 
-\BedrockTableCaption{Leaf AM Encodings}
+\BedrockTableCaption{Leaf (:ref:base.memory.translation.PTE.AM:) Encodings}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.35in}@{}}
 \toprule
-\rowcolor{BedrockHeaderFill}\textbf{AM} & \textbf{Permission} & \textbf{Class} & \textbf{Name}\\
+\rowcolor{BedrockHeaderFill}\textbf{(:ref:base.memory.translation.PTE.AM:)} & \textbf{Permission} & \textbf{Class} & \textbf{Name}\\
 \midrule
 \texttt{000} & read & Normal & \texttt{R}\\
 \texttt{001} & write & Normal & \texttt{W}\\
@@ -53,42 +53,42 @@ descriptor raises (:ref:base.events.EXCEPTION.MALFORMED_PAGE_TABLE_ENTRY:).
 No leaf encoding grants both write and execute, and no MMIO leaf grants
 execute. This W\textasciicircum X property applies to one selected translation.
 The architecture does not compare aliases: distinct descriptors for the same
-physical page may have different permissions, AM classes, or CP values.
+physical page may have different permissions, (:ref:base.memory.translation.PTE.AM:) classes, or (:ref:base.memory.translation.PTE.CP:) values.
 
-\BedrockTableCaption{Table-Pointer Descriptor Fields (P=1, T=1)}
+\BedrockTableCaption{Table-Pointer Descriptor Fields ((:ref:base.memory.translation.PTE.P:)\texttt{=1}, (:ref:base.memory.translation.PTE.T:)\texttt{=1})}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
 \rowcolor{BedrockHeaderFill}\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
-\texttt{P} & \texttt{0} & present, one\\
-\texttt{T} & \texttt{1} & table-pointer selector, one\\
-\texttt{R/W/X} & \texttt{2/3/4} & subtree maximum permissions\\
-\texttt{U} & \texttt{5} & subtree maximum user-domain permission\\
+(:ref:base.memory.translation.PTE.P:) & \texttt{0} & present, one\\
+(:ref:base.memory.translation.PTE.T:) & \texttt{1} & table-pointer selector, one\\
+(:pte-field-target:base.memory.translation.PTE.R:)(:pte-field-target:base.memory.translation.PTE.W:)(:pte-field-target:base.memory.translation.PTE.X:)\texttt{R/W/X} & \texttt{2/3/4} & subtree maximum permissions\\
+(:ref:base.memory.translation.PTE.U:) & \texttt{5} & subtree maximum user-domain permission\\
 (:term:base.terms.reserved:) & \texttt{6} & (:term:base.terms.must_be_zero:)\\
-\texttt{A} & \texttt{7} & accessed state\\
+(:ref:base.memory.translation.PTE.A:) & \texttt{7} & accessed state\\
 (:term:base.terms.reserved:) & \texttt{11..8} & (:term:base.terms.must_be_zero:)\\
-\texttt{PFN} & \texttt{55..12} & next-table (:term:base.terms.physical_frame_number:)\\
-\texttt{SW[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
+(:ref:base.memory.translation.PTE.PFN:) & \texttt{55..12} & next-table (:term:base.terms.physical_frame_number:)\\
+(:ref:base.memory.translation.PTE.SW:)\texttt{[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
 (:term:base.terms.reserved:) & \texttt{63..58} & (:term:base.terms.must_be_zero:)\\
 \bottomrule
 \end{BedrockTabular}
 
-A table pointer with \texttt{R=W=X=0}, or a table pointer at L1, is malformed.
-The walker begins with R, W, X, and U enabled, intersects each table bitmap and
-U bit, then intersects the terminating leaf\textquotesingle{}s decoded AM permissions and U bit.
-The leaf alone supplies G, CP, and Normal/MMIO class. A leaf at level $L$ must
+A table pointer with (:ref:base.memory.translation.PTE.R:)\texttt{=}(:ref:base.memory.translation.PTE.W:)\texttt{=}(:ref:base.memory.translation.PTE.X:)\texttt{=0}, or a table pointer at L1, is malformed.
+The walker begins with (:ref:base.memory.translation.PTE.R:), (:ref:base.memory.translation.PTE.W:), (:ref:base.memory.translation.PTE.X:), and (:ref:base.memory.translation.PTE.U:) enabled, intersects each table bitmap and
+(:ref:base.memory.translation.PTE.U:) bit, then intersects the terminating leaf\textquotesingle{}s decoded (:ref:base.memory.translation.PTE.AM:) permissions and (:ref:base.memory.translation.PTE.U:) bit.
+The leaf alone supplies (:ref:base.memory.translation.PTE.G:), (:ref:base.memory.translation.PTE.CP:), and Normal/MMIO class. A leaf at level $L$ must
 have a physical base aligned to $2^{12+9(L-1)}$ bytes.
 
-The CP (:term:base.terms.field:) is orthogonal to AM: all 32 AM/CP combinations are structurally
-valid. CP values 0 through 3 mean cacheable write-back, coherent uncacheable,
-coherent write-through, and coherent write-combining respectively. CP never
+The (:ref:base.memory.translation.PTE.CP:) (:term:base.terms.field:) is orthogonal to (:ref:base.memory.translation.PTE.AM:): all 32 (:ref:base.memory.translation.PTE.AM:)/(:ref:base.memory.translation.PTE.CP:) combinations are structurally
+valid. (:ref:base.memory.translation.PTE.CP:) values 0 through 3 mean cacheable write-back, coherent uncacheable,
+coherent write-through, and coherent write-combining respectively. (:ref:base.memory.translation.PTE.CP:) never
 weakens an MMIO execution rule.
 
-Hardware sets A on each structurally valid descriptor consumed by a completed
-walk and may also set A during a speculative walk whose instruction later
-faults or is squashed. D is set only when the corresponding store or atomic update
-commits, and every required D update succeeds before its memory update becomes
-visible. Hardware A/D changes are conditional atomic updates of the complete
+Hardware sets (:ref:base.memory.translation.PTE.A:) on each structurally valid descriptor consumed by a completed
+walk and may also set (:ref:base.memory.translation.PTE.A:) during a speculative walk whose instruction later
+faults or is squashed. (:ref:base.memory.translation.PTE.D:) is set only when the corresponding store or atomic update
+commits, and every required (:ref:base.memory.translation.PTE.D:) update succeeds before its memory update becomes
+visible. Hardware (:ref:base.memory.translation.PTE.A:)/(:ref:base.memory.translation.PTE.D:) changes are conditional atomic updates of the complete
 64-bit PTE and preserve every other (:term:base.terms.field:). A concurrent change causes a
 re-read and complete revalidation; stale (:term:base.terms.field|plural:) are never written back.
-(:ref:base.instructions.PTQUERY:) and (:ref:base.instructions.VTOP:) do not modify A or D.
+(:ref:base.instructions.PTQUERY:) and (:ref:base.instructions.VTOP:) do not modify (:ref:base.memory.translation.PTE.A:) or (:ref:base.memory.translation.PTE.D:).

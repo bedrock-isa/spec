@@ -1,7 +1,7 @@
 \subsection{Base Identity}
-Class \texttt{0x00000000}, leaf \texttt{0x0000} reports \texttt{MAX\_LEAF=0} and \texttt{MAX\_INDEX=18} in its
+Class \texttt{0x00000000}, leaf \texttt{0x0000} reports (:cpuid-field-target:base.cpuid.BASE.IDENTITY.HEADER.MAX_LEAF:)\texttt{MAX\_LEAF}\texttt{=0} and (:cpuid-field-target:base.cpuid.BASE.IDENTITY.HEADER.MAX_INDEX:)\texttt{MAX\_INDEX}\texttt{=18} in its
 index-zero (:term:base.terms.header:). An implementation recognizing only the classes defined by this specification reports
-\texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports the highest
+(:cpuid-field-target:base.cpuid.BASE.IDENTITY.HEADER.MAX_CLASS:)\texttt{MAX\_CLASS}\texttt{=2}; an implementation that recognizes a higher implementation-defined class reports the highest
 such selector. The base-identity (:term:base.terms.payload:) is:
 
 \begin{BedrockListedFormatDiagram}{CPUID Base Identity Result Formats}
@@ -23,23 +23,23 @@ such selector. The base-identity (:term:base.terms.payload:) is:
 \rowcolor{BedrockHeaderFill}
 \textbf{Index} & \textbf{Contents}\\
 \midrule
-1 & bits 31..0 \texttt{IMPLEMENTATION\_ID}; bits 47..32 \texttt{ARCHITECTURE\_ID}; bits 63..48 \texttt{VENDOR\_ID}\\
-2 & bits 15..0 \texttt{ARCHITECTURE\_REVISION}; bits 31..16 \texttt{IMPLEMENTATION\_REVISION}; bits 63..32 zero\\
+1 & bits 31..0 (:cpuid-field-target:base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID:)\texttt{IMPLEMENTATION\_ID}; bits 47..32 (:cpuid-field-target:base.cpuid.BASE.IDENTITY.IDENTITY.ARCHITECTURE_ID:)\texttt{ARCHITECTURE\_ID}; bits 63..48 (:cpuid-field-target:base.cpuid.BASE.IDENTITY.IDENTITY.VENDOR_ID:)\texttt{VENDOR\_ID}\\
+2 & bits 15..0 (:cpuid-field-target:base.cpuid.BASE.IDENTITY.REVISIONS.ARCHITECTURE_REVISION:)\texttt{ARCHITECTURE\_REVISION}; bits 31..16 (:cpuid-field-target:base.cpuid.BASE.IDENTITY.REVISIONS.IMPLEMENTATION_REVISION:)\texttt{IMPLEMENTATION\_REVISION}; bits 63..32 zero\\
 3--10 & 64-byte vendor name\\
 11--18 & 64-byte processor name\\
 \bottomrule
 \end{BedrockTabular}
 
-\texttt{VENDOR\_ID} selects the vendor namespace in which \texttt{IMPLEMENTATION\_ID} is interpreted.
-\texttt{IMPLEMENTATION\_ID} is assigned within that \texttt{VENDOR\_ID} namespace.
-\texttt{ARCHITECTURE\_ID} identifies the base ISA definition implemented by the processor, while the
-\texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies the implementation.
+(:ref:base.cpuid.BASE.IDENTITY.IDENTITY.VENDOR_ID:) selects the vendor namespace in which (:ref:base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID:) is interpreted.
+(:ref:base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID:) is assigned within that (:ref:base.cpuid.BASE.IDENTITY.IDENTITY.VENDOR_ID:) namespace.
+(:ref:base.cpuid.BASE.IDENTITY.IDENTITY.ARCHITECTURE_ID:) identifies the base ISA definition implemented by the processor, while the
+((:ref:base.cpuid.BASE.IDENTITY.IDENTITY.VENDOR_ID:), (:ref:base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID:)) pair identifies the implementation.
 
-\texttt{ARCHITECTURE\_REVISION} is the unsigned 16-bit revision of the base ISA definition selected by
-\texttt{ARCHITECTURE\_ID}; it does not imply the behavior of any other revision. Optional instruction groups,
+(:ref:base.cpuid.BASE.IDENTITY.REVISIONS.ARCHITECTURE_REVISION:) is the unsigned 16-bit revision of the base ISA definition selected by
+(:ref:base.cpuid.BASE.IDENTITY.IDENTITY.ARCHITECTURE_ID:); it does not imply the behavior of any other revision. Optional instruction groups,
 (:term:base.terms.processor_state:), and feature-specific parameters are reported separately by their CPUID leaves and feature bits.
-\texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned
-by the vendor and is compared only when both \texttt{VENDOR\_ID} and \texttt{IMPLEMENTATION\_ID} match.
+(:ref:base.cpuid.BASE.IDENTITY.REVISIONS.IMPLEMENTATION_REVISION:) is an unsigned revision assigned
+by the vendor and is compared only when both (:ref:base.cpuid.BASE.IDENTITY.IDENTITY.VENDOR_ID:) and (:ref:base.cpuid.BASE.IDENTITY.IDENTITY.IMPLEMENTATION_ID:) match.
 
 The name (:term:base.terms.field|plural:) are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies
 bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero

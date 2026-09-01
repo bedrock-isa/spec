@@ -1,0 +1,6 @@
+id: DELIVERY_FAILURE_ERROR_CODE
+bits: 64
+fields:
+- {id: FAULT_EA_VALID, lsb: 24, bits: 1}
+- {id: FAULT_LINEAR_VALID, lsb: 25, bits: 1}
+- {id: EVENT_AUX_VALID, lsb: 26, bits: 1}

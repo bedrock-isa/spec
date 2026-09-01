@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from types import MappingProxyType
 
+from .entity import Entity
 from .extension import ExtensionMetadata, ExtensionSetCatalog
 from .reference import Reference
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
@@ -112,7 +113,7 @@ class ExecutionProvider:
 
 
 @dataclass(frozen=True, slots=True)
-class DocumentTopic:
+class DocumentTopic(Entity):
     """One owner-local authored TeX source available to public composers."""
 
     owner: str

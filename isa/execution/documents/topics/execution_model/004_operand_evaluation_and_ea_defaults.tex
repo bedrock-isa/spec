@@ -9,7 +9,7 @@ Ordinary instructions accept at most one memory operand. The explicitly encoded 
 CMP, EXTSL, EXTSQ, EXTSW, EXTZL, EXTZQ, EXTZW, MOV, MOVCU, MOVUC, MOVUU, FBNDII, FBNDIX, FBNDXI, FBNDXX. Repeat behavior is available only through the repeat instructions and body-eligibility
 rules defined in Repeated Scalar Execution.
 
-An instruction either replaces the complete Z, N, C, and V FLAGS image or preserves the complete image; partial FLAGS
+An instruction either replaces the complete (:ref:base.registers.STATE.FLAGS.Z:), (:ref:base.registers.STATE.FLAGS.N:), (:ref:base.registers.STATE.FLAGS.C:), and (:ref:base.registers.STATE.FLAGS.V:) FLAGS image or preserves the complete image; partial FLAGS
 writes do not exist. Operand evaluation follows
 instruction operand order, and an instruction has one architectural commit point unless its description explicitly
 defines partial completion.

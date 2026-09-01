@@ -1,7 +1,7 @@
 \subsubsection{Other Exception Payloads}
 Integer-divide, instruction-validation, control-state, and privilege failures are independently allocated leaf events.
 Their event code identifies the precise condition, so events without a defined payload use BASIC frames and do not
-repeat a cause number in ERROR\_CODE.
+repeat a cause number in (:ref:base.events.frame.EVENT_FRAME.ERROR_CODE:).
 
 The bounds instructions report comparison failure through (:ref:base.registers.STATE.FLAGS.V:). Segment bounds failures raise
 (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:). Debug-event payloads are defined separately for their distinct

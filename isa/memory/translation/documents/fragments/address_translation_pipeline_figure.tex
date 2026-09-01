@@ -8,8 +8,8 @@
 \node[box,minimum width=2.45cm] (keep) at (6.10,0) {$m\ne0$, $b=1$\\linear = EA};
 \node[box,minimum width=2.45cm] (disabled) at (6.10,-1.55) {$m=0$\\linear = EA};
 \node[box,minimum width=1.45cm] (lin) at (8.45,0) {linear\\address};
-\node[box,minimum width=2.00cm] (page) at (10.65,0.95) {(:ref:base.control_registers.PTCR.PE:)=1\\page-table\\translation};
-\node[box,minimum width=2.00cm] (direct) at (10.65,-0.95) {(:ref:base.control_registers.PTCR.PE:)=0\\use linear\\directly};
+\node[box,minimum width=2.00cm] (page) at (10.65,0.95) {(:ref:base.control_registers.PTCR.PE:)\texttt{=1}\\page-table\\translation};
+\node[box,minimum width=2.00cm] (direct) at (10.65,-0.95) {(:ref:base.control_registers.PTCR.PE:)\texttt{=0}\\use linear\\directly};
 \node[box,minimum width=1.75cm] (out) at (12.90,0) {memory-system\\address};
 \draw[->] (ea.east) -- (sel.west);
 \coordinate (modebranch) at (2.75,0);

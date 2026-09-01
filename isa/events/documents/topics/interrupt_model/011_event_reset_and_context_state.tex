@@ -7,7 +7,7 @@ The transition clears R0 through R15, SP, and FLAGS. It sets PC to BOOTPC and se
 every other STATUS bit. It clears CS, DS, SS, GS0 through GS5, PTCR, ASCR, ECR, EPC, ECS, EDS, the complete user
 context bank (UPC, USP, UCS, UDS, USS, UCTL, and UINFO), and the configured event stacks and segments (SSS, SSP,
 ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWALK. Clearing ECR clears its
-hardware-managed NMI\_P (:term:base.terms.field:) as part of the same transition.
+hardware-managed (:ref:base.control_registers.ECR.NMI_P:) as part of the same transition.
 It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability
 reported by (:ref:base.control_registers.ICAP.MAX_ID:).
 It resets DTRSEL and disables every architectural debug-trigger slot.
@@ -24,7 +24,7 @@ values before applying the same (:term:base.terms.processor_state_image:) to eac
 selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops
 before setting (:ref:base.control_registers.ECR.V:) or entering user mode.
 
-ECR, entry and stack registers, (:ref:base.registers.STATE.STATUS.EDEPTH:)/UO, hidden current DFA, the interrupt file, the debug-trigger array, and
+ECR, entry and stack registers, (:ref:base.registers.STATE.STATUS.EDEPTH:)/(:ref:base.registers.STATE.STATUS.UO:), hidden current DFA, the interrupt file, the debug-trigger array, and
 the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software
 includes the applicable non-debug state when switching supervisor contexts; debug-trigger state is managed separately.
 Payloads and full event frames reside in byte-addressed (:term:base.terms.normal_memory:) owned by the interrupted context.

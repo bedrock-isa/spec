@@ -7,9 +7,9 @@ stable until reset. A (:term:VECTOR.terms.predicate_register:) contains one bit 
 (:term:VECTOR.terms.vector_register:); its packed image therefore occupies VLEN/64 bytes. Reset
 clears every vector and predicate bit.
 
-The \texttt{VECTOR} discovery predicate and the \texttt{VECTOR\_PARAMETERS}
+The (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:) discovery predicate and the \texttt{VECTOR\_PARAMETERS}
 CPUID leaf report the extension and VLEN. Integer and raw-bit vector forms
-require \texttt{VECTOR}. Floating-point vector operations are provided by the
-separate \texttt{VECTORFP} extension.
+require (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:). Floating-point vector operations are provided by the
+separate (:ref:VECTORFP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTORFP:) extension.
 
 (:register-figure:VECTOR:VECTOR,PREDICATE:)

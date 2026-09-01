@@ -8,6 +8,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, cast
 
+from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex, UnknownReferenceError
@@ -46,7 +47,7 @@ class CpuidIndexRange:
 
 
 @dataclass(frozen=True, slots=True)
-class CpuidField:
+class CpuidField(Entity):
     """One named allocation in a 64-bit CPUID result."""
 
     reference: Reference["CpuidField"]
@@ -64,7 +65,28 @@ class CpuidField:
 
 
 @dataclass(frozen=True, slots=True)
-class CpuidQuery:
+class CpuidLayout(Entity):
+    """One reusable result layout owned by a CPUID leaf."""
+
+    reference: Reference["CpuidLayout"]
+    source: Path
+    id: str
+    fields: tuple[CpuidField, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CpuidCommonHeader(Entity):
+    """The semantic fields shared by every CPUID index-zero header."""
+
+    reference: Reference["CpuidCommonHeader"]
+    source: Path
+    id: str
+    bits: int
+    fields: tuple[CpuidField, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CpuidQuery(Entity):
     """One fixed or indexed CPUID query allocation."""
 
     reference: Reference["CpuidQuery"]
@@ -75,7 +97,7 @@ class CpuidQuery:
 
 
 @dataclass(frozen=True, slots=True)
-class CpuidLeaf:
+class CpuidLeaf(Entity):
     """One CPUID leaf definition or overlay fragment."""
 
     reference: Reference["CpuidLeaf"]
@@ -85,11 +107,12 @@ class CpuidLeaf:
     name: str
     value: int | None
     extends: Reference["CpuidLeaf"] | None
+    layouts: Mapping[str, CpuidLayout]
     queries: tuple[CpuidQuery, ...]
 
 
 @dataclass(frozen=True, slots=True)
-class CpuidClass:
+class CpuidClass(Entity):
     """One authored class definition or overlay fragment."""
 
     reference: Reference["CpuidClass"]
@@ -119,8 +142,12 @@ class CpuidReferenceIndexes:
 
     classes: ReferenceIndex[CpuidClass]
     leaves: ReferenceIndex[CpuidLeaf]
+    layouts: ReferenceIndex[CpuidLayout]
     queries: ReferenceIndex[CpuidQuery]
     fields: ReferenceIndex[CpuidField]
+    layout_fields: ReferenceIndex[CpuidField]
+    common_headers: ReferenceIndex[CpuidCommonHeader]
+    common_header_fields: ReferenceIndex[CpuidField]
 
 
 class CpuidResolutionError(ValueError):
@@ -146,6 +173,7 @@ class CpuidCatalog:
     """The union of distributed base and extension CPUID allocations."""
 
     namespaces: Mapping[str, CpuidNamespace]
+    common_header: CpuidCommonHeader
     references: CpuidReferenceIndexes
 
     @classmethod
@@ -159,14 +187,19 @@ class CpuidCatalog:
         references = CpuidReferenceIndexes(
             ReferenceIndex[CpuidClass](),
             ReferenceIndex[CpuidLeaf](),
+            ReferenceIndex[CpuidLayout](),
             ReferenceIndex[CpuidQuery](),
             ReferenceIndex[CpuidField](),
+            ReferenceIndex[CpuidField](),
+            ReferenceIndex[CpuidCommonHeader](),
+            ReferenceIndex[CpuidField](),
         )
+        common_header = _load_common_header(root, references)
         namespaces: dict[str, CpuidNamespace] = {}
         for owner, namespace_root in extensions.owner_roots():
             namespace = _load_namespace(owner, namespace_root, root, references)
             namespaces[owner] = namespace
-        return cls(MappingProxyType(namespaces), references)
+        return cls(MappingProxyType(namespaces), common_header, references)
 
     @property
     def base(self) -> CpuidNamespace:
@@ -396,6 +429,35 @@ def compose_selector(class_value: int, leaf_value: int, index: int) -> int:
     return class_value << 32 | leaf_value << 16 | index
 
 
+def _load_common_header(
+    isa_root: Path, references: CpuidReferenceIndexes
+) -> CpuidCommonHeader:
+    source = isa_root / "cpuid/common_header.yaml"
+    raw = _load_validated(source, isa_root / "schemas/cpuid-common-header.yaml")
+    reference: Reference[CpuidCommonHeader] = Reference(
+        "base", ("cpuid",), raw["id"]
+    )
+    fields = tuple(
+        CpuidField(
+            Reference(
+                reference.owner,
+                (*reference.path, reference.element),
+                value["id"],
+            ),
+            source,
+            value["id"],
+            value["lsb"],
+            value["bits"],
+        )
+        for value in raw["fields"]
+    )
+    header = CpuidCommonHeader(reference, source, raw["id"], raw["bits"], fields)
+    references.common_headers.register(header.reference, header)
+    for field in fields:
+        references.common_header_fields.register(field.reference, field)
+    return header
+
+
 def _load_namespace(
     owner: str,
     namespace_root: Path,
@@ -469,7 +531,31 @@ def _load_leaf(
     reference: Reference[CpuidLeaf] = Reference(
         owner, ("cpuid", class_id), leaf_id
     )
-    layouts = document.get("layouts", {})
+    raw_layouts = document.get("layouts", {})
+    layouts: dict[str, CpuidLayout] = {}
+    for layout_id, raw_layout in raw_layouts.items():
+        layout_reference: Reference[CpuidLayout] = Reference(
+            owner, ("cpuid", class_id, leaf_id), layout_id
+        )
+        layout_fields = tuple(
+            CpuidField(
+                reference=Reference(
+                    owner,
+                    ("cpuid", class_id, leaf_id, layout_id),
+                    raw_field["id"],
+                ),
+                source=source,
+                id=raw_field["id"],
+                lsb=raw_field["lsb"],
+                bits=raw_field["bits"],
+            )
+            for raw_field in raw_layout["fields"]
+        )
+        layout = CpuidLayout(layout_reference, source, layout_id, layout_fields)
+        references.layouts.register(layout.reference, layout)
+        for field in layout_fields:
+            references.layout_fields.register(field.reference, field)
+        layouts[layout_id] = layout
     queries: list[CpuidQuery] = []
     for raw_query in document["queries"]:
         query_id = raw_query["id"]
@@ -479,7 +565,7 @@ def _load_leaf(
         raw_fields: list[Mapping[str, Any]] = []
         layout_id = raw_query.get("layout")
         if layout_id is not None:
-            layout = layouts.get(layout_id)
+            layout = raw_layouts.get(layout_id)
             if layout is None:
                 raise ValueError(
                     f"{source}: query {query_id!r} uses unknown layout {layout_id!r}"
@@ -517,6 +603,7 @@ def _load_leaf(
         name=document["name"],
         value=document.get("value"),
         extends=_optional_leaf_reference(document.get("extends")),
+        layouts=MappingProxyType(layouts),
         queries=tuple(queries),
     )
 

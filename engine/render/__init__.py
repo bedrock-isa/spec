@@ -18,7 +18,15 @@ from .register_model_figure import (
     RegisterFigureProjection,
     RegisterModelFigureRenderer,
 )
+from .page_table_entry_field_target import PageTableEntryFieldTargetRenderer
 from .register_field_target import RegisterFieldTargetRenderer
+from .structured_field_target import (
+    CpuidFieldTargetRenderer,
+    DebugTriggerTargetRenderer,
+    EventStructureTargetRenderer,
+    InstructionHeaderFieldTargetRenderer,
+    SaveAreaFieldTargetRenderer,
+)
 from .latex_document import (
     DocumentProjection,
     InstructionBitSegment,
@@ -76,7 +84,13 @@ __all__ = [
     "ImplementationDisclosureRenderer",
     "RegisterModelFigureRenderer",
     "RegisterFigureProjection",
+    "PageTableEntryFieldTargetRenderer",
     "RegisterFieldTargetRenderer",
+    "CpuidFieldTargetRenderer",
+    "DebugTriggerTargetRenderer",
+    "EventStructureTargetRenderer",
+    "InstructionHeaderFieldTargetRenderer",
+    "SaveAreaFieldTargetRenderer",
     "InstructionEntryRenderer",
     "InstructionBitSegment",
     "InstructionByteProjection",

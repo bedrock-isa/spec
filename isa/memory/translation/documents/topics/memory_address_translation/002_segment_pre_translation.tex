@@ -13,9 +13,9 @@ address in bounds-only mode.
 \rowcolor{BedrockHeaderFill}
 \textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
 \midrule
-disabled & m = 0 & no segment-window check & linear = EA\\
-translated window & m != 0, b = 0 & complete byte range lies within $0 \le \mathrm{EA}<\mathrm{span}$ & linear = base + EA\\
-bounds-only window & m != 0, b = 1 & complete byte range lies within $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$ & linear = EA\\
+disabled & (:ref:base.registers.SEGMENT.M:)\texttt{=0} & no segment-window check & linear = EA\\
+translated window & (:ref:base.registers.SEGMENT.M:)\texttt{!=0}, (:ref:base.registers.SEGMENT.B:)\texttt{=0} & complete byte range lies within $0 \le \mathrm{EA}<\mathrm{span}$ & linear = base + EA\\
+bounds-only window & (:ref:base.registers.SEGMENT.M:)\texttt{!=0}, (:ref:base.registers.SEGMENT.B:)\texttt{=1} & complete byte range lies within $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$ & linear = EA\\
 \bottomrule
 \end{BedrockTabular}
 
@@ -28,6 +28,6 @@ failure raises (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:) before the
 
 The segment result is the (:term:base.terms.linear_address:). With (:ref:base.control_registers.PTCR.PE:) set, the page-table walker consumes that address and applies
 the selected PTE frame and attributes. With paging disabled, the (:term:base.terms.linear_address:) is the physical byte address and
-must fit the implementation PABITS value. An out-of-range direct address raises
+must fit (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:). An out-of-range direct address raises
 (:ref:base.events.EXCEPTION.PHYSICAL_ADDRESS_FAULT:). An invalid segment image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:) when written; a failed segment bound or
 canonical-address check raises (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:) or (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:), respectively, during access.

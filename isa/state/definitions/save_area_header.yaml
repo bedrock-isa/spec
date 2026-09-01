@@ -1,0 +1,8 @@
+id: BASE_HEADER
+bits: 64
+fields:
+- {id: FMT, lsb: 0, bits: 4}
+- {id: GS_VALID, lsb: 4, bits: 6}
+- {id: DFA, lsb: 10, bits: 1}
+- {id: FLAGS, lsb: 20, bits: 16}
+- {id: STATUS, lsb: 36, bits: 16}

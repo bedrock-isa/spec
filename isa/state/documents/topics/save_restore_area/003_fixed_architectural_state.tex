@@ -1,8 +1,8 @@
 \subsection{Fixed Architectural State}
 The fixed block contains the base (:term:base.terms.header:), state-block bitmap, R0 through R15, and GS0 through GS5 images.
 
-The (:term:base.terms.header:) carries FLAGS, STATUS, the hidden current-DFA bit, format, and GS-validity state. \texttt{GS\_VALID}
+The (:term:base.terms.header:) carries (:ref:base.state.save_area.BASE_HEADER.FLAGS:), (:ref:base.state.save_area.BASE_HEADER.STATUS:), the hidden (:ref:base.state.save_area.BASE_HEADER.DFA:) bit, (:ref:base.state.save_area.BASE_HEADER.FMT:), and (:ref:base.state.save_area.BASE_HEADER.GS_VALID:). (:ref:base.state.save_area.BASE_HEADER.GS_VALID:)
 selects which GS images are meaningful.
 
 Per-processor debug-trigger slots and their selector are not part of the fixed block or any SAVE/RESTORE extension
-component. (:ref:base.registers.STATE.STATUS.TF:) and (:ref:base.registers.STATE.STATUS.RF:) remain part of the saved STATUS execution context.
+component. (:ref:base.registers.STATE.STATUS.TF:) and (:ref:base.registers.STATE.STATUS.RF:) remain part of the saved (:ref:base.state.save_area.BASE_HEADER.STATUS:) execution context.
