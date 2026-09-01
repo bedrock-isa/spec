@@ -6,7 +6,22 @@ from pathlib import Path
 import re
 
 from ..reference import Reference, ReferenceError, UnknownReferenceError
-from ..vector_diagram import VectorDiagram, VectorExample, render_tikz, tex_escape
+from ..vector_diagram import (
+    CountedPredicateRangeExample,
+    FloatingPointWidthConversionExample,
+    IntegerWidthConversionExample,
+    PredicateLaneTransferExample,
+    PredicateWidthConversionExample,
+    PredicatedVectorLoadExample,
+    PredicatedVectorReductionExample,
+    ScalarVectorTransferExample,
+    StatefulPredicateRangeExample,
+    VectorDiagram,
+    VectorExample,
+    VectorLaneTransferExample,
+    render_tikz,
+    tex_escape,
+)
 
 
 _DIAGRAM_DIRECTIVE_RE = re.compile(
@@ -23,39 +38,42 @@ def _layout(example: VectorExample) -> tuple[str, str, str]:
     """Return the established page reservation and TikZ unit scales."""
 
     has_predicate_row = any(row["role"] == "predicate" for row in example.rows)
-    if example.variant == "vector-lane-transfer" and has_predicate_row:
+    if isinstance(example, VectorLaneTransferExample) and has_predicate_row:
         needspace = 2.21 + 0.48 * (len(example.rows) - 2)
         if not example.scalable:
             needspace += 0.22
         return f"{needspace:.2f}in", ".76cm", ".70cm"
-    if example.variant == "predicate-width-conversion":
+    if isinstance(example, PredicateWidthConversionExample):
         return "3.20in", ".76cm", ".70cm"
-    if example.variant == "predicate-lane-transfer":
+    if isinstance(example, PredicateLaneTransferExample):
         if len(example.rows) == 3:
             needspace = "2.69in" if example.scalable else "2.91in"
         else:
             needspace = "2.60in"
         return needspace, ".76cm", ".70cm"
-    if example.variant == "integer-width-conversion" and has_predicate_row:
+    if isinstance(example, IntegerWidthConversionExample):
         return "3.29in", ".76cm", ".70cm"
-    if example.variant == "predicate-range-generation":
+    if isinstance(
+        example, (StatefulPredicateRangeExample, CountedPredicateRangeExample)
+    ):
         needspace = (
             "3.45in"
-            if example.data is not None and "states" in example.data
+            if isinstance(example, StatefulPredicateRangeExample)
             else "3.25in"
         )
         return needspace, ".76cm", ".70cm"
-    if example.variant == "scalar-vector-transfer":
-        needspace = "3.25in" if len(example.data["scalars"]) > 1 else "2.50in"
+    if isinstance(example, ScalarVectorTransferExample):
+        needspace = "3.25in" if len(example.scalars) > 1 else "2.50in"
         return needspace, ".76cm", ".70cm"
-    if example.variant == "predicated-vector-load":
+    if isinstance(example, PredicatedVectorLoadExample):
         return "4.25in", ".76cm", ".70cm"
-    if example.variant == "predicated-vector-reduction":
+    if isinstance(example, PredicatedVectorReductionExample):
         return "4.05in", ".76cm", ".70cm"
-    if example.variant == "floating-point-width-conversion":
+    if isinstance(example, FloatingPointWidthConversionExample):
         return "3.29in", ".76cm", ".70cm"
-    x_scale = ".94cm" if example.variant == "integer-width-conversion" else "0.72cm"
-    return "2.50in", x_scale, "0.66cm"
+    if isinstance(example, VectorLaneTransferExample):
+        return "2.50in", "0.72cm", "0.66cm"
+    raise TypeError(f"unsupported vector example {type(example).__name__}")
 
 
 class VectorDiagramRenderer:

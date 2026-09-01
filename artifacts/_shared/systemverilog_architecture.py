@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
+from engine.register import ConstantReset
 from engine.generation import (
     ArtifactGenerationContext,
     ArtifactGenerator,
@@ -481,8 +482,7 @@ class RegisterContractsGenerator(_Generator):
                             else (1 << 64) - 1
                         )
                         reset_known = (
-                            register.reset is not None
-                            and register.reset.value is not None
+                            isinstance(register.reset, ConstantReset)
                         )
                         registers.append(
                             RegisterContractProjection(
@@ -528,8 +528,7 @@ class RegisterContractsGenerator(_Generator):
                     else (1 << 64) - 1
                 )
                 reset_known = (
-                    register.reset is not None
-                    and register.reset.value is not None
+                    isinstance(register.reset, ConstantReset)
                 )
                 registers.append(
                     RegisterContractProjection(

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ..dependency import DependencyGraph
+from ..encoding import AllowedOperandConstraint, ExcludedOperandConstraint
 from ..entity import (
     Entity,
     EntityDisplayStyle,
@@ -32,7 +33,18 @@ from ..semantic_text import (
     TextOrigin,
 )
 from ..terminology import Term, TermCatalog, TermGroup
-from ..type_system import FieldTypeKind
+from ..type_system import (
+    EffectiveAddressFieldType,
+    EnumConditionFieldType,
+    FlagsFieldType,
+    ImmediateFieldType,
+    MemoryOrderFieldType,
+    PageTableLevelFieldType,
+    RegisterFieldType,
+    RegisterPairSelectorFieldType,
+    RegisterSelectorFieldType,
+    SizeSelectorFieldType,
+)
 from .document_fragment import DocumentFragmentPipeline
 from .latex_source import LatexSourcePreprocessor
 
@@ -537,18 +549,18 @@ class InstructionEntryRenderer:
     @staticmethod
     def _field_label(field: "FieldBinding", field_type: "FieldType") -> str:
         names = {
-            FieldTypeKind.SIZE_SELECTOR: "Size field",
-            FieldTypeKind.EFFECTIVE_ADDRESS: "Effective Address field",
-            FieldTypeKind.REGISTER_SELECTOR: "Register field",
-            FieldTypeKind.REGISTER: "Register field",
-            FieldTypeKind.REGISTER_PAIR_SELECTOR: "Register-pair field",
-            FieldTypeKind.ENUM_CONDITION: "Condition field",
-            FieldTypeKind.IMMEDIATE: "Immediate field",
-            FieldTypeKind.MEMORY_ORDER: "Memory-order field",
-            FieldTypeKind.FLAGS: "Flags field",
-            FieldTypeKind.PAGE_TABLE_LEVEL: "Page-table-level field",
+            SizeSelectorFieldType: "Size field",
+            EffectiveAddressFieldType: "Effective Address field",
+            RegisterSelectorFieldType: "Register field",
+            RegisterFieldType: "Register field",
+            RegisterPairSelectorFieldType: "Register-pair field",
+            EnumConditionFieldType: "Condition field",
+            ImmediateFieldType: "Immediate field",
+            MemoryOrderFieldType: "Memory-order field",
+            FlagsFieldType: "Flags field",
+            PageTableLevelFieldType: "Page-table-level field",
         }
-        return f"{names[field_type.kind]} {tex_code(field.marker)}"
+        return f"{names[type(field_type)]} {tex_code(field.marker)}"
 
     def _field_description(
         self,
@@ -557,9 +569,8 @@ class InstructionEntryRenderer:
         field: "FieldBinding",
         field_type: "FieldType",
     ) -> str:
-        kind = field_type.kind
         target = self._operand_target(bundle, field.role)
-        if kind is FieldTypeKind.SIZE_SELECTOR:
+        if isinstance(field_type, SizeSelectorFieldType):
             choices = form.syntax.selected_size_codes or tuple(
                 value.code for value in field_type.values
             )
@@ -568,36 +579,34 @@ class InstructionEntryRenderer:
                 if choices
                 else "Selects the operand size."
             )
-        elif kind is FieldTypeKind.EFFECTIVE_ADDRESS:
+        elif isinstance(field_type, EffectiveAddressFieldType):
             text = f"Specifies {target}."
             if any(
                 constraint.role == field.role
-                and "immediate" in constraint.exclude
+                and isinstance(constraint, ExcludedOperandConstraint)
+                and "immediate" in constraint.values
                 for constraint in form.constraints
             ):
                 text += " Immediate addressing is unavailable in this form."
-        elif kind in {
-            FieldTypeKind.REGISTER_SELECTOR,
-            FieldTypeKind.REGISTER,
-        }:
+        elif isinstance(field_type, (RegisterSelectorFieldType, RegisterFieldType)):
             text = f"Selects {target}."
-        elif kind is FieldTypeKind.REGISTER_PAIR_SELECTOR:
+        elif isinstance(field_type, RegisterPairSelectorFieldType):
             text = f"Selects {target} as a register pair."
-        elif kind is FieldTypeKind.ENUM_CONDITION:
+        elif isinstance(field_type, EnumConditionFieldType):
             text = "Selects the condition code."
-        elif kind is FieldTypeKind.IMMEDIATE:
+        elif isinstance(field_type, ImmediateFieldType):
             text = "Encodes the immediate value."
-        elif kind is FieldTypeKind.MEMORY_ORDER:
+        elif isinstance(field_type, MemoryOrderFieldType):
             text = "Selects the memory ordering."
-        elif kind is FieldTypeKind.FLAGS:
+        elif isinstance(field_type, FlagsFieldType):
             text = "Selects the architectural flags."
-        elif kind is FieldTypeKind.PAGE_TABLE_LEVEL:
+        elif isinstance(field_type, PageTableLevelFieldType):
             text = "Selects the page-table level."
-        else:  # pragma: no cover - exhaustive over FieldTypeKind
-            raise ValueError(f"unsupported field type kind {kind!r}")
+        else:
+            raise TypeError(f"unsupported field type {type(field_type).__name__}")
 
         allowed = self._allowed_values(form, field.role)
-        if allowed and kind is not FieldTypeKind.SIZE_SELECTOR:
+        if allowed and not isinstance(field_type, SizeSelectorFieldType):
             text += f" Allowed encoded values: {self._value_ranges(allowed)}."
         return tex_escape(text)
 
@@ -628,9 +637,11 @@ class InstructionEntryRenderer:
     def _allowed_values(form: "EncodingForm", role: str) -> set[int]:
         allowed: set[int] = set()
         for constraint in form.constraints:
-            if constraint.role != role:
+            if constraint.role != role or not isinstance(
+                constraint, AllowedOperandConstraint
+            ):
                 continue
-            for item in constraint.allow:
+            for item in constraint.values:
                 if isinstance(item, int):
                     allowed.add(item)
                     continue

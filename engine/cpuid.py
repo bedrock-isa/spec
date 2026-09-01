@@ -98,32 +98,53 @@ class CpuidQuery(Entity):
 
 @dataclass(frozen=True, slots=True)
 class CpuidLeaf(Entity):
-    """One CPUID leaf definition or overlay fragment."""
+    """Common authored content of one CPUID leaf fragment."""
 
     reference: Reference["CpuidLeaf"]
     source: Path
     root: Path
     id: str
     name: str
-    value: int | None
-    extends: Reference["CpuidLeaf"] | None
     layouts: Mapping[str, CpuidLayout]
     queries: tuple[CpuidQuery, ...]
 
 
 @dataclass(frozen=True, slots=True)
+class AllocatedCpuidLeaf(CpuidLeaf):
+    value: int
+
+
+@dataclass(frozen=True, slots=True)
+class CpuidLeafOverlay(CpuidLeaf):
+    extends: Reference[CpuidLeaf]
+
+
+@dataclass(frozen=True, slots=True)
+class CpuidDiscoveryLeaf(CpuidLeaf):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
 class CpuidClass(Entity):
-    """One authored class definition or overlay fragment."""
+    """Common authored content of one CPUID class fragment."""
 
     reference: Reference["CpuidClass"]
     source: Path
     root: Path
     id: str
     name: str
-    value: int | None
-    extends: Reference["CpuidClass"] | None
     leaf_inventory: CpuidInventory
     leaves: Mapping[str, CpuidLeaf]
+
+
+@dataclass(frozen=True, slots=True)
+class AllocatedCpuidClass(CpuidClass):
+    value: int
+
+
+@dataclass(frozen=True, slots=True)
+class CpuidClassOverlay(CpuidClass):
+    extends: Reference[CpuidClass]
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,12 +232,12 @@ class CpuidCatalog:
         except KeyError as error:
             raise ValueError(f"unknown CPUID namespace {owner!r}") from error
 
-    def root_class(self, cpuid_class: CpuidClass) -> CpuidClass:
+    def root_class(self, cpuid_class: CpuidClass) -> AllocatedCpuidClass:
         """Resolve a CPUID class overlay to its numeric class definition."""
 
         active: list[Reference[CpuidClass]] = []
         current = cpuid_class
-        while current.extends is not None:
+        while isinstance(current, CpuidClassOverlay):
             if current.reference in active:
                 raise CpuidResolutionError(
                     current.source, "circular CPUID class overlay"
@@ -235,7 +256,7 @@ class CpuidCatalog:
                     f"ID {target.id!r}",
                 )
             current = target
-        if current.value is None:
+        if not isinstance(current, AllocatedCpuidClass):
             raise CpuidResolutionError(
                 current.source, f"incomplete CPUID class definition {current.id!r}"
             )
@@ -245,20 +266,17 @@ class CpuidCatalog:
         self, cpuid_class: CpuidClass
     ) -> CpuidLeaf | None:
         root_class = self.root_class(cpuid_class)
-        if cpuid_class.extends is None or root_class.value != 1:
+        if not isinstance(cpuid_class, CpuidClassOverlay) or root_class.value != 1:
             return None
         roots = tuple(
-            leaf for leaf in cpuid_class.leaves.values() if leaf.extends is None
+            leaf
+            for leaf in cpuid_class.leaves.values()
+            if isinstance(leaf, CpuidDiscoveryLeaf)
         )
         if len(roots) != 1:
             raise CpuidResolutionError(
                 cpuid_class.leaf_inventory.source,
                 "a class-1 extension contribution must own one discovery leaf",
-            )
-        if roots[0].value is not None:
-            raise CpuidResolutionError(
-                roots[0].source,
-                "a class-1 extension discovery leaf must not declare value",
             )
         return roots[0]
 
@@ -288,10 +306,9 @@ class CpuidCatalog:
                 )
             )
             root_class = self.root_class(cpuid_class)
-            assert root_class.value is not None
             discovery = self._extension_discovery_leaf(cpuid_class)
 
-            if current.extends is not None:
+            if isinstance(current, CpuidLeafOverlay):
                 active.append(current.reference)
                 try:
                     target = self.references.leaves.resolve(current.extends)
@@ -323,7 +340,7 @@ class CpuidCatalog:
                 directories = tuple(
                     candidate
                     for candidate in cpuid_class.leaves.values()
-                    if candidate.extends is not None
+                    if isinstance(candidate, CpuidLeafOverlay)
                     and (
                         (resolved := resolve(candidate)).class_value,
                         resolved.leaf_value,
@@ -358,7 +375,7 @@ class CpuidCatalog:
                     current, current, root_class.value, leaf_value
                 )
 
-            if current.value is None:
+            if not isinstance(current, AllocatedCpuidLeaf):
                 raise CpuidResolutionError(
                     current.source, f"incomplete CPUID leaf definition {current.id!r}"
                 )
@@ -501,17 +518,20 @@ def _load_class(
         leaf = _load_leaf(owner, class_id, leaf_root, isa_root, references)
         references.leaves.register(leaf.reference, leaf)
         leaves[leaf_id] = leaf
-    return CpuidClass(
-        reference=reference,
-        source=source,
-        root=root,
-        id=class_id,
-        name=document["name"],
-        value=document.get("value"),
-        extends=_optional_class_reference(document.get("extends")),
-        leaf_inventory=inventory,
-        leaves=MappingProxyType(leaves),
+    common = (
+        reference,
+        source,
+        root,
+        class_id,
+        document["name"],
+        inventory,
+        MappingProxyType(leaves),
     )
+    if "extends" in document:
+        return CpuidClassOverlay(
+            *common, Reference.parse(cast(str, document["extends"]))
+        )
+    return AllocatedCpuidClass(*common, document["value"])
 
 
 def _load_leaf(
@@ -595,17 +615,22 @@ def _load_leaf(
         for field in fields:
             references.fields.register(field.reference, field)
         queries.append(query)
-    return CpuidLeaf(
-        reference=reference,
-        source=source,
-        root=root,
-        id=leaf_id,
-        name=document["name"],
-        value=document.get("value"),
-        extends=_optional_leaf_reference(document.get("extends")),
-        layouts=MappingProxyType(layouts),
-        queries=tuple(queries),
+    common = (
+        reference,
+        source,
+        root,
+        leaf_id,
+        document["name"],
+        MappingProxyType(layouts),
+        tuple(queries),
     )
+    if "extends" in document:
+        return CpuidLeafOverlay(
+            *common, Reference.parse(cast(str, document["extends"]))
+        )
+    if "value" in document:
+        return AllocatedCpuidLeaf(*common, document["value"])
+    return CpuidDiscoveryLeaf(*common)
 
 
 def _parse_indexes(raw: object) -> CpuidIndexRange:
@@ -614,14 +639,6 @@ def _parse_indexes(raw: object) -> CpuidIndexRange:
     if not isinstance(raw, Mapping):
         raise ValueError(f"invalid CPUID index allocation {raw!r}")
     return CpuidIndexRange(raw["first"], raw["last"], raw.get("stride", 1))
-
-
-def _optional_class_reference(raw: object) -> Reference[CpuidClass] | None:
-    return None if raw is None else Reference.parse(cast(str, raw))
-
-
-def _optional_leaf_reference(raw: object) -> Reference[CpuidLeaf] | None:
-    return None if raw is None else Reference.parse(cast(str, raw))
 
 
 def _load_inventory(owner: str, root: Path, key: str) -> CpuidInventory:

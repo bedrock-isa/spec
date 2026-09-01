@@ -9,8 +9,27 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from ..ea_mode import (
+    CompactExtensionEAMode,
+    EAEncoding,
+    ExtendedExtensionEAMode,
+    FieldEASegment,
+    FixedEASegment,
+    ImmediateEAMode,
+    MemoryEAMode,
+)
+from ..encoding import AllowedOperandConstraint, ExcludedOperandConstraint
 from ..encoding_architecture import ENCODING_CLASSES_BY_NAME
+from ..instruction_metasyntax import DecimalLiteral, OperandReference
 from ..reference import Reference
+from ..type_system import (
+    EffectiveAddressFieldType,
+    PayloadType,
+    SizeSelectorFieldType,
+    field_type_source_name,
+    payload_type_is_signed,
+    payload_type_source_name,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,9 +63,17 @@ class ConstraintRangeIR:
 class ConstraintIR:
     field_symbol: str
     positions: tuple[int, ...]
-    kind: str
-    ranges: tuple[ConstraintRangeIR, ...]
     reason: str
+
+
+@dataclass(frozen=True)
+class AllowedRangesConstraintIR(ConstraintIR):
+    ranges: tuple[ConstraintRangeIR, ...]
+
+
+@dataclass(frozen=True)
+class ExcludedImmediateConstraintIR(ConstraintIR):
+    pass
 
 
 @dataclass(frozen=True)
@@ -378,11 +405,8 @@ def _operand_type_name(definition: Any) -> str:
     return name
 
 
-def _is_signed(definition: Any) -> bool:
-    if getattr(definition, "signed", None) is not None:
-        return bool(definition.signed)
-    value_type = getattr(definition, "value_type", None)
-    return value_type == "signed_integer" or definition.id.endswith("S")
+def _is_signed(definition: PayloadType) -> bool:
+    return payload_type_is_signed(definition)
 
 
 def _legal_values(type_name: str, authored: tuple[int, ...]) -> tuple[int, ...]:
@@ -408,16 +432,15 @@ def _legal_values(type_name: str, authored: tuple[int, ...]) -> tuple[int, ...]:
 def _ea_form(
     project: Any,
     mode: Any,
-    encoding: dict[str, Any],
+    encoding: EAEncoding,
     encoding_index: int,
     *,
     family: str = "",
 ) -> EaFormIR:
-    patterns = encoding["pattern"]
-    chunks = (patterns,) if isinstance(patterns, str) else tuple(patterns)
+    chunks = encoding.patterns
     joined = "".join(chunks)
     value, mask = pattern_value_mask(joined)
-    payloads = encoding.get("payloads", ())
+    payloads = encoding.payloads
     payload_binding = payloads[0] if payloads else None
     payload_definition = (
         project.types.payload_types.resolve(mode.payload_type_reference(encoding_index, 0))
@@ -429,10 +452,10 @@ def _ea_form(
         if payload_definition is not None
         else ""
     )
-    mode_id = mode["id"]
+    mode_id = mode.id
     if family:
-        update = encoding.get("autoupdate")
-        name = mode_id + (f"_{update['type']}" if update else "")
+        update = encoding.autoupdate
+        name = mode_id + (f"_{update.update_type}" if update else "")
     elif mode_id == "register":
         name = "register_indirect" if not payload_name else f"register_{payload_name}"
     elif mode_id in {"stack_pointer_displaced", "program_counter_displaced"}:
@@ -448,36 +471,50 @@ def _ea_form(
         name = mode_id
 
     fields_ir = []
-    for symbol, raw_field in sorted(mode.to_dict().get("fields", {}).items()):
-        definition = project.types.field_types.resolve(mode.field_type_reference(symbol))
+    for field in sorted(mode.fields, key=lambda item: item.symbol):
+        definition = project.types.field_types.resolve(field.type)
         fields_ir.append(
             EaFieldIR(
-                symbol,
+                field.symbol,
                 _operand_type_name(definition),
-                raw_field["role"],
+                field.role,
                 definition.bits,
-                gather_positions(joined, symbol),
+                gather_positions(joined, field.symbol),
             )
         )
-    segment = mode.to_dict().get("segment")
-    if segment is None:
-        segment_name = "default" if mode["kind"] == "memory" else ""
-    elif segment["source"] == "fixed":
-        segment_name = segment["register"]
-    else:
+    segment = mode.segment if isinstance(mode, MemoryEAMode) else None
+    if isinstance(mode, MemoryEAMode) and segment is None:
+        segment_name = "default"
+    elif isinstance(segment, FixedEASegment):
+        segment_name = segment.register
+    elif isinstance(segment, FieldEASegment):
         segment_name = "explicit"
-    base_source = mode.base_source.value
+    else:
+        segment_name = ""
+    base_source = mode.base_source.value if isinstance(mode, MemoryEAMode) else "none"
     base = "" if base_source in {"none", "encoded"} else base_source
-    extension = mode.to_dict().get("extension", {})
-    update = encoding.get("autoupdate") or {}
-    kind = "escape" if mode["kind"] == "extension" else mode["kind"]
+    extension = (
+        mode.extension
+        if isinstance(mode, (CompactExtensionEAMode, ExtendedExtensionEAMode))
+        else None
+    )
+    update = encoding.autoupdate
+    kind = (
+        "escape"
+        if isinstance(mode, CompactExtensionEAMode)
+        else "extension"
+        if isinstance(mode, ExtendedExtensionEAMode)
+        else "immediate"
+        if isinstance(mode, ImmediateEAMode)
+        else "memory"
+    )
     profile = mode.catalog.profile
     descriptor_identity = f"{profile}_{family.lower()}" if family else ""
-    referenced_family = str(extension.get("id", "")).lower()
+    referenced_family = extension.id.lower() if extension is not None else ""
     return EaFormIR(
         name=name,
         member_of_descriptor_family=descriptor_identity,
-        descriptor_bytes=len(chunks) if family else int(extension.get("bytes", 0)),
+        descriptor_bytes=len(chunks) if family else extension.bytes if extension else 0,
         patterns=tuple(_pattern_ir(chunk) for chunk in chunks),
         width=len(joined),
         value=value,
@@ -495,17 +532,17 @@ def _ea_form(
         ),
         update_target=next(
             (
-                symbol
-                for symbol, field in mode.to_dict().get("fields", {}).items()
-                if field["role"] == update.get("target")
+                field.symbol
+                for field in mode.fields
+                if update is not None and field.role == update.target
             ),
             "",
         ),
-        update_mode=str(update.get("type", "")),
+        update_mode=update.update_type if update is not None else "",
         update_difference=(
-            f"constant_{update['difference']}"
-            if isinstance(update.get("difference"), int)
-            else str(update.get("difference", ""))
+            f"constant_{update.difference}"
+            if update is not None and isinstance(update.difference, int)
+            else str(update.difference) if update is not None else ""
         ),
     )
 
@@ -515,8 +552,7 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
     profile_order: list[str] = []
     compact_widths: set[int] = set()
     for definition in project.types.field_types.values():
-        if definition.kind.value == "effective_address":
-            assert definition.profile is not None
+        if isinstance(definition, EffectiveAddressFieldType):
             if definition.profile not in profile_order:
                 profile_order.append(definition.profile)
             compact_widths.add(definition.bits)
@@ -538,7 +574,7 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
             forms = tuple(
                 _ea_form(project, mode, encoding, index, family=family)
                 for mode in modes_by_profile_type[profile, family]
-                for index, encoding in enumerate(mode["encodings"])
+                for index, encoding in enumerate(mode.encodings)
             )
             descriptor_bytes = {form.descriptor_bytes for form in forms}
             kinds = {form.kind for form in forms}
@@ -560,7 +596,7 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
         forms = tuple(
             _ea_form(project, mode, encoding, index)
             for mode in modes_by_profile_type.get((profile, "compact"), ())
-            for index, encoding in enumerate(mode["encodings"])
+            for index, encoding in enumerate(mode.encodings)
         )
         entries = []
         compact_width = next(iter(compact_widths))
@@ -618,7 +654,7 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
     payloads = tuple(
         EaPayloadIR(
             definition.id.lower(),
-            str(definition.kind),
+            payload_type_source_name(definition),
             definition.bytes * 8,
             _is_signed(definition),
             "",
@@ -661,8 +697,8 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
         if marker is not None:
             definition = project.types.field_types.resolve(reference)
             positions = gather_positions(form.pattern.code, marker)
-            if definition.kind.value == "effective_address":
-                source = EffectiveAddressSourceIR(marker, positions, definition.profile or "ea")
+            if isinstance(definition, EffectiveAddressFieldType):
+                source = EffectiveAddressSourceIR(marker, positions, definition.profile)
                 operand_role = logical.get("role", "source")
                 ea_role = (
                     operand_role
@@ -680,7 +716,11 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
                 ea_role = ""
                 ea_width = ""
             width = definition.bits
-            authored_values = tuple(item.value for item in definition.values)
+            authored_values = (
+                tuple(item.value for item in definition.values)
+                if isinstance(definition, SizeSelectorFieldType)
+                else ()
+            )
         else:
             definition = project.types.payload_types.resolve(reference)
             source = AppendedPayloadSourceIR(
@@ -715,7 +755,7 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
     displayed_fields = {
         node.field
         for node in form.syntax.displayed_operands
-        if node.field is not None
+        if isinstance(node, OperandReference) and node.field is not None
     }
     for binding in form.fields:
         if (
@@ -728,11 +768,15 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
 
     displayed_operands = form.syntax.displayed_operands
     for node_index, node in enumerate(displayed_operands):
-        if node.field is not None and node.field in field_by_marker:
+        if (
+            isinstance(node, OperandReference)
+            and node.field is not None
+            and node.field in field_by_marker
+        ):
             binding = field_by_marker[node.field]
             add_binding(binding.role, binding.type, node.field)
             continue
-        if node.angled:
+        if isinstance(node, OperandReference) and node.angled:
             match = next(
                 (
                     binding
@@ -740,7 +784,7 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
                     if _operand_type_name(
                         project.types.payload_types.resolve(binding.type)
                     ).lower()
-                    == (node.name or "").lower()
+                    == node.name.lower()
                 ),
                 unused_payloads[0] if unused_payloads else None,
             )
@@ -748,9 +792,6 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
                 unused_payloads.remove(match)
                 public_type = (
                     node.name
-                    or _operand_type_name(
-                        project.types.payload_types.resolve(match.type)
-                    )
                 ).lower()
                 if public_type.startswith("disp"):
                     public_type = "imm" + public_type.removeprefix("disp")
@@ -758,7 +799,7 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
                     public_type = "imm" + public_type.removeprefix("abs")
                 add_binding(match.role, match.type, type_name=public_type)
                 continue
-        if node.kind == "decimal" and "imm" in instruction_operands:
+        if isinstance(node, DecimalLiteral) and "imm" in instruction_operands:
             logical = instruction_operands["imm"]
             result.append(
                 OperandIR(
@@ -775,7 +816,7 @@ def _operand_ir(project: Any, bundle: Any, form: Any) -> tuple[OperandIR, ...]:
             )
             used_roles.add("imm")
             continue
-        if node.kind == "reference" and node.name in {"SP", "CS"}:
+        if isinstance(node, OperandReference) and node.name in {"SP", "CS"}:
             candidates = [role for role in instruction_operands if role not in used_roles]
             if node.name == "CS":
                 role = candidates[0]
@@ -833,7 +874,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
         FieldIR(
             binding.marker,
             _operand_type_name(project.types.field_types.resolve(binding.type)),
-            project.types.field_types.resolve(binding.type).kind.value,
+            field_type_source_name(project.types.field_types.resolve(binding.type)),
             project.types.field_types.resolve(binding.type).bits,
             gather_positions(form.pattern.code, binding.marker),
         )
@@ -846,17 +887,28 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
             raise ValueError(
                 f"{bundle.instruction.mnemonic}:{form.id}: constraint has no field"
             )
-        ranges = tuple(normalize_range(value) for value in constraint.allow)
-        kind = "allow_ranges" if ranges else f"exclude_{constraint.exclude[0]}"
-        constraints.append(
-            ConstraintIR(
-                binding.marker,
-                gather_positions(form.pattern.code, binding.marker),
-                kind,
-                ranges,
-                constraint.reason,
+        positions = gather_positions(form.pattern.code, binding.marker)
+        if isinstance(constraint, AllowedOperandConstraint):
+            constraints.append(
+                AllowedRangesConstraintIR(
+                    binding.marker,
+                    positions,
+                    constraint.reason,
+                    tuple(normalize_range(value) for value in constraint.values),
+                )
             )
-        )
+        elif isinstance(constraint, ExcludedOperandConstraint) and constraint.values == (
+            "immediate",
+        ):
+            constraints.append(
+                ExcludedImmediateConstraintIR(
+                    binding.marker, positions, constraint.reason
+                )
+            )
+        else:
+            raise ValueError(
+                f"{bundle.instruction.mnemonic}:{form.id}: unsupported constraint projection"
+            )
     layout = tuple(
         ParseEaIR(
             operand.name,

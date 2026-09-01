@@ -12,17 +12,74 @@ class InstructionMetasyntaxError(MetasyntaxError):
     """Raised when an instruction metasyntax value is malformed."""
 
 
-@dataclass(frozen=True, slots=True)
 class InstructionMetasyntaxOperand:
-    """One operand, group, or address-expression node."""
+    """Base class for one parsed instruction-metasyntax node."""
 
-    kind: str
-    name: str | None = None
+    __slots__ = ()
+
+
+@dataclass(frozen=True, slots=True)
+class OperandReference(InstructionMetasyntaxOperand):
+    """A named operand, optionally bound to an encoding-field marker."""
+
+    name: str
     angled: bool = False
     field: str | None = None
-    literal: int | None = None
-    group_style: str | None = None
-    members: tuple["InstructionMetasyntaxOperand", ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ScaleReference(InstructionMetasyntaxOperand):
+    """The distinguished scale term inside an address expression."""
+
+    angled: bool = False
+    field: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DecimalLiteral(InstructionMetasyntaxOperand):
+    """A decimal literal operand or address-expression member."""
+
+    literal: int
+
+
+@dataclass(frozen=True, slots=True)
+class AddressOperator(InstructionMetasyntaxOperand):
+    """An addition or multiplication operator inside an address expression."""
+
+    operator: str
+
+
+@dataclass(frozen=True, slots=True)
+class AddressExpression(InstructionMetasyntaxOperand):
+    """A top-level bracketed effective-address expression."""
+
+    members: tuple[InstructionMetasyntaxOperand, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class LaneIndexExpression(InstructionMetasyntaxOperand):
+    """A nested bracketed lane-index expression."""
+
+    members: tuple[InstructionMetasyntaxOperand, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class BracedOperandGroup(InstructionMetasyntaxOperand):
+    """A repeated operand group written with braces and an ellipsis."""
+
+    name: str
+    angled: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ParenthesizedOperandGroup(InstructionMetasyntaxOperand):
+    """An operand group written in parentheses."""
+
+    name: str
+    angled: bool = False
+
+
+DisplayedInstructionOperand = OperandReference | DecimalLiteral
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,25 +120,27 @@ class InstructionMetasyntax(Metasyntax):
             object.__setattr__(self, name, getattr(parsed, name))
 
     @property
-    def displayed_operands(self) -> tuple[InstructionMetasyntaxOperand, ...]:
+    def displayed_operands(self) -> tuple[DisplayedInstructionOperand, ...]:
         """Return displayed operands with address references flattened."""
 
         def address_references(
             operand: InstructionMetasyntaxOperand,
-        ) -> list[InstructionMetasyntaxOperand]:
-            result: list[InstructionMetasyntaxOperand] = []
+        ) -> list[OperandReference]:
+            if not isinstance(operand, (AddressExpression, LaneIndexExpression)):
+                return []
+            result: list[OperandReference] = []
             for member in operand.members:
-                if member.kind == "reference":
+                if isinstance(member, OperandReference):
                     result.append(member)
-                elif member.kind == "lane_index":
+                elif isinstance(member, LaneIndexExpression):
                     result.extend(address_references(member))
             return result
 
-        result: list[InstructionMetasyntaxOperand] = []
+        result: list[DisplayedInstructionOperand] = []
         for operand in self.operands:
-            if operand.kind == "address":
+            if isinstance(operand, AddressExpression):
                 result.extend(address_references(operand))
-            elif operand.kind != "group":
+            elif isinstance(operand, (OperandReference, DecimalLiteral)):
                 result.append(operand)
         return tuple(result)
 
@@ -144,36 +203,29 @@ class _InstructionMetasyntaxParser:
             self.require(">")
         return name, angled
 
-    def address_expression(self, kind: str) -> InstructionMetasyntaxOperand:
+    def address_expression(self, *, lane_index: bool) -> InstructionMetasyntaxOperand:
         members: list[InstructionMetasyntaxOperand] = []
         while True:
             if self.index >= len(self.value):
                 self.fail("unterminated address expression")
             if self.take("]"):
-                return InstructionMetasyntaxOperand(kind=kind, members=tuple(members))
+                expression = LaneIndexExpression if lane_index else AddressExpression
+                return expression(tuple(members))
             if self.value[self.index].isspace():
                 self.index += 1
                 continue
             if self.take("["):
-                members.append(self.address_expression("lane_index"))
+                members.append(self.address_expression(lane_index=True))
                 continue
             if self.value[self.index] in "+*":
-                members.append(
-                    InstructionMetasyntaxOperand(
-                        kind="operator", name=self.value[self.index]
-                    )
-                )
+                members.append(AddressOperator(self.value[self.index]))
                 self.index += 1
                 continue
             decimal = re.match(r"[0-9]+", self.value[self.index :])
             if decimal is not None:
                 spelling = decimal.group(0)
                 self.index += len(spelling)
-                members.append(
-                    InstructionMetasyntaxOperand(
-                        kind="decimal", literal=int(spelling, 10)
-                    )
-                )
+                members.append(DecimalLiteral(int(spelling, 10)))
                 continue
             name, angled = self.operand_reference()
             marker = (
@@ -181,46 +233,34 @@ class _InstructionMetasyntaxParser:
                 if self.index < len(self.value) and self.value[self.index] == "("
                 else None
             )
-            members.append(
-                InstructionMetasyntaxOperand(
-                    kind="scale" if name == "scale" else "reference",
-                    name=name,
-                    angled=angled,
-                    field=marker,
-                )
-            )
+            if name == "scale":
+                members.append(ScaleReference(angled=angled, field=marker))
+            else:
+                members.append(OperandReference(name, angled, marker))
 
     def operand(self) -> InstructionMetasyntaxOperand:
         if self.take("["):
-            return self.address_expression("address")
+            return self.address_expression(lane_index=False)
         if self.take("{ "):
             name, angled = self.operand_reference()
             self.require("... }")
-            return InstructionMetasyntaxOperand(
-                kind="group", name=name, angled=angled, group_style="braced"
-            )
+            return BracedOperandGroup(name, angled)
         if self.take("("):
             name, angled = self.operand_reference()
             self.require(")")
-            return InstructionMetasyntaxOperand(
-                kind="group", name=name, angled=angled, group_style="parenthesized"
-            )
+            return ParenthesizedOperandGroup(name, angled)
         decimal = re.match(r"[0-9]+", self.value[self.index :])
         if decimal is not None:
             spelling = decimal.group(0)
             self.index += len(spelling)
-            return InstructionMetasyntaxOperand(
-                kind="decimal", literal=int(spelling, 10)
-            )
+            return DecimalLiteral(int(spelling, 10))
         name, angled = self.operand_reference()
         marker = (
             self.field_expression()
             if self.index < len(self.value) and self.value[self.index] == "("
             else None
         )
-        return InstructionMetasyntaxOperand(
-            kind="reference", name=name, angled=angled, field=marker
-        )
+        return OperandReference(name, angled, marker)
 
     def parse(self) -> _ParsedInstruction:
         mnemonic = self.identifier("mnemonic name", mnemonic=True)

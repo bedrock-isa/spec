@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 import json
 from pathlib import Path
+import re
 
 from engine.generation import (
     ArtifactGenerationContext,
@@ -82,14 +83,15 @@ class Generator(ArtifactGenerator):
         nodes: dict[str, _Node] = {}
         for domain, provider in context.workspace.providers.items():
             for entity in provider.entities.references.values():
+                presentation = provider.entities.presentation(entity.reference)
                 self._add_node(
                     nodes,
                     context,
                     domain=domain,
                     reference=entity.reference,
-                    kind=entity.kind.value,
-                    display=entity.display,
-                    display_style=entity.display_style.value,
+                    kind=_entity_type_name(entity),
+                    display=presentation.display,
+                    display_style=presentation.display_style.value,
                     source=entity.source,
                 )
         return nodes
@@ -213,6 +215,12 @@ def _relative(path: Path, root: Path) -> str:
         return resolved.relative_to(root.resolve()).as_posix()
     except ValueError:
         return resolved.as_posix()
+
+
+def _entity_type_name(entity: object) -> str:
+    """Project a diagnostic graph grouping from the concrete entity type."""
+
+    return re.sub(r"(?<!^)(?=[A-Z])", "-", type(entity).__name__).lower()
 
 
 def _render_view(graph: Mapping[str, object]) -> str:

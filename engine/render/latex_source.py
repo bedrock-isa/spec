@@ -24,12 +24,20 @@ class LatexSourceInputProjection:
 
 @dataclass(frozen=True, slots=True)
 class LatexSourceProjection:
-    """One expanded source node before semantic TeX serialization."""
+    """Common source identity and expanded inputs of one LaTeX source node."""
 
     source: Path
-    semantic: SemanticText | None
-    style_text: str | None
     inputs: tuple[LatexSourceInputProjection, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticLatexSourceProjection(LatexSourceProjection):
+    semantic: SemanticText
+
+
+@dataclass(frozen=True, slots=True)
+class StyleLatexSourceProjection(LatexSourceProjection):
+    style_text: str
 
 
 class LatexSourcePreprocessor:
@@ -89,16 +97,12 @@ class LatexSourcePreprocessor:
             cycle = " -> ".join(str(item) for item in (*active, path))
             raise RuntimeError(f"cyclic TeX input: {cycle}")
         text = path.read_text(encoding="utf-8")
-        semantic = None
-        style_text = None
         if path.suffix != ".sty":
             text = self.fragments.expand(text, project, public_targets, path)
             text = self.diagrams.expand(text, project, path, owner)
             semantic = SemanticText.parse(text, origin=TextOrigin(path))
             if owner is not None:
                 self.dependencies.record(owner, semantic)
-        else:
-            style_text = text
 
         inputs: list[LatexSourceInputProjection] = []
         for match in LOCAL_INPUT_RE.finditer(text):
@@ -120,7 +124,9 @@ class LatexSourcePreprocessor:
                     ),
                 )
             )
-        return LatexSourceProjection(path, semantic, style_text, tuple(inputs))
+        if path.suffix == ".sty":
+            return StyleLatexSourceProjection(path, tuple(inputs), text)
+        return SemanticLatexSourceProjection(path, tuple(inputs), semantic)
 
     def _render_projection(
         self,
@@ -128,7 +134,7 @@ class LatexSourcePreprocessor:
         project,
         public_targets: PublicTargetCatalog,
     ) -> str:
-        if projection.semantic is not None:
+        if isinstance(projection, SemanticLatexSourceProjection):
             text = self.semantic.render(
                 projection.semantic,
                 project.terminology,
@@ -136,7 +142,10 @@ class LatexSourcePreprocessor:
                 escape_literals=False,
             )
         else:
-            assert projection.style_text is not None
+            if not isinstance(projection, StyleLatexSourceProjection):
+                raise TypeError(
+                    f"unsupported LaTeX source projection {type(projection).__name__}"
+                )
             text = projection.style_text
 
         inputs = iter(projection.inputs)

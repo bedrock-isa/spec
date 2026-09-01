@@ -8,12 +8,48 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from ..composition import SailProgram
-from ..encoding import EncodingForm, FieldBinding, PayloadBinding
+from ..ea_mode import (
+    CompactExtensionEAMode,
+    EAField,
+    ExtendedExtensionEAMode,
+    FieldEASegment,
+    FixedEASegment,
+    ImmediateEAMode,
+    MemoryEAMode,
+)
+from ..encoding import (
+    AllowedOperandConstraint,
+    EncodingForm,
+    ExcludedOperandConstraint,
+    FieldBinding,
+    PayloadBinding,
+)
 from ..encoding_architecture import ENCODING_CLASSES_BY_WIDTH
-from ..instruction_metasyntax import InstructionMetasyntaxOperand
+from ..instruction_metasyntax import (
+    DecimalLiteral,
+    DisplayedInstructionOperand,
+    OperandReference,
+)
 from ..project import InstructionBundle
 from ..reference import Reference
-from ..type_system import FieldType, FieldTypeKind, PayloadType, PayloadTypeKind
+from ..type_system import (
+    ControlRegisterSelectorPayloadType,
+    EffectiveAddressFieldType,
+    EnumConditionFieldType,
+    FieldType,
+    ImmediateFieldType,
+    ImmediatePayloadType,
+    MemoryOrderFieldType,
+    PageTableLevelFieldType,
+    PayloadType,
+    PcAbsolutePayloadType,
+    PcDisplacementPayloadType,
+    RegisterPairSelectorFieldType,
+    RegisterSelectorFieldType,
+    RegisterSelectorPayloadType,
+    SizeSelectorFieldType,
+    payload_type_is_signed,
+)
 from .sail_registry import ROUTE_CONSTRUCTORS, instruction_set_constructor
 
 
@@ -89,38 +125,37 @@ def _field_type_name(definition: FieldType) -> str:
 
 def _payload_type_name(definition: PayloadType) -> str:
     name = definition.id
-    if definition.kind in {
-        PayloadTypeKind.IMMEDIATE,
-        PayloadTypeKind.PC_DISPLACEMENT,
-        PayloadTypeKind.PC_ABSOLUTE,
-        PayloadTypeKind.REGISTER_SELECTOR,
-        PayloadTypeKind.CONTROL_REGISTER_SELECTOR,
-    }:
+    if isinstance(
+        definition,
+        (
+            ImmediatePayloadType,
+            PcDisplacementPayloadType,
+            PcAbsolutePayloadType,
+            RegisterSelectorPayloadType,
+            ControlRegisterSelectorPayloadType,
+        ),
+    ):
         if name == "FCONST":
             return "fconst_id"
-        signed = definition.signed is True or name.endswith("S")
+        signed = payload_type_is_signed(definition)
         return f"imm{definition.bytes * 8}{'s' if signed else ''}"
     return name.lower()
 
 
 def _field_kind(definition: FieldType) -> str:
-    if definition.kind == FieldTypeKind.EFFECTIVE_ADDRESS:
+    if isinstance(definition, EffectiveAddressFieldType):
         return "FieldEa"
-    if definition.kind == FieldTypeKind.ENUM_CONDITION:
+    if isinstance(definition, EnumConditionFieldType):
         return "FieldCondition"
-    if definition.kind == FieldTypeKind.SIZE_SELECTOR:
+    if isinstance(definition, SizeSelectorFieldType):
         return "FieldSize"
-    if definition.kind in {
-        FieldTypeKind.IMMEDIATE,
-        FieldTypeKind.PAGE_TABLE_LEVEL,
-        FieldTypeKind.MEMORY_ORDER,
-    }:
+    if isinstance(
+        definition, (ImmediateFieldType, PageTableLevelFieldType, MemoryOrderFieldType)
+    ):
         return "FieldImmediate"
-    if definition.kind in {
-        FieldTypeKind.REGISTER_SELECTOR,
-        FieldTypeKind.REGISTER_PAIR_SELECTOR,
-    }:
-        assert definition.register_group is not None
+    if isinstance(
+        definition, (RegisterSelectorFieldType, RegisterPairSelectorFieldType)
+    ):
         return "FieldFreg" if definition.register_group.element == "FPR" else "FieldRn"
     return "FieldBits"
 
@@ -169,7 +204,11 @@ def _representative_record(program: SailProgram, form: EncodingForm) -> tuple[in
     for constraint in form.constraints:
         field = form.field_for_role(constraint.role)
         assert field is not None
-        selected = _constraint_lower(constraint.allow[0]) if constraint.allow else 0x10
+        selected = (
+            _constraint_lower(constraint.values[0])
+            if isinstance(constraint, AllowedOperandConstraint)
+            else 0x10
+        )
         value = _insert_field(form.pattern.code, field.marker, value, selected)
 
     appended_bytes = sum(
@@ -205,8 +244,12 @@ def _representative_record(program: SailProgram, form: EncodingForm) -> tuple[in
 def _render_constraint(form: EncodingForm, constraint) -> str:
     field = form.field_for_role(constraint.role)
     assert field is not None
-    values = constraint.allow or constraint.exclude
-    kind = "AllowRanges" if constraint.allow else "ExcludeImmediate"
+    values = constraint.values
+    kind = (
+        "AllowRanges"
+        if isinstance(constraint, AllowedOperandConstraint)
+        else "ExcludeImmediate"
+    )
     ranges = _list(
         f"struct {{ lower = {lower}, upper = {upper} }}"
         for lower, upper in _constraint_values(values)
@@ -233,24 +276,60 @@ class _OperandRepresentation:
     name: str
     type_name: str
     access: str
-    field: FieldBinding | None = None
-    payload: PayloadBinding | None = None
-    fixed_name: str | None = None
-    fixed_value: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _FieldOperandRepresentation(_OperandRepresentation):
+    field: FieldBinding
+
+
+@dataclass(frozen=True, slots=True)
+class _PayloadOperandRepresentation(_OperandRepresentation):
+    payload: PayloadBinding
+
+
+@dataclass(frozen=True, slots=True)
+class _FixedNameOperandRepresentation(_OperandRepresentation):
+    fixed_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class _FixedValueOperandRepresentation(_OperandRepresentation):
+    fixed_value: int
 
 
 @dataclass(frozen=True, slots=True)
 class SailOperandBindingProjection:
-    """One logical operand bound to a field, payload, or fixed syntax value."""
+    """Common public identity of one lowered Sail operand binding."""
 
     name: str
     type_name: str
     access: str
-    field_marker: str | None
-    payload_type: Reference[PayloadType] | None
-    fixed_name: str | None
-    fixed_value: int | None
-    ea_profile: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SailFieldOperandBindingProjection(SailOperandBindingProjection):
+    field_marker: str
+
+
+@dataclass(frozen=True, slots=True)
+class SailEffectiveAddressOperandBindingProjection(SailFieldOperandBindingProjection):
+    ea_profile: str
+
+
+@dataclass(frozen=True, slots=True)
+class SailPayloadOperandBindingProjection(SailOperandBindingProjection):
+    payload_type: Reference[PayloadType]
+
+
+@dataclass(frozen=True, slots=True)
+class SailFixedNameOperandBindingProjection(SailOperandBindingProjection):
+    fixed_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class SailFixedValueOperandBindingProjection(SailOperandBindingProjection):
+    fixed_value: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -269,7 +348,7 @@ class SailFormProjection:
 
 def _fixed_syntax_representations(
     bundle: InstructionBundle, form: EncodingForm
-) -> dict[str, InstructionMetasyntaxOperand]:
+) -> dict[str, DisplayedInstructionOperand]:
     """Bind fixed syntax operands to logical roles used by this form.
 
     Field and payload bindings already identify their roles explicitly.  A
@@ -283,12 +362,12 @@ def _fixed_syntax_representations(
         *(field.role for field in form.fields),
         *(payload.role for payload in form.payloads),
     }
-    result: dict[str, InstructionMetasyntaxOperand] = {}
+    result: dict[str, DisplayedInstructionOperand] = {}
     displayed = form.syntax.displayed_operands
     for index, item in enumerate(displayed):
-        if item.kind == "decimal":
+        if isinstance(item, DecimalLiteral):
             preferred_role = "source"
-        elif item.kind == "reference" and item.name in {"SP", "CS"}:
+        elif isinstance(item, OperandReference) and item.name in {"SP", "CS"}:
             preferred_role = (
                 "destination" if index + 1 == len(displayed) else "source"
             )
@@ -297,7 +376,7 @@ def _fixed_syntax_representations(
 
         candidates = [name for name in logical if name not in used_roles]
         role: str | None
-        if item.kind == "decimal" and "imm" in candidates:
+        if isinstance(item, DecimalLiteral) and "imm" in candidates:
             role = "imm"
         else:
             role = next(
@@ -337,28 +416,47 @@ def _operand_representations(
             syntax = fixed_by_role.get(name)
             if syntax is None:
                 continue
-            fixed_name = syntax.name if syntax is not None else None
-            fixed_value = syntax.literal if syntax is not None else None
-            type_name = fixed_name if fixed_name in {"SP", "CS"} else "imm"
+            if isinstance(syntax, OperandReference):
+                rendered.append(
+                    _FixedNameOperandRepresentation(
+                        name,
+                        syntax.name if syntax.name in {"SP", "CS"} else "imm",
+                        str(metadata["access"]),
+                        syntax.name,
+                    )
+                )
+            elif isinstance(syntax, DecimalLiteral):
+                rendered.append(
+                    _FixedValueOperandRepresentation(
+                        name,
+                        "imm",
+                        str(metadata["access"]),
+                        syntax.literal,
+                    )
+                )
+            else:
+                raise TypeError(f"unsupported fixed syntax {type(syntax).__name__}")
+            continue
+        if field is not None:
             rendered.append(
-                _OperandRepresentation(
+                _FieldOperandRepresentation(
                     name,
                     type_name,
-                    str(metadata["access"]),
-                    fixed_name=fixed_name,
-                    fixed_value=fixed_value,
+                    str(binding_access or metadata["access"]),
+                    field,
                 )
             )
-            continue
-        rendered.append(
-            _OperandRepresentation(
-                name,
-                type_name,
-                str(binding_access or metadata["access"]),
-                field=field,
-                payload=payload,
+        elif payload is not None:
+            rendered.append(
+                _PayloadOperandRepresentation(
+                    name,
+                    type_name,
+                    str(binding_access or metadata["access"]),
+                    payload,
+                )
             )
-        )
+        else:
+            raise AssertionError("operand binding branch lost its representation")
     return tuple(rendered)
 
 
@@ -368,10 +466,10 @@ def _ea_metadata(
     form: EncodingForm,
     operand: _OperandRepresentation,
 ) -> tuple[str, str, str]:
-    if operand.field is None:
+    if not isinstance(operand, _FieldOperandRepresentation):
         return "None()", "None()", "None()"
     definition = program.project.types.field_types.resolve(operand.field.type)
-    if definition.kind != FieldTypeKind.EFFECTIVE_ADDRESS:
+    if not isinstance(definition, EffectiveAddressFieldType):
         return "None()", "None()", "None()"
     logical = bundle.instruction["operands"][operand.name]
     role = str(logical["role"])
@@ -400,20 +498,25 @@ def _render_operand(
 ) -> str:
     field_symbol = "None()"
     positions: tuple[int, ...] = ()
-    if operand.field is not None:
+    if isinstance(operand, _FieldOperandRepresentation):
         field_symbol = f"Some({_constructor('Field_', operand.field.marker)})"
         positions = _positions(form.pattern.code, operand.field.marker)
     logical = bundle.instruction["operands"][operand.name]
     domain = _option(logical.get("domain"), "OperandDomain_")
     ea_role, ea_width, ea_profile = _ea_metadata(program, bundle, form, operand)
-    fixed = operand.fixed_value is not None
+    fixed_value = (
+        operand.fixed_value
+        if isinstance(operand, _FixedValueOperandRepresentation)
+        else 0
+    )
+    fixed = isinstance(operand, _FixedValueOperandRepresentation)
     return (
         f"struct {{ name = {_constructor('Operand_', operand.name)}, "
         f"operand_type = {_constructor('OperandType_', operand.type_name)}, "
         f"access = {ACCESS_CONSTRUCTORS[operand.access]}, field_symbol = {field_symbol}, "
         f"field_positions = {_list(map(str, positions))}, domain = {domain}, "
         f"ea_role = {ea_role}, ea_width = {ea_width}, ea_profile = {ea_profile}, "
-        f"has_fixed_value = {str(fixed).lower()}, fixed_value = {operand.fixed_value or 0}, "
+        f"has_fixed_value = {str(fixed).lower()}, fixed_value = {fixed_value}, "
         "legal_values = [||] }"
     )
 
@@ -425,7 +528,7 @@ def _render_payload(
 ) -> str:
     definition = program.project.types.payload_types.resolve(payload.type)
     operand = operands[payload.role]
-    signed = definition.signed is True or definition.id.endswith("S")
+    signed = payload_type_is_signed(definition)
     return (
         f"struct {{ operand_name = {_constructor('Operand_', payload.role)}, "
         f"operand_type = {_constructor('OperandType_', operand.type_name)}, "
@@ -477,8 +580,7 @@ class SailEaFormProjection:
     descriptor_bytes: int
     patterns: tuple[str, ...]
     kind: str
-    fields: Mapping[str, Mapping[str, str]]
-    field_types: Mapping[str, Reference[FieldType]]
+    fields: tuple[EAField, ...]
     segment: str | None
     payload_width: int
     payload_signed: bool
@@ -490,7 +592,7 @@ class SailEaFormProjection:
 
 
 def _payload_suffix(definition: PayloadType) -> str:
-    signed = definition.signed is True or definition.id.endswith("S")
+    signed = payload_type_is_signed(definition)
     return f"{definition.bytes * 8}{'s' if signed else ''}"
 
 
@@ -512,17 +614,27 @@ def _compact_name(mode_id: str, definition: PayloadType | None) -> str:
     return mode_id if not suffix else f"{mode_id}_disp{suffix}"
 
 
-def _mode_segment(mode, raw: Mapping[str, object]) -> tuple[str | None, str | None]:
-    segment = raw.get("segment")
-    if isinstance(segment, Mapping):
-        if segment.get("source") == "field":
-            return "explicit", None
-        register = str(segment.get("register"))
+def _mode_segment(mode) -> tuple[str | None, str | None]:
+    if not isinstance(mode, MemoryEAMode):
+        return None, None
+    segment = mode.segment
+    if isinstance(segment, FieldEASegment):
+        return "explicit", None
+    if isinstance(segment, FixedEASegment):
+        register = segment.register
         return register, mode.base_source.value
-    if raw.get("kind") == "memory":
-        base = mode.base_source.value
-        return "default", None if base in {"none", "encoded"} else base
-    return None, None
+    base = mode.base_source.value
+    return "default", None if base in {"none", "encoded"} else base
+
+
+def _mode_kind(mode) -> str:
+    if isinstance(mode, (CompactExtensionEAMode, ExtendedExtensionEAMode)):
+        return "extension"
+    if isinstance(mode, ImmediateEAMode):
+        return "immediate"
+    if isinstance(mode, MemoryEAMode):
+        return "memory"
+    raise TypeError(f"unsupported EA mode {type(mode).__name__}")
 
 
 def _ea_variants(program: SailProgram) -> tuple[SailEaFormProjection, ...]:
@@ -530,18 +642,13 @@ def _ea_variants(program: SailProgram) -> tuple[SailEaFormProjection, ...]:
     for mode in program.project.catalog.ea_modes.values():
         if mode.catalog.owner not in program.configuration.owners:
             continue
-        raw = mode.to_dict()
         mode_type = mode.catalog.mode_type
-        mode_id = str(raw["id"])
-        fields = raw.get("fields", {})
-        field_types = {
-            marker: mode.field_type_reference(marker) for marker in fields
-        }
-        segment, base = _mode_segment(mode, raw)
-        for encoding_index, encoding in enumerate(raw["encodings"]):
-            patterns = encoding["pattern"]
-            chunks = (patterns,) if isinstance(patterns, str) else tuple(patterns)
-            payloads = encoding.get("payloads", ())
+        mode_id = mode.id
+        fields = mode.fields
+        segment, base = _mode_segment(mode)
+        for encoding_index, encoding in enumerate(mode.encodings):
+            chunks = encoding.patterns
+            payloads = encoding.payloads
             payload_definition = (
                 program.project.types.payload_types.resolve(
                     mode.payload_type_reference(encoding_index, 0)
@@ -549,42 +656,46 @@ def _ea_variants(program: SailProgram) -> tuple[SailEaFormProjection, ...]:
                 if payloads
                 else None
             )
-            autoupdate = encoding.get("autoupdate")
-            update_mode = str(autoupdate["type"]) if autoupdate else None
+            autoupdate = encoding.autoupdate
+            update_mode = autoupdate.update_type if autoupdate else None
             update_difference = None
             if autoupdate:
-                difference = autoupdate["difference"]
+                difference = autoupdate.difference
                 update_difference = (
                     f"constant_{difference}"
                     if isinstance(difference, int)
                     else str(difference)
                 )
-            update_role = str(autoupdate["target"]) if autoupdate else None
+            update_role = autoupdate.target if autoupdate else None
             update_target = None
             if update_role is not None:
                 update_target = next(
-                    marker for marker, value in fields.items() if value["role"] == update_role
+                    field.symbol for field in fields if field.role == update_role
                 )
             if mode_type == "compact":
                 name = _compact_name(mode_id, payload_definition)
-                descriptor = raw.get("extension", {}).get("id")
-                kind = str(raw["kind"])
+                descriptor = (
+                    mode.extension.id
+                    if isinstance(mode, CompactExtensionEAMode)
+                    else None
+                )
+                kind = _mode_kind(mode)
                 variants.append(SailEaFormProjection(
                     name,
                     mode.catalog.profile,
                     None,
-                    int(raw.get("extension", {}).get("bytes", 0)),
+                    mode.extension.bytes
+                    if isinstance(mode, CompactExtensionEAMode)
+                    else 0,
                     chunks,
-                    "escape" if raw["kind"] == "extension" else kind,
+                    "escape" if isinstance(mode, CompactExtensionEAMode) else kind,
                     fields,
-                    field_types,
                     segment,
                     payload_definition.bytes * 8 if payload_definition else 0,
                     bool(
                         payload_definition
                         and (
-                            payload_definition.signed is True
-                            or payload_definition.id.endswith("S")
+                            payload_type_is_signed(payload_definition)
                         )
                     ),
                     base,
@@ -602,9 +713,8 @@ def _ea_variants(program: SailProgram) -> tuple[SailEaFormProjection, ...]:
                         mode_type.lower(),
                         len(chunks),
                         chunks,
-                        str(raw["kind"]),
+                        _mode_kind(mode),
                         fields,
-                        field_types,
                         segment,
                         0,
                         False,
@@ -626,13 +736,13 @@ def _render_ea_variant(program: SailProgram, variant: SailEaFormProjection) -> s
     )
     joined = "".join(variant.patterns)
     fields = []
-    for marker, raw in variant.fields.items():
-        definition = program.project.types.field_types.resolve(variant.field_types[marker])
+    for field in variant.fields:
+        definition = program.project.types.field_types.resolve(field.type)
         fields.append(
-            f"struct {{ symbol = {_constructor('Field_', marker)}, "
+            f"struct {{ symbol = {_constructor('Field_', field.symbol)}, "
             f"operand_type = {_constructor('OperandType_', _field_type_name(definition))}, "
-            f"role = {_constructor('EaRole_', str(raw['role']))}, "
-            f"positions = {_list(map(str, _positions(joined, marker)))} }}"
+            f"role = {_constructor('EaRole_', field.role)}, "
+            f"positions = {_list(map(str, _positions(joined, field.symbol)))} }}"
         )
     return (
         f"  struct {{ name = {_constructor('EaForm_', variant.name)}, "
@@ -668,27 +778,36 @@ class SailCatalogRenderer:
             for form in bundle.encodings.forms:
                 operands = []
                 for operand in _operand_representations(program, bundle, form):
-                    ea_profile = None
-                    if operand.field is not None:
+                    common = (operand.name, operand.type_name, operand.access)
+                    if isinstance(operand, _FieldOperandRepresentation):
                         definition = program.project.types.field_types.resolve(
                             operand.field.type
                         )
-                        if definition.kind is FieldTypeKind.EFFECTIVE_ADDRESS:
-                            ea_profile = definition.profile
-                    operands.append(
-                        SailOperandBindingProjection(
-                            operand.name,
-                            operand.type_name,
-                            operand.access,
-                            operand.field.marker if operand.field is not None else None,
-                            operand.payload.type
-                            if operand.payload is not None
-                            else None,
-                            operand.fixed_name,
-                            operand.fixed_value,
-                            ea_profile,
+                        if isinstance(definition, EffectiveAddressFieldType):
+                            projected = SailEffectiveAddressOperandBindingProjection(
+                                *common, operand.field.marker, definition.profile
+                            )
+                        else:
+                            projected = SailFieldOperandBindingProjection(
+                                *common, operand.field.marker
+                            )
+                    elif isinstance(operand, _PayloadOperandRepresentation):
+                        projected = SailPayloadOperandBindingProjection(
+                            *common, operand.payload.type
                         )
-                    )
+                    elif isinstance(operand, _FixedNameOperandRepresentation):
+                        projected = SailFixedNameOperandBindingProjection(
+                            *common, operand.fixed_name
+                        )
+                    elif isinstance(operand, _FixedValueOperandRepresentation):
+                        projected = SailFixedValueOperandBindingProjection(
+                            *common, operand.fixed_value
+                        )
+                    else:
+                        raise TypeError(
+                            f"unsupported operand representation {type(operand).__name__}"
+                        )
+                    operands.append(projected)
                 forms.append(
                     SailFormProjection(
                         _form_key(bundle, form),
@@ -832,11 +951,11 @@ def catalog_id_declarations(program: SailProgram) -> list[str]:
                     _payload_type_name(program.project.types.payload_types.resolve(payload.type))
                 )
     for variant in variants:
-        fields.update(variant.fields)
-        for reference in variant.field_types.values():
+        fields.update(field.symbol for field in variant.fields)
+        for field in variant.fields:
             operand_types.add(
                 _field_type_name(
-                    program.project.types.field_types.resolve(reference)
+                    program.project.types.field_types.resolve(field.type)
                 )
             )
     groups = (

@@ -227,8 +227,8 @@ class SystemVerilogDecoderTest(unittest.TestCase):
                     self.project.types,
                     catalog=catalog,
                 )
-                for encoding in mode["encodings"]:
-                    pattern = EncodingMetasyntax.parse(encoding["pattern"])
+                for encoding in mode.encodings:
+                    pattern = EncodingMetasyntax.parse(encoding.patterns[0])
                     expected.update(
                         raw
                         for raw in range(1 << pattern.bit_width)

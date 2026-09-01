@@ -10,7 +10,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Callable, TypeVar, cast
 
-from .cpuid import CpuidCatalog, CpuidField
+from .cpuid import CpuidCatalog, CpuidClassOverlay, CpuidField, CpuidLeafOverlay
 from .control_register import ControlRegisterCatalog
 from .debug_trigger import DebugTriggerCatalog
 from .dependency import EntityDependency
@@ -19,7 +19,7 @@ from .ea_mode import EAMode, EAModeCatalog
 from .encoding import EncodingCatalog, EncodingForm
 from .encoding_reservation import EncodingReservationCatalog
 from .entity import Entity, EntityCatalog, EntityDisplayStyle
-from .event import EventCatalog
+from .event import EventCatalog, EventClassOverlay
 from .event_structure import EventFrameCatalog, EventPayloadCatalog
 from .extension import ExtensionMetadata, ExtensionSetCatalog
 from .inventory import DirectoryInventory
@@ -28,7 +28,7 @@ from .instruction_header import InstructionHeaderCatalog
 from .model import ModelCatalog
 from .observability import log_phase
 from .page_table_entry import PageTableEntryCatalog
-from .register import RegisterCatalog
+from .register import RegisterCatalog, SourcedReset
 from .reference import (
     QualifiedReference,
     Reference,
@@ -37,7 +37,7 @@ from .reference import (
 )
 from .save_area import SaveAreaCatalog
 from .terminology import TermCatalog
-from .type_system import TypeNamespace, TypeSystem
+from .type_system import EffectiveAddressFieldType, TypeNamespace, TypeSystem
 from .vector_diagram import VectorDiagram, VectorDiagramCatalog
 
 
@@ -702,7 +702,7 @@ class IsaProject:
         profile_types = {
             (definition.owner, definition.profile): definition.reference
             for definition in self.types.field_types.values()
-            if definition.profile is not None
+            if isinstance(definition, EffectiveAddressFieldType)
         }
         for mode in self.catalog.ea_modes.values():
             source = cast(Reference[object], mode.reference)
@@ -713,40 +713,36 @@ class IsaProject:
                     cast(Reference[object], profile_type),
                     "ea-profile-type",
                 )
-            fields = mode.get("fields", {})
-            for symbol in fields:
+            for field in mode.fields:
                 add(
                     source,
-                    cast(Reference[object], mode.field_type_reference(symbol)),
+                    cast(Reference[object], field.type),
                     "ea-field-type",
                 )
-            for encoding_index, encoding in enumerate(mode["encodings"]):
-                for payload_index, _ in enumerate(encoding.get("payloads", ())):
+            for encoding in mode.encodings:
+                for payload in encoding.payloads:
                     add(
                         source,
-                        cast(
-                            Reference[object],
-                            mode.payload_type_reference(encoding_index, payload_index),
-                        ),
+                        cast(Reference[object], payload.type),
                         "ea-payload-type",
                     )
 
         for cpuid_class in self.cpuid.references.classes.values():
-            if cpuid_class.extends is not None:
+            if isinstance(cpuid_class, CpuidClassOverlay):
                 add(
                     cast(Reference[object], cpuid_class.reference),
                     cast(Reference[object], cpuid_class.extends),
                     "cpuid-class-overlay",
                 )
         for leaf in self.cpuid.references.leaves.values():
-            if leaf.extends is not None:
+            if isinstance(leaf, CpuidLeafOverlay):
                 add(
                     cast(Reference[object], leaf.reference),
                     cast(Reference[object], leaf.extends),
                     "cpuid-leaf-overlay",
                 )
         for event_class in self.events.references.classes.values():
-            if event_class.extends is not None:
+            if isinstance(event_class, EventClassOverlay):
                 add(
                     cast(Reference[object], event_class.reference),
                     cast(Reference[object], event_class.extends),
@@ -754,14 +750,14 @@ class IsaProject:
                 )
 
         for register in self.registers.references.registers.values():
-            if register.reset is not None and register.reset.source is not None:
+            if isinstance(register.reset, SourcedReset):
                 add(
                     cast(Reference[object], register.reference),
                     cast(Reference[object], register.reset.source),
                     "register-reset-source",
                 )
         for register in self.control_registers.references.registers.values():
-            if register.reset is not None and register.reset.source is not None:
+            if isinstance(register.reset, SourcedReset):
                 add(
                     cast(Reference[object], register.reference),
                     cast(Reference[object], register.reset.source),

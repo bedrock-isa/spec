@@ -11,7 +11,18 @@ import re
 import sys
 from typing import Any
 
-from .ea_mode import EABaseSource, EAMode, EAModeCatalog
+from .ea_mode import (
+    CompactExtensionEAMode,
+    EABaseSource,
+    EAEncoding,
+    EAMode,
+    EAModeCatalog,
+    ExtendedExtensionEAMode,
+    FieldEASegment,
+    FixedEASegment,
+    ImmediateEAMode,
+    MemoryEAMode,
+)
 from .reference import Reference
 from .type_system import TypeSystem
 
@@ -117,18 +128,32 @@ class EAEncodingProjection:
     autoupdate: EAAutoupdateProjection | None
 
 
-@dataclass(frozen=True, slots=True)
 class EAFlowProjection:
-    """The address-generation relation conveyed by one EA flow diagram."""
+    """Base class for one address-generation flow projection."""
 
-    kind: str
+    __slots__ = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ImmediateEAFlowProjection(EAFlowProjection):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryEAFlowProjection(EAFlowProjection):
+    """The address-generation relation conveyed by a memory mode."""
+
     base_source: EABaseSource
-    base_label: str | None
-    base_operand: str | None
+    base_label: str
+    base_operand: str
     index_operand: str | None
     has_displacement: bool
     has_scale: bool
-    has_memory_tail: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ExtensionEAFlowProjection(EAFlowProjection):
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,7 +165,7 @@ class EAModeDiagramProjection:
     source: Path
     title: str
     encodings: tuple[EAEncodingProjection, ...]
-    flow: EAFlowProjection | None
+    flow: EAFlowProjection
     autoupdates: tuple[EAAutoupdateProjection, ...]
     authored_mode: EAMode
 
@@ -175,15 +200,15 @@ def _payload_type_id(mode: EAMode, encoding_index: int, payload_index: int) -> s
 
 
 def _encoding_label(
-    mode: EAMode, encoding_index: int, encoding: Mapping[str, Any]
+    mode: EAMode, encoding_index: int, encoding: EAEncoding
 ) -> str:
     parts: list[str] = []
-    update = encoding.get("autoupdate")
-    if update:
-        parts.append(f"{update['target']} {update['type']}")
+    update = encoding.autoupdate
+    if update is not None:
+        parts.append(f"{update.target} {update.update_type}")
     parts.extend(
         _payload_type_id(mode, encoding_index, payload_index)
-        for payload_index, _ in enumerate(encoding.get("payloads", []))
+        for payload_index, _ in enumerate(encoding.payloads)
     )
     return " + ".join(parts) if parts else "plain"
 
@@ -206,14 +231,12 @@ def render_encoding_diagram(projection: EAModeDiagramProjection) -> str:
 
 
 def _field_operand(mode: EAMode, role: str) -> str | None:
-    for symbol, definition in mode.to_dict().get("fields", {}).items():
-        if definition["role"] == role:
-            return f"Rn({symbol})"
-    return None
+    field = mode.field_for_role(role)
+    return f"Rn({field.symbol})" if field is not None else None
 
 
-def _expression(mode: EAMode) -> str:
-    return mode["pseudocode"].split("=", 1)[1].strip()
+def _expression(mode: ImmediateEAMode | MemoryEAMode) -> str:
+    return mode.pseudocode.split("=", 1)[1].strip()
 
 
 def _base_operand(mode: EAMode, expression: str) -> tuple[str, str]:
@@ -233,46 +256,48 @@ def project_mode(mode: EAMode) -> EAModeDiagramProjection:
 
     updates: list[EAAutoupdateProjection] = []
     encodings: list[EAEncodingProjection] = []
-    for encoding_index, encoding in enumerate(mode["encodings"]):
-        raw_update = encoding.get("autoupdate")
+    for encoding_index, encoding in enumerate(mode.encodings):
+        raw_update = encoding.autoupdate
         update = None
         if raw_update is not None:
             update = EAAutoupdateProjection(
                 encoding_index,
-                raw_update["target"],
-                raw_update["type"],
-                str(raw_update["difference"]),
+                raw_update.target,
+                raw_update.update_type,
+                str(raw_update.difference),
             )
             updates.append(update)
         encodings.append(
             EAEncodingProjection(
                 _encoding_label(mode, encoding_index, encoding),
-                _encoding_fields(encoding["pattern"]),
+                _encoding_fields(encoding.patterns),
                 update,
             )
         )
 
-    flow = None
-    if "pseudocode" in mode:
+    flow: EAFlowProjection
+    if isinstance(mode, ImmediateEAMode):
+        flow = ImmediateEAFlowProjection()
+    elif isinstance(mode, MemoryEAMode):
         expression = _expression(mode)
         words = expression.split()
         base_label, base_operand = _base_operand(mode, expression)
-        flow = EAFlowProjection(
-            mode["kind"],
+        flow = MemoryEAFlowProjection(
             mode.base_source,
             base_label,
             base_operand,
             _field_operand(mode, "index"),
             "displacement" in words,
             "scale" in words,
-            mode["kind"] != "immediate",
         )
+    else:
+        flow = ExtensionEAFlowProjection()
 
     return EAModeDiagramProjection(
         mode.reference,
         mode.reference.owner,
         mode.source,
-        mode["name"],
+        mode.name,
         tuple(encodings),
         flow,
         tuple(updates),
@@ -282,16 +307,24 @@ def project_mode(mode: EAMode) -> EAModeDiagramProjection:
 
 @dataclass(frozen=True)
 class _FlowNode:
-    """A semantic flow node before it is converted to TikZ geometry."""
+    """Common placement of one semantic flow node."""
 
     node_id: str
-    kind: str
     row: int
     lane: str
     text: str
-    row_label: str = ""
+
+
+@dataclass(frozen=True)
+class _FlowBoxNode(_FlowNode):
+    row_label: str
     width_class: str = "word"
     show_bits: bool = False
+
+
+@dataclass(frozen=True)
+class _FlowOperationNode(_FlowNode):
+    pass
 
 
 class _EAFlowLayout:
@@ -369,9 +402,8 @@ class _EAFlowLayout:
         width_class: str = "word",
         show_bits: bool = False,
     ) -> None:
-        self.nodes[node_id] = _FlowNode(
+        self.nodes[node_id] = _FlowBoxNode(
             node_id,
-            "box",
             row,
             lane,
             text,
@@ -381,7 +413,7 @@ class _EAFlowLayout:
         )
 
     def add_operation(self, node_id: str, row: int, lane: str, text: str) -> None:
-        self.nodes[node_id] = _FlowNode(node_id, "operation", row, lane, text)
+        self.nodes[node_id] = _FlowOperationNode(node_id, row, lane, text)
 
     def connect(self, source: str, target: str) -> None:
         if source.endswith(".east") and target.endswith(".west"):
@@ -391,20 +423,30 @@ class _EAFlowLayout:
             target_node = self.nodes[target_id]
             source_half_width = (
                 self.OP_RADIUS
-                if source_node.kind == "operation"
+                if isinstance(source_node, _FlowOperationNode)
                 else self._width(source_node.width_class) / 2
             )
             target_half_width = (
                 self.OP_RADIUS
-                if target_node.kind == "operation"
+                if isinstance(target_node, _FlowOperationNode)
                 else self._width(target_node.width_class) / 2
             )
+            source_width_class = (
+                "word"
+                if isinstance(source_node, _FlowOperationNode)
+                else source_node.width_class
+            )
+            target_width_class = (
+                "word"
+                if isinstance(target_node, _FlowOperationNode)
+                else target_node.width_class
+            )
             source_right = (
-                self._lane_x(source_node.lane, source_node.width_class)
+                self._lane_x(source_node.lane, source_width_class)
                 + source_half_width
             )
             target_left = (
-                self._lane_x(target_node.lane, target_node.width_class)
+                self._lane_x(target_node.lane, target_width_class)
                 - target_half_width
             )
             if target_left - source_right + 1e-9 < self.OP_GAP:
@@ -418,6 +460,10 @@ class _EAFlowLayout:
     def connect_feedback(self, register_id: str, operation_id: str) -> None:
         register = self.nodes[register_id]
         operation = self.nodes[operation_id]
+        if not isinstance(register, _FlowBoxNode) or not isinstance(
+            operation, _FlowOperationNode
+        ):
+            raise TypeError("feedback requires a box and an operation node")
         register_x = self._lane_x(register.lane, register.width_class)
         register_width = self._width(register.width_class)
         operation_x = self._lane_x(operation.lane)
@@ -449,6 +495,8 @@ class _EAFlowLayout:
         self, box_id: str, operation_id: str, lane: str
     ) -> None:
         box = self.nodes[box_id]
+        if not isinstance(box, _FlowBoxNode):
+            raise TypeError("box-port connection requires a box node")
         x = self._lane_x(lane)
         box_y = self._row_y(box.row) - 0.13
         number = self._number
@@ -468,14 +516,19 @@ class _EAFlowLayout:
             f"\\BedrockEAFlowStart{{{number(height)}in}}{{{self.caption}}}%"
         ]
         for node in self.nodes.values():
-            x = self._lane_x(node.lane, node.width_class)
+            width_class = (
+                node.width_class if isinstance(node, _FlowBoxNode) else "word"
+            )
+            x = self._lane_x(node.lane, width_class)
             y = self._row_y(node.row)
-            if node.kind == "operation":
+            if isinstance(node, _FlowOperationNode):
                 lines.append(
                     f"  \\BedrockEAFlowCircle{{{node.node_id}}}"
                     f"{{{number(x)}}}{{{number(y)}}}{{{node.text}}}%"
                 )
             else:
+                if not isinstance(node, _FlowBoxNode):
+                    raise TypeError(f"unsupported flow node {type(node).__name__}")
                 width = self._width(node.width_class)
                 lines.append(
                     f"  \\BedrockEAFlowLabeledBox{{{node.row_label}}}"
@@ -514,12 +567,14 @@ def render_flow_diagram(projection: EAModeDiagramProjection) -> str | None:
     """Render one plain EA mode through the semantic grid layout engine."""
 
     flow = projection.flow
-    if flow is None:
+    if isinstance(flow, ExtensionEAFlowProjection):
         return None
 
-    generated_value = "operand" if flow.kind == "immediate" else "address"
+    generated_value = (
+        "operand" if isinstance(flow, ImmediateEAFlowProjection) else "address"
+    )
     name = _tex(_title_case(f"{projection.title} {generated_value} generation"))
-    if flow.kind == "immediate":
+    if isinstance(flow, ImmediateEAFlowProjection):
         layout = _EAFlowLayout(name, 2)
         layout.add_box(
             "imm",
@@ -539,7 +594,8 @@ def render_flow_diagram(projection: EAModeDiagramProjection) -> str | None:
         layout.connect("imm.south", "operand.north")
         return layout.render()
 
-    assert flow.base_label is not None and flow.base_operand is not None
+    if not isinstance(flow, MemoryEAFlowProjection):
+        raise TypeError(f"unsupported EA flow {type(flow).__name__}")
     source_label, base = flow.base_label, flow.base_operand
     index = flow.index_operand
     if index and flow.has_scale:
@@ -624,9 +680,8 @@ def render_autoupdate_diagrams(
     """Render each autoupdate variant as an integrated address-generation flow."""
 
     flow = projection.flow
-    if flow is None:
+    if not isinstance(flow, MemoryEAFlowProjection):
         return []
-    assert flow.base_label is not None and flow.base_operand is not None
     source_label, base = flow.base_label, flow.base_operand
     displacement = "displacement" if flow.has_displacement else ""
     index = flow.index_operand
@@ -787,13 +842,13 @@ def _block_height(projection: EAModeDiagramProjection) -> float:
 
     format_height = 0.90 + 0.68 * len(projection.encodings)
     flow = projection.flow
-    if flow is None:
+    if isinstance(flow, ExtensionEAFlowProjection):
         flow_height = 0.0
-    elif flow.kind == "immediate":
+    elif isinstance(flow, ImmediateEAFlowProjection):
         flow_height = 1.55
-    elif flow.index_operand and flow.has_scale:
+    elif isinstance(flow, MemoryEAFlowProjection) and flow.index_operand and flow.has_scale:
         flow_height = 3.30
-    elif flow.has_displacement:
+    elif isinstance(flow, MemoryEAFlowProjection) and flow.has_displacement:
         flow_height = 2.35
     else:
         flow_height = 2.10
@@ -805,30 +860,30 @@ def _block_height(projection: EAModeDiagramProjection) -> float:
 
 
 def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
-    syntax = mode.to_dict().get("syntax")
-    if not isinstance(syntax, str):
+    if not isinstance(mode, (ImmediateEAMode, MemoryEAMode, ExtendedExtensionEAMode)):
         return ()
+    syntax = mode.syntax
     variants: list[str] = []
-    for encoding_index, encoding in enumerate(mode["encodings"]):
+    for encoding_index, encoding in enumerate(mode.encodings):
         rendered = syntax
         payloads = {
-            payload["role"]: _payload_type_id(
+            payload.role: _payload_type_id(
                 mode, encoding_index, payload_index
             ).lower()
-            for payload_index, payload in enumerate(encoding.get("payloads", []))
+            for payload_index, payload in enumerate(encoding.payloads)
         }
         optional_displacement = payloads.get("displacement")
         rendered = rendered.replace(
             "[+ displacement]",
             f"+ {optional_displacement}" if optional_displacement else "",
         )
-        update = encoding.get("autoupdate")
+        update = encoding.autoupdate
         match = re.search(r"update\((.+)\)", rendered)
         if match is not None:
             operand = match.group(1)
             if update is None:
                 replacement = operand
-            elif update["type"] == "postincrement":
+            elif update.update_type == "postincrement":
                 replacement = operand + "++"
             else:
                 replacement = "--" + operand
@@ -843,15 +898,13 @@ def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
 
 def _encoding_description(mode: EAMode) -> str:
     descriptions = []
-    for encoding_index, encoding in enumerate(mode["encodings"]):
-        pattern = " ".join(encoding["pattern"]) if isinstance(
-            encoding["pattern"], list
-        ) else encoding["pattern"]
+    for encoding_index, encoding in enumerate(mode.encodings):
+        pattern = " ".join(encoding.patterns)
         details = []
-        update = encoding.get("autoupdate")
+        update = encoding.autoupdate
         if update is not None:
-            details.append(f"{update['target']} {update['type']}")
-        payloads = encoding.get("payloads", [])
+            details.append(f"{update.target} {update.update_type}")
+        payloads = encoding.payloads
         if payloads:
             details.extend(
                 _payload_type_id(mode, encoding_index, payload_index).lower()
@@ -863,20 +916,20 @@ def _encoding_description(mode: EAMode) -> str:
 
 
 def _segment_description(mode: EAMode) -> str:
-    segment = mode.to_dict().get("segment")
+    segment = mode.segment if isinstance(mode, MemoryEAMode) else None
     if segment is None:
         return "Uses the operation default data segment."
-    if segment["source"] == "fixed":
-        return f"Fixed to {_tex(segment['register'])}."
+    if isinstance(segment, FixedEASegment):
+        return f"Fixed to {_tex(segment.register)}."
     return "SEG(s) selects the encoded segment register."
 
 
 def _payload_description(mode: EAMode) -> str:
     payloads = []
-    for encoding_index, encoding in enumerate(mode["encodings"]):
-        for payload_index, payload in enumerate(encoding.get("payloads", [])):
+    for encoding_index, encoding in enumerate(mode.encodings):
+        for payload_index, payload in enumerate(encoding.payloads):
             item = (
-                payload["role"],
+                payload.role,
                 _payload_type_id(mode, encoding_index, payload_index).lower(),
             )
             if item not in payloads:
@@ -887,29 +940,29 @@ def _payload_description(mode: EAMode) -> str:
             for role, payload_type in payloads
         )
         return f"Appends {listed} as selected by the encoding."
-    if isinstance(mode["encodings"][0]["pattern"], list):
+    if mode.catalog.mode_type != "compact":
         return "The descriptor is followed by the displacement selected by the compact EXT escape."
     return "No appended payload bytes."
 
 
 def _update_description(mode: EAMode) -> str | None:
     updates = [
-        encoding["autoupdate"]
-        for encoding in mode["encodings"]
-        if "autoupdate" in encoding
+        encoding.autoupdate
+        for encoding in mode.encodings
+        if encoding.autoupdate is not None
     ]
     if not updates:
         return None
     sentences = []
     for update in updates:
-        target = f"{update['target']} register"
-        difference = update["difference"]
+        target = f"{update.target} register"
+        difference = update.difference
         difference_text = (
             rf"\texttt{{{_tex(difference)}}}"
             if isinstance(difference, str)
             else str(difference)
         )
-        if update["type"] == "postincrement":
+        if update.update_type == "postincrement":
             sentences.append(
                 f"Postincrement uses the current temporary {target}, then adds {difference_text}."
             )
@@ -923,8 +976,8 @@ def _update_description(mode: EAMode) -> str | None:
 def render_description_block(mode: EAMode) -> str:
     """Render the former hand-authored EA explanation block from mode data."""
 
-    title = _title_case(f"{mode.catalog.name} {mode['name']}")
-    label = "EA encoding" if isinstance(mode["encodings"][0]["pattern"], str) else "Descriptor"
+    title = _title_case(f"{mode.catalog.name} {mode.name}")
+    label = "EA encoding" if mode.catalog.mode_type == "compact" else "Descriptor"
     lines = [
         r"\begin{BedrockFormBlock}{2.75in}",
         rf"\BedrockEAProfileTitle{{{_tex(title)}}}",
@@ -949,22 +1002,11 @@ def render_description_block(mode: EAMode) -> str:
 
 
 def _encoding_variant_mode(
-    mode: EAMode, encoding: Mapping[str, Any]
+    mode: EAMode, encoding: EAEncoding
 ) -> EAMode:
     """Return a one-encoding view so each update form owns its explanation."""
 
-    data = mode.to_dict()
-    data["encodings"] = [dict(encoding)]
-    update = encoding.get("autoupdate")
-    variant = update["type"] if update is not None else "plain"
-    data["name"] = f"{data['name']} / {variant}"
-    return EAMode(
-        data,
-        mode.source,
-        mode.isa_root,
-        mode.type_system,
-        catalog=mode.catalog,
-    )
+    return mode.with_encoding(encoding)
 
 
 def _render_mode_section(projection: EAModeDiagramProjection) -> str:
@@ -994,9 +1036,9 @@ def render_mode(projection: EAModeDiagramProjection) -> str:
     except ValueError:
         pass
     header = f"% Generated from {relative_source.as_posix()}; do not edit this block."
-    encodings = mode["encodings"]
+    encodings = mode.encodings
     if len(encodings) > 1 and any(
-        "autoupdate" in encoding for encoding in encodings
+        encoding.autoupdate is not None for encoding in encodings
     ):
         sections = []
         for index, encoding in enumerate(encodings):

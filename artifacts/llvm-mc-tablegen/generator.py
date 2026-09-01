@@ -7,7 +7,7 @@ import re
 from typing import TYPE_CHECKING, NamedTuple
 
 from engine.encoding_architecture import ENCODING_CLASSES_BY_WIDTH
-from engine.encoding import EncodingForm
+from engine.encoding import AllowedOperandConstraint, EncodingForm, ExcludedOperandConstraint
 from engine.generation import (
     ArtifactGenerationContext,
     ArtifactGenerator,
@@ -16,7 +16,25 @@ from engine.generation import (
 )
 from engine.project import IsaProject
 from engine.reference import Reference
-from engine.type_system import FieldTypeKind, PayloadTypeKind
+from engine.instruction_metasyntax import DecimalLiteral, OperandReference
+from engine.type_system import (
+    ControlRegisterSelectorPayloadType,
+    EffectiveAddressFieldType,
+    EnumConditionFieldType,
+    FlagsFieldType,
+    FloatingPointConstantIdPayloadType,
+    ImmediateFieldType,
+    ImmediatePayloadType,
+    MemoryOrderFieldType,
+    PageTableLevelFieldType,
+    PcDisplacementPayloadType,
+    RegisterFieldType,
+    RegisterPairSelectorFieldType,
+    RegisterSelectorFieldType,
+    RegisterSelectorPayloadType,
+    SizeSelectorFieldType,
+    payload_type_is_signed,
+)
 
 if TYPE_CHECKING:
     from engine.register import RegisterGroup
@@ -160,8 +178,7 @@ class Generator(ArtifactGenerator):
             {
                 payload_type.register_group
                 for payload_type in project.types.payload_types.values()
-                if payload_type.kind == PayloadTypeKind.REGISTER_SELECTOR
-                and payload_type.register_group is not None
+                if isinstance(payload_type, RegisterSelectorPayloadType)
             }
         )
         selector_group_ids = {
@@ -203,7 +220,7 @@ class Generator(ArtifactGenerator):
                     for payload in form.payloads
                 )
                 has_effective_address = any(
-                    field_type.kind == FieldTypeKind.EFFECTIVE_ADDRESS
+                    isinstance(field_type, EffectiveAddressFieldType)
                     for field_type in field_types
                 )
                 fixed_payload_bytes = sum(payload.bytes for payload in payload_types)
@@ -303,10 +320,12 @@ class Generator(ArtifactGenerator):
 def _constraint_values(form: EncodingForm, role: str, width: int) -> set[int]:
     values = set(range(1 << width))
     for constraint in form.constraints:
-        if constraint.role != role or not constraint.allow:
+        if constraint.role != role or not isinstance(
+            constraint, AllowedOperandConstraint
+        ):
             continue
         values = set()
-        for item in constraint.allow:
+        for item in constraint.values:
             if isinstance(item, int):
                 values.add(item)
                 continue
@@ -344,6 +363,8 @@ def _render_vector_form(
         if binding is None:
             raise ValueError(f"{identifier}: size field has no binding")
         field_type = project.types.field_types.resolve(binding.type)
+        if not isinstance(field_type, SizeSelectorFieldType):
+            raise ValueError(f"{identifier}: size field does not use a size selector")
         selected = set(form.syntax.selected_size_codes)
         allowed = _constraint_values(form, binding.role, field_type.bits)
         width = max((value.value for value in field_type.values), default=-1) + 1
@@ -360,8 +381,9 @@ def _render_vector_form(
     condition_fields = [
         field
         for field in form.fields
-        if project.types.field_types.resolve(field.type).kind
-        == FieldTypeKind.ENUM_CONDITION
+        if isinstance(
+            project.types.field_types.resolve(field.type), EnumConditionFieldType
+        )
     ]
     for field in condition_fields:
         operands.append(_VectorOperand(_OPERAND_CONDITION, ord(field.marker), 0, False))
@@ -369,7 +391,7 @@ def _render_vector_form(
     payload_index = 0
     explicit_roles: list[str] = []
     for operand in form.syntax.displayed_operands:
-        if operand.kind != "reference":
+        if not isinstance(operand, OperandReference):
             continue
         if operand.field is not None:
             binding = form.field_for_marker(operand.field)
@@ -384,7 +406,9 @@ def _render_vector_form(
                 logical = dict(bundle.instruction)["operands"].get(binding.role, {})
                 access = logical.get("access")
             excludes_immediate = any(
-                constraint.role == binding.role and "immediate" in constraint.exclude
+                constraint.role == binding.role
+                and isinstance(constraint, ExcludedOperandConstraint)
+                and "immediate" in constraint.values
                 for constraint in form.constraints
             )
             operands.append(
@@ -405,11 +429,7 @@ def _render_vector_form(
         payload_binding = form.payloads[payload_index]
         payload_index += 1
         payload_type = project.types.payload_types.resolve(payload_binding.type)
-        signed = (
-            payload_type.value_type == "signed_integer"
-            or payload_type.id.endswith("S")
-            or (operand.name or "").lower().endswith("s")
-        )
+        signed = payload_type_is_signed(payload_type) or operand.name.lower().endswith("s")
         operands.append(
             _VectorOperand(
                 _OPERAND_TAIL_SIGNED if signed else _OPERAND_TAIL_UNSIGNED,
@@ -482,7 +502,8 @@ def _render_scalar_form(
         for field in form.fields
     }
     if any(
-        operand.kind not in {"reference", "decimal"} for operand in form.syntax.operands
+        not isinstance(operand, (OperandReference, DecimalLiteral))
+        for operand in form.syntax.operands
     ):
         return None
 
@@ -490,7 +511,7 @@ def _render_scalar_form(
     condition_fields = [
         field
         for field in form.fields
-        if field_types[field.marker].kind == FieldTypeKind.ENUM_CONDITION
+        if isinstance(field_types[field.marker], EnumConditionFieldType)
     ]
     if len(condition_fields) > 1:
         return None
@@ -513,6 +534,8 @@ def _render_scalar_form(
         if binding is None:
             return None
         definition = field_types[binding.marker]
+        if not isinstance(definition, SizeSelectorFieldType):
+            return None
         selected = set(form.syntax.selected_size_codes)
         allowed = _constraint_values(form, binding.role, definition.bits)
         count = max((value.value for value in definition.values), default=-1) + 1
@@ -533,7 +556,7 @@ def _render_scalar_form(
         if binding is None:
             return None
         definition = field_types[binding.marker]
-        if definition.kind != FieldTypeKind.MEMORY_ORDER:
+        if not isinstance(definition, MemoryOrderFieldType):
             return None
         operands.append(
             _ScalarOperand(
@@ -552,7 +575,7 @@ def _render_scalar_form(
         explicit_roles.append(binding.role)
         consumed_fields.add(binding.marker)
     for operand in form.syntax.operands:
-        if operand.kind == "decimal":
+        if isinstance(operand, DecimalLiteral):
             operands.append(
                 _ScalarOperand(
                     _OPERAND_FIXED_IMMEDIATE,
@@ -560,7 +583,7 @@ def _render_scalar_form(
                     0,
                     False,
                     False,
-                    operand.literal or 0,
+                    operand.literal,
                     1,
                 )
             )
@@ -570,31 +593,40 @@ def _render_scalar_form(
             if operand.angled and payload_index < len(form.payloads):
                 payload = form.payloads[payload_index]
                 definition = project.types.payload_types.resolve(payload.type)
-                if definition.kind not in {
-                    PayloadTypeKind.IMMEDIATE,
-                    PayloadTypeKind.PC_DISPLACEMENT,
-                    PayloadTypeKind.FLOATING_POINT_CONSTANT_ID,
-                    PayloadTypeKind.REGISTER_SELECTOR,
-                    PayloadTypeKind.CONTROL_REGISTER_SELECTOR,
-                }:
+                if not isinstance(
+                    definition,
+                    (
+                        ImmediatePayloadType,
+                        PcDisplacementPayloadType,
+                        FloatingPointConstantIdPayloadType,
+                        RegisterSelectorPayloadType,
+                        ControlRegisterSelectorPayloadType,
+                    ),
+                ):
                     return None
                 signed = (
-                    definition.kind == PayloadTypeKind.PC_DISPLACEMENT
-                    or definition.value_type == "signed_integer"
+                    isinstance(definition, PcDisplacementPayloadType)
                     or (
-                        definition.kind == PayloadTypeKind.IMMEDIATE
+                        isinstance(definition, ImmediatePayloadType)
+                        and definition.value_type == "signed_integer"
+                    )
+                    or (
+                        isinstance(definition, ImmediatePayloadType)
                         and definition.bytes == 8
                     )
-                    or (operand.name or "").lower().endswith("s")
+                    or operand.name.lower().endswith("s")
                 )
                 operands.append(
                     _ScalarOperand(
                         (
                             _OPERAND_REGISTER_SELECTOR
-                            if definition.kind in {
-                                PayloadTypeKind.REGISTER_SELECTOR,
-                                PayloadTypeKind.CONTROL_REGISTER_SELECTOR,
-                            }
+                            if isinstance(
+                                definition,
+                                (
+                                    RegisterSelectorPayloadType,
+                                    ControlRegisterSelectorPayloadType,
+                                ),
+                            )
                             else (
                                 _OPERAND_TAIL_SIGNED
                                 if signed
@@ -609,7 +641,7 @@ def _render_scalar_form(
                             _selector_group_id(
                                 selector_group_ids, definition.register_group
                             )
-                            if definition.kind == PayloadTypeKind.REGISTER_SELECTOR
+                            if isinstance(definition, RegisterSelectorPayloadType)
                             else control_selector_group_id
                         ),
                         1,
@@ -618,7 +650,7 @@ def _render_scalar_form(
                 explicit_roles.append(payload.role)
                 payload_index += 1
                 continue
-            fixed = (operand.name or "").upper()
+            fixed = operand.name.upper()
             kind = {"SP": _OPERAND_FIXED_SP, "CS": _OPERAND_FIXED_CS}.get(fixed)
             if kind is None:
                 return None
@@ -636,7 +668,9 @@ def _render_scalar_form(
         if definition.bits > 8:
             return None
         excludes_immediate = any(
-            constraint.role == binding.role and "immediate" in constraint.exclude
+            constraint.role == binding.role
+            and isinstance(constraint, ExcludedOperandConstraint)
+            and "immediate" in constraint.values
             for constraint in form.constraints
         )
         access = binding.access
@@ -649,7 +683,8 @@ def _render_scalar_form(
                 kind,
                 ord(binding.marker),
                 definition.bits,
-                definition.value_type == "signed_integer",
+                isinstance(definition, ImmediateFieldType)
+                and definition.value_type == "signed_integer",
                 kind in {_OPERAND_EA, _OPERAND_FEA}
                 and access != "write"
                 and not excludes_immediate,
@@ -727,16 +762,19 @@ def _selector_group_id(
 
 
 def _scalar_field_operand_kind(project, field_type) -> int | None:
-    if field_type.kind == FieldTypeKind.EFFECTIVE_ADDRESS:
+    if isinstance(field_type, EffectiveAddressFieldType):
         return _OPERAND_FEA if field_type.profile == "fea" else _OPERAND_EA
-    if field_type.kind in {
-        FieldTypeKind.IMMEDIATE,
-        FieldTypeKind.REGISTER_PAIR_SELECTOR,
-        FieldTypeKind.PAGE_TABLE_LEVEL,
-        FieldTypeKind.FLAGS,
-    }:
+    if isinstance(
+        field_type,
+        (
+            ImmediateFieldType,
+            RegisterPairSelectorFieldType,
+            PageTableLevelFieldType,
+            FlagsFieldType,
+        ),
+    ):
         return _OPERAND_IMMEDIATE
-    if field_type.kind in {FieldTypeKind.REGISTER, FieldTypeKind.REGISTER_SELECTOR}:
+    if isinstance(field_type, (RegisterFieldType, RegisterSelectorFieldType)):
         group = _register_group_id(project, field_type.register_group)
         if group == "GPR":
             return _OPERAND_GPR
@@ -754,15 +792,14 @@ def _register_group_id(project, reference) -> str | None:
 
 
 def _field_operand_kind(project, field_type, identifier: str) -> int:
-    if field_type.kind == FieldTypeKind.EFFECTIVE_ADDRESS:
+    if isinstance(field_type, EffectiveAddressFieldType):
         return _OPERAND_VEA if field_type.profile == "vea" else _OPERAND_EA
-    if field_type.kind == FieldTypeKind.IMMEDIATE:
+    if isinstance(field_type, ImmediateFieldType):
         return _OPERAND_IMMEDIATE
-    if field_type.kind in {
-        FieldTypeKind.REGISTER,
-        FieldTypeKind.REGISTER_SELECTOR,
-        FieldTypeKind.REGISTER_PAIR_SELECTOR,
-    }:
+    if isinstance(
+        field_type,
+        (RegisterFieldType, RegisterSelectorFieldType, RegisterPairSelectorFieldType),
+    ):
         group = _register_group_id(project, field_type.register_group)
         if group == "GPR":
             return _OPERAND_GPR

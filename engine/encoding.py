@@ -39,12 +39,21 @@ class PayloadBinding:
 
 @dataclass(frozen=True, slots=True)
 class OperandConstraint:
-    """An allowed or excluded subset of one field role's value domain."""
+    """Common identity of a constraint on one field role's value domain."""
 
     role: str
     reason: str
-    allow: tuple[ConstraintValue, ...] = ()
-    exclude: tuple[ConstraintValue, ...] = ()
+    values: tuple[ConstraintValue, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class AllowedOperandConstraint(OperandConstraint):
+    """The field value must belong to the authored set or ranges."""
+
+
+@dataclass(frozen=True, slots=True)
+class ExcludedOperandConstraint(OperandConstraint):
+    """The field value must not belong to the authored set or ranges."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,11 +120,16 @@ class EncodingCatalog:
                 for representation in raw_form.get("payloads", ())
             )
             constraints = tuple(
-                OperandConstraint(
-                    role=constraint["role"],
-                    reason=constraint["reason"],
-                    allow=tuple(constraint.get("allow", ())),
-                    exclude=tuple(constraint.get("exclude", ())),
+                AllowedOperandConstraint(
+                    constraint["role"],
+                    constraint["reason"],
+                    tuple(constraint["allow"]),
+                )
+                if "allow" in constraint
+                else ExcludedOperandConstraint(
+                    constraint["role"],
+                    constraint["reason"],
+                    tuple(constraint["exclude"]),
                 )
                 for constraint in raw_form.get("constraints", ())
             )

@@ -150,14 +150,13 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 if root.reference in seen:
                     continue
                 seen.add(root.reference)
-                assert root.value is not None and root.selector is not None
                 anchor = ""
                 if public_targets.contains(root.reference):
                     anchor = rf"\phantomsection\label{{{public_targets.label(root.reference)}}}"
                 classes.append(
                     rf"\texttt{{0x{root.value:02X}}}{anchor} & "
                     rf"{_identifier(root.id)} & "
-                    rf"{tex_escape(root.name or root.id)} & "
+                    rf"{tex_escape(root.name)} & "
                     rf"{tex_escape(root.selector.kind)} {root.selector.bits}-bit selector\\"
                 )
         return "\n".join(

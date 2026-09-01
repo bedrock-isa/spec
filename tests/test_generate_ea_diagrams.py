@@ -32,8 +32,8 @@ class GenerateEADiagramsTest(unittest.TestCase):
                 projection = project_mode(mode)
                 updates = tuple(
                     index
-                    for index, encoding in enumerate(mode["encodings"])
-                    if "autoupdate" in encoding
+                    for index, encoding in enumerate(mode.encodings)
+                    if encoding.autoupdate is not None
                 )
 
                 self.assertEqual(
@@ -56,13 +56,9 @@ class GenerateEADiagramsTest(unittest.TestCase):
                     ),
                     tuple(
                         len(
-                            pattern
-                            if isinstance(pattern, str)
-                            else "".join(pattern)
+                            "".join(patterns)
                         )
-                        for pattern in (
-                            encoding["pattern"] for encoding in mode["encodings"]
-                        )
+                        for patterns in (encoding.patterns for encoding in mode.encodings)
                     ),
                 )
 

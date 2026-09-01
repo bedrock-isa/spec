@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
 
-from .encoding import EncodingForm
+from .encoding import AllowedOperandConstraint, EncodingForm, ExcludedOperandConstraint
 from .encoding_architecture import (
     ENCODING_CLASSES,
     EncodingClass,
@@ -493,10 +493,12 @@ def form_cubes(form: EncodingForm) -> tuple[AllocationCube, ...]:
             continue
         width = form.pattern.field_width(field.marker)
         domain = set(range(1 << width))
-        if constraint.allow:
-            domain &= _constraint_values(constraint.allow, width)
-        if constraint.exclude:
-            domain -= _constraint_values(constraint.exclude, width)
+        if isinstance(constraint, AllowedOperandConstraint):
+            domain &= _constraint_values(constraint.values, width)
+        elif isinstance(constraint, ExcludedOperandConstraint):
+            domain -= _constraint_values(constraint.values, width)
+        else:
+            raise TypeError(f"unsupported constraint {type(constraint).__name__}")
         constrained.append((field.marker, tuple(sorted(domain))))
 
     assignments = product(*(values for _, values in constrained)) if constrained else [()]

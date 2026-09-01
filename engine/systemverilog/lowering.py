@@ -217,7 +217,11 @@ def representative_opcode(form: decode_ir.FormIR) -> int:
     """Return a live-form opcode satisfying the normalized D0 constraints."""
     opcode = form.opcode_value
     for constraint in form.constraints:
-        selected = constraint.ranges[0].lower if constraint.ranges else 0x10
+        selected = (
+            constraint.ranges[0].lower
+            if isinstance(constraint, decode_ir.AllowedRangesConstraintIR)
+            else 0x10
+        )
         opcode = _set_gather(opcode, constraint.positions, selected)
     return opcode
 
@@ -226,11 +230,11 @@ def _constraint_matches(constraint: decode_ir.ConstraintIR, opcode: int) -> bool
     value = 0
     for position in constraint.positions:
         value = (value << 1) | ((opcode >> position) & 1)
-    if constraint.kind == "allow_ranges":
+    if isinstance(constraint, decode_ir.AllowedRangesConstraintIR):
         return any(item.lower <= value <= item.upper for item in constraint.ranges)
-    if constraint.kind == "exclude_immediate":
+    if isinstance(constraint, decode_ir.ExcludedImmediateConstraintIR):
         return not 0x5B <= value <= 0x5E
-    raise ValueError(f"unknown constraint kind {constraint.kind}")
+    raise TypeError(f"unsupported constraint {type(constraint).__name__}")
 
 
 def _accepted_forms_overlap(
@@ -890,7 +894,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
 
 def _constraint_sv(constraint: decode_ir.ConstraintIR, gathered: str) -> str:
     width = len(constraint.positions)
-    if constraint.kind == "allow_ranges":
+    if isinstance(constraint, decode_ir.AllowedRangesConstraintIR):
         parts = []
         for item in constraint.ranges:
             if item.lower == item.upper:
@@ -903,9 +907,9 @@ def _constraint_sv(constraint: decode_ir.ConstraintIR, gathered: str) -> str:
         if len(parts) == 1:
             return "(" + parts[0] + ")"
         return "(\n      " + " ||\n      ".join(parts) + "\n    )"
-    if constraint.kind == "exclude_immediate":
+    if isinstance(constraint, decode_ir.ExcludedImmediateConstraintIR):
         return f"!(({gathered} >= {_hex(width, 0x5B)}) && ({gathered} <= {_hex(width, 0x5E)}))"
-    raise ValueError(f"unknown constraint kind {constraint.kind}")
+    raise TypeError(f"unsupported constraint {type(constraint).__name__}")
 
 
 def _constraint_signal(form_index: int, constraint_index: int) -> str:

@@ -12,7 +12,14 @@ from .entity import Entity
 from .extension import ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
-from .register import RegisterField, RegisterLayout, ResetSpec
+from .register import (
+    ConstantReset,
+    LifecycleReset,
+    RegisterField,
+    RegisterLayout,
+    ResetSpec,
+    SourcedReset,
+)
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
@@ -299,11 +306,11 @@ def _decode_reset(raw: object) -> ResetSpec | None:
     if raw is None:
         return None
     if isinstance(raw, int) and not isinstance(raw, bool):
-        return ResetSpec(value=raw)
+        return ConstantReset(raw)
     assert isinstance(raw, Mapping)
     if "from" in raw:
-        return ResetSpec(source=Reference.parse(raw["from"]))
-    return ResetSpec(cold=raw.get("cold"), warm=raw.get("warm"))
+        return SourcedReset(Reference.parse(raw["from"]))
+    return LifecycleReset(raw["cold"], raw["warm"])
 
 
 def _load_mapping(path: Path) -> dict[str, Any]:

@@ -42,14 +42,26 @@ class VariableRegisterWidth:
 RegisterWidth = int | VariableRegisterWidth
 
 
-@dataclass(frozen=True, slots=True)
 class ResetSpec:
-    """One static reset value, register source, or lifecycle policy."""
+    """Base class for one architected reset policy."""
 
-    value: int | None = None
-    source: Reference["Register"] | None = None
-    cold: str | None = None
-    warm: str | None = None
+    __slots__ = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ConstantReset(ResetSpec):
+    value: int
+
+
+@dataclass(frozen=True, slots=True)
+class SourcedReset(ResetSpec):
+    source: Reference["Register"]
+
+
+@dataclass(frozen=True, slots=True)
+class LifecycleReset(ResetSpec):
+    cold: str
+    warm: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,9 +134,17 @@ class RegisterGroup(Entity):
     summary: str | None
     reset: ResetSpec | None
     layout: RegisterLayout | None
-    series: RegisterSeries | None
-    register_inventory: RegisterInventory | None
     registers: Mapping[str, Register]
+
+
+@dataclass(frozen=True, slots=True)
+class SeriesRegisterGroup(RegisterGroup):
+    series: RegisterSeries
+
+
+@dataclass(frozen=True, slots=True)
+class ExplicitRegisterGroup(RegisterGroup):
+    register_inventory: RegisterInventory
 
 
 @dataclass(frozen=True, slots=True)
@@ -294,20 +314,22 @@ def _load_group(
                     references.fields.register(field.reference, field)
             registers[register_id] = register
 
-    return RegisterGroup(
-        reference=reference,
-        source=source,
-        root=root,
-        owner=owner,
-        id=group_id,
-        width=width,
-        summary=raw.get("summary"),
-        reset=reset,
-        layout=layout,
-        series=series_spec,
-        register_inventory=register_inventory,
-        registers=MappingProxyType(registers),
+    common = (
+        reference,
+        source,
+        root,
+        owner,
+        group_id,
+        width,
+        raw.get("summary"),
+        reset,
+        layout,
+        MappingProxyType(registers),
     )
+    if series_spec is not None:
+        return SeriesRegisterGroup(*common, series_spec)
+    assert register_inventory is not None
+    return ExplicitRegisterGroup(*common, register_inventory)
 
 
 def _load_register(
@@ -411,11 +433,11 @@ def _decode_reset(raw: object) -> ResetSpec | None:
     if raw is None:
         return None
     if isinstance(raw, int) and not isinstance(raw, bool):
-        return ResetSpec(value=raw)
+        return ConstantReset(raw)
     assert isinstance(raw, Mapping)
     if "from" in raw:
-        return ResetSpec(source=Reference.parse(raw["from"]))
-    return ResetSpec(cold=raw.get("cold"), warm=raw.get("warm"))
+        return SourcedReset(Reference.parse(raw["from"]))
+    return LifecycleReset(raw["cold"], raw["warm"])
 
 
 def _load_validated(path: Path, schema: Mapping[str, object]) -> dict[str, Any]:

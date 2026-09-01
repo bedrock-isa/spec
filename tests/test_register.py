@@ -8,6 +8,7 @@ from engine.register import (
     RegisterCatalog,
     RegisterGroupSourceConflictError,
     RegisterWidthDomainOrderError,
+    SeriesRegisterGroup,
 )
 from engine.reference import Reference
 
@@ -26,7 +27,7 @@ class RegisterCatalogTest(unittest.TestCase):
                 Reference.parse("base.registers.GPR")
             ]
 
-            self.assertIsNone(group.register_inventory)
+            self.assertIsInstance(group, SeriesRegisterGroup)
             self.assertFalse((group.root / "registers").exists())
             self.assertEqual(tuple(group.registers), ("R0", "R1"))
             self.assertEqual(group.registers["R0"].encoding, 0)

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import ast
-from collections.abc import Iterator, Mapping, MutableMapping
+from collections.abc import Mapping
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import re
 from enum import StrEnum
@@ -17,7 +17,7 @@ from jsonschema import Draft202012Validator
 from .entity import Entity
 from .encoding_metasyntax import EncodingMetasyntax
 from .reference import Reference, ReferenceError
-from .type_system import FieldType, FieldTypeKind, PayloadType, TypeSystem
+from .type_system import EffectiveAddressFieldType, FieldType, PayloadType, TypeSystem
 
 
 class EAModeSchemaError(ValueError):
@@ -96,13 +96,12 @@ class EAModeCatalog:
         root = Path(isa_root).resolve()
         profiles: dict[str, str] = {}
         for definition in type_system.field_types.values():
-            if definition.kind != FieldTypeKind.EFFECTIVE_ADDRESS:
+            if not isinstance(definition, EffectiveAddressFieldType):
                 continue
             if definition.owner in profiles:
                 raise ValueError(
                     f"{root}: owner {definition.owner!r} has multiple EA profiles"
                 )
-            assert definition.profile is not None
             profiles[definition.owner] = definition.profile
         owner_order = owners or tuple(profiles)
         catalogs: list[EAModeCatalog] = []
@@ -162,8 +161,139 @@ class EAModeCatalog:
         return self.source.parent / mode_id / "mode.yaml"
 
 
-class EAMode(Entity, MutableMapping[str, Any]):
-    """Encapsulate and validate one compact or extended ``mode.yaml``."""
+@dataclass(frozen=True, slots=True)
+class EAField:
+    """One encoded field used by every encoding of an EA mode."""
+
+    symbol: str
+    role: str
+    type: Reference[FieldType]
+
+
+@dataclass(frozen=True, slots=True)
+class EAPayload:
+    """One payload consumed after an EA selector or descriptor."""
+
+    role: str
+    type: Reference[PayloadType]
+
+
+@dataclass(frozen=True, slots=True)
+class EAAutoupdate:
+    """One architected register update attached to an EA encoding."""
+
+    target: str
+    update_type: str
+    difference: int | str
+
+
+@dataclass(frozen=True, slots=True)
+class EAEncoding:
+    """One normalized wire encoding of an EA mode."""
+
+    patterns: tuple[str, ...]
+    payloads: tuple[EAPayload, ...]
+    autoupdate: EAAutoupdate | None
+
+
+@dataclass(frozen=True, slots=True)
+class FixedEASegment:
+    register: str
+
+
+@dataclass(frozen=True, slots=True)
+class FieldEASegment:
+    role: str
+
+
+EASegment = FixedEASegment | FieldEASegment
+
+
+@dataclass(frozen=True, slots=True)
+class EAExtension:
+    id: str
+    bytes: int
+
+
+@dataclass(frozen=True, slots=True)
+class EAMode(Entity):
+    """Common immutable identity and encodings of an effective-address mode."""
+
+    reference: Reference["EAMode"]
+    source: Path
+    isa_root: Path
+    type_system: TypeSystem
+    catalog: EAModeCatalog
+    id: str
+    name: str
+    encodings: tuple[EAEncoding, ...]
+    fields: tuple[EAField, ...]
+
+    @classmethod
+    def load(
+        cls,
+        path: str | Path,
+        isa_root: str | Path | None = None,
+        type_system: TypeSystem | None = None,
+        *,
+        catalog: EAModeCatalog | None = None,
+    ) -> "EAMode":
+        source = Path(path)
+        with source.open("r", encoding="utf-8") as stream:
+            data = yaml.safe_load(stream)
+        if not isinstance(data, Mapping):
+            raise ValueError(f"{source}: expected a YAML mapping")
+        return _EAModeSource(
+            data, source, isa_root, type_system, catalog=catalog
+        ).decode()
+
+    def field(self, symbol: str) -> EAField:
+        return next(field for field in self.fields if field.symbol == symbol)
+
+    def field_for_role(self, role: str) -> EAField | None:
+        return next((field for field in self.fields if field.role == role), None)
+
+    def field_type_reference(self, symbol: str) -> Reference[FieldType]:
+        return self.field(symbol).type
+
+    def payload_type_reference(
+        self, encoding_index: int, payload_index: int
+    ) -> Reference[PayloadType]:
+        return self.encodings[encoding_index].payloads[payload_index].type
+
+    def with_encoding(self, encoding: EAEncoding) -> "EAMode":
+        update = encoding.autoupdate
+        variant = update.update_type if update is not None else "plain"
+        return replace(self, encodings=(encoding,), name=f"{self.name} / {variant}")
+
+
+@dataclass(frozen=True, slots=True)
+class ImmediateEAMode(EAMode):
+    syntax: str
+    pseudocode: str
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryEAMode(EAMode):
+    syntax: str
+    pseudocode: str
+    segment: EASegment | None
+    base_source: EABaseSource
+
+
+@dataclass(frozen=True, slots=True)
+class CompactExtensionEAMode(EAMode):
+    extension: EAExtension
+
+
+@dataclass(frozen=True, slots=True)
+class ExtendedExtensionEAMode(EAMode):
+    syntax: str
+    extension: EAExtension
+
+
+class _EAModeSource:
+    """Validate and decode one authored compact or extended ``mode.yaml``."""
 
     def __init__(
         self,
@@ -189,24 +319,6 @@ class EAMode(Entity, MutableMapping[str, Any]):
         self._field_type_references: dict[str, Reference[FieldType]] = {}
         self._payload_type_references: dict[tuple[int, int], Reference[PayloadType]] = {}
         self.validate()
-
-    @classmethod
-    def load(
-        cls,
-        path: str | Path,
-        isa_root: str | Path | None = None,
-        type_system: TypeSystem | None = None,
-        *,
-        catalog: EAModeCatalog | None = None,
-    ) -> "EAMode":
-        """Load and validate a mode YAML file."""
-
-        source = Path(path)
-        with source.open("r", encoding="utf-8") as stream:
-            data = yaml.safe_load(stream)
-        if not isinstance(data, Mapping):
-            raise ValueError(f"{source}: expected a YAML mapping")
-        return cls(data, source, isa_root, type_system, catalog=catalog)
 
     def validate(self) -> None:
         """Validate this file without performing catalog-wide checks."""
@@ -330,18 +442,6 @@ class EAMode(Entity, MutableMapping[str, Any]):
         self._field_type_references = field_type_references
         self._payload_type_references = payload_type_references
 
-    def field_type_reference(self, symbol: str) -> Reference[FieldType]:
-        """Return the typed field-type reference for one field symbol."""
-
-        return self._field_type_references[symbol]
-
-    def payload_type_reference(
-        self, encoding_index: int, payload_index: int
-    ) -> Reference[PayloadType]:
-        """Return the typed payload-type reference for one encoding payload."""
-
-        return self._payload_type_references[encoding_index, payload_index]
-
     @property
     def base_source(self) -> EABaseSource:
         """Return the structurally parsed base term used by this mode."""
@@ -383,62 +483,71 @@ class EAMode(Entity, MutableMapping[str, Any]):
             )
         return candidates[0]
 
-    def save(self, path: str | Path | None = None) -> None:
-        """Validate and write the mode to ``path`` or back to its source."""
-
-        self.validate()
-        destination = Path(path) if path is not None else self.source
-        destination_catalog = EAModeCatalog.containing(
-            destination, self.isa_root, self.type_system
+    def decode(self) -> EAMode:
+        fields = tuple(
+            EAField(symbol, raw["role"], self._field_type_references[symbol])
+            for symbol, raw in self._data.get("fields", {}).items()
         )
-        destination_reference = destination_catalog.reference(self._data["id"])
-        with destination.open("w", encoding="utf-8") as stream:
-            yaml.safe_dump(
-                self._data,
-                stream,
-                sort_keys=False,
-                allow_unicode=True,
-                default_flow_style=False,
+        encodings = tuple(
+            EAEncoding(
+                (raw["pattern"],)
+                if isinstance(raw["pattern"], str)
+                else tuple(raw["pattern"]),
+                tuple(
+                    EAPayload(
+                        payload["role"],
+                        self._payload_type_references[encoding_index, payload_index],
+                    )
+                    for payload_index, payload in enumerate(raw.get("payloads", ()))
+                ),
+                EAAutoupdate(
+                    raw["autoupdate"]["target"],
+                    raw["autoupdate"]["type"],
+                    raw["autoupdate"]["difference"],
+                )
+                if "autoupdate" in raw
+                else None,
             )
-        self.source = destination
-        self.catalog = destination_catalog
-        self.reference = destination_reference
-
-    def to_dict(self) -> dict[str, Any]:
-        return deepcopy(self._data)
-
-    def __getattr__(self, name: str) -> Any:
-        data = self.__dict__.get("_data", {})
-        if name in data:
-            return deepcopy(data[name])
-        raise AttributeError(name)
-
-    def __getitem__(self, key: str) -> Any:
-        return deepcopy(self._data[key])
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        previous = deepcopy(self._data)
-        self._data[key] = deepcopy(value)
-        try:
-            self.validate()
-        except Exception:
-            self._data = previous
-            raise
-
-    def __delitem__(self, key: str) -> None:
-        previous = deepcopy(self._data)
-        del self._data[key]
-        try:
-            self.validate()
-        except Exception:
-            self._data = previous
-            raise
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._data)
-
-    def __len__(self) -> int:
-        return len(self._data)
+            for encoding_index, raw in enumerate(self._data["encodings"])
+        )
+        common = (
+            self.reference,
+            self.source,
+            self.isa_root,
+            self.type_system,
+            self.catalog,
+            self._data["id"],
+            self._data["name"],
+            encodings,
+            fields,
+        )
+        kind = self._data["kind"]
+        if kind == "immediate":
+            return ImmediateEAMode(
+                *common, self._data["syntax"], self._data["pseudocode"]
+            )
+        if kind == "memory":
+            raw_segment = self._data.get("segment")
+            segment: EASegment | None
+            if raw_segment is None:
+                segment = None
+            elif raw_segment["source"] == "fixed":
+                segment = FixedEASegment(raw_segment["register"])
+            else:
+                segment = FieldEASegment(raw_segment["role"])
+            return MemoryEAMode(
+                *common,
+                self._data["syntax"],
+                self._data["pseudocode"],
+                segment,
+                self.base_source,
+            )
+        extension = EAExtension(
+            self._data["extension"]["id"], self._data["extension"]["bytes"]
+        )
+        if self.catalog.mode_type == "compact":
+            return CompactExtensionEAMode(*common, extension)
+        return ExtendedExtensionEAMode(*common, self._data["syntax"], extension)
 
     def _find_isa_root(self) -> Path:
         for parent in (self.source.parent, *self.source.parents):
@@ -455,7 +564,7 @@ class EAMode(Entity, MutableMapping[str, Any]):
         candidates = [
             (reference, definition)
             for reference, definition in field_types.items()
-            if definition.kind == FieldTypeKind.EFFECTIVE_ADDRESS
+            if isinstance(definition, EffectiveAddressFieldType)
             and definition.profile == profile
         ]
         if len(candidates) != 1:

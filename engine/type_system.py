@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
@@ -19,32 +18,6 @@ if TYPE_CHECKING:
     from .register import RegisterGroup
 
 
-class FieldTypeKind(StrEnum):
-    """Architectural interpretation of a primary-encoding field."""
-
-    REGISTER_SELECTOR = "register_selector"
-    EFFECTIVE_ADDRESS = "effective_address"
-    REGISTER = "register"
-    ENUM_CONDITION = "enum_condition"
-    REGISTER_PAIR_SELECTOR = "register_pair_selector"
-    PAGE_TABLE_LEVEL = "page_table_level"
-    FLAGS = "flags"
-    IMMEDIATE = "immediate"
-    MEMORY_ORDER = "memory_order"
-    SIZE_SELECTOR = "size_selector"
-
-
-class PayloadTypeKind(StrEnum):
-    """Architectural interpretation of an appended instruction payload."""
-
-    IMMEDIATE = "immediate"
-    PC_DISPLACEMENT = "pc_displacement"
-    PC_ABSOLUTE = "pc_absolute"
-    FLOATING_POINT_CONSTANT_ID = "floating_point_constant_id"
-    REGISTER_SELECTOR = "register_selector"
-    CONTROL_REGISTER_SELECTOR = "control_register_selector"
-
-
 @dataclass(frozen=True, slots=True)
 class FieldValue:
     """One authored value/code pair for a selector field."""
@@ -55,18 +28,13 @@ class FieldValue:
 
 @dataclass(frozen=True, slots=True)
 class FieldType(Entity):
-    """A type that occupies bits inside the primary instruction encoding."""
+    """Common identity and width of a primary-encoding field type."""
 
     reference: Reference["FieldType"]
     source: Path
     owner: str
     id: str
-    kind: FieldTypeKind
     bits: int
-    value_type: str | None = None
-    register_group: Reference["RegisterGroup"] | None = None
-    profile: str | None = None
-    values: tuple[FieldValue, ...] = ()
 
     @classmethod
     def from_mapping(
@@ -77,70 +45,114 @@ class FieldType(Entity):
         type_id: str,
         data: Mapping[str, Any],
     ) -> "FieldType":
-        _reject_unknown_properties(
-            type_id,
-            data,
-            {"type", "bits", "value_type", "register_group", "profile", "values"},
-        )
         raw_kind = _required_string(type_id, data, "type")
-        try:
-            kind = FieldTypeKind(raw_kind)
-        except ValueError as error:
-            raise ValueError(
-                f"{source}: {type_id}: unknown field type kind {raw_kind!r}"
-            ) from error
         bits = _positive_int(type_id, data.get("bits"), "bits")
-        values = _field_values(type_id, data.get("values", ()), bits)
-        value_type = _optional_string(type_id, data, "value_type")
-        register_group = _optional_reference(type_id, data, "register_group")
-        profile = _optional_string(type_id, data, "profile")
-
-        if kind == FieldTypeKind.SIZE_SELECTOR and not values:
-            raise ValueError(f"{source}: {type_id}: size_selector requires values")
-        if kind == FieldTypeKind.EFFECTIVE_ADDRESS and profile is None:
-            raise ValueError(
-                f"{source}: {type_id}: effective_address requires profile"
+        common = (reference, source, owner, type_id, bits)
+        if raw_kind == "register_selector":
+            _reject_unknown_properties(type_id, data, {"type", "bits", "register_group"})
+            return RegisterSelectorFieldType(
+                *common, _required_reference(type_id, data, "register_group")
             )
-        if kind == FieldTypeKind.IMMEDIATE and value_type is None:
-            raise ValueError(f"{source}: {type_id}: immediate requires value_type")
-        if (
-            kind
-            in {
-                FieldTypeKind.REGISTER,
-                FieldTypeKind.REGISTER_SELECTOR,
-                FieldTypeKind.REGISTER_PAIR_SELECTOR,
-            }
-            and register_group is None
-        ):
-            raise ValueError(f"{source}: {type_id}: {kind} requires register_group")
+        if raw_kind == "effective_address":
+            _reject_unknown_properties(type_id, data, {"type", "bits", "profile"})
+            return EffectiveAddressFieldType(
+                *common, _required_string(type_id, data, "profile")
+            )
+        if raw_kind == "register":
+            _reject_unknown_properties(type_id, data, {"type", "bits", "register_group"})
+            return RegisterFieldType(
+                *common, _required_reference(type_id, data, "register_group")
+            )
+        if raw_kind == "enum_condition":
+            _reject_unknown_properties(type_id, data, {"type", "bits"})
+            return EnumConditionFieldType(*common)
+        if raw_kind == "register_pair_selector":
+            _reject_unknown_properties(type_id, data, {"type", "bits", "register_group"})
+            return RegisterPairSelectorFieldType(
+                *common, _required_reference(type_id, data, "register_group")
+            )
+        if raw_kind == "page_table_level":
+            _reject_unknown_properties(type_id, data, {"type", "bits"})
+            return PageTableLevelFieldType(*common)
+        if raw_kind == "flags":
+            _reject_unknown_properties(type_id, data, {"type", "bits"})
+            return FlagsFieldType(*common)
+        if raw_kind == "immediate":
+            _reject_unknown_properties(type_id, data, {"type", "bits", "value_type"})
+            return ImmediateFieldType(
+                *common, _required_string(type_id, data, "value_type")
+            )
+        if raw_kind == "memory_order":
+            _reject_unknown_properties(type_id, data, {"type", "bits"})
+            return MemoryOrderFieldType(*common)
+        if raw_kind == "size_selector":
+            _reject_unknown_properties(type_id, data, {"type", "bits", "values"})
+            values = _field_values(type_id, data.get("values", ()), bits)
+            if not values:
+                raise ValueError(f"{source}: {type_id}: size_selector requires values")
+            return SizeSelectorFieldType(*common, values)
+        raise ValueError(f"{source}: {type_id}: unknown field type {raw_kind!r}")
 
-        return cls(
-            reference=reference,
-            source=source,
-            owner=owner,
-            id=type_id,
-            kind=kind,
-            bits=bits,
-            value_type=value_type,
-            register_group=register_group,
-            profile=profile,
-            values=values,
-        )
+
+@dataclass(frozen=True, slots=True)
+class RegisterSelectorFieldType(FieldType):
+    register_group: Reference["RegisterGroup"]
+
+
+@dataclass(frozen=True, slots=True)
+class EffectiveAddressFieldType(FieldType):
+    profile: str
+
+
+@dataclass(frozen=True, slots=True)
+class RegisterFieldType(FieldType):
+    register_group: Reference["RegisterGroup"]
+
+
+@dataclass(frozen=True, slots=True)
+class EnumConditionFieldType(FieldType):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class RegisterPairSelectorFieldType(FieldType):
+    register_group: Reference["RegisterGroup"]
+
+
+@dataclass(frozen=True, slots=True)
+class PageTableLevelFieldType(FieldType):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class FlagsFieldType(FieldType):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class ImmediateFieldType(FieldType):
+    value_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryOrderFieldType(FieldType):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class SizeSelectorFieldType(FieldType):
+    values: tuple[FieldValue, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class PayloadType(Entity):
-    """A byte-sized type appended after the primary instruction encoding."""
+    """Common identity and width of an appended payload type."""
 
     reference: Reference["PayloadType"]
     source: Path
     owner: str
     id: str
-    kind: PayloadTypeKind
     bytes: int
-    value_type: str | None = None
-    signed: bool | None = None
-    register_group: Reference["RegisterGroup"] | None = None
 
     @classmethod
     def from_mapping(
@@ -151,43 +163,113 @@ class PayloadType(Entity):
         type_id: str,
         data: Mapping[str, Any],
     ) -> "PayloadType":
-        _reject_unknown_properties(
-            type_id,
-            data,
-            {"type", "bytes", "value_type", "signed", "register_group"},
-        )
         raw_kind = _required_string(type_id, data, "type")
-        try:
-            kind = PayloadTypeKind(raw_kind)
-        except ValueError as error:
-            raise ValueError(
-                f"{source}: {type_id}: unknown payload type kind {raw_kind!r}"
-            ) from error
         byte_count = _positive_int(type_id, data.get("bytes"), "bytes")
-        value_type = _optional_string(type_id, data, "value_type")
-        signed = data.get("signed")
-        if signed is not None and not isinstance(signed, bool):
-            raise ValueError(f"{source}: {type_id}: signed must be a boolean")
-        if kind == PayloadTypeKind.IMMEDIATE and value_type is None:
-            raise ValueError(f"{source}: {type_id}: immediate requires value_type")
-        if kind == PayloadTypeKind.PC_ABSOLUTE and signed is None:
-            raise ValueError(f"{source}: {type_id}: pc_absolute requires signed")
-        register_group = _optional_reference(type_id, data, "register_group")
-        if kind == PayloadTypeKind.REGISTER_SELECTOR and register_group is None:
-            raise ValueError(
-                f"{source}: {type_id}: register_selector requires register_group"
+        common = (reference, source, owner, type_id, byte_count)
+        if raw_kind == "immediate":
+            _reject_unknown_properties(type_id, data, {"type", "bytes", "value_type"})
+            return ImmediatePayloadType(
+                *common, _required_string(type_id, data, "value_type")
             )
-        return cls(
-            reference,
-            source,
-            owner,
-            type_id,
-            kind,
-            byte_count,
-            value_type,
-            signed,
-            register_group,
-        )
+        if raw_kind == "pc_displacement":
+            _reject_unknown_properties(type_id, data, {"type", "bytes"})
+            return PcDisplacementPayloadType(*common)
+        if raw_kind == "pc_absolute":
+            _reject_unknown_properties(type_id, data, {"type", "bytes", "signed"})
+            signed = data.get("signed")
+            if not isinstance(signed, bool):
+                raise ValueError(f"{source}: {type_id}: pc_absolute requires boolean signed")
+            return PcAbsolutePayloadType(*common, signed)
+        if raw_kind == "floating_point_constant_id":
+            _reject_unknown_properties(type_id, data, {"type", "bytes"})
+            return FloatingPointConstantIdPayloadType(*common)
+        if raw_kind == "register_selector":
+            _reject_unknown_properties(type_id, data, {"type", "bytes", "register_group"})
+            return RegisterSelectorPayloadType(
+                *common, _required_reference(type_id, data, "register_group")
+            )
+        if raw_kind == "control_register_selector":
+            _reject_unknown_properties(type_id, data, {"type", "bytes"})
+            return ControlRegisterSelectorPayloadType(*common)
+        raise ValueError(f"{source}: {type_id}: unknown payload type {raw_kind!r}")
+
+
+@dataclass(frozen=True, slots=True)
+class ImmediatePayloadType(PayloadType):
+    value_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class PcDisplacementPayloadType(PayloadType):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class PcAbsolutePayloadType(PayloadType):
+    signed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FloatingPointConstantIdPayloadType(PayloadType):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class RegisterSelectorPayloadType(PayloadType):
+    register_group: Reference["RegisterGroup"]
+
+
+@dataclass(frozen=True, slots=True)
+class ControlRegisterSelectorPayloadType(PayloadType):
+    pass
+
+
+def field_type_source_name(definition: FieldType) -> str:
+    """Return the authored type spelling for machine-facing projections."""
+
+    names = {
+        RegisterSelectorFieldType: "register_selector",
+        EffectiveAddressFieldType: "effective_address",
+        RegisterFieldType: "register",
+        EnumConditionFieldType: "enum_condition",
+        RegisterPairSelectorFieldType: "register_pair_selector",
+        PageTableLevelFieldType: "page_table_level",
+        FlagsFieldType: "flags",
+        ImmediateFieldType: "immediate",
+        MemoryOrderFieldType: "memory_order",
+        SizeSelectorFieldType: "size_selector",
+    }
+    try:
+        return names[type(definition)]
+    except KeyError as error:
+        raise TypeError(f"unsupported field type {type(definition).__name__}") from error
+
+
+def payload_type_source_name(definition: PayloadType) -> str:
+    """Return the authored type spelling for machine-facing projections."""
+
+    names = {
+        ImmediatePayloadType: "immediate",
+        PcDisplacementPayloadType: "pc_displacement",
+        PcAbsolutePayloadType: "pc_absolute",
+        FloatingPointConstantIdPayloadType: "floating_point_constant_id",
+        RegisterSelectorPayloadType: "register_selector",
+        ControlRegisterSelectorPayloadType: "control_register_selector",
+    }
+    try:
+        return names[type(definition)]
+    except KeyError as error:
+        raise TypeError(f"unsupported payload type {type(definition).__name__}") from error
+
+
+def payload_type_is_signed(definition: PayloadType) -> bool:
+    """Return the numeric signedness projected for an appended payload."""
+
+    if isinstance(definition, PcAbsolutePayloadType):
+        return definition.signed
+    if isinstance(definition, ImmediatePayloadType):
+        return definition.value_type == "signed_integer"
+    return definition.id.endswith("S")
 
 
 @dataclass(frozen=True, slots=True)
@@ -324,20 +406,10 @@ def _required_string(type_id: str, data: Mapping[str, Any], key: str) -> str:
     return value
 
 
-def _optional_string(
+def _required_reference(
     type_id: str, data: Mapping[str, Any], key: str
-) -> str | None:
-    value = data.get(key)
-    if value is not None and (not isinstance(value, str) or not value):
-        raise ValueError(f"{type_id}: {key} must be a non-empty string")
-    return value
-
-
-def _optional_reference(
-    type_id: str, data: Mapping[str, Any], key: str
-) -> Reference["RegisterGroup"] | None:
-    value = _optional_string(type_id, data, key)
-    return None if value is None else Reference.parse(value)
+) -> Reference["RegisterGroup"]:
+    return Reference.parse(_required_string(type_id, data, key))
 
 
 def _positive_int(type_id: str, value: object, key: str) -> int:

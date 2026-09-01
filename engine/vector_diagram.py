@@ -46,11 +46,73 @@ class VectorDiagramError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class VectorExample:
-    variant: str
+    """Common validated structure shared by finite vector examples."""
+
     scalable: bool
     rows: tuple[dict[str, Any], ...]
     edges: tuple[dict[str, Any], ...]
-    data: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class VectorLaneTransferExample(VectorExample):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class IntegerWidthConversionExample(VectorExample):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class StatefulPredicateRangeExample(VectorExample):
+    states: tuple[dict[str, str], ...]
+    start: int
+    end: int | str
+
+
+@dataclass(frozen=True, slots=True)
+class CountedPredicateRangeExample(VectorExample):
+    count: dict[str, str]
+    start: int
+    end: int | str
+
+
+PredicateRangeExample = StatefulPredicateRangeExample | CountedPredicateRangeExample
+
+
+@dataclass(frozen=True, slots=True)
+class PredicateWidthConversionExample(VectorExample):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class PredicateLaneTransferExample(VectorExample):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class ScalarVectorTransferExample(VectorExample):
+    scalars: tuple[dict[str, Any], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class PredicatedVectorLoadExample(VectorExample):
+    base: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class PredicatedVectorReductionExample(VectorExample):
+    selected: tuple[int, ...]
+    fold_label: str
+    terms: tuple[str, ...]
+    continuation: bool
+    result_label: str
+    result_value: str
+
+
+@dataclass(frozen=True, slots=True)
+class FloatingPointWidthConversionExample(VectorExample):
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +128,27 @@ class VectorDiagram:
 
     @property
     def kind(self) -> str:
-        return self.example.variant
+        if isinstance(self.example, VectorLaneTransferExample):
+            return "vector-lane-transfer"
+        if isinstance(self.example, IntegerWidthConversionExample):
+            return "integer-width-conversion"
+        if isinstance(
+            self.example, (StatefulPredicateRangeExample, CountedPredicateRangeExample)
+        ):
+            return "predicate-range-generation"
+        if isinstance(self.example, PredicateWidthConversionExample):
+            return "predicate-width-conversion"
+        if isinstance(self.example, PredicateLaneTransferExample):
+            return "predicate-lane-transfer"
+        if isinstance(self.example, ScalarVectorTransferExample):
+            return "scalar-vector-transfer"
+        if isinstance(self.example, PredicatedVectorLoadExample):
+            return "predicated-vector-load"
+        if isinstance(self.example, PredicatedVectorReductionExample):
+            return "predicated-vector-reduction"
+        if isinstance(self.example, FloatingPointWidthConversionExample):
+            return "floating-point-width-conversion"
+        raise TypeError(f"unsupported vector example {type(self.example).__name__}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -296,7 +378,7 @@ def _decode_lane_map(raw: dict[str, Any], path: Path, scalable: bool) -> VectorE
             path,
             "result cells must use a renderable transfer or terminal classification",
         )
-    return VectorExample("vector-lane-transfer", scalable, tuple(rows), edges)
+    return VectorLaneTransferExample(scalable, tuple(rows), edges)
 
 
 def _decode_edges(
@@ -541,7 +623,7 @@ def _decode_detailed_width_map(
         _fail(path, "detailed integer-width-conversion result cells have an invalid classification")
     rows_by_id = {row["id"]: row for row in rows}
     edges = _decode_detailed_width_edges(raw["edges"], path, rows_by_id, result_row)
-    return VectorExample("integer-width-conversion", scalable, tuple(rows), edges)
+    return IntegerWidthConversionExample(scalable, tuple(rows), edges)
 
 
 def _decode_predicate_range_bounds(
@@ -665,12 +747,13 @@ def _decode_stateful_predicate_range(
 
     start, end = _decode_predicate_range_bounds(raw, path)
     row = _decode_predicate_range_result(raw, path, start, end)
-    return VectorExample(
-        "predicate-range-generation",
+    return StatefulPredicateRangeExample(
         True,
         (row,),
         (),
-        {"states": tuple(states), "start": start, "end": end},
+        tuple(states),
+        start,
+        end,
     )
 
 
@@ -696,19 +779,16 @@ def _decode_counted_predicate_range(
     if start != count_value or end != "lane-count":
         _fail(path, "counted predicate-range-generation must span count through lane-count")
     row = _decode_predicate_range_result(raw, path, start, end)
-    return VectorExample(
-        "predicate-range-generation",
+    return CountedPredicateRangeExample(
         True,
         (row,),
         (),
         {
-            "count": {
-                "label": _string(count["label"], path, "count.label"),
-                "value": str(count_value),
-            },
-            "start": start,
-            "end": end,
+            "label": _string(count["label"], path, "count.label"),
+            "value": str(count_value),
         },
+        start,
+        end,
     )
 
 
@@ -875,7 +955,7 @@ def _decode_predicate_width(
         }
         for offset in range(count)
     )
-    return VectorExample("predicate-width-conversion", False, rows, edges)
+    return PredicateWidthConversionExample(False, rows, edges)
 
 
 def _decode_predicate_lane_map(
@@ -1028,7 +1108,7 @@ def _decode_predicate_lane_map(
     }
     if transfer_targets != copied_targets:
         _fail(path, "predicate-lane-transfer transfers must cover exactly the copied result cells")
-    return VectorExample("predicate-lane-transfer", scalable, tuple(rows), tuple(edges))
+    return PredicateLaneTransferExample(scalable, tuple(rows), tuple(edges))
 
 
 def _decode_finite_lane_row(
@@ -1297,12 +1377,11 @@ def _decode_scalar_bridge(
         }
         if len(transfers) != len(expected_transfers) or actual_transfers != expected_transfers:
             _fail(path, "scalar-vector-transfer broadcast transfers must cover every result lane exactly once")
-    return VectorExample(
-        "scalar-vector-transfer",
+    return ScalarVectorTransferExample(
         True,
         (row,),
         tuple(connections),
-        {"scalars": tuple(scalars)},
+        tuple(scalars),
     )
 
 
@@ -1421,7 +1500,7 @@ def _decode_memory_lanes(
         _fail(path, "predicated-vector-load connections must cover exactly every active access")
     if any((index in active) != (result_cells[index]["effect"] == "copy") for index in range(lane_count)):
         _fail(path, "predicated-vector-load result classifications must match active accesses")
-    return VectorExample("predicated-vector-load", True, rows, tuple(connections), {"base": base_data})
+    return PredicatedVectorLoadExample(True, rows, tuple(connections), base_data)
 
 
 def _decode_reduction(
@@ -1487,19 +1566,16 @@ def _decode_reduction(
         {"id": "predicate", "label": _string(predicate["label"], path, "predicate.label"), "role": "predicate", "element_bits": 8, "cells": predicate_cells},
         {"id": "source", "label": _string(source["label"], path, "source.label"), "role": "source", "element_bits": element_bits, "cells": source_cells},
     )
-    return VectorExample(
-        "predicated-vector-reduction",
+    return PredicatedVectorReductionExample(
         True,
         rows,
         (),
-        {
-            "selected": selected,
-            "fold_label": _string(fold["label"], path, "fold.label"),
-            "terms": terms,
-            "continuation": fold["continuation"],
-            "result_label": _string(result["label"], path, "result.label"),
-            "result_value": _string(result["value"], path, "result.value"),
-        },
+        selected,
+        _string(fold["label"], path, "fold.label"),
+        terms,
+        fold["continuation"],
+        _string(result["label"], path, "result.label"),
+        _string(result["value"], path, "result.value"),
     )
 
 
@@ -1606,7 +1682,7 @@ def _decode_conversion_map(
     edge_targets = {(edge["to_container"], edge["to_cell"]) for edge in edges}
     if copied_results != edge_targets:
         _fail(path, "floating-point-width-conversion connections must cover exactly the converted result fields")
-    return VectorExample("floating-point-width-conversion", True, tuple(rows), edges)
+    return FloatingPointWidthConversionExample(True, tuple(rows), edges)
 
 
 def _decode(raw: dict[str, Any], path: Path) -> VectorExample:
@@ -1726,7 +1802,9 @@ def _width_cell_geometry(
     )
 
 
-def _render_detailed_width_tikz(example: VectorExample) -> str:
+def _render_detailed_width_tikz(
+    example: IntegerWidthConversionExample | FloatingPointWidthConversionExample,
+) -> str:
     lines: list[str] = []
     top_y = (len(example.rows) - 2) * 1.10
     y_by_id = {
@@ -1820,7 +1898,7 @@ def _predicate_width_cell_geometry(
     return container_left + cell_index * .5, .5
 
 
-def _render_predicate_width_tikz(example: VectorExample) -> str:
+def _render_predicate_width_tikz(example: PredicateWidthConversionExample) -> str:
     lines = [
         r"\node[vectorExampleFixedView] at (4,2.18) {fixed example: VLEN = 16 bytes};"
     ]
@@ -1881,7 +1959,7 @@ def _predicate_lane_cell_geometry(
     return right - (preceding_bits + cell["bits"]) / 16, cell["bits"] / 16
 
 
-def _render_predicate_lane_map_tikz(example: VectorExample) -> str:
+def _render_predicate_lane_map_tikz(example: PredicateLaneTransferExample) -> str:
     lines: list[str] = []
     top_y = (len(example.rows) - 1) * 1.10
     y_by_id = {
@@ -1946,16 +2024,15 @@ def _render_predicate_lane_map_tikz(example: VectorExample) -> str:
     return "\n".join(lines)
 
 
-def _render_grouped_predicate_range_tikz(example: VectorExample) -> str:
-    assert example.data is not None
+def _render_grouped_predicate_range_tikz(example: PredicateRangeExample) -> str:
     row = example.rows[0]
-    start = example.data["start"]
-    end = example.data["end"]
+    start = example.start
+    end = example.end
     start_x = 8 - start
     end_x = 0 if end == "lane-count" else 8 - end
     lines: list[str] = []
-    if "states" in example.data:
-        for state in example.data["states"]:
+    if isinstance(example, StatefulPredicateRangeExample):
+        for state in example.states:
             anchor_x = start_x if state["anchor"] == "start" else end_x
             gap = 1.35 if len(state["after"]) > 1 else .85
             after_x = (
@@ -1988,7 +2065,7 @@ def _render_grouped_predicate_range_tikz(example: VectorExample) -> str:
                 rf"({anchor_x:.2f},1.18);"
             )
     else:
-        count = example.data["count"]
+        count = example.count
         lines.append(
             rf"\node[vectorExampleIndex] (predicateRangeCount) at ({start_x:.2f},1.95) "
             rf"{{{_tex(count['value'])}}};"
@@ -2037,10 +2114,9 @@ def _render_grouped_predicate_range_tikz(example: VectorExample) -> str:
     return "\n".join(lines)
 
 
-def _render_scalar_bridge_tikz(example: VectorExample) -> str:
-    assert example.data is not None
+def _render_scalar_bridge_tikz(example: ScalarVectorTransferExample) -> str:
     row = example.rows[0]
-    scalars = example.data["scalars"]
+    scalars = example.scalars
     scalar_destination = next((scalar for scalar in scalars if scalar["role"] == "destination"), None)
     scalar_source = next((scalar for scalar in scalars if scalar["role"] == "source"), None)
     scalar_index = next((scalar for scalar in scalars if scalar["role"] == "index"), None)
@@ -2169,11 +2245,10 @@ def _render_scalar_bridge_tikz(example: VectorExample) -> str:
     return "\n".join(lines)
 
 
-def _render_memory_lanes_tikz(example: VectorExample) -> str:
-    assert example.data is not None
+def _render_memory_lanes_tikz(example: PredicatedVectorLoadExample) -> str:
     rows = {row["id"]: row for row in example.rows}
     y_by_id = {"address": 2.20, "memory": 1.10, "result": 0.0, "predicate": -1.10}
-    base = example.data["base"]
+    base = example.base
     lines = [
         rf"\node[vectorExampleScalar] (memoryBase) at (3.35,3.71) {{{_tex(base['value'])}}};",
         rf"\node[vectorExampleLabel] at (3.93,3.71) {{{_tex(base['label'])}}};",
@@ -2221,8 +2296,7 @@ def _render_memory_lanes_tikz(example: VectorExample) -> str:
     return "\n".join(lines)
 
 
-def _render_reduction_tikz(example: VectorExample) -> str:
-    assert example.data is not None
+def _render_reduction_tikz(example: PredicatedVectorReductionExample) -> str:
     y_by_id = {"predicate": 3.30, "source": 2.20}
     lines: list[str] = []
     for row in example.rows:
@@ -2237,7 +2311,7 @@ def _render_reduction_tikz(example: VectorExample) -> str:
                 rf"\node[{'vectorExampleCompactText' if row['id'] == 'predicate' else 'vectorExampleCellText'}] "
                 rf"at ({x + width / 2:.2f},{y + .31:.2f}) {{{_tex(cell['value'])}}};"
             )
-            if row["id"] == "source" and index in example.data["selected"]:
+            if row["id"] == "source" and index in example.selected:
                 lines.append(
                     rf"\draw[vectorExampleLaneTransferArrow] ({x + width / 2:.2f},{y - .02:.2f}) -- "
                     rf"({x + width / 2:.2f},1.78);"
@@ -2247,41 +2321,43 @@ def _render_reduction_tikz(example: VectorExample) -> str:
             rf"\draw[vectorExamplePredicateLaneContinuation] (-2,{y + .62:.2f}) -- (0,{y + .62:.2f});"
             rf"\node[vectorExampleMuted] at (-1,{y + .31:.2f}) {{$\cdots$}};"
         )
-    expression = " + ".join(_tex(term) for term in example.data["terms"])
-    if example.data["continuation"]:
+    expression = " + ".join(_tex(term) for term in example.terms)
+    if example.continuation:
         expression += r" + \cdots"
     lines.append(r"\path[vectorExampleFold] (0,1.10) rectangle (8,1.72);")
     lines.append(rf"\node[vectorExampleCellText] at (4,1.41) {{$ {expression} $}};")
-    lines.append(rf"\node[vectorExampleLabel] at (8.22,1.41) {{{_tex(example.data['fold_label'])}}};")
+    lines.append(rf"\node[vectorExampleLabel] at (8.22,1.41) {{{_tex(example.fold_label)}}};")
     lines.append(
         rf"\node[vectorExampleScalar] (reductionResult) at (4,.31) "
-        rf"{{{_tex(example.data['result_value'])}}};"
+        rf"{{{_tex(example.result_value)}}};"
     )
-    lines.append(rf"\node[vectorExampleLabel] at (8.22,.31) {{{_tex(example.data['result_label'])}}};")
+    lines.append(rf"\node[vectorExampleLabel] at (8.22,.31) {{{_tex(example.result_label)}}};")
     lines.append(r"\node[vectorExampleEquality] at (4,.86) {$=$};")
     return "\n".join(lines)
 
 
 def render_tikz(example: VectorExample) -> str:
     lines: list[str] = []
-    if example.variant == "scalar-vector-transfer":
+    if isinstance(example, ScalarVectorTransferExample):
         return _render_scalar_bridge_tikz(example)
-    if example.variant == "predicated-vector-load":
+    if isinstance(example, PredicatedVectorLoadExample):
         return _render_memory_lanes_tikz(example)
-    if example.variant == "predicated-vector-reduction":
+    if isinstance(example, PredicatedVectorReductionExample):
         return _render_reduction_tikz(example)
-    if example.variant == "floating-point-width-conversion":
+    if isinstance(example, FloatingPointWidthConversionExample):
         return _render_detailed_width_tikz(example)
-    if example.variant == "predicate-lane-transfer":
+    if isinstance(example, PredicateLaneTransferExample):
         return _render_predicate_lane_map_tikz(example)
-    if example.variant == "predicate-width-conversion":
+    if isinstance(example, PredicateWidthConversionExample):
         return _render_predicate_width_tikz(example)
-    if example.variant == "predicate-range-generation":
-        return _render_grouped_predicate_range_tikz(example)
-    if example.variant == "integer-width-conversion" and any(
-        "containers" in row for row in example.rows
+    if isinstance(
+        example, (StatefulPredicateRangeExample, CountedPredicateRangeExample)
     ):
+        return _render_grouped_predicate_range_tikz(example)
+    if isinstance(example, IntegerWidthConversionExample):
         return _render_detailed_width_tikz(example)
+    if not isinstance(example, VectorLaneTransferExample):
+        raise TypeError(f"unsupported vector example {type(example).__name__}")
     detailed_lane_view = any(row["role"] == "predicate" for row in example.rows)
     if not detailed_lane_view:
         y_by_id = {
@@ -2334,13 +2410,8 @@ def render_tikz(example: VectorExample) -> str:
                     rf"\path[vectorExample{cell['effect'].title()}] "
                     rf"({x},{y:.2f}) rectangle ({x + 1},{y + .68:.2f});"
                 )
-                text_style = (
-                    "vectorExampleCompactText"
-                    if example.variant == "integer-width-conversion"
-                    else "vectorExampleCellText"
-                )
                 lines.append(
-                    rf"\node[{text_style}] at ({x + .5},{y + .34:.2f}) "
+                    rf"\node[vectorExampleCellText] at ({x + .5},{y + .34:.2f}) "
                     rf"{{{_tex(cell['value'])}}};"
                 )
             if example.scalable:

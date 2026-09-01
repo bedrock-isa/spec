@@ -10,7 +10,15 @@ from pathlib import Path
 from typing import Any
 
 from .allocation import AllocationCube, forms_overlap, numeric_bounds, reservation_cube
-from .cpuid import CpuidCatalog, CpuidLeaf, CpuidQuery, CpuidResolutionError
+from .cpuid import (
+    AllocatedCpuidClass,
+    AllocatedCpuidLeaf,
+    CpuidCatalog,
+    CpuidLeaf,
+    CpuidLeafOverlay,
+    CpuidQuery,
+    CpuidResolutionError,
+)
 from .control_register import ControlRegister, ControlRegisterCatalog
 from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
 from .encoding import OperandConstraint
@@ -20,14 +28,30 @@ from .encoding_reservation import (
     EncodingReservationCatalog,
     EncodingReservationRegion,
 )
-from .event import EventCatalog, EventClass
+from .event import AllocatedEventClass, EventCatalog, EventClass, EventClassOverlay
 from .observability import log_phase
 from .project import IsaProject, InstructionBundle
 from .reference import Reference, ReferenceError
-from .register import Register, RegisterCatalog, RegisterGroup, RegisterInventory
+from .register import (
+    ConstantReset,
+    ExplicitRegisterGroup,
+    Register,
+    RegisterCatalog,
+    RegisterGroup,
+    RegisterInventory,
+    SourcedReset,
+)
 from .semantic_text import TermReferenceText
 from .terminology import Term, TermCatalog, TerminologyInventory
-from .type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
+from .instruction_metasyntax import OperandReference
+from .type_system import (
+    RegisterFieldType,
+    RegisterPairSelectorFieldType,
+    RegisterSelectorFieldType,
+    RegisterSelectorPayloadType,
+    SizeSelectorFieldType,
+    TypeSystem,
+)
 from .validation import SailEntryValidator
 
 
@@ -193,7 +217,11 @@ class BundleValidator:
                 )
 
             for displayed in form.syntax.displayed_operands:
-                if displayed.field is not None and displayed.field not in markers:
+                if (
+                    isinstance(displayed, OperandReference)
+                    and displayed.field is not None
+                    and displayed.field not in markers
+                ):
                     yield _error(
                         "syntax.unknown-field",
                         source,
@@ -215,7 +243,9 @@ class BundleValidator:
                     )
                 elif size_binding is not None:
                     definition = project.types.field_types.resolve(size_binding.type)
-                    declared_codes = tuple(value.code for value in definition.values)
+                    declared_codes = tuple(
+                        value.code for value in definition.values
+                    ) if isinstance(definition, SizeSelectorFieldType) else ()
                     if not set(form.syntax.selected_size_codes).issubset(
                         declared_codes
                     ):
@@ -327,7 +357,7 @@ class BundleValidator:
         width: int,
     ) -> Iterator[Diagnostic]:
         limit = 1 << width
-        for value in (*constraint.allow, *constraint.exclude):
+        for value in constraint.values:
             bounds = numeric_bounds(value)
             if bounds is None:
                 continue
@@ -589,7 +619,7 @@ class CpuidValidator:
         definitions = [
             cpuid_class
             for cpuid_class in catalog.references.classes.values()
-            if cpuid_class.value is not None
+            if isinstance(cpuid_class, AllocatedCpuidClass)
         ]
         for index, left in enumerate(definitions):
             for right in definitions[index + 1 :]:
@@ -614,7 +644,7 @@ class CpuidValidator:
         for namespace in catalog.namespaces.values():
             for cpuid_class in namespace.classes.values():
                 for leaf in cpuid_class.leaves.values():
-                    if leaf.extends is not None:
+                    if isinstance(leaf, CpuidLeafOverlay):
                         continue
                     selector = leaf_values.get(leaf.reference)
                     if selector is not None:
@@ -623,7 +653,7 @@ class CpuidValidator:
             for right_selector, right in definitions[index + 1 :]:
                 if left_selector != right_selector:
                     continue
-                path = ("value",) if left.value is not None else ()
+                path = ("value",) if isinstance(left, AllocatedCpuidLeaf) else ()
                 yield _error(
                     "cpuid.leaf.value-overlap",
                     left.source,
@@ -782,7 +812,7 @@ class EventValidator:
                     )
                 )
                 return None
-            if event_class.extends is None:
+            if not isinstance(event_class, EventClassOverlay):
                 roots[event_class.reference] = event_class
                 return event_class
             try:
@@ -823,15 +853,8 @@ class EventValidator:
         definitions = [
             event_class
             for event_class in catalog.references.classes.values()
-            if event_class.extends is None
+            if isinstance(event_class, AllocatedEventClass)
         ]
-        for event_class in definitions:
-            if event_class.value is None or event_class.selector is None:
-                yield _error(
-                    "event.class.incomplete",
-                    event_class.source,
-                    "event class definition has no value or selector policy",
-                )
         for index, left in enumerate(definitions):
             for right in definitions[index + 1 :]:
                 if left.value != right.value:
@@ -855,7 +878,7 @@ class EventValidator:
         event_ids: dict[str, Any] = {}
         for event_class in catalog.references.classes.values():
             root = roots.get(event_class.reference)
-            if root is None or root.selector is None:
+            if not isinstance(root, AllocatedEventClass):
                 continue
             for event in event_class.events.values():
                 previous_id = event_ids.get(event.id)
@@ -945,7 +968,7 @@ class RegisterValidator:
             inventories.extend(
                 group.register_inventory
                 for group in namespace.groups.values()
-                if group.register_inventory is not None
+                if isinstance(group, ExplicitRegisterGroup)
             )
             for inventory in inventories:
                 yield from RegisterValidator._validate_inventory(inventory)
@@ -1040,7 +1063,7 @@ class RegisterValidator:
             if reference in resolved:
                 return
             reset = register.reset
-            if reset is not None and reset.value is not None:
+            if isinstance(reset, ConstantReset):
                 if (
                     isinstance(register.width, int)
                     and reset.value >= 1 << register.width
@@ -1052,7 +1075,7 @@ class RegisterValidator:
                         f"register {register.id!r}",
                         "reset",
                     )
-            if reset is not None and reset.source is not None:
+            if isinstance(reset, SourcedReset):
                 try:
                     target = (
                         control_registers.references.registers.resolve(reset.source)
@@ -1110,15 +1133,16 @@ class RegisterValidator:
     def _validate_types(
         catalog: RegisterCatalog, types: TypeSystem
     ) -> Iterator[Diagnostic]:
-        register_field_kinds = {
-            FieldTypeKind.REGISTER,
-            FieldTypeKind.REGISTER_SELECTOR,
-            FieldTypeKind.REGISTER_PAIR_SELECTOR,
-        }
         for field in types.field_types.values():
-            if field.kind not in register_field_kinds:
+            if not isinstance(
+                field,
+                (
+                    RegisterFieldType,
+                    RegisterSelectorFieldType,
+                    RegisterPairSelectorFieldType,
+                ),
+            ):
                 continue
-            assert field.register_group is not None
             group = RegisterValidator._resolve_group(catalog, field.register_group)
             if group is None:
                 yield _error(
@@ -1130,7 +1154,7 @@ class RegisterValidator:
                     "register_group",
                 )
                 continue
-            if field.kind == FieldTypeKind.REGISTER_PAIR_SELECTOR:
+            if isinstance(field, RegisterPairSelectorFieldType):
                 yield from RegisterValidator._validate_pair_type(
                     group, field.bits, field.source
                 )
@@ -1139,13 +1163,12 @@ class RegisterValidator:
                     group,
                     field.bits,
                     field.source,
-                    require_complete=field.kind == FieldTypeKind.REGISTER_SELECTOR,
+                    require_complete=isinstance(field, RegisterSelectorFieldType),
                 )
 
         for payload in types.payload_types.values():
-            if payload.kind != PayloadTypeKind.REGISTER_SELECTOR:
+            if not isinstance(payload, RegisterSelectorPayloadType):
                 continue
-            assert payload.register_group is not None
             group = RegisterValidator._resolve_group(catalog, payload.register_group)
             if group is None:
                 yield _error(
@@ -1270,7 +1293,7 @@ class ControlRegisterValidator:
                 f"control register {register.id!r} has no required semantics artifact",
             )
         reset = register.reset
-        if reset is not None and reset.value is not None and reset.value >= 1 << 64:
+        if isinstance(reset, ConstantReset) and reset.value >= 1 << 64:
             yield _error(
                 "control-register.reset.range",
                 register.source,

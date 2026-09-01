@@ -45,18 +45,26 @@ class ArchitecturalEvent(Entity):
 
 @dataclass(frozen=True, slots=True)
 class EventClass(Entity):
-    """One event-code class definition or extension overlay."""
+    """Common authored content of one event-code class fragment."""
 
     reference: Reference["EventClass"]
     source: Path
     root: Path
     id: str
-    name: str | None
-    value: int | None
-    selector: EventSelector | None
-    extends: Reference["EventClass"] | None
     event_inventory: EventInventory
     events: Mapping[str, ArchitecturalEvent]
+
+
+@dataclass(frozen=True, slots=True)
+class AllocatedEventClass(EventClass):
+    name: str
+    value: int
+    selector: EventSelector
+
+
+@dataclass(frozen=True, slots=True)
+class EventClassOverlay(EventClass):
+    extends: Reference[EventClass]
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,7 +88,7 @@ class ResolvedEvent:
 
     owner: str
     event_class: EventClass
-    root_class: EventClass
+    root_class: AllocatedEventClass
     event: ArchitecturalEvent
     code: EventCode
 
@@ -136,12 +144,12 @@ class EventCatalog:
         except KeyError as error:
             raise ValueError(f"unknown event namespace {owner!r}") from error
 
-    def root_class(self, event_class: EventClass) -> EventClass:
+    def root_class(self, event_class: EventClass) -> AllocatedEventClass:
         """Resolve an event class overlay to its numeric class definition."""
 
         active: list[Reference[EventClass]] = []
         current = event_class
-        while current.extends is not None:
+        while isinstance(current, EventClassOverlay):
             if current.reference in active:
                 cycle = (*active[active.index(current.reference) :], current.reference)
                 raise ValueError(
@@ -149,7 +157,7 @@ class EventCatalog:
                 )
             active.append(current.reference)
             current = self.references.classes.resolve(current.extends)
-        if current.value is None or current.selector is None:
+        if not isinstance(current, AllocatedEventClass):
             raise ValueError(f"incomplete event class definition {current.id!r}")
         return current
 
@@ -175,7 +183,6 @@ class EventCatalog:
                 continue
             for event_class in namespace.classes.values():
                 root = self.root_class(event_class)
-                assert root.value is not None and root.selector is not None
                 for event in event_class.events.values():
                     result.append(
                         ResolvedEvent(
@@ -236,18 +243,6 @@ def _load_class(
     reference: Reference[EventClass] = Reference(
         owner, ("events",), class_id
     )
-    selector_raw = raw.get("selector")
-    selector = (
-        EventSelector(
-            cast(str, cast(Mapping[str, object], selector_raw)["kind"]),
-            cast(int, cast(Mapping[str, object], selector_raw)["bits"]),
-        )
-        if selector_raw is not None
-        else None
-    )
-    extends: Reference[EventClass] | None = (
-        Reference.parse(cast(str, raw["extends"])) if "extends" in raw else None
-    )
     events_root = root / "events"
     inventory = _load_inventory(owner, events_root, "events")
     events: dict[str, ArchitecturalEvent] = {}
@@ -258,17 +253,26 @@ def _load_class(
         event = _load_event(owner, class_id, event_root, isa_root)
         references.events.register(event.reference, event)
         events[event_id] = event
-    return EventClass(
-        reference=reference,
-        source=source,
-        root=root,
-        id=class_id,
-        name=cast(str | None, raw.get("name")),
-        value=cast(int | None, raw.get("value")),
-        selector=selector,
-        extends=extends,
-        event_inventory=inventory,
-        events=MappingProxyType(events),
+    common = (
+        reference,
+        source,
+        root,
+        class_id,
+        inventory,
+        MappingProxyType(events),
+    )
+    if "extends" in raw:
+        return EventClassOverlay(
+            *common, Reference.parse(cast(str, raw["extends"]))
+        )
+    selector_raw = cast(Mapping[str, object], raw["selector"])
+    return AllocatedEventClass(
+        *common,
+        cast(str, raw["name"]),
+        cast(int, raw["value"]),
+        EventSelector(
+            cast(str, selector_raw["kind"]), cast(int, selector_raw["bits"])
+        ),
     )
 
 

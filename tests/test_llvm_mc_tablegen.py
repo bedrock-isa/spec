@@ -6,11 +6,15 @@ import subprocess
 import tempfile
 import unittest
 
-from engine.encoding import EncodingForm
+from engine.encoding import EncodingForm, ExcludedOperandConstraint
 from engine.encoding_architecture import ENCODING_CLASSES_BY_WIDTH
 from engine.generation import ArtifactDefinition, ArtifactGenerationContext
 from engine.project import InstructionBundle, IsaProject
-from engine.type_system import FieldTypeKind, PayloadTypeKind
+from engine.type_system import (
+    ControlRegisterSelectorPayloadType,
+    EffectiveAddressFieldType,
+    RegisterSelectorPayloadType,
+)
 from engine.workspace import SpecWorkspace
 from engine.yaml_document import YamlDocumentLoader
 
@@ -59,7 +63,7 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
                     for field in form.fields
                 )
                 has_variable_length = any(
-                    field_type.kind == FieldTypeKind.EFFECTIVE_ADDRESS
+                    isinstance(field_type, EffectiveAddressFieldType)
                     for field_type in field_types
                 )
                 if not has_variable_length:
@@ -123,8 +127,7 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
         selector_group_references = {
             payload_type.register_group
             for payload_type in self.project.types.payload_types.values()
-            if payload_type.kind == PayloadTypeKind.REGISTER_SELECTOR
-            and payload_type.register_group is not None
+            if isinstance(payload_type, RegisterSelectorPayloadType)
         }
         expected_groups = [
             {
@@ -137,7 +140,7 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             for group_reference in selector_group_references
         ]
         if any(
-            payload_type.kind == PayloadTypeKind.CONTROL_REGISTER_SELECTOR
+            isinstance(payload_type, ControlRegisterSelectorPayloadType)
             for payload_type in self.project.types.payload_types.values()
         ):
             expected_groups.append(
@@ -165,7 +168,9 @@ class LlvmMcTableGenArtifactTests(unittest.TestCase):
             for identifier, form in canonical.items()
             if identifier in scalar_ids
             and any(
-                constraint.role == "dst" and "immediate" in constraint.exclude
+                constraint.role == "dst"
+                and isinstance(constraint, ExcludedOperandConstraint)
+                and "immediate" in constraint.values
                 for constraint in form.constraints
             )
         }

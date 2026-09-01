@@ -1,8 +1,12 @@
 import unittest
 
 from engine.instruction_metasyntax import (
+    AddressExpression,
+    BracedOperandGroup,
+    DecimalLiteral,
     InstructionMetasyntax,
     InstructionMetasyntaxError,
+    ParenthesizedOperandGroup,
 )
 
 
@@ -34,9 +38,9 @@ class InstructionMetasyntaxTest(unittest.TestCase):
         group = InstructionMetasyntax("REPcc Rn(r), (<instruction>)")
         braced = InstructionMetasyntax("REP { <instruction>... }")
 
-        self.assertEqual(literal.operands[0].literal, 8)
-        self.assertEqual(group.operands[1].group_style, "parenthesized")
-        self.assertEqual(braced.operands[0].group_style, "braced")
+        self.assertEqual(literal.operands[0], DecimalLiteral(8))
+        self.assertIsInstance(group.operands[1], ParenthesizedOperandGroup)
+        self.assertIsInstance(braced.operands[0], BracedOperandGroup)
 
     def test_parses_and_flattens_vector_address(self) -> None:
         syntax = InstructionMetasyntax(
@@ -45,7 +49,7 @@ class InstructionMetasyntaxTest(unittest.TestCase):
         )
 
         address = syntax.operands[2]
-        self.assertEqual(address.kind, "address")
+        self.assertIsInstance(address, AddressExpression)
         self.assertEqual(
             [operand.name for operand in syntax.displayed_operands],
             ["Pn", "Pn", "Rn", "Vn", "disp16s", "Vn"],

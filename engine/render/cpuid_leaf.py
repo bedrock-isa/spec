@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from ..cpuid import CpuidField, CpuidLeaf, compose_selector
+from ..cpuid import CpuidField, CpuidLeaf, CpuidLeafOverlay, compose_selector
 from ..reference import Reference, ReferenceError, UnknownReferenceError
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 from .latex_document import tex_escape
@@ -44,7 +44,7 @@ class CpuidLeafProjection:
 
     @classmethod
     def create(cls, catalog, leaf: CpuidLeaf) -> "CpuidLeafProjection":
-        if leaf.extends is not None:
+        if isinstance(leaf, CpuidLeafOverlay):
             raise ValueError(
                 f"CPUID leaf projection requires a root leaf, not {leaf.reference}"
             )
@@ -230,7 +230,7 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
                     f"{context.source}: CPUID leaf owner {reference.owner!r} does not "
                     f"match topic owner {topic.owner!r}"
                 )
-            if leaf.extends is not None:
+            if isinstance(leaf, CpuidLeafOverlay):
                 raise ValueError(
                     f"{context.source}: CPUID leaf placement must name the root leaf, "
                     f"not overlay {reference}"

@@ -13,7 +13,12 @@ from engine.check import (
     ValidationRule,
     ValidationScope,
 )
-from engine.encoding import EncodingForm, FieldBinding, OperandConstraint
+from engine.encoding import (
+    AllowedOperandConstraint,
+    EncodingForm,
+    ExcludedOperandConstraint,
+    FieldBinding,
+)
 from engine.encoding_metasyntax import EncodingMetasyntax
 from engine.instruction_metasyntax import InstructionMetasyntax
 from engine.project import ArtifactSet, IsaProject
@@ -126,10 +131,10 @@ class CheckServiceTest(unittest.TestCase):
             raw,
             id="constrained",
             constraints=(
-                OperandConstraint(
+                ExcludedOperandConstraint(
                     role="selector",
                     reason="reserved",
-                    exclude=(0,),
+                    values=(0,),
                 ),
             ),
         )
@@ -137,10 +142,10 @@ class CheckServiceTest(unittest.TestCase):
             raw,
             id="reserved",
             constraints=(
-                OperandConstraint(
+                AllowedOperandConstraint(
                     role="selector",
                     reason="reserved",
-                    allow=(0,),
+                    values=(0,),
                 ),
             ),
         )

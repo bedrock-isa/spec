@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from ..register import RegisterGroup, RegisterNamespace
+from ..register import Register, RegisterGroup, RegisterNamespace, SeriesRegisterGroup
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 
 
@@ -26,9 +26,18 @@ _DIRECTIVE_RE = re.compile(
 
 
 @dataclass(frozen=True, slots=True)
+class _RegisterEllipsis:
+    """A deliberately elided middle run in a compact series projection."""
+
+
+REGISTER_ELLIPSIS = _RegisterEllipsis()
+RegisterFigureRow = Register | _RegisterEllipsis
+
+
+@dataclass(frozen=True, slots=True)
 class _Block:
     group: RegisterGroup
-    rows: tuple[object | None, ...]
+    rows: tuple[RegisterFigureRow, ...]
     height: float
 
 
@@ -150,16 +159,16 @@ def _render_figure(
     return lines
 
 
-def _compact_rows(group: RegisterGroup) -> tuple[object | None, ...]:
+def _compact_rows(group: RegisterGroup) -> tuple[RegisterFigureRow, ...]:
     registers = tuple(group.registers.values())
     if len(registers) <= 5:
         return registers
-    return (*registers[:3], None, registers[-1])
+    return (*registers[:3], REGISTER_ELLIPSIS, registers[-1])
 
 
 def _block(group: RegisterGroup) -> _Block:
     registers = tuple(group.registers.values())
-    rows = _compact_rows(group) if group.series is not None else registers
+    rows = _compact_rows(group) if isinstance(group, SeriesRegisterGroup) else registers
     rows_height = (len(rows) - 1) * ROW_PITCH + ROW_HEIGHT
     return _Block(group, rows, HEADER_HEIGHT + rows_height)
 
@@ -285,7 +294,11 @@ def _render_block(placed: _PlacedBlock) -> list[str]:
     for index, register in enumerate(block.rows):
         row_top = first_row_top + index * ROW_PITCH
         lines.extend(_register_image(group, x, row_top))
-        name = r"\ldots" if register is None else _tex(register.id)
+        name = (
+            r"\ldots"
+            if isinstance(register, _RegisterEllipsis)
+            else _tex(register.id)
+        )
         lines.append(
             rf"\node[anchor=west] at ({_fmt(x + 1.78)},"
             rf"{_y(row_top + ROW_HEIGHT / 2)}) {{{name}}};"
