@@ -197,7 +197,7 @@ function run_repeat_single(body : Decoded_instruction, bytes : list(bits(8)), st
     if result.awaiting_environment then {
         attach_repeat_parent(result, body, bytes)
     } else {
-        if result.fault != None() then {
+        if result.fault != None() | result.debug_stop != None() then {
             result
         } else {
             finish_repeat_single(body, bytes, iteration_state, result.state, pending_transaction(result.pending).captured_first)

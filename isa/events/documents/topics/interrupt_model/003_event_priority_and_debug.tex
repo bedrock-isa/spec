@@ -1,0 +1,24 @@
+\subsection{Event Priority and Debug Stops}\label{section:event-priority-and-debug}
+When events compete at one architectural boundary, delivery failure is selected before machine check. Instruction
+and operand validation, address formation, translation, permission, alignment, and other higher-priority synchronous
+faults precede debug-trigger evaluation. A pre-effect execution breakpoint or memory watchpoint is selected before
+any result of the stopped instruction and before NMI or a maskable interrupt at the same boundary. After successful
+completion, an explicit (:ref:base.events.EXCEPTION.EXPLICIT_BREAKPOINT:) is selected before
+(:ref:base.events.EXCEPTION.SINGLE_STEP:); NMI and maskable interrupts follow automatic debug events. An asynchronous
+event that is not selected remains pending.
+
+A (:term:base.terms.trace_unit:) is one (:term:base.terms.ordinary:) committed instruction or one committed REP or
+REPcc body iteration. Completion of a zero-count REP or REPcc is also one (:term:base.terms.trace_unit:). TF is
+sampled at the start of the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit
+and then delivers (:ref:base.events.EXCEPTION.SINGLE_STEP:) with the following trace-unit boundary as its saved PC.
+
+The (:ref:base.instructions.TRACE:) marker instruction is an (:term:base.terms.ordinary:) instruction for this rule.
+Its marker is recorded before a pending SINGLE\_STEP is delivered. The (:ref:base.term_groups.tracing:) section
+distinguishes the marker instruction, (:term:base.terms.trace_unit:), and SINGLE\_STEP event.
+
+RF suppresses SINGLE\_STEP and every automatic execution or memory trigger for one trace unit. It does not suppress
+(:ref:base.events.EXCEPTION.EXPLICIT_BREAKPOINT:) or the TRACE marker. If sampled RF is one, successful trace-unit
+completion clears RF. A fault or asynchronous event before successful completion preserves it. Event entry saves the
+old STATUS image and clears live TF and RF. Entry for a pre-effect hardware-trigger event first sets RF in the saved
+return STATUS image, allowing a normal return to retry the instruction once without an immediate retrigger. A handler
+may clear that saved RF bit to request deliberate retriggering.

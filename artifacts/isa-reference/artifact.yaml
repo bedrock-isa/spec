@@ -100,7 +100,7 @@ body:
 - topic: base.time.architectural-time.deadline-timer
 - topic: base.events.interrupt-model.architectural-event-processing-model
 - topic: base.events.interrupt-model.event-code-and-sources
-- topic: base.events.interrupt-model.event-priority-and-debug-trace
+- topic: base.events.interrupt-model.event-priority-and-debug
 - topic: base.events.interrupt-model.entry-admission-and-event-depth
 - topic: base.events.interrupt-model.supervisor-event-stacks-and-nesting
 - topic: base.events.interrupt-model.event-entry-state
@@ -108,12 +108,19 @@ body:
 - topic: base.events.interrupt-model.event-payloads
 - topic: base.events.event-error-codes.address-context-error-code
 - topic: base.events.event-error-codes.other-exception-error-codes
+- topic: base.events.event-error-codes.debug-event-payloads
 - topic: FP.events.floating-point-exception-payload
 - topic: CFI.events.control-flow-integrity-violation
 - topic: base.events.event-auxiliary-payloads.auxiliary-payloads
 - topic: base.events.interrupt-model.machine-check-and-bus-error-continuation
 - topic: base.events.interrupt-model.delivery-failure-and-shutdown
 - topic: base.events.interrupt-model.event-reset-and-context-state
+- topic: base.debug.architectural-debug.debug-triggers
+- topic: base.debug.architectural-debug.debug-event-identities
+- topic: base.debug.architectural-debug.trigger-slot-programming
+- topic: base.debug.architectural-debug.matching-coordinates
+- topic: base.debug.architectural-debug.pre-effect-memory-evaluation
+- topic: base.debug.architectural-debug.trigger-state-and-retry
 - topic: base.cpuid.cpuid-feature-discovery.cpuid-feature-discovery
 - topic: base.cpuid.cpuid-feature-discovery.overview
 - topic: base.cpuid.cpuid-feature-discovery.query-model
@@ -133,6 +140,7 @@ body:
 - topic: base.cpuid.cpuid-feature-discovery.address-width-discovery
 - topic: base.cpuid.cpuid-feature-discovery.save-area-layout-discovery
 - topic: base.cpuid.cpuid-feature-discovery.timebase-discovery
+- topic: base.cpuid.cpuid-feature-discovery.debug-trigger-discovery
 - topic: base.state.save-restore-area.processor-state-save-and-restore
 - topic: base.state.save-restore-area.save-area-layout
 - topic: base.state.save-restore-area.fixed-architectural-state

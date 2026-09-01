@@ -28,6 +28,7 @@ function vector_memory_request(
     struct {
         kind = kind,
         ordinal = 0,
+        operand = operand_ordinal(instruction, evaluation.operand_name),
         role = request_role_for_ea(evaluation.role),
         domain = request_domain_for_operand(evaluation.domain),
         segment = evaluation.segment,
@@ -43,6 +44,12 @@ function vector_memory_request(
         access = access,
         value = 0x0000000000000000,
         address_translation = true,
+        debug_validation = false,
+        debug_validated = false,
+        physical_address = 0x0000000000000000,
+        debug_ranges = vector_memory_debug_ranges(
+            predicate_move, predicate, evaluation.effective_address,
+            evaluation.linear_address, length, element_bytes),
         commit_point = true,
         memory_order = 0,
         cache_policy = 0,
@@ -106,6 +113,7 @@ function vector_uop_memory_request_make(
     struct {
         kind = kind,
         ordinal = 0,
+        operand = vector_memory_operand_ordinal(instruction),
         role = RequestRoleValue,
         domain = address.domain,
         segment = address.segment,
@@ -121,6 +129,12 @@ function vector_uop_memory_request_make(
         access = access,
         value = 0x0000000000000000,
         address_translation = true,
+        debug_validation = false,
+        debug_validated = false,
+        physical_address = 0x0000000000000000,
+        debug_ranges = vector_memory_debug_ranges(
+            predicate_move, vector_memory_predicate(instruction, state),
+            address.effective_address, address.linear_address, length, element_bytes),
         commit_point = true,
         memory_order = 0,
         cache_policy = 0,

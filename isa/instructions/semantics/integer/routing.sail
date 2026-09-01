@@ -92,6 +92,7 @@ function route_environment(
         effects =
             [|typed_effect(effect_kind, instruction, state, address, 0x0000000000000000, width, 0, suppress_fault)|],
         fault = None(),
+        debug_stop = None(),
         awaiting_environment = true,
     }
 }

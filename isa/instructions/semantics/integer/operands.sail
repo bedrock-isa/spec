@@ -60,6 +60,17 @@ function write_local_destination(state : Cpu_state, operation : Semantic_operati
 function operand_named(instruction : Decoded_instruction, name : Operand_id) -> option(Decoded_operand) =
   find_operand_by_name(name, instruction.operands)
 
+function operand_ordinal_in(
+  name : Operand_id, operands : list(Decoded_operand), ordinal : int
+) -> int = match operands {
+  [||] => 255,
+  operand :: tail => if operand.name == name then ordinal
+                     else operand_ordinal_in(name, tail, ordinal + 1),
+}
+
+function operand_ordinal(instruction : Decoded_instruction, name : Operand_id) -> int =
+  operand_ordinal_in(name, instruction.operands, 0)
+
 function value_named(instruction : Decoded_instruction, state : Cpu_state,
                      name : Operand_id) -> option(bits(64)) =
   match operand_named(instruction, name) {

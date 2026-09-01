@@ -1,0 +1,8 @@
+id: MEMORY_WRITE_WATCHPOINT
+name: Memory Write Watchpoint
+summary: An enabled debug trigger matches a validated data-write range before the write becomes visible.
+code: 0x08
+family: DEBUG
+frame: page
+payload: [TRIGGER_SLOT, OPERAND, ACCESS_SIZE, FAULT_EA, FAULT_LINEAR, USER_DOMAIN, MEMORY_CLASS]
+

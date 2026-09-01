@@ -10,7 +10,8 @@ function continue_with_request(previous : Execution_result, phase : Continuation
     Some(continuation) => struct {
       state = previous.state,
       pending = { previous.pending with continuation = continuation },
-      request = request, effects = [||], fault = None(), awaiting_environment = true
+      request = request, effects = [||], fault = None(), debug_stop = None(),
+      awaiting_environment = true
     },
     None() => faulted(
       previous.state,
@@ -102,7 +103,7 @@ function execute_resolved_operands(instruction : Decoded_instruction, image : Cp
     instruction.operands, first_name, first_value, second_name, second_value, scratch
   ) };
   let result = execute_operation_entry(synthetic, execution_image);
-  if result.awaiting_environment | result.fault != None() then None()
+  if result.awaiting_environment | result.fault != None() | result.debug_stop != None() then None()
   else {
     let destination_value = image_register(result.state, scratch);
     var final_state = result.state;

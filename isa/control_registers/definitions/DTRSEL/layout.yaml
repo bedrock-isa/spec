@@ -1,0 +1,4 @@
+bits: 64
+fields:
+- {id: SLOT, lsb: 0, bits: 16, summary: Selected debug-trigger slot.}
+- {id: BANK, lsb: 16, bits: 2, summary: "Selected CONFIG, LOW, or HIGH bank."}

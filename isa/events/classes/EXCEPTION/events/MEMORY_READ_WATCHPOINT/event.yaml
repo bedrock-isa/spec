@@ -1,0 +1,8 @@
+id: MEMORY_READ_WATCHPOINT
+name: Memory Read Watchpoint
+summary: An enabled debug trigger matches a validated data-read range before the read or its architectural result occurs.
+code: 0x07
+family: DEBUG
+frame: page
+payload: [TRIGGER_SLOT, OPERAND, ACCESS_SIZE, FAULT_EA, FAULT_LINEAR, USER_DOMAIN, MEMORY_CLASS]
+

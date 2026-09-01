@@ -1,0 +1,8 @@
+id: ATOMIC_MEMORY_WATCHPOINT
+name: Atomic Memory Watchpoint
+summary: An enabled read or write debug trigger matches a validated atomic range before any read-modify-write effect occurs.
+code: 0x09
+family: DEBUG
+frame: page
+payload: [TRIGGER_SLOT, OPERAND, ACCESS_SIZE, FAULT_EA, FAULT_LINEAR, USER_DOMAIN, MEMORY_CLASS]
+

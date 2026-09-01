@@ -13,7 +13,8 @@ function request_domain_for_operand(domain : option(Operand_domain)) -> Request_
 function request_for_evaluation(kind : Primitive_request_kind, ordinal : int,
                                 evaluation : Ea_evaluation, access : Transaction_access,
                                 value : bits(64), commit_point : bool) -> Primitive_request = struct {
-  kind = kind, ordinal = ordinal, role = request_role_for_ea(evaluation.role),
+  kind = kind, ordinal = ordinal, operand = 255,
+  role = request_role_for_ea(evaluation.role),
   domain = request_domain_for_operand(evaluation.domain),
   segment = evaluation.segment, segment_image = evaluation.segment_image,
   width = evaluation.width, range_start = evaluation.effective_address,
@@ -23,7 +24,10 @@ function request_for_evaluation(kind : Primitive_request_kind, ordinal : int,
   range_end_at_modulus = unsigned(evaluation.effective_address) + evaluation.width
                          == 18446744073709551616,
   effective_address = evaluation.effective_address, linear_address = evaluation.linear_address,
-  access = access, value = value, address_translation = true, commit_point = commit_point,
+  access = access, value = value, address_translation = true,
+  debug_validation = false, debug_validated = false,
+  physical_address = 0x0000000000000000, debug_ranges = [||],
+  commit_point = commit_point,
   memory_order = ordinal, cache_policy = 0, suppress_fault = false,
   staged_updates = evaluation.staged_updates, selector = 0x0000000000000000,
   expected = 0x0000000000000000, desired = 0x0000000000000000,
@@ -43,7 +47,8 @@ function waiting_transaction(family : Transaction_family,
       empty_transaction_continuation() with phase = phase, ordinal = ordinal,
       captured_first = first, captured_second = second
     }) },
-  request = request, effects = [||], fault = None(), awaiting_environment = true
+  request = request, effects = [||], fault = None(), debug_stop = None(),
+  awaiting_environment = true
 }
 
 // Scalar memory execution itself is expressed by typed calc-EA/load/store/probe uops.

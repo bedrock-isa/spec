@@ -1,10 +1,14 @@
-function event_frame_control(state : Cpu_state, frame_slots : int,
-                             frame_type : int) -> bits(64) =
+function event_saved_status(state : Cpu_state, event : Event_record) -> bits(64) =
+  if event.automatic_return_rf then state.status | 0x0000000000000008
+  else state.status
+
+function event_frame_control(state : Cpu_state, event : Event_record,
+                             frame_slots : int, frame_type : int) -> bits(64) =
   get_slice_int(64, frame_slots, 0)
   | sail_shiftleft(get_slice_int(64, frame_type, 0), 8)
   | (if state.current_dfa then 0x0000000000001000 else 0x0000000000000000)
   | sail_shiftleft(sail_zero_extend(state.flags, 64), 32)
-  | sail_shiftleft(state.status & 0x000000000000FFFF, 36)
+  | sail_shiftleft(event_saved_status(state, event) & 0x000000000000FFFF, 36)
 
 function event_frame_type_code(frame_type : Event_frame_type) -> int = match frame_type {
   EventFrameBasic => 0, EventFrameError => 1,
@@ -21,7 +25,41 @@ function make_event(kind : Event_kind, frame_type : Event_frame_type, code : bit
   kind = kind, frame_type = frame_type, code = code, priority = priority,
   saved_pc = saved_pc, error_code = 0x0000000000000000,
   fault_ea = 0x0000000000000000, fault_linear = 0x0000000000000000,
-  event_aux = 0x0000000000000000
+  event_aux = 0x0000000000000000, automatic_return_rf = false
+}
+
+function architectural_event_code(event : Architectural_event) -> bits(32) =
+  match architectural_event_selector(event) {
+    Some(selector) => architectural_event_class(event) @ selector,
+    None() => architectural_event_class(event) @ 0x000000,
+  }
+
+function watchpoint_error_code(stop : Debug_stop) -> bits(64) =
+    bits_from_int(stop.slot)
+  | sail_shiftleft(bits_from_int(stop.operand), 16)
+  | sail_shiftleft(bits_from_int(stop.access_size), 24)
+  | (if stop.user_domain then 0x0000010000000000 else 0x0000000000000000)
+  | (if stop.access_class == MmioAccess then 0x0000020000000000 else 0x0000000000000000)
+  | (if stop.linear_valid then 0x0000040000000000 else 0x0000000000000000)
+
+function event_from_debug_stop(state : Cpu_state, stop : Debug_stop) -> Event_record = {
+  let identity = if stop.kind == DebugStopExecution then Event_EXECUTION_BREAKPOINT
+    else if stop.kind == DebugStopMemoryRead then Event_MEMORY_READ_WATCHPOINT
+    else if stop.kind == DebugStopMemoryWrite then Event_MEMORY_WRITE_WATCHPOINT
+    else Event_ATOMIC_MEMORY_WATCHPOINT;
+  var event = make_event(
+    EventDebug, architectural_event_frame(identity), architectural_event_code(identity),
+    4, state.pc);
+  event.automatic_return_rf = true;
+  if stop.kind == DebugStopExecution then
+    event.error_code = bits_from_int(stop.slot)
+  else {
+    event.error_code = watchpoint_error_code(stop);
+    event.fault_ea = stop.effective_address;
+    event.fault_linear = if stop.linear_valid then stop.linear_address
+                         else 0x0000000000000000
+  };
+  event
 }
 
 function base_event_from_fault(result : Execution_result) -> Event_record = match result.fault {
@@ -178,7 +216,7 @@ function event_frame_store_request(event : Event_record, state : Cpu_state,
                                    ordinal : int) -> Primitive_request = {
   let range = event_stack_range_request(event, state, ordinal);
   let control = event_frame_control(
-    state, event_frame_slots(event.frame_type), event_frame_type_code(event.frame_type)
+    state, event, event_frame_slots(event.frame_type), event_frame_type_code(event.frame_type)
   );
   let payload = if event.frame_type == EventFrameError then
     append_bytes(le64_bytes(event.error_code), le64_bytes(0x0000000000000000))
@@ -213,7 +251,7 @@ function committed_event_entry(before : Cpu_state, event : Event_record,
     updated = control_register_with_value(
       updated, ControlRegister_BASE_UCTL,
       0x0000000100000000
-      | sail_shiftleft(before.status & 0x000000000000FFFF, 16)
+      | sail_shiftleft(event_saved_status(before, event) & 0x000000000000FFFF, 16)
       | sail_zero_extend(before.flags, 64));
     updated = control_register_with_value(
       updated, ControlRegister_BASE_UINFO, sail_zero_extend(event.code, 64))
@@ -258,7 +296,8 @@ function waiting_event_transaction(state : Cpu_state, event : Event_record, atte
       attempt = attempt
     }),
     boundary_class = BoundaryEventEntry },
-  request = request, effects = [||], fault = None(), awaiting_environment = true
+  request = request, effects = [||], fault = None(), debug_stop = None(),
+  awaiting_environment = true
 }
 
 function pending_event_record(pending : Pending_commit) -> option(Event_record) =
@@ -327,8 +366,10 @@ function start_event_control(operation : Event_control_uop_operation,
   -> Execution_result = {
   if operation == EventControlBreakpoint then
     start_admitted_event(
-      make_event(EventSynchronous, EventFrameBasic, 0x00000002, 4,
-                 next_pc(state, instruction)), state
+      make_event(
+        EventSynchronous, architectural_event_frame(Event_EXPLICIT_BREAKPOINT),
+        architectural_event_code(Event_EXPLICIT_BREAKPOINT), 4,
+        next_pc(state, instruction)), state
     )
   else if operation == EventControlSyscall then
     if state.supervisor | state.status[0] == bitone

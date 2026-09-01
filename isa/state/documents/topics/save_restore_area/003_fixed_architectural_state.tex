@@ -3,3 +3,6 @@ The fixed block contains the base (:term:base.terms.header:), state-block bitmap
 
 The (:term:base.terms.header:) carries FLAGS, STATUS, the hidden current-DFA bit, format, and GS-validity state. \texttt{GS\_VALID}
 selects which GS images are meaningful.
+
+Per-processor debug-trigger slots and their selector are not part of the fixed block or any SAVE/RESTORE extension
+component. STATUS.TF and STATUS.RF remain part of the saved STATUS execution context.

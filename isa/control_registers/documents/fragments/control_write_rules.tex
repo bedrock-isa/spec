@@ -19,6 +19,8 @@
 \texttt{ITHRESH} & THRESHOLD; bits 63 through 24 (:term:base.terms.must_be_zero:) & reject a nonzero (:term:base.terms.reserved:) bit & replace the threshold atomically\\
 \texttt{ISEL} & BANK and WORD; bits 63 through 20 (:term:base.terms.must_be_zero:) & WORD must select at least one implemented nonzero identity & replace the selector atomically\\
 \texttt{IDATA} & bank-dependent 64-bit word & reject pending-bank writes and bits outside the implemented identity range & apply W1S, W1C, or enable-word replacement atomically\\
+\texttt{DTRSEL} & SLOT and BANK; bits 63 through 18 (:term:base.terms.must_be_zero:) & SLOT must be below CPUID SLOT\_COUNT and BANK must be 0 through 2 & replace the selector atomically\\
+\texttt{DTRDATA} & selected CONFIG, LOW, or HIGH word & active slots permit only an exact VALID-clear CONFIG write; activation validates the complete staged slot & replace the selected word or activate the staged slot atomically\\
 \texttt{EPC} & complete 64-bit entry address & 16-byte aligned, canonical, and executable under the matching code-segment image & replace the selected register atomically\\
 \texttt{ECS}, \texttt{EDS}, \texttt{SSS}, \texttt{ISS}, \texttt{FSS}, \texttt{DSS} & complete 64-bit segment image & apply the architectural segment-image validity rule & replace the selected register atomically\\
 \texttt{SSP}, \texttt{ISP}, \texttt{FSP}, \texttt{DSP} & complete 64-bit configured stack top & 64-byte aligned & replace the selected register atomically\\

@@ -106,6 +106,7 @@ function transaction_faulted(previous : Execution_result, kind : Fault_kind, det
                     bus_error = kind == AccessFault,
                 },
             ),
+        debug_stop = None(),
         awaiting_environment = false,
     }
 
@@ -163,6 +164,7 @@ function architectural_memory_fault(
                     bus_error = false,
                 },
             ),
+        debug_stop = None(),
         awaiting_environment = false,
     }
 

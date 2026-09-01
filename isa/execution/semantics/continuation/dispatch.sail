@@ -26,6 +26,25 @@ function latch_resumable_scatter_machine_check(
     { result with state = updated }
 }
 
+function resume_debug_validation(
+    previous : Execution_result,
+    response : Transaction_response,
+) -> (
+    Execution_result
+) =
+    match debug_trigger_memory_stop(
+        previous.state, previous.request, response.access_class
+    ) {
+        Some(stop) => debug_stopped(
+            previous.state, previous.pending.operation, stop
+        ),
+        None() => {
+            previous with
+            request = debug_trigger_validated_request(previous.request, response.value),
+            awaiting_environment = true,
+        },
+    }
+
 function resume_transaction_inner(previous : Execution_result, response : Transaction_response) -> Execution_result =
     if not_bool(previous.awaiting_environment) then {
         previous
@@ -111,6 +130,8 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
                                                     1,
                                                     "MMIO scalar is not naturally aligned",
                                                 )
+                                            } else if previous.request.debug_validation then {
+                                                resume_debug_validation(previous, response)
                                             } else {
                                                 match previous.pending.continuation {
                                                   PendingUop(_) => uop_program_resume(previous, response),
@@ -140,7 +161,7 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
 
 function resume_transaction(previous : Execution_result, response : Transaction_response) -> Execution_result = {
     let result = resume_transaction_inner(previous, response);
-    if result.awaiting_environment | result.fault != None() then {
+    if result.awaiting_environment | result.fault != None() | result.debug_stop != None() then {
         result
     } else {
         match previous.pending.repeat_parent {

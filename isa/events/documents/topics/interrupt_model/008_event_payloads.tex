@@ -13,3 +13,6 @@ A misaligned atomic memory operand raises (:ref:base.events.EXCEPTION.ATOMIC_ALI
 FAULT\_EA identifies the misaligned effective-address operand and FAULT\_LINEAR contains
 its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory
 read, memory write, or architectural result update.
+
+Execution-breakpoint and memory-watchpoint payloads are defined in the debug-event payload format. Their pre-effect
+timing is part of the \hyperref[page:architectural-debug]{Architectural Debug Triggers} contract.

@@ -64,6 +64,36 @@ enum Transaction_access = {
 enum Memory_access_class = { NormalAccess, MmioAccess }
 enum Physical_memory_class = { NormalPhysical, DevicePhysical }
 
+struct Debug_access_range = {
+  effective_address : bits(64),
+  linear_address : bits(64),
+  width : int,
+}
+
+enum Debug_stop_kind = {
+    DebugStopExecution,
+    DebugStopMemoryRead,
+    DebugStopMemoryWrite,
+    DebugStopAtomicMemory,
+}
+
+struct Debug_stop = {
+  kind : Debug_stop_kind,
+  slot : int,
+  operand : int,
+  access_size : int,
+  effective_address : bits(64),
+  linear_address : bits(64),
+  linear_valid : bool,
+  user_domain : bool,
+  access_class : Memory_access_class,
+}
+
+struct Debug_trigger_match = {
+  slot : int,
+  accessed : Debug_access_range,
+}
+
 enum Continuation_phase = {
     ContinuationNone,
     PhaseSourceAddress,
@@ -199,6 +229,7 @@ struct Ea_evaluation_set = {
 struct Primitive_request = {
   kind : Primitive_request_kind,
   ordinal : int,
+  operand : int,
   role : Request_role,
   domain : Request_domain,
   segment : int,
@@ -214,6 +245,15 @@ struct Primitive_request = {
   access : Transaction_access,
   value : bits(64),
   address_translation : bool,
+  /* A debug-validation request returns the ordinary response kind after all
+     pre-access checks, without performing a memory or device access, and
+     places the translated starting address in response.value.  The reissued
+     debug-validated request performs the access at physical_address without
+     repeating translation or permission checks. */
+  debug_validation : bool,
+  debug_validated : bool,
+  physical_address : bits(64),
+  debug_ranges : list(Debug_access_range),
   commit_point : bool,
   memory_order : int,
   cache_policy : int,
@@ -536,6 +576,7 @@ struct Execution_result = {
   request : Primitive_request,
   effects : list(Architectural_effect),
   fault : option(Execution_fault),
+  debug_stop : option(Debug_stop),
   awaiting_environment : bool,
 }
 

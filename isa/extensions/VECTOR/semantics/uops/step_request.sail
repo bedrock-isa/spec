@@ -202,6 +202,7 @@ function vector_step_request(
     struct {
         kind = if gather then VectorMemoryRead else VectorMemoryWrite,
         ordinal = 0,
+        operand = vector_memory_operand_ordinal(instruction),
         role = RequestRoleValue,
         domain = RequestDomainCurrent,
         segment = 1,
@@ -217,6 +218,14 @@ function vector_step_request(
         access = if gather then AccessLoad else AccessStore,
         value = 0x0000000000000000,
         address_translation = true,
+        debug_validation = false,
+        debug_validated = false,
+        physical_address = 0x0000000000000000,
+        debug_ranges = [|struct {
+            effective_address = address,
+            linear_address = point.linear,
+            width = element_bytes,
+        }|],
         commit_point = true,
         memory_order = 0,
         cache_policy = 0,

@@ -1,7 +1,0 @@
-id: DEBUG_TRACE
-name: Debug Trace
-summary: The trace mechanism reports successful completion of a trace-selected execution unit.
-code: 0x00
-family: DEBUG
-frame: basic
-

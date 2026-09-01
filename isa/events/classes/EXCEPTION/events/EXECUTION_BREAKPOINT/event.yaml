@@ -1,0 +1,8 @@
+id: EXECUTION_BREAKPOINT
+name: Execution Breakpoint
+summary: An enabled debug trigger matches the current pre-segment architectural PC before the instruction has an architectural effect.
+code: 0x06
+family: DEBUG
+frame: error
+payload: [TRIGGER_SLOT]
+

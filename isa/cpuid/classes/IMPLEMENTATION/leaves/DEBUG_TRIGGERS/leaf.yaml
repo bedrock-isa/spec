@@ -1,0 +1,13 @@
+id: DEBUG_TRIGGERS
+name: Architectural Debug Triggers
+value: 0x0006
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: PARAMETERS
+  index: 1
+  fields:
+  - {id: SLOT_COUNT, lsb: 0, bits: 16}
+

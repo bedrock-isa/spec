@@ -1,4 +1,4 @@
-enum Event_kind = EventNone | EventSynchronous | EventDebugTrace | EventNmi | EventInterrupt
+enum Event_kind = EventNone | EventSynchronous | EventDebug | EventNmi | EventInterrupt
 struct Event_record = {
   kind : Event_kind,
   frame_type : Event_frame_type,
@@ -9,6 +9,7 @@ struct Event_record = {
   fault_ea : bits(64),
   fault_linear : bits(64),
   event_aux : bits(64),
+  automatic_return_rf : bool,
 }
 
 struct Async_ingress = {

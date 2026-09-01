@@ -1,0 +1,7 @@
+id: SINGLE_STEP
+name: Single Step
+summary: A TF-selected trace unit completes successfully and requests a debug stop at the following architectural boundary.
+code: 0x00
+family: DEBUG
+frame: basic
+

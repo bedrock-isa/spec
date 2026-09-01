@@ -24,8 +24,57 @@ function vector_operand_writes(name : Operand_id, operands : list(Decoded_operan
 function vector_memory_predicate(instruction : Decoded_instruction, state : Cpu_state) -> list(bits(8)) =
     match predicate_register_index(instruction, Operand_govern) {
         Some(index) => state.predicate_registers[unsigned(index)],
-        None() => zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8)),
+    None() => zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8)),
     }
+
+function vector_ea_operand_ordinal(
+    instruction : Decoded_instruction, operands : list(Decoded_operand), ordinal : int
+) -> int = match operands {
+    [||] => if operand_named(instruction, Operand_address) != None()
+            then operand_ordinal(instruction, Operand_address)
+            else operand_ordinal(instruction, Operand_base),
+    operand :: tail => match operand.ea {
+        Some(_) => ordinal,
+        None() => vector_ea_operand_ordinal(instruction, tail, ordinal + 1),
+    },
+}
+
+function vector_memory_operand_ordinal(instruction : Decoded_instruction) -> int =
+    vector_ea_operand_ordinal(instruction, instruction.operands, 0)
+
+function vector_active_debug_ranges(
+    predicate : list(bits(8)), effective_address : bits(64), linear_address : bits(64),
+    lane : int, lanes : int, element_bytes : int
+) -> list(Debug_access_range) =
+    if lane >= lanes then [||]
+    else {
+        let tail = vector_active_debug_ranges(
+            predicate, effective_address, linear_address,
+            lane + 1, lanes, element_bytes);
+        let offset = lane * element_bytes;
+        if predicate_bit(predicate, offset) then
+            struct {
+                effective_address = add_bits(effective_address, bits_from_int(offset)),
+                linear_address = add_bits(linear_address, bits_from_int(offset)),
+                width = element_bytes,
+            } :: tail
+        else tail
+    }
+
+function vector_memory_debug_ranges(
+    predicate_move : bool, predicate : list(bits(8)),
+    effective_address : bits(64), linear_address : bits(64),
+    length : int, element_bytes : int
+) -> list(Debug_access_range) =
+    if length <= 0 then [||]
+    else if predicate_move then [|struct {
+        effective_address = effective_address,
+        linear_address = linear_address,
+        width = length,
+    }|]
+    else vector_active_debug_ranges(
+        predicate, effective_address, linear_address,
+        0, tdiv_int(length, element_bytes), element_bytes)
 
 function vector_fp_basic_operation(operation : Semantic_operation) -> bool =
     vector_semantics(operation).fp_basic

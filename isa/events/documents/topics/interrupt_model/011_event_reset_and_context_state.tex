@@ -10,6 +10,7 @@ ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWAL
 hardware-managed NMI\_P (:term:base.terms.field:) as part of the same transition.
 It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability
 reported by ICAP.MAX\_ID.
+It resets DTRSEL and disables every architectural debug-trigger slot.
 It disarms the deadline timer while preserving the invariant timebase value and frequency. Timer reset does not
 independently clear interrupt-file state.
 
@@ -23,6 +24,7 @@ values before applying the same (:term:base.terms.processor_state_image:) to eac
 selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops
 before setting ECR.V or entering user mode.
 
-ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, the interrupt file, and the user context bank are
-per-logical-processor state. System software includes the applicable state when switching supervisor contexts.
+ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, the interrupt file, the debug-trigger array, and
+the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software
+includes the applicable non-debug state when switching supervisor contexts; debug-trigger state is managed separately.
 Payloads and full event frames reside in byte-addressed (:term:base.terms.normal_memory:) owned by the interrupted context.

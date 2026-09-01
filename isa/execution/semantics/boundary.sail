@@ -6,6 +6,19 @@ function live_event_state_valid(state : Cpu_state) -> bool =
        & (not_bool(status_user_origin(state.status))
           | control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone)
 
+function instruction_execution_breakpoint(
+    instruction : Decoded_instruction, state : Cpu_state
+) -> option(Debug_stop) =
+  if state.run_state != Running
+     | state.supervisor != (state.status[4] == bitone)
+     | not_bool(live_event_state_valid(state))
+     | not_bool(instruction_available(instruction, state))
+     | (instruction.form.privilege == SupervisorPrivilege & not_bool(state.supervisor)) then None()
+  else match architectural_state_fault(instruction, state) {
+    Some(_) => None(),
+    None() => debug_trigger_execution_stop(state),
+  }
+
 function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> Execution_result =
   if state.run_state != Running then
     completed(state, state, CommitNone, [||])
@@ -24,11 +37,14 @@ function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> E
     faulted(state, instruction.form.operation, PrivilegeFault, "supervisor instruction")
   else match architectural_state_fault(instruction, state) {
     Some(problem) => faulted(state, instruction.form.operation, problem.kind, problem.detail),
-    None() =>
-      if instruction.form.predicate_mode == AnnulOnFalse
-              & not_bool(predicate_holds(instruction, state)) then
-        completed(state, advance_pc(state, instruction), CommitControl, [||])
-      else execute_operation_entry(instruction, state),
+    None() => match debug_trigger_execution_stop(state) {
+      Some(stop) => debug_stopped(state, instruction.form.operation, stop),
+      None() =>
+        if instruction.form.predicate_mode == AnnulOnFalse
+                & not_bool(predicate_holds(instruction, state)) then
+          completed(state, advance_pc(state, instruction), CommitControl, [||])
+        else execute_operation_entry(instruction, state),
+    },
   }
 
 function machine_check_payload_valid(error_code : bits(64), fault_ea : bits(64),
@@ -135,6 +151,25 @@ function boundary_shutdown(state : Cpu_state) -> Boundary_result = {
   struct { state = execution.state, admitted = None(), execution = Some(execution) }
 }
 
+function boundary_execution_breakpoint(
+    instruction : Decoded_instruction, state : Cpu_state
+) -> option((Semantic_operation, Debug_stop)) =
+  if state.repeat_state.active then match decode_full_record(state.repeat_state.fixed_body) {
+    None() => None(),
+    Some(body) => {
+      var iteration = state;
+      iteration.pc = state.repeat_state.body_start;
+      match instruction_execution_breakpoint(body, iteration) {
+        Some(stop) => Some((body.form.operation, stop)),
+        None() => None(),
+      }
+    },
+  }
+  else match instruction_execution_breakpoint(instruction, state) {
+    Some(stop) => Some((instruction.form.operation, stop)),
+    None() => None(),
+  }
+
 function execute_boundary(instruction : Decoded_instruction, state : Cpu_state,
                           ingress : Async_ingress) -> Boundary_result = {
   let latched = latch_ingress(state, ingress);
@@ -146,21 +181,29 @@ function execute_boundary(instruction : Decoded_instruction, state : Cpu_state,
           & (control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitzero
              | status_event_depth(latched.status) >= 15) then
     boundary_shutdown(latched)
-  else match admitted_async_event(latched) {
-    Some(event) => boundary_with_event(latched, event),
-    None() =>
-      if control_register_value(latched, ControlRegister_BASE_ECR)[7] == bitone
-         & control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitone
-         & latched.status[1] == bitzero
-         & status_event_depth(latched.status) >= 15 then
-        boundary_shutdown(latched)
-      else if latched.run_state == Halted then
-        struct { state = latched, admitted = None(), execution = None() }
-      else {
-        let execution = if latched.repeat_state.active then execute_active_repeat(latched)
-                        else execute_full(instruction, latched);
-        struct { state = execution.state, admitted = None(), execution = Some(execution) }
-      },
+  else if latched.machine_check_pending then
+    boundary_with_event(latched, machine_check_event(latched))
+  else match boundary_execution_breakpoint(instruction, latched) {
+    Some((operation, stop)) => {
+      let execution = debug_stopped(latched, operation, stop);
+      struct { state = execution.state, admitted = None(), execution = Some(execution) }
+    },
+    None() => match admitted_async_event(latched) {
+      Some(event) => boundary_with_event(latched, event),
+      None() =>
+        if control_register_value(latched, ControlRegister_BASE_ECR)[7] == bitone
+           & control_register_value(latched, ControlRegister_BASE_ECR)[0] == bitone
+           & latched.status[1] == bitzero
+           & status_event_depth(latched.status) >= 15 then
+          boundary_shutdown(latched)
+        else if latched.run_state == Halted then
+          struct { state = latched, admitted = None(), execution = None() }
+        else {
+          let execution = if latched.repeat_state.active then execute_active_repeat(latched)
+                          else execute_full(instruction, latched);
+          struct { state = execution.state, admitted = None(), execution = Some(execution) }
+        },
+    },
   }
 }
 
@@ -191,12 +234,16 @@ function resume_boundary(result : Execution_result, sampled_status : bits(64),
     else if latched.machine_check_pending then boundary_with_event(latched, machine_check_event(latched))
     else match result.fault {
       Some(_) => boundary_with_event(latched, event_from_fault(result_with_state(result, latched))),
-      None() => {
+      None() => match result.debug_stop {
+        Some(stop) => boundary_with_event(latched, event_from_debug_stop(latched, stop)),
+        None() => {
         let trace_unit = result.pending.boundary_class != BoundaryEventEntry
                        & result.pending.boundary_class != BoundaryVectorLane;
         if trace_unit & sampled_status[2] == bitone & sampled_status[3] == bitzero then
           boundary_with_event(
-            latched, make_event(EventDebugTrace, EventFrameBasic, 0x00000000, 5, latched.pc)
+            latched, make_event(
+              EventDebug, architectural_event_frame(Event_SINGLE_STEP),
+              architectural_event_code(Event_SINGLE_STEP), 5, latched.pc)
           )
         else {
           var after_rf = latched;
@@ -211,6 +258,7 @@ function resume_boundary(result : Execution_result, sampled_status : bits(64),
             },
           }
         }
+        },
       },
     }
   }

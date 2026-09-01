@@ -294,6 +294,7 @@ class SailRegistryRenderer:
                 if item.state_field is not None
             ),
             "  interrupt_file : Interrupt_file,",
+            "  debug_trigger_file : Debug_trigger_file,",
             "}",
             "",
             "enum Semantic_operation =",
@@ -406,6 +407,7 @@ class SailRegistryRenderer:
         lines.extend(
             (
                 "  interrupt_file = initial_interrupt_file(),",
+                "  debug_trigger_file = initial_debug_trigger_file(),",
                 "}",
                 "",
                 "val control_state_value : (Control_state, Control_register) -> bits(64)",

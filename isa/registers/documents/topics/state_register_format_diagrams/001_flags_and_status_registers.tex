@@ -60,8 +60,8 @@ In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, 
 \texttt{EDEPTH} & \texttt{9..6} & current architectural event depth\\
 \texttt{IE} & \texttt{5} & permits maskable-interrupt admission when the other admission conditions hold\\
 \texttt{PM} & \texttt{4} & selects user mode when zero and supervisor mode when one\\
-\texttt{RF} & \texttt{3} & one-shot suppression of (:ref:base.events.EXCEPTION.DEBUG_TRACE:)\\
-\texttt{TF} & \texttt{2} & requests post-success (:ref:base.events.EXCEPTION.DEBUG_TRACE:) for a (:term:base.terms.trace_unit:) when \texttt{RF} is clear\\
+\texttt{RF} & \texttt{3} & one-shot suppression of automatic single-step, execution-breakpoint, and memory-watchpoint stops\\
+\texttt{TF} & \texttt{2} & requests post-success (:ref:base.events.EXCEPTION.SINGLE_STEP:) for a (:term:base.terms.trace_unit:) when \texttt{RF} is clear\\
 \texttt{NI} & \texttt{1} & inhibits NMI admission while preserving the NMI pending\\
 \texttt{EA} & \texttt{0} & hardware-managed architectural event-active state\\
 \bottomrule

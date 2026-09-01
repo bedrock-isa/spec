@@ -1,0 +1,11 @@
+\subsection{Debug Event Identities}
+(:ref:base.events.EXCEPTION.SINGLE_STEP:) is the post-success event selected by STATUS.TF.
+(:ref:base.events.EXCEPTION.EXPLICIT_BREAKPOINT:) is the post-success event produced by
+(:ref:base.instructions.BKPT:). Both save the following architectural boundary.
+
+(:ref:base.events.EXCEPTION.EXECUTION_BREAKPOINT:),
+(:ref:base.events.EXCEPTION.MEMORY_READ_WATCHPOINT:),
+(:ref:base.events.EXCEPTION.MEMORY_WRITE_WATCHPOINT:), and
+(:ref:base.events.EXCEPTION.ATOMIC_MEMORY_WATCHPOINT:) are fault-like, pre-effect events. They save the current
+instruction for retry. The event identity itself states the stopping reason; there is no generic debug-cause event.
+(:ref:base.instructions.TRACE:) remains a non-stopping trace-stream marker.

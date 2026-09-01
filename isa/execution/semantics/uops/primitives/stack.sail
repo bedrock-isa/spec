@@ -13,6 +13,7 @@ function uop_stack_request_make(
     struct {
         kind = kind,
         ordinal = 0,
+        operand = 255,
         role = RequestRoleStack,
         domain = RequestDomainStack,
         segment = 2,
@@ -28,6 +29,10 @@ function uop_stack_request_make(
         access = access,
         value = value,
         address_translation = true,
+        debug_validation = false,
+        debug_validated = false,
+        physical_address = 0x0000000000000000,
+        debug_ranges = [||],
         commit_point = commit_point,
         memory_order = 0,
         cache_policy = 0,

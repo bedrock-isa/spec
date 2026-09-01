@@ -201,6 +201,7 @@ function uop_memory_request_make(
     struct {
         kind = kind,
         ordinal = 0,
+        operand = 255,
         role = RequestRoleValue,
         domain = address.domain,
         segment = address.segment,
@@ -216,6 +217,10 @@ function uop_memory_request_make(
         access = access,
         value = value,
         address_translation = true,
+        debug_validation = false,
+        debug_validated = false,
+        physical_address = 0x0000000000000000,
+        debug_ranges = [||],
         commit_point = commit_point,
         memory_order = 0,
         cache_policy = 0,
@@ -260,6 +265,7 @@ function uop_program_make_waiting_result(
         request = request,
         effects = [||],
         fault = None(),
+        debug_stop = None(),
         awaiting_environment = true,
     }
 
@@ -354,18 +360,31 @@ function uop_step_interpret(
 ) =
     match step {
         UopContinue(next) => uop_program_run(program, cursor + 1, next.values, instruction, before, next.state),
-        UopWait(wait) => uop_program_make_waiting_result(
-            program,
-            cursor + 1,
-            values,
-            wait.pending_destination,
-            instruction,
-            before,
-            speculative,
-            wait.request,
-            wait.captured,
-            wait.commit_state,
-        ),
+        UopWait(wait) => {
+            let request : Primitive_request = match uop_program_get(program, cursor) {
+                Some(uop) => if wait.request.operand != 255
+                                | (wait.request.role != RequestRoleValue
+                                   & wait.request.role != RequestRoleAddress) then wait.request
+                             else { wait.request with operand = operand_ordinal(
+                                 instruction, uop.operand_name) },
+                None() => wait.request,
+            };
+            uop_program_make_waiting_result(
+                program,
+                cursor + 1,
+                values,
+                wait.pending_destination,
+                instruction,
+                before,
+                speculative,
+                debug_trigger_prepare_request(
+                    if wait.commit_state then speculative else before,
+                    request,
+                ),
+                wait.captured,
+                wait.commit_state,
+            )
+        },
         UopComplete(done) => {
             let result = completed(
                 before,

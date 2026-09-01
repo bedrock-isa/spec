@@ -32,6 +32,7 @@ function empty_destination() -> Commit_destination = struct { kind = Destination
 function empty_primitive_request() -> Primitive_request = struct {
     kind = NoPrimitiveRequest,
     ordinal = 0,
+    operand = 255,
     role = RequestRoleNone,
     domain = RequestDomainCurrent,
     segment = 0,
@@ -47,6 +48,10 @@ function empty_primitive_request() -> Primitive_request = struct {
     access = NoTransactionAccess,
     value = 0x0000000000000000,
     address_translation = false,
+    debug_validation = false,
+    debug_validated = false,
+    physical_address = 0x0000000000000000,
+    debug_ranges = [||],
     commit_point = false,
     memory_order = 0,
     cache_policy = 0,
@@ -133,6 +138,7 @@ function completed(
         request = empty_primitive_request(),
         effects = effects,
         fault = None(),
+        debug_stop = None(),
         awaiting_environment = false,
     }
 
@@ -164,8 +170,23 @@ function faulted(
                     bus_error = false,
                 },
             ),
+        debug_stop = None(),
         awaiting_environment = false,
     }
+
+function debug_stopped(
+    state : Cpu_state,
+    operation : Semantic_operation,
+    stop : Debug_stop,
+) -> Execution_result = struct {
+    state = state,
+    pending = empty_pending(None(), operation, CommitNone),
+    request = empty_primitive_request(),
+    effects = [||],
+    fault = None(),
+    debug_stop = Some(stop),
+    awaiting_environment = false,
+}
 
 function pending_after(result : Execution_result) -> Cpu_state =
     match result.pending.after {

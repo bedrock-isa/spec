@@ -1,0 +1,14 @@
+\subsection{Pre-Effect Memory Evaluation}
+For a candidate memory operation, the processor validates the instruction and operands, resolves its condition or
+predicate, computes the effective address, and completes segmentation, translation, permission, and alignment
+validation before evaluating triggers. A winning trigger is reported before the memory or device access and before
+any architectural result commits. Consequently, earlier synchronous faults take priority; a matching load performs
+no read, a matching store is not visible, a matching atomic performs no read-modify-write action, and a matching MMIO
+operation does not access the device. A bus or data fault can still occur after event return when the operation is
+retried.
+
+Explicit and implicit instruction data accesses participate. Instruction fetch, page-table walks, event-entry frame
+accesses, prefetch hints, and cache-maintenance accesses do not. False-conditioned operations and inactive vector
+lanes do not participate. REP and REPcc evaluate before each iteration's memory effect and preserve completed prior
+iterations. Gather and scatter evaluate before the next active lane access and preserve completed lane and predicate
+progress.

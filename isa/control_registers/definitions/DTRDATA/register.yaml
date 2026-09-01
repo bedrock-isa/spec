@@ -1,0 +1,4 @@
+id: DTRDATA
+selector: 0x0401
+summary: Selected debug-trigger configuration or address-range word.
+

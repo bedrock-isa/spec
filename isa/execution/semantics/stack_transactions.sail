@@ -3,14 +3,17 @@ function stack_request(kind : Primitive_request_kind, ordinal : int, state : Cpu
                        value : bits(64), commit_point : bool) -> Primitive_request = {
   let point = segment_point(state.segments[2], address);
   struct {
-    kind = kind, ordinal = ordinal, role = RequestRoleStack, domain = RequestDomainStack, segment = 2,
+    kind = kind, ordinal = ordinal, operand = 255,
+    role = RequestRoleStack, domain = RequestDomainStack, segment = 2,
     segment_image = state.segments[2], width = 8, range_start = address, range_end = range_end,
     range_length = unsigned(sub_bits(range_end, address)),
     range_wrap = unsigned(range_end) < unsigned(address) & range_end != 0x0000000000000000,
     range_end_at_modulus = range_end == 0x0000000000000000
                            & address != 0x0000000000000000,
     effective_address = address, linear_address = point.linear, access = access, value = value,
-    address_translation = true, commit_point = commit_point, memory_order = ordinal,
+    address_translation = true, debug_validation = false, debug_validated = false,
+    physical_address = 0x0000000000000000, debug_ranges = [||],
+    commit_point = commit_point, memory_order = ordinal,
     cache_policy = 0, suppress_fault = false, staged_updates = [||]
     , selector = 0x0000000000000000, expected = 0x0000000000000000,
     desired = 0x0000000000000000, auxiliary = 0x0000000000000000, body_length = 0,

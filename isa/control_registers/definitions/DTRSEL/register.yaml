@@ -1,0 +1,4 @@
+id: DTRSEL
+selector: 0x0400
+summary: Runtime debug-trigger slot and bank selector.
+
