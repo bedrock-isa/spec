@@ -8,6 +8,10 @@ mod platform;
 mod translation;
 pub use bus::SailBusExecutionError;
 
+pub mod protocol {
+    include!(concat!(env!("OUT_DIR"), "/protocol_constants.rs"));
+}
+
 pub const MAX_INSTRUCTION_BYTES: usize = 18;
 pub const REGISTER_COUNT: usize = 16;
 pub const FLOATING_REGISTER_COUNT: usize = 16;
@@ -743,12 +747,10 @@ mod ffi {
 
 #[cfg(test)]
 mod tests {
-    use super::{SailCore, SailCoreResponse, SailCoreStatus};
-
-    const RESPONSE_READ: i32 = 2;
-    const RESPONSE_WRITE: i32 = 3;
-    const REQUEST_READ: i32 = 3;
-    const REQUEST_WRITE: i32 = 4;
+    use super::{
+        SailCore, SailCoreResponse, SailCoreStatus,
+        protocol::{request_kind, response_kind},
+    };
     const VGATHER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x10, 0x02, 0x02, 0x43];
     const VSCATTER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x18, 0x02, 0x02, 0x43];
 
@@ -984,13 +986,13 @@ mod tests {
             SailCoreStatus::NeedsEnvironment
         );
         let request = core.last_request().unwrap();
-        assert_eq!(request.kind, REQUEST_READ);
+        assert_eq!(request.kind, request_kind::READ);
         assert_eq!(request.effective_address, 0x100);
         assert_eq!(request.width, 1);
 
         assert_eq!(
             core.resume(SailCoreResponse {
-                kind: RESPONSE_READ,
+                kind: response_kind::READ,
                 success: true,
                 body: vec![0xa5],
                 known: true,
@@ -1005,8 +1007,6 @@ mod tests {
 
     #[test]
     fn ea_postincrement_is_an_explicit_speculative_uop() {
-        const RESPONSE_READ: i32 = 2;
-
         let mut core = SailCore::new().unwrap();
         assert_eq!(core.set_register(2, 0x100), SailCoreStatus::Ok);
         assert_eq!(core.set_register(3, 4), SailCoreStatus::Ok);
@@ -1023,7 +1023,7 @@ mod tests {
 
         assert_eq!(
             core.resume(SailCoreResponse {
-                kind: RESPONSE_READ,
+                kind: response_kind::READ,
                 success: true,
                 body: vec![0x7b],
                 known: true,
@@ -1039,11 +1039,6 @@ mod tests {
 
     #[test]
     fn resumes_push_through_environment_requests() {
-        const REQUEST_MEMORY_PROBE: i32 = 2;
-        const REQUEST_STACK_RANGE: i32 = 5;
-        const RESPONSE_PROBE: i32 = 1;
-        const RESPONSE_STACK_RANGE: i32 = 4;
-
         let mut core = SailCore::new().unwrap();
         assert_eq!(core.set_sp(0x1000), SailCoreStatus::Ok);
         assert_eq!(
@@ -1059,17 +1054,17 @@ mod tests {
             }
             let request = core.last_request().unwrap();
             let response_kind = match request.kind {
-                REQUEST_STACK_RANGE => {
+                request_kind::STACK_RANGE => {
                     assert!(request.payload.is_empty());
-                    RESPONSE_STACK_RANGE
+                    response_kind::STACK_RANGE
                 }
-                REQUEST_MEMORY_PROBE => {
+                request_kind::MEMORY_PROBE => {
                     assert!(request.payload.is_empty());
-                    RESPONSE_PROBE
+                    response_kind::PROBE
                 }
-                REQUEST_WRITE => {
+                request_kind::WRITE => {
                     assert_eq!(request.payload, 0x1122_3344_5566_7788u64.to_le_bytes());
-                    RESPONSE_WRITE
+                    response_kind::WRITE
                 }
                 kind => panic!("unexpected PUSH environment request {kind}"),
             };
@@ -1120,7 +1115,7 @@ mod tests {
             SailCoreStatus::NeedsEnvironment
         );
         let first = core.last_request().unwrap();
-        assert_eq!(first.kind, REQUEST_READ);
+        assert_eq!(first.kind, request_kind::READ);
         assert_eq!(first.effective_address, 0x100);
         assert_eq!(first.width, 1);
         assert_eq!(first.body_length, 1);
@@ -1129,7 +1124,7 @@ mod tests {
 
         assert_eq!(
             core.resume(SailCoreResponse {
-                kind: RESPONSE_READ,
+                kind: response_kind::READ,
                 success: true,
                 body: vec![0x11],
                 known: true,
@@ -1149,11 +1144,11 @@ mod tests {
             SailCoreStatus::NeedsEnvironment
         );
         let second = core.last_request().unwrap();
-        assert_eq!(second.kind, REQUEST_READ);
+        assert_eq!(second.kind, request_kind::READ);
         assert_eq!(second.effective_address, 0x102);
         assert_eq!(
             core.resume(SailCoreResponse {
-                kind: RESPONSE_READ,
+                kind: response_kind::READ,
                 success: true,
                 body: vec![0x33],
                 known: true,
@@ -1185,13 +1180,13 @@ mod tests {
             SailCoreStatus::NeedsEnvironment
         );
         let request = retryable.last_request().unwrap();
-        assert_eq!(request.kind, REQUEST_WRITE);
+        assert_eq!(request.kind, request_kind::WRITE);
         assert_eq!(request.effective_address, 0x100);
         assert_eq!(request.selector, 1);
         assert_eq!(request.payload, vec![0xa5]);
         assert_eq!(
             retryable.resume(SailCoreResponse {
-                kind: RESPONSE_WRITE,
+                kind: response_kind::WRITE,
                 success: false,
                 fault_kind: crate::translation::FAULT_ACCESS,
                 fault_cause: 7,
@@ -1218,7 +1213,7 @@ mod tests {
         );
         assert_eq!(
             irrevocable.resume(SailCoreResponse {
-                kind: RESPONSE_WRITE,
+                kind: response_kind::WRITE,
                 success: false,
                 fault_kind: crate::translation::FAULT_ACCESS,
                 fault_cause: 7,

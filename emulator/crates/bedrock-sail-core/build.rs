@@ -166,6 +166,71 @@ fn generate_operation_constants(header: &Path, out_dir: &Path) {
         .expect("failed to write generated Semantic_operation constants");
 }
 
+fn rust_constant_name(name: &str) -> String {
+    let mut result = String::new();
+    let characters = name.chars().collect::<Vec<_>>();
+    for (index, character) in characters.iter().copied().enumerate() {
+        if !character.is_ascii_alphanumeric() {
+            if !result.ends_with('_') {
+                result.push('_');
+            }
+            continue;
+        }
+        let previous_is_lower = index > 0 && characters[index - 1].is_ascii_lowercase();
+        let next_is_lower =
+            index + 1 < characters.len() && characters[index + 1].is_ascii_lowercase();
+        if character.is_ascii_uppercase()
+            && !result.is_empty()
+            && !result.ends_with('_')
+            && (previous_is_lower || next_is_lower)
+        {
+            result.push('_');
+        }
+        result.push(character.to_ascii_uppercase());
+    }
+    result
+}
+
+fn generate_protocol_constants(types: &Path, out_dir: &Path) {
+    let source = fs::read_to_string(types)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", types.display()));
+    let enums = [
+        ("Primitive_request_kind", "request_kind", ""),
+        ("Transaction_response_kind", "response_kind", "Response"),
+        ("Transaction_access", "transaction_access", "Access"),
+        ("Request_role", "request_role", "RequestRole"),
+        ("Read_completion", "read_completion", "ReadCompletion"),
+        ("Memory_cache_hint", "memory_cache_hint", "MemoryCache"),
+    ];
+    let mut rust = String::from("// Generated from Sail protocol enums.\n");
+    for (enum_name, module_name, variant_prefix) in enums {
+        let marker = format!("enum {enum_name} = {{");
+        let start = source
+            .find(&marker)
+            .unwrap_or_else(|| panic!("{} has no {enum_name} enum", types.display()))
+            + marker.len();
+        let end = source[start..]
+            .find('}')
+            .map(|offset| start + offset)
+            .unwrap_or_else(|| panic!("{} has an unterminated {enum_name} enum", types.display()));
+        rust.push_str(&format!("pub mod {module_name} {{\n"));
+        for (ordinal, raw) in source[start..end].split(',').enumerate() {
+            let variant = raw.trim();
+            if variant.is_empty() {
+                continue;
+            }
+            let name = variant.strip_prefix(variant_prefix).unwrap_or(variant);
+            rust.push_str(&format!(
+                "    pub const {}: i32 = {ordinal};\n",
+                rust_constant_name(name)
+            ));
+        }
+        rust.push_str("}\n");
+    }
+    fs::write(out_dir.join("protocol_constants.rs"), rust)
+        .expect("failed to write generated protocol constants");
+}
+
 fn main() {
     println!("cargo:rerun-if-env-changed=PYTHON");
     println!("cargo:rerun-if-env-changed=SAIL");
@@ -211,6 +276,10 @@ fn main() {
         );
     }
     generate_operation_constants(&core_dir.join("bedrock_core.h"), &out_dir);
+    generate_protocol_constants(
+        &repository_root.join("isa/execution/semantics/types.sail"),
+        &out_dir,
+    );
 
     let mut sail_dir_command = Command::new(&sail);
     sail_dir_command.arg("-dir");

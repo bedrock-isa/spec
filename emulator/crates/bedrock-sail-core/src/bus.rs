@@ -1,64 +1,10 @@
-use super::{SailCore, SailCoreFault, SailCoreRequest, SailCoreResponse, SailCoreStatus};
+use super::{
+    SailCore, SailCoreFault, SailCoreRequest, SailCoreResponse, SailCoreStatus,
+    protocol::{request_kind, request_role, response_kind, transaction_access},
+};
 use crate::translation::{self, TranslationAccess, TranslationError};
 use bedrock_bus::{Bus, BusError, PhysicalMemoryClass};
 use std::fmt;
-
-const REQUEST_TRANSLATION_EXECUTE_PROBE: i32 = 1;
-const REQUEST_MEMORY_PROBE: i32 = 2;
-const REQUEST_READ: i32 = 3;
-const REQUEST_WRITE: i32 = 4;
-const REQUEST_STACK_RANGE: i32 = 5;
-const REQUEST_SEGMENT_BOUNDS: i32 = 6;
-const REQUEST_ATOMIC: i32 = 7;
-const REQUEST_ADDRESS_WAKE: i32 = 8;
-const REQUEST_ADDRESS_TRANSLATE: i32 = 9;
-const REQUEST_PHYSICAL_PTE_READ: i32 = 10;
-const REQUEST_CACHE_MAINTENANCE: i32 = 11;
-const REQUEST_PREFETCH_HINT: i32 = 12;
-const REQUEST_FENCE_COMPLETION: i32 = 13;
-const REQUEST_TLB_INVALIDATE: i32 = 14;
-const REQUEST_TRANSLATION_QUERY: i32 = 15;
-const REQUEST_CONTEXT_SWITCH: i32 = 16;
-const REQUEST_REPEAT_BODY_FETCH: i32 = 17;
-const REQUEST_EVENT_FRAME_ACCESS: i32 = 18;
-const REQUEST_CPUID_QUERY: i32 = 19;
-const REQUEST_PERFORMANCE_COUNTER: i32 = 20;
-const REQUEST_CONTROL_TRANSITION: i32 = 21;
-const REQUEST_RESET_SERIALIZE: i32 = 22;
-
-const RESPONSE_TRANSLATION: i32 = 0;
-const RESPONSE_PROBE: i32 = 1;
-const RESPONSE_READ: i32 = 2;
-const RESPONSE_WRITE: i32 = 3;
-const RESPONSE_STACK_RANGE: i32 = 4;
-const RESPONSE_SEGMENT_BOUNDS: i32 = 5;
-const RESPONSE_ATOMIC: i32 = 7;
-const RESPONSE_ADDRESS_WAKE: i32 = 8;
-const RESPONSE_ADDRESS_TRANSLATION: i32 = 9;
-const RESPONSE_PTE_READ: i32 = 10;
-const RESPONSE_CACHE_MAINTENANCE: i32 = 11;
-const RESPONSE_FENCE_COMPLETION: i32 = 12;
-const RESPONSE_TLB_OPERATION: i32 = 13;
-const RESPONSE_TRANSLATION_QUERY: i32 = 14;
-const RESPONSE_CONTEXT_SWITCH: i32 = 15;
-const RESPONSE_REPEAT_FETCH: i32 = 16;
-const RESPONSE_EVENT_FRAME: i32 = 17;
-const RESPONSE_CPUID_QUERY: i32 = 18;
-const RESPONSE_PERFORMANCE_COUNTER: i32 = 19;
-const RESPONSE_CONTROL_TRANSITION: i32 = 20;
-const RESPONSE_RESET_SERIALIZE: i32 = 21;
-
-const ACCESS_LOAD: i32 = 1;
-const ACCESS_STORE: i32 = 2;
-const ACCESS_READ_MODIFY_WRITE: i32 = 3;
-const ACCESS_EXECUTE: i32 = 4;
-const ACCESS_STACK_READ: i32 = 5;
-const ACCESS_STACK_WRITE: i32 = 6;
-const ACCESS_ADDRESS_ONLY: i32 = 7;
-
-const ROLE_EVENT_ENTRY_TARGET: i32 = 6;
-const ROLE_EVENT_FRAME_RANGE: i32 = 7;
-const ROLE_EVENT_FRAME_STORE: i32 = 8;
 
 #[derive(Debug)]
 pub enum SailBusExecutionError {
@@ -263,7 +209,7 @@ fn fetch_translation_fault(
             ..SailCoreFault::default()
         },
         request: Some(Box::new(SailCoreRequest {
-            access: ACCESS_EXECUTE,
+            access: transaction_access::EXECUTE,
             domain: 2,
             segment: 0,
             width: 1,
@@ -327,27 +273,29 @@ fn service_request(
     request: &SailCoreRequest,
 ) -> Result<SailCoreResponse, SailBusExecutionError> {
     let response_kind = match request.kind {
-        REQUEST_TRANSLATION_EXECUTE_PROBE => RESPONSE_TRANSLATION,
-        REQUEST_MEMORY_PROBE => RESPONSE_PROBE,
-        REQUEST_READ => RESPONSE_READ,
-        REQUEST_WRITE => RESPONSE_WRITE,
-        REQUEST_STACK_RANGE => RESPONSE_STACK_RANGE,
-        REQUEST_SEGMENT_BOUNDS => RESPONSE_SEGMENT_BOUNDS,
-        REQUEST_ATOMIC => RESPONSE_ATOMIC,
-        REQUEST_ADDRESS_WAKE => RESPONSE_ADDRESS_WAKE,
-        REQUEST_ADDRESS_TRANSLATE => RESPONSE_ADDRESS_TRANSLATION,
-        REQUEST_PHYSICAL_PTE_READ => RESPONSE_PTE_READ,
-        REQUEST_CACHE_MAINTENANCE | REQUEST_PREFETCH_HINT => RESPONSE_CACHE_MAINTENANCE,
-        REQUEST_FENCE_COMPLETION => RESPONSE_FENCE_COMPLETION,
-        REQUEST_TLB_INVALIDATE => RESPONSE_TLB_OPERATION,
-        REQUEST_TRANSLATION_QUERY => RESPONSE_TRANSLATION_QUERY,
-        REQUEST_CONTEXT_SWITCH => RESPONSE_CONTEXT_SWITCH,
-        REQUEST_REPEAT_BODY_FETCH => RESPONSE_REPEAT_FETCH,
-        REQUEST_EVENT_FRAME_ACCESS => RESPONSE_EVENT_FRAME,
-        REQUEST_CPUID_QUERY => RESPONSE_CPUID_QUERY,
-        REQUEST_PERFORMANCE_COUNTER => RESPONSE_PERFORMANCE_COUNTER,
-        REQUEST_CONTROL_TRANSITION => RESPONSE_CONTROL_TRANSITION,
-        REQUEST_RESET_SERIALIZE => RESPONSE_RESET_SERIALIZE,
+        request_kind::TRANSLATION_EXECUTE_PROBE => response_kind::TRANSLATION,
+        request_kind::MEMORY_PROBE => response_kind::PROBE,
+        request_kind::READ => response_kind::READ,
+        request_kind::WRITE => response_kind::WRITE,
+        request_kind::STACK_RANGE => response_kind::STACK_RANGE,
+        request_kind::SEGMENT_BOUNDS_POINT => response_kind::SEGMENT_BOUNDS,
+        request_kind::ATOMIC => response_kind::ATOMIC,
+        request_kind::ADDRESS_WAKE => response_kind::ADDRESS_WAKE,
+        request_kind::ADDRESS_TRANSLATE_REQUEST => response_kind::ADDRESS_TRANSLATION,
+        request_kind::PHYSICAL_PTE_READ => response_kind::PTE_READ,
+        request_kind::CACHE_MAINTENANCE_BLOCK | request_kind::PREFETCH_HINT => {
+            response_kind::CACHE_MAINTENANCE
+        }
+        request_kind::FENCE_COMPLETION => response_kind::FENCE_COMPLETION,
+        request_kind::TLB_INVALIDATE_REQUEST => response_kind::TLB_OPERATION,
+        request_kind::TRANSLATION_QUERY_REQUEST => response_kind::TRANSLATION_QUERY,
+        request_kind::CONTEXT_SWITCH_REQUEST => response_kind::CONTEXT_SWITCH,
+        request_kind::REPEAT_BODY_FETCH => response_kind::REPEAT_FETCH,
+        request_kind::EVENT_FRAME_ACCESS => response_kind::EVENT_FRAME,
+        request_kind::CPUID_QUERY_REQUEST => response_kind::CPUID_QUERY,
+        request_kind::PERFORMANCE_COUNTER_REQUEST => response_kind::PERFORMANCE_COUNTER,
+        request_kind::CONTROL_TRANSITION_REQUEST => response_kind::CONTROL_TRANSITION,
+        request_kind::RESET_SERIALIZE_REQUEST => response_kind::RESET_SERIALIZE,
         kind => return Err(SailBusExecutionError::UnsupportedRequest(kind)),
     };
 
@@ -361,11 +309,11 @@ fn service_request(
     };
 
     match request.kind {
-        REQUEST_CPUID_QUERY => {
+        request_kind::CPUID_QUERY_REQUEST => {
             response.value = crate::platform::cpuid_query(request.selector);
             return Ok(response);
         }
-        REQUEST_PERFORMANCE_COUNTER => {
+        request_kind::PERFORMANCE_COUNTER_REQUEST => {
             let value = match request.selector {
                 1 => Some(core.environment.cycle_counter),
                 2 => Some(core.environment.retired_instruction_counter),
@@ -377,15 +325,17 @@ fn service_request(
             response.value = value.unwrap_or_default();
             return Ok(response);
         }
-        REQUEST_FENCE_COMPLETION
-        | REQUEST_TLB_INVALIDATE
-        | REQUEST_TRANSLATION_QUERY
-        | REQUEST_CONTEXT_SWITCH
-        | REQUEST_CONTROL_TRANSITION
-        | REQUEST_RESET_SERIALIZE => return Ok(response),
+        request_kind::FENCE_COMPLETION
+        | request_kind::TLB_INVALIDATE_REQUEST
+        | request_kind::TRANSLATION_QUERY_REQUEST
+        | request_kind::CONTEXT_SWITCH_REQUEST
+        | request_kind::CONTROL_TRANSITION_REQUEST
+        | request_kind::RESET_SERIALIZE_REQUEST => return Ok(response),
         _ => {}
     }
-    if request.kind == REQUEST_STACK_RANGE || request.kind == REQUEST_SEGMENT_BOUNDS {
+    if request.kind == request_kind::STACK_RANGE
+        || request.kind == request_kind::SEGMENT_BOUNDS_POINT
+    {
         response.bounds_passed = stack_range_in_bounds(request);
         return Ok(response);
     }
@@ -405,14 +355,16 @@ fn service_request(
             core.environment.page_walk_counter = core.environment.page_walk_counter.wrapping_add(1);
         }
         let access = match request.access {
-            ACCESS_STORE | ACCESS_READ_MODIFY_WRITE | ACCESS_STACK_WRITE => {
-                TranslationAccess::Write
-            }
-            ACCESS_EXECUTE => TranslationAccess::Execute,
+            transaction_access::STORE
+            | transaction_access::READ_MODIFY_WRITE
+            | transaction_access::STACK_WRITE => TranslationAccess::Write,
+            transaction_access::EXECUTE => TranslationAccess::Execute,
             _ => TranslationAccess::Read,
         };
         let supervisor = match request.role {
-            ROLE_EVENT_ENTRY_TARGET | ROLE_EVENT_FRAME_RANGE | ROLE_EVENT_FRAME_STORE => true,
+            request_role::EVENT_ENTRY_TARGET
+            | request_role::EVENT_FRAME_RANGE
+            | request_role::EVENT_FRAME_STORE => true,
             _ => core.is_supervisor().map_err(SailBusExecutionError::Core)?,
         };
         match translation::translate(
@@ -470,31 +422,31 @@ fn service_request(
     }
 
     let operation = match request.kind {
-        REQUEST_TRANSLATION_EXECUTE_PROBE | REQUEST_MEMORY_PROBE => Ok(()),
-        REQUEST_ADDRESS_TRANSLATE => {
+        request_kind::TRANSLATION_EXECUTE_PROBE | request_kind::MEMORY_PROBE => Ok(()),
+        request_kind::ADDRESS_TRANSLATE_REQUEST => {
             response.value = address;
             Ok(())
         }
-        REQUEST_PHYSICAL_PTE_READ => {
+        request_kind::PHYSICAL_PTE_READ => {
             read_width(bus, address, request.width).map(|value| response.value = value)
         }
-        REQUEST_READ => service_read(bus, address, request, &mut response),
-        REQUEST_WRITE => {
+        request_kind::READ => service_read(bus, address, request, &mut response),
+        request_kind::WRITE => {
             let result = service_write(bus, address, request);
             if result.is_ok() && request.selector == 1 {
                 response.atomic_store_happened = true;
             }
             result
         }
-        REQUEST_ATOMIC => service_atomic(bus, address, request, &mut response),
-        REQUEST_ADDRESS_WAKE => Ok(()),
-        REQUEST_CACHE_MAINTENANCE
-        | REQUEST_PREFETCH_HINT
-        | REQUEST_FENCE_COMPLETION
-        | REQUEST_TLB_INVALIDATE
-        | REQUEST_TRANSLATION_QUERY
-        | REQUEST_CONTEXT_SWITCH => Ok(()),
-        REQUEST_REPEAT_BODY_FETCH => match fetch_instruction(bus, address) {
+        request_kind::ATOMIC => service_atomic(bus, address, request, &mut response),
+        request_kind::ADDRESS_WAKE => Ok(()),
+        request_kind::CACHE_MAINTENANCE_BLOCK
+        | request_kind::PREFETCH_HINT
+        | request_kind::FENCE_COMPLETION
+        | request_kind::TLB_INVALIDATE_REQUEST
+        | request_kind::TRANSLATION_QUERY_REQUEST
+        | request_kind::CONTEXT_SWITCH_REQUEST => Ok(()),
+        request_kind::REPEAT_BODY_FETCH => match fetch_instruction(bus, address) {
             Ok(body) => {
                 response.body = body;
                 Ok(())
@@ -505,7 +457,9 @@ fn service_request(
                 message: error.to_string(),
             }),
         },
-        REQUEST_EVENT_FRAME_ACCESS => service_blob_access(bus, address, request, &mut response),
+        request_kind::EVENT_FRAME_ACCESS => {
+            service_blob_access(bus, address, request, &mut response)
+        }
         _ => unreachable!(),
     };
     if let Err(error) = operation {
@@ -524,12 +478,16 @@ fn service_blob_access(
     response: &mut SailCoreResponse,
 ) -> Result<(), BusError> {
     match request.access {
-        ACCESS_LOAD | ACCESS_READ_MODIFY_WRITE | ACCESS_STACK_READ => {
+        transaction_access::LOAD
+        | transaction_access::READ_MODIFY_WRITE
+        | transaction_access::STACK_READ => {
             response.body = read_payload(bus, address, request.body_length)?;
             Ok(())
         }
-        ACCESS_STORE | ACCESS_STACK_WRITE => write_payload(bus, address, &request.payload),
-        ACCESS_ADDRESS_ONLY => Ok(()),
+        transaction_access::STORE | transaction_access::STACK_WRITE => {
+            write_payload(bus, address, &request.payload)
+        }
+        transaction_access::ADDRESS_ONLY => Ok(()),
         _ => Err(BusError::InvalidRange {
             start: address,
             end: address,
@@ -543,12 +501,12 @@ fn service_read(
     request: &SailCoreRequest,
     response: &mut SailCoreResponse,
 ) -> Result<(), BusError> {
-    if request.access == ACCESS_ADDRESS_ONLY {
+    if request.access == transaction_access::ADDRESS_ONLY {
         return Ok(());
     }
-    if request.access != ACCESS_LOAD
-        && request.access != ACCESS_READ_MODIFY_WRITE
-        && request.access != ACCESS_STACK_READ
+    if request.access != transaction_access::LOAD
+        && request.access != transaction_access::READ_MODIFY_WRITE
+        && request.access != transaction_access::STACK_READ
     {
         return Err(invalid_request_range(address));
     }
@@ -583,7 +541,9 @@ fn service_write(
     address: u64,
     request: &SailCoreRequest,
 ) -> Result<(), BusError> {
-    if request.access != ACCESS_STORE && request.access != ACCESS_STACK_WRITE {
+    if request.access != transaction_access::STORE
+        && request.access != transaction_access::STACK_WRITE
+    {
         return Err(invalid_request_range(address));
     }
     for range in &request.memory_ranges {
@@ -728,10 +688,7 @@ fn service_atomic(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ACCESS_LOAD, ACCESS_READ_MODIFY_WRITE, ACCESS_STORE, REQUEST_ATOMIC, REQUEST_READ,
-        REQUEST_WRITE, service_request,
-    };
+    use super::{request_kind, service_request, transaction_access};
     use crate::{SailCore, SailCoreMemoryRange, SailCoreRequest, SailCoreStatus};
     use bedrock_bus::{Bus, BusResult, Ram};
 
@@ -761,9 +718,9 @@ mod tests {
         let mut bus = RejectTargetAccessBus;
 
         for (kind, access) in [
-            (REQUEST_READ, ACCESS_LOAD),
-            (REQUEST_WRITE, ACCESS_STORE),
-            (REQUEST_ATOMIC, ACCESS_READ_MODIFY_WRITE),
+            (request_kind::READ, transaction_access::LOAD),
+            (request_kind::WRITE, transaction_access::STORE),
+            (request_kind::ATOMIC, transaction_access::READ_MODIFY_WRITE),
         ] {
             let request = SailCoreRequest {
                 kind,
@@ -787,8 +744,8 @@ mod tests {
         let mut ram = Ram::new(0x100);
         ram.write_u64(0x20, 0x8877_6655_4433_2211).unwrap();
         let request = SailCoreRequest {
-            kind: REQUEST_READ,
-            access: ACCESS_LOAD,
+            kind: request_kind::READ,
+            access: transaction_access::LOAD,
             width: 8,
             linear_address: u64::MAX,
             debug_validated: true,
