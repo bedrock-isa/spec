@@ -94,6 +94,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Check out Bedrock LLVM
+        uses: actions/checkout@v6
+        with:
+          repository: bedrock-isa/llvm-project
+          ref: 6f3a8ee88b70553e22e6d77c0cad57d23ca9fa77
+          path: llvm-project
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -129,10 +136,28 @@ jobs:
       - name: Install emulator and hardware test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgmp-dev verilator
+          sudo apt-get install -y cmake libgmp-dev ninja-build verilator
+
+      - name: Build Bedrock LLVM tools
+        run: |
+          python tools/sync_llvm_artifacts.py llvm-project
+          cmake -S llvm-project/llvm \
+            -B "${RUNNER_TEMP}/bedrock-llvm" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_ASSERTIONS=ON \
+            -DLLVM_ENABLE_PROJECTS="clang;lld" \
+            -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=Bedrock \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_TARGETS_TO_BUILD=""
+          cmake --build "${RUNNER_TEMP}/bedrock-llvm" \
+            --target clang lld llvm-mc llvm-objdump
 
       - name: Run canonical PR test gate
         env:
+          BEDROCK_LLVM_BIN: ${{ runner.temp }}/bedrock-llvm/bin
           BUILD_DIR: ${{ runner.temp }}/bedrock-build
           EMULATOR_TARGET_DIR: ${{ runner.temp }}/bedrock-emulator-target
           TMPDIR: ${{ runner.temp }}
