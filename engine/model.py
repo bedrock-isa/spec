@@ -327,9 +327,9 @@ class ModelCatalogLoader:
     ) -> ModelCatalog:
         root = Path(isa_root).resolve()
         extension_roots = {
-            extension_id: extension_catalog.root / extension_id
-            for extension_id in extension_catalog.declared
-            if (extension_catalog.root / extension_id).is_dir()
+            extension_id: extension_root
+            for extension_id, extension_root in extension_catalog.owner_roots()[1:]
+            if extension_root.is_dir()
         }
         schema = _load_mapping(root / "schemas/model.yaml")
         loader = ModelManifestLoader(schema)

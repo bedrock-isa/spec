@@ -693,7 +693,7 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
 
 
 def _inventory(owner: str, root: Path, kind: str, plural: str) -> DirectoryInventory:
-    return DirectoryInventory.load(
+    return DirectoryInventory.load_strict(
         owner=owner,
         kind=kind,
         source=root / plural / f"{plural}.yaml",

@@ -36,10 +36,7 @@ class ImplementationDisclosureCatalog:
         seen: set[str] = set()
         disclosures = []
         sources = []
-        for owner, namespace_root in (
-            ("base", root),
-            *((item, extensions.root / item) for item in extensions.declared),
-        ):
+        for owner, namespace_root in extensions.owner_roots():
             source = namespace_root / "implementation_disclosures.yaml"
             if not source.is_file():
                 continue

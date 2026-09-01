@@ -474,7 +474,7 @@ def _load_namespace(
     )
     tls_inventory = _inventory(owner, root, "tls-model", "tls_models")
     code_inventory = _inventory(owner, root, "code-model", "code_models")
-    register_group_inventory = DirectoryInventory.load(
+    register_group_inventory = DirectoryInventory.load_strict(
         owner=owner,
         kind="elf-register-group",
         source=root / "registers/groups/groups.yaml",
@@ -784,7 +784,7 @@ def _validate_debug_register_ranges(
 def _inventory(
     owner: str, root: Path, kind: str, plural: str
 ) -> DirectoryInventory:
-    return DirectoryInventory.load(
+    return DirectoryInventory.load_strict(
         owner=owner,
         kind=kind,
         source=root / plural / f"{plural}.yaml",

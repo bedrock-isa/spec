@@ -7,17 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 
-from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .inventory import DirectoryInventory
+from .yaml_document import SchemaValidatedYamlLoader
 
 
-@dataclass(frozen=True, slots=True)
-class EncodingReservationInventory:
+class EncodingReservationInventory(DirectoryInventory):
     """The closed-world base-architecture reservation inventory."""
-
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,27 +57,15 @@ class EncodingReservationCatalog:
 
 
 def _load_inventory(root: Path) -> EncodingReservationInventory:
-    source = root / "reservations.yaml"
-    actual = (
-        tuple(
-            sorted(
-                path.name
-                for path in root.iterdir()
-                if path.is_dir() and not path.name.startswith(".")
-            )
-        )
-        if root.is_dir()
-        else ()
+    return EncodingReservationInventory.inspect(
+        owner="base",
+        kind="reservation",
+        source=root / "reservations.yaml",
+        root=root,
+        key="reservations",
+        allow_missing=True,
+        exact_keys=True,
     )
-    if not source.is_file():
-        return EncodingReservationInventory(source, root, (), actual)
-    raw = YamlDocumentLoader().mapping(source)
-    values = raw.get("reservations")
-    if set(raw) != {"reservations"} or not isinstance(values, list) or any(
-        not isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"{source}: expected exactly a reservations list of strings")
-    return EncodingReservationInventory(source, root, tuple(values), actual)
 
 
 def _load_reservation(root: Path, isa_root: Path) -> EncodingReservation:

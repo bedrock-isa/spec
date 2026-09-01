@@ -9,21 +9,14 @@ import re
 from types import MappingProxyType
 
 from .extension import ExtensionSetCatalog
+from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
 from .semantic_text import SemanticText, TermForm, TextOrigin
-from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .yaml_document import SchemaValidatedYamlLoader
 
 
-@dataclass(frozen=True, slots=True)
-class TerminologyInventory:
+class TerminologyInventory(DirectoryInventory):
     """One closed-world terminology group or term directory inventory."""
-
-    owner: str
-    kind: str
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,10 +123,7 @@ class TermCatalog:
             ReferenceIndex[TermGroup](), ReferenceIndex[Term]()
         )
         namespaces: dict[str, TerminologyNamespace] = {}
-        for owner, namespace_root in (
-            ("base", root),
-            *((item, extensions.root / item) for item in extensions.declared),
-        ):
+        for owner, namespace_root in extensions.owner_roots():
             namespaces[owner] = _load_namespace(
                 owner, namespace_root, schemas, references
             )
@@ -265,30 +255,14 @@ def _load_term(
 def _load_inventory(
     owner: str, kind: str, root: Path, key: str
 ) -> TerminologyInventory:
-    source = root / f"{key}.yaml"
-    declared = _load_name_list(source, key) if source.is_file() else ()
-    actual = (
-        tuple(
-            sorted(
-                path.name
-                for path in root.iterdir()
-                if path.is_dir() and not path.name.startswith(".")
-            )
-        )
-        if root.is_dir()
-        else ()
+    return TerminologyInventory.inspect(
+        owner=owner,
+        kind=kind,
+        source=root / f"{key}.yaml",
+        root=root,
+        key=key,
+        allow_missing=True,
     )
-    return TerminologyInventory(owner, kind, source, root, declared, actual)
-
-
-def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
-    document = YamlDocumentLoader().mapping(path)
-    values = document.get(key)
-    if not isinstance(values, list) or any(
-        not isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"{path}: expected a {key} list of strings")
-    return tuple(values)
 
 
 def _term_spellings(term: Term) -> tuple[TermSpelling, ...]:

@@ -9,19 +9,13 @@ from types import MappingProxyType
 from typing import Any, cast
 
 from .extension import ExtensionSetCatalog
+from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex, UnknownReferenceError
-from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .yaml_document import SchemaValidatedYamlLoader
 
 
-@dataclass(frozen=True, slots=True)
-class CpuidInventory:
+class CpuidInventory(DirectoryInventory):
     """One closed-world directory inventory in a CPUID namespace."""
-
-    owner: str
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,13 +163,7 @@ class CpuidCatalog:
             ReferenceIndex[CpuidField](),
         )
         namespaces: dict[str, CpuidNamespace] = {}
-        for owner, namespace_root in (
-            ("base", root),
-            *(
-                (extension_id, extensions.root / extension_id)
-                for extension_id in extensions.declared
-            ),
-        ):
+        for owner, namespace_root in extensions.owner_roots():
             namespace = _load_namespace(owner, namespace_root, root, references)
             namespaces[owner] = namespace
         return cls(MappingProxyType(namespaces), references)
@@ -550,33 +538,15 @@ def _optional_leaf_reference(raw: object) -> Reference[CpuidLeaf] | None:
 
 
 def _load_inventory(owner: str, root: Path, key: str) -> CpuidInventory:
-    source = root / f"{key}.yaml"
-    if not source.is_file():
-        return CpuidInventory(owner, source, root, (), _actual_directories(root))
-    document = _load_mapping(source)
-    values = document.get(key)
-    if not isinstance(values, list) or any(
-        not isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"{source}: expected a {key} list of strings")
-    return CpuidInventory(owner, source, root, tuple(values), _actual_directories(root))
-
-
-def _actual_directories(root: Path) -> tuple[str, ...]:
-    if not root.is_dir():
-        return ()
-    return tuple(
-        sorted(
-            path.name
-            for path in root.iterdir()
-            if path.is_dir() and not path.name.startswith(".")
-        )
+    return CpuidInventory.inspect(
+        owner=owner,
+        kind={"classes": "class", "leaves": "leaf"}[key],
+        source=root / f"{key}.yaml",
+        root=root,
+        key=key,
+        allow_missing=True,
     )
 
 
 def _load_validated(source: Path, schema_path: Path) -> dict[str, Any]:
     return SchemaValidatedYamlLoader().load(source, schema_path)
-
-
-def _load_mapping(path: Path) -> dict[str, Any]:
-    return YamlDocumentLoader().mapping(path)

@@ -9,19 +9,13 @@ from types import MappingProxyType
 from typing import cast
 
 from .extension import ExtensionSetCatalog
+from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
-from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .yaml_document import SchemaValidatedYamlLoader
 
 
-@dataclass(frozen=True, slots=True)
-class EventInventory:
+class EventInventory(DirectoryInventory):
     """One closed-world event class or event directory inventory."""
-
-    owner: str
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,10 +121,7 @@ class EventCatalog:
             ReferenceIndex[EventClass](), ReferenceIndex[ArchitecturalEvent]()
         )
         namespaces: dict[str, EventNamespace] = {}
-        for owner, namespace_root in (
-            ("base", root),
-            *((extension_id, extensions.root / extension_id) for extension_id in extensions.declared),
-        ):
+        for owner, namespace_root in extensions.owner_roots():
             namespaces[owner] = _load_namespace(owner, namespace_root, root, references)
         return cls(MappingProxyType(namespaces), references)
 
@@ -305,27 +296,15 @@ def _load_event(
 
 
 def _load_inventory(owner: str, root: Path, key: str) -> EventInventory:
-    source = root.parent / f"{key}.yaml"
-    declared = _load_name_list(source, key) if source.is_file() else ()
-    actual = (
-        tuple(sorted(path.name for path in root.iterdir() if path.is_dir() and not path.name.startswith(".")))
-        if root.is_dir()
-        else ()
+    return EventInventory.inspect(
+        owner=owner,
+        kind={"classes": "class", "events": "event"}[key],
+        source=root / f"{key}.yaml",
+        root=root,
+        key=key,
+        allow_missing=True,
     )
-    return EventInventory(owner, source, root, declared, actual)
-
-
-def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
-    raw = _load_mapping(path)
-    values = raw.get(key)
-    if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
-        raise ValueError(f"{path}: expected a {key} list of strings")
-    return tuple(values)
 
 
 def _load_validated(path: Path, schema_path: Path) -> dict[str, object]:
     return SchemaValidatedYamlLoader().load(path, schema_path)
-
-
-def _load_mapping(path: Path) -> dict[str, object]:
-    return YamlDocumentLoader().mapping(path)

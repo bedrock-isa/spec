@@ -228,10 +228,11 @@ class TypeSystem:
     ) -> "TypeSystem":
         root = Path(isa_root).resolve()
         catalog = extension_catalog or ExtensionSetCatalog.load(root)
-        base = TypeNamespace.load("base", root)
+        owner_roots = catalog.owner_roots()
+        base_owner, base_root = owner_roots[0]
+        base = TypeNamespace.load(base_owner, base_root)
         extensions: dict[str, TypeNamespace] = {}
-        for extension_id in catalog.declared:
-            extension_root = catalog.root / extension_id
+        for extension_id, extension_root in owner_roots[1:]:
             if extension_root.is_dir():
                 extensions[extension_id] = TypeNamespace.load(
                     extension_id, extension_root

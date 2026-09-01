@@ -19,6 +19,7 @@ from .encoding_reservation import EncodingReservationCatalog
 from .entity import Entity, EntityCatalog
 from .event import EventCatalog
 from .extension import ExtensionMetadata, ExtensionSetCatalog
+from .inventory import DirectoryInventory
 from .instruction import Instruction
 from .model import ModelCatalog
 from .register import RegisterCatalog
@@ -31,7 +32,6 @@ from .reference import (
 from .terminology import TermCatalog
 from .type_system import TypeNamespace, TypeSystem
 from .vector_diagram import VectorDiagram, VectorDiagramCatalog
-from .yaml_document import YamlDocumentLoader
 
 
 _T = TypeVar("_T")
@@ -120,15 +120,8 @@ class InstructionBundle:
         return (*self.required_cpuid_flags, *form.additional_cpuid_flags)
 
 
-@dataclass(frozen=True, slots=True)
-class InstructionSetCatalog:
+class InstructionSetCatalog(DirectoryInventory):
     """One declared base or extension instruction catalog."""
-
-    owner: str
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -208,6 +201,7 @@ class SourceCatalog:
         ea_modes = ReferenceIndex[EAMode]()
         order: list[Reference[InstructionBundle]] = []
         extension_catalog = extension_catalog or ExtensionSetCatalog.load(isa_root)
+        extension_roots = extension_catalog.owner_roots()[1:]
 
         base = cls._load_instruction_set(
             "base",
@@ -220,8 +214,7 @@ class SourceCatalog:
             cpuid,
         )
         extension_metadata: dict[str, ExtensionMetadata] = {}
-        for extension_id in extension_catalog.declared:
-            extension_root = extension_catalog.root / extension_id
+        for extension_id, extension_root in extension_roots:
             if extension_root.is_dir():
                 extension_metadata[extension_id] = ExtensionMetadata.load(
                     extension_root / "extension.yaml", isa_root
@@ -230,8 +223,7 @@ class SourceCatalog:
             extension_metadata, extension_catalog.declared, cpuid
         )
         extension_components: dict[str, _ExtensionComponents] = {}
-        for extension_id in extension_catalog.declared:
-            extension_root = extension_catalog.root / extension_id
+        for extension_id, extension_root in extension_roots:
             if not extension_root.is_dir():
                 continue
             metadata = extension_metadata[extension_id]
@@ -408,20 +400,15 @@ class SourceCatalog:
         required_cpuid_flags: tuple[CpuidField, ...],
         cpuid: CpuidCatalog,
     ) -> InstructionSet:
-        source = instruction_root / "instructions.yaml"
-        declared = cls._load_name_list(source, "instructions")
-        actual = tuple(
-            sorted(
-                path.name
-                for path in instruction_root.iterdir()
-                if path.is_dir() and not path.name.startswith(".")
-            )
-        )
-        catalog = InstructionSetCatalog(
-            owner, source, instruction_root, declared, actual
+        catalog = InstructionSetCatalog.inspect(
+            owner=owner,
+            kind="instruction",
+            source=instruction_root / "instructions.yaml",
+            root=instruction_root,
+            key="instructions",
         )
         bundles: list[InstructionBundle] = []
-        for mnemonic in declared:
+        for mnemonic in catalog.declared:
             directory = instruction_root / mnemonic
             reference: Reference[InstructionBundle] = Reference(
                 owner, ("instructions",), mnemonic
@@ -481,16 +468,6 @@ class SourceCatalog:
             order.append(reference)
             bundles.append(bundle)
         return InstructionSet(catalog, tuple(bundles))
-
-    @staticmethod
-    def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
-        document = YamlDocumentLoader().mapping(path)
-        if not isinstance(document, Mapping) or not isinstance(document.get(key), list):
-            raise ValueError(f"{path}: expected a {key} list")
-        values = document[key]
-        if any(not isinstance(value, str) for value in values):
-            raise ValueError(f"{path}: {key} entries must be strings")
-        return tuple(values)
 
 
 @dataclass(frozen=True, slots=True)

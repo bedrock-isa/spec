@@ -98,7 +98,7 @@ class VectorDiagramCatalog:
                 f"{collection_root}: finite VECTOR diagrams may only be owned "
                 "by VECTOR or VECTORFP instructions"
             )
-        inventory = DirectoryInventory.load(
+        inventory = DirectoryInventory.load_strict(
             owner=owner,
             kind="vector-diagram",
             source=collection_root / "diagrams.yaml",

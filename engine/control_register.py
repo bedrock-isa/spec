@@ -9,20 +9,16 @@ from types import MappingProxyType
 from typing import Any
 
 from .extension import ExtensionSetCatalog
+from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
 from .register import RegisterField, RegisterLayout, ResetSpec
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
 @dataclass(frozen=True, slots=True)
-class ControlRegisterInventory:
+class ControlRegisterInventory(DirectoryInventory):
     """One owner-local closed-world control-register inventory."""
 
-    owner: str
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
     generated_state_registers: tuple[str, ...]
     reset: ResetSpec | None
 
@@ -95,13 +91,7 @@ class ControlRegisterCatalog:
         )
         namespaces: dict[str, ControlRegisterNamespace] = {}
         selectors: dict[int, ControlRegister] = {}
-        for owner, namespace_root in (
-            ("base", root),
-            *(
-                (extension_id, extensions.root / extension_id)
-                for extension_id in extensions.declared
-            ),
-        ):
+        for owner, namespace_root in extensions.owner_roots():
             namespace = _load_namespace(owner, namespace_root, root, references)
             references.namespaces.register(namespace.reference, namespace)
             namespaces[owner] = namespace
@@ -169,15 +159,28 @@ def _load_namespace(
 
 def _load_inventory(owner: str, root: Path) -> ControlRegisterInventory:
     source = root / "control_registers.yaml"
+    membership = DirectoryInventory.inspect(
+        owner=owner,
+        kind="control-register",
+        source=source,
+        root=root,
+        key="control_registers",
+        allow_missing=True,
+    )
     if not source.is_file():
-        return ControlRegisterInventory(owner, source, root, (), (), (), None)
+        return ControlRegisterInventory(
+            membership.owner,
+            membership.kind,
+            membership.source,
+            membership.root,
+            membership.declared,
+            membership.actual,
+            (),
+            None,
+        )
     raw = _load_mapping(source)
-    values = raw.get("control_registers")
-    if not isinstance(values, list) or any(
-        not isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"{source}: expected a control_registers list of strings")
-    generated_state_registers = raw.get("generated_state_registers", values)
+    values = membership.declared
+    generated_state_registers = raw.get("generated_state_registers", list(values))
     if not isinstance(generated_state_registers, list) or any(
         not isinstance(value, str) for value in generated_state_registers
     ):
@@ -206,23 +209,13 @@ def _load_inventory(owner: str, root: Path) -> ControlRegisterInventory:
             f"{source}: generated-state control registers are listed more than once: "
             f"{duplicate_state_registers}"
         )
-    actual = (
-        tuple(
-            sorted(
-                path.name
-                for path in root.iterdir()
-                if path.is_dir() and not path.name.startswith(".")
-            )
-        )
-        if root.is_dir()
-        else ()
-    )
     return ControlRegisterInventory(
-        owner,
-        source,
-        root,
-        tuple(values),
-        actual,
+        membership.owner,
+        membership.kind,
+        membership.source,
+        membership.root,
+        values,
+        membership.actual,
         tuple(generated_state_registers),
         _decode_reset(raw.get("reset")),
     )

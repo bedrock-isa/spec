@@ -350,27 +350,20 @@ class CatalogValidator:
     ) -> Iterator[Diagnostic]:
         if complete:
             extension_catalog = project.catalog.extension_catalog
-            declared_extensions = set(extension_catalog.declared)
-            actual_extensions = set(extension_catalog.actual)
-            for missing in sorted(declared_extensions - actual_extensions):
+            for missing in extension_catalog.missing:
                 yield _error(
                     "extension.missing-directory",
                     extension_catalog.source,
                     f"declared extension {missing!r} has no directory",
                 )
-            for undeclared in sorted(actual_extensions - declared_extensions):
+            for undeclared in extension_catalog.undeclared:
                 yield _error(
                     "extension.undeclared-directory",
                     extension_catalog.root / undeclared,
                     f"extension directory {undeclared!r} is not in "
                     f"{extension_catalog.source.name}",
                 )
-            duplicate_extensions = sorted(
-                extension_id
-                for extension_id in declared_extensions
-                if extension_catalog.declared.count(extension_id) > 1
-            )
-            for duplicate in duplicate_extensions:
+            for duplicate in extension_catalog.duplicates:
                 yield _error(
                     "extension.duplicate",
                     extension_catalog.source,
@@ -386,24 +379,19 @@ class CatalogValidator:
             )
             for instruction_set in instruction_sets:
                 catalog = instruction_set.catalog
-                declared = set(catalog.declared)
-                actual = set(catalog.actual)
-                for missing in sorted(declared - actual):
+                for missing in catalog.missing:
                     yield _error(
                         "catalog.missing-directory",
                         catalog.source,
                         f"declared instruction {missing!r} has no directory",
                     )
-                for undeclared in sorted(actual - declared):
+                for undeclared in catalog.undeclared:
                     yield _error(
                         "catalog.undeclared-directory",
                         catalog.root / undeclared,
                         f"instruction directory {undeclared!r} is not in {catalog.source.name}",
                     )
-                duplicates = sorted(
-                    name for name in declared if catalog.declared.count(name) > 1
-                )
-                for duplicate in duplicates:
+                for duplicate in catalog.duplicates:
                     yield _error(
                         "catalog.duplicate",
                         catalog.source,
@@ -451,27 +439,20 @@ class EncodingReservationValidator:
 
     def validate(self, catalog: EncodingReservationCatalog) -> Iterator[Diagnostic]:
         inventory = catalog.inventory
-        declared = set(inventory.declared)
-        actual = set(inventory.actual)
-        for missing in sorted(declared - actual):
+        for missing in inventory.missing:
             yield _error(
                 "encoding-reservation.missing-directory",
                 inventory.source,
                 f"declared reservation {missing!r} has no directory",
             )
-        for undeclared in sorted(actual - declared):
+        for undeclared in inventory.undeclared:
             yield _error(
                 "encoding-reservation.undeclared-directory",
                 inventory.root / undeclared,
                 f"reservation directory {undeclared!r} is not in "
                 f"{inventory.source.name}",
             )
-        duplicates = sorted(
-            reservation_id
-            for reservation_id in declared
-            if inventory.declared.count(reservation_id) > 1
-        )
-        for duplicate in duplicates:
+        for duplicate in inventory.duplicates:
             yield _error(
                 "encoding-reservation.duplicate",
                 inventory.source,
@@ -577,26 +558,21 @@ class CpuidValidator:
                 cpuid_class.leaf_inventory for cpuid_class in namespace.classes.values()
             )
             for inventory in inventories:
-                declared = set(inventory.declared)
-                actual = set(inventory.actual)
-                kind = "class" if inventory.source.name == "classes.yaml" else "leaf"
-                for missing in sorted(declared - actual):
+                kind = inventory.kind
+                for missing in inventory.missing:
                     yield _error(
                         f"cpuid.{kind}.missing-directory",
                         inventory.source,
                         f"declared CPUID {kind} {missing!r} has no directory",
                     )
-                for undeclared in sorted(actual - declared):
+                for undeclared in inventory.undeclared:
                     yield _error(
                         f"cpuid.{kind}.undeclared-directory",
                         inventory.root / undeclared,
                         f"CPUID {kind} directory {undeclared!r} is not in "
                         f"{inventory.source.name}",
                     )
-                duplicates = sorted(
-                    item for item in declared if inventory.declared.count(item) > 1
-                )
-                for duplicate in duplicates:
+                for duplicate in inventory.duplicates:
                     yield _error(
                         f"cpuid.{kind}.duplicate",
                         inventory.source,
@@ -752,26 +728,21 @@ class EventValidator:
                 for event_class in namespace.classes.values()
             )
             for inventory in inventories:
-                declared = set(inventory.declared)
-                actual = set(inventory.actual)
-                kind = "class" if inventory.source.name == "classes.yaml" else "event"
-                for missing in sorted(declared - actual):
+                kind = inventory.kind
+                for missing in inventory.missing:
                     yield _error(
                         f"event.{kind}.missing-directory",
                         inventory.source,
                         f"declared event {kind} {missing!r} has no directory",
                     )
-                for undeclared in sorted(actual - declared):
+                for undeclared in inventory.undeclared:
                     yield _error(
                         f"event.{kind}.undeclared-directory",
                         inventory.root / undeclared,
                         f"event {kind} directory {undeclared!r} is not in "
                         f"{inventory.source.name}",
                     )
-                duplicates = sorted(
-                    item for item in declared if inventory.declared.count(item) > 1
-                )
-                for duplicate in duplicates:
+                for duplicate in inventory.duplicates:
                     yield _error(
                         f"event.{kind}.duplicate",
                         inventory.source,
@@ -976,25 +947,20 @@ class RegisterValidator:
 
     @staticmethod
     def _validate_inventory(inventory: RegisterInventory) -> Iterator[Diagnostic]:
-        declared = set(inventory.declared)
-        actual = set(inventory.actual)
-        for missing in sorted(declared - actual):
+        for missing in inventory.missing:
             yield _error(
                 f"register.{inventory.kind}.missing-directory",
                 inventory.source,
                 f"declared register {inventory.kind} {missing!r} has no directory",
             )
-        for undeclared in sorted(actual - declared):
+        for undeclared in inventory.undeclared:
             yield _error(
                 f"register.{inventory.kind}.undeclared-directory",
                 inventory.root / undeclared,
                 f"register {inventory.kind} directory {undeclared!r} is not in "
                 f"{inventory.source.name}",
             )
-        duplicates = sorted(
-            item for item in declared if inventory.declared.count(item) > 1
-        )
-        for duplicate in duplicates:
+        for duplicate in inventory.duplicates:
             yield _error(
                 f"register.{inventory.kind}.duplicate",
                 inventory.source,
@@ -1269,23 +1235,19 @@ class ControlRegisterValidator:
     def validate(self, catalog: ControlRegisterCatalog) -> Iterator[Diagnostic]:
         for namespace in catalog.namespaces.values():
             inventory = namespace.inventory
-            declared = set(inventory.declared)
-            actual = set(inventory.actual)
-            for missing in sorted(declared - actual):
+            for missing in inventory.missing:
                 yield _error(
                     "control-register.missing-directory",
                     inventory.source,
                     f"declared control register {missing!r} has no directory",
                 )
-            for undeclared in sorted(actual - declared):
+            for undeclared in inventory.undeclared:
                 yield _error(
                     "control-register.undeclared-directory",
                     inventory.root / undeclared,
                     f"control-register directory {undeclared!r} is not declared",
                 )
-            for duplicate in sorted(
-                item for item in declared if inventory.declared.count(item) > 1
-            ):
+            for duplicate in inventory.duplicates:
                 yield _error(
                     "control-register.duplicate",
                     inventory.source,
@@ -1357,24 +1319,20 @@ class TerminologyValidator:
     def _validate_inventory(
         inventory: TerminologyInventory,
     ) -> Iterator[Diagnostic]:
-        declared = set(inventory.declared)
-        actual = set(inventory.actual)
-        for missing in sorted(declared - actual):
+        for missing in inventory.missing:
             yield _error(
                 f"terminology.{inventory.kind}.missing-directory",
                 inventory.source,
                 f"declared terminology {inventory.kind} {missing!r} has no directory",
             )
-        for undeclared in sorted(actual - declared):
+        for undeclared in inventory.undeclared:
             yield _error(
                 f"terminology.{inventory.kind}.undeclared-directory",
                 inventory.root / undeclared,
                 f"terminology {inventory.kind} directory {undeclared!r} is not in "
                 f"{inventory.source.name}",
             )
-        for duplicate in sorted(
-            item for item in declared if inventory.declared.count(item) > 1
-        ):
+        for duplicate in inventory.duplicates:
             yield _error(
                 f"terminology.{inventory.kind}.duplicate",
                 inventory.source,

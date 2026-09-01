@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
+from .inventory import DirectoryInventory
+from .yaml_document import SchemaValidatedYamlLoader
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,43 +42,28 @@ class ExtensionMetadata:
         )
 
 
-@dataclass(frozen=True, slots=True)
-class ExtensionSetCatalog:
+class ExtensionSetCatalog(DirectoryInventory):
     """The closed-world inventory of extension directories."""
 
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
+    def owner_roots(self) -> tuple[tuple[str, Path], ...]:
+        """Return base and declared extension roots in declaration order."""
+
+        return (
+            ("base", self.root.parent),
+            *(
+                (extension_id, self.root / extension_id)
+                for extension_id in self.declared
+            ),
+        )
 
     @classmethod
     def load(cls, isa_root: str | Path) -> "ExtensionSetCatalog":
         root = Path(isa_root) / "extensions"
-        source = root / "extensions.yaml"
-        declared = _load_name_list(source, "extensions") if source.is_file() else ()
-        actual = (
-            tuple(
-                sorted(
-                    path.name
-                    for path in root.iterdir()
-                    if path.is_dir() and not path.name.startswith(".")
-                )
-            )
-            if root.is_dir()
-            else ()
+        return cls.inspect(
+            owner="isa",
+            kind="extension",
+            source=root / "extensions.yaml",
+            root=root,
+            key="extensions",
+            allow_missing=True,
         )
-        return cls(source, root, declared, actual)
-
-
-def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
-    document = _load_mapping(path)
-    values = document.get(key)
-    if not isinstance(values, list) or any(
-        not isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"{path}: expected a {key} list of strings")
-    return tuple(values)
-
-
-def _load_mapping(path: Path) -> dict[str, object]:
-    return YamlDocumentLoader().mapping(path)

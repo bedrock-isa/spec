@@ -15,6 +15,7 @@ from engine.entity import (
     EntityDisplayStyle,
     EntityKind,
 )
+from engine.inventory import DirectoryInventory
 from engine.reference import QualifiedReference, Reference, ReferenceIndex
 from engine.yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
@@ -304,12 +305,12 @@ def _load_groups(
     extensions: Mapping[str, InterfaceExtension],
 ) -> tuple[ReferenceIndex[InterfaceGroup], ReferenceIndex[object]]:
     groups_root = root / kind / "groups"
-    declared = _load_inventory(groups_root / "groups.yaml", "groups")
-    actual = _actual_directories(groups_root)
-    if declared != actual:
+    group_inventory = _load_inventory(groups_root / "groups.yaml", "groups")
+    declared = group_inventory.declared
+    if declared != group_inventory.actual:
         raise ValueError(
             f"{groups_root}: declared {kind} groups {declared} do not match "
-            f"actual groups {actual}"
+            f"actual groups {group_inventory.actual}"
         )
     group_schema = root / "schemas/group.yaml"
     entity_schema = root / f"schemas/{singular}.yaml"
@@ -338,12 +339,12 @@ def _load_groups(
             ),
         )
         entities_root = group_root / kind
-        entity_ids = _load_inventory(entities_root / f"{kind}.yaml", kind)
-        actual_entities = _actual_directories(entities_root)
-        if entity_ids != actual_entities:
+        entity_inventory = _load_inventory(entities_root / f"{kind}.yaml", kind)
+        entity_ids = entity_inventory.declared
+        if entity_ids != entity_inventory.actual:
             raise ValueError(
                 f"{entities_root}: declared {kind} {entity_ids} do not match "
-                f"actual entries {actual_entities}"
+                f"actual entries {entity_inventory.actual}"
             )
         for entity_id in entity_ids:
             source = entities_root / entity_id / f"{singular}.yaml"
@@ -403,33 +404,27 @@ def _load_groups(
     return groups, entities
 
 
-def _load_inventory(path: Path, key: str) -> tuple[str, ...]:
-    values = YamlDocumentLoader().mapping(path).get(key)
-    if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
-        raise ValueError(f"{path}: expected a {key} list of strings")
-    if len(set(values)) != len(values):
-        raise ValueError(f"{path}: duplicate {key} entries")
-    return tuple(values)
-
-
-def _actual_directories(root: Path) -> tuple[str, ...]:
-    return tuple(
-        sorted(
-            path.name
-            for path in root.iterdir()
-            if path.is_dir() and not path.name.startswith(".")
-        )
+def _load_inventory(path: Path, key: str) -> DirectoryInventory:
+    inventory = DirectoryInventory.inspect(
+        owner="interfaces.c",
+        kind=key,
+        source=path,
+        root=path.parent,
+        key=key,
     )
+    if inventory.duplicates:
+        raise ValueError(f"{path}: duplicate {key} entries")
+    return inventory
 
 
 def _load_extensions(root: Path) -> Mapping[str, InterfaceExtension]:
     extensions_root = root / "extensions"
-    declared = _load_inventory(extensions_root / "extensions.yaml", "extensions")
-    actual = _actual_directories(extensions_root)
-    if declared != actual:
+    inventory = _load_inventory(extensions_root / "extensions.yaml", "extensions")
+    declared = inventory.declared
+    if declared != inventory.actual:
         raise ValueError(
             f"{extensions_root}: declared extensions {declared} do not match "
-            f"actual extensions {actual}"
+            f"actual extensions {inventory.actual}"
         )
     schema = root / "schemas/extension.yaml"
     loaded: dict[str, InterfaceExtension] = {}

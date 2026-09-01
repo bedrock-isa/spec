@@ -9,6 +9,7 @@ from types import MappingProxyType
 from typing import Any
 
 from .extension import ExtensionSetCatalog
+from .inventory import DirectoryInventory
 from .reference import Reference, ReferenceIndex
 from .yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
@@ -93,16 +94,8 @@ class Register:
     layout: RegisterLayout | None
 
 
-@dataclass(frozen=True, slots=True)
-class RegisterInventory:
+class RegisterInventory(DirectoryInventory):
     """One closed-world group or explicit-register directory inventory."""
-
-    owner: str
-    kind: str
-    source: Path
-    root: Path
-    declared: tuple[str, ...]
-    actual: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,13 +158,10 @@ class RegisterCatalog:
         root = Path(isa_root).resolve()
         extensions = extension_catalog or ExtensionSetCatalog.load(root)
         schema_root = root / "schemas"
-        namespace_roots = (
-            root,
-            *(extensions.root / extension_id for extension_id in extensions.declared),
-        )
+        owner_roots = extensions.owner_roots()
         manifests = tuple(
             namespace_root / "registers/groups/groups.yaml"
-            for namespace_root in namespace_roots
+            for _, namespace_root in owner_roots
         )
         schemas = (
             {
@@ -186,9 +176,7 @@ class RegisterCatalog:
             ReferenceIndex[RegisterGroup](), ReferenceIndex[Register]()
         )
         namespaces: dict[str, RegisterNamespace] = {}
-        for owner, namespace_root in zip(
-            ("base", *extensions.declared), namespace_roots, strict=True
-        ):
+        for owner, namespace_root in owner_roots:
             namespaces[owner] = _load_namespace(
                 owner, namespace_root, schemas, references
             )
@@ -379,20 +367,14 @@ def _load_layout(source: Path, schema: Mapping[str, object]) -> RegisterLayout |
 
 
 def _load_inventory(owner: str, kind: str, root: Path, key: str) -> RegisterInventory:
-    source = root / f"{key}.yaml"
-    declared = _load_name_list(source, key) if source.is_file() else ()
-    actual = (
-        tuple(
-            sorted(
-                path.name
-                for path in root.iterdir()
-                if path.is_dir() and not path.name.startswith(".")
-            )
-        )
-        if root.is_dir()
-        else ()
+    return RegisterInventory.inspect(
+        owner=owner,
+        kind=kind,
+        source=root / f"{key}.yaml",
+        root=root,
+        key=key,
+        allow_missing=True,
     )
-    return RegisterInventory(owner, kind, source, root, declared, actual)
 
 
 def _decode_reset(raw: object) -> ResetSpec | None:
@@ -404,16 +386,6 @@ def _decode_reset(raw: object) -> ResetSpec | None:
     if "from" in raw:
         return ResetSpec(source=Reference.parse(raw["from"]))
     return ResetSpec(cold=raw.get("cold"), warm=raw.get("warm"))
-
-
-def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
-    raw = _load_mapping(path)
-    values = raw.get(key)
-    if not isinstance(values, list) or any(
-        not isinstance(value, str) for value in values
-    ):
-        raise ValueError(f"{path}: expected a {key} list of strings")
-    return tuple(values)
 
 
 def _load_validated(path: Path, schema: Mapping[str, object]) -> dict[str, Any]:
