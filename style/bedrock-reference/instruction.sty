@@ -59,13 +59,20 @@
 \newcommand{\BedrockInstructionFormatHeading}{%
   \par\Needspace{1.25in}%
   {\normalsize\bfseries Instruction Format:\par}\vspace{3pt}}
-\newcommand{\BedrockInstructionFieldsHeading}{%
+\newcommand{\BedrockInstructionRestrictionsHeading}{%
   \par\Needspace{0.70in}%
-  {\normalsize\bfseries Instruction Fields:\par}\vspace{3pt}}
-\newcommand{\BedrockInstructionFieldDescription}[2]{%
+  {\normalsize\bfseries Restrictions:\par}\vspace{3pt}}
+\newcommand{\BedrockInstructionRestrictionRow}[2]{%
   \par\Needspace{0.36in}%
   \begingroup\leftskip=0.24in%
   \noindent\textbf{#1}:\enspace#2\par\endgroup\vspace{2pt}}
+\newcommand{\BedrockInstructionOperandConstraint}[4]{%
+  \BedrockInstructionRestrictionRow{Operand constraint}{%
+    Role \texttt{#1}; relation \texttt{#2}; values \texttt{#3}; reason
+    \texttt{#4}.}}
+\newcommand{\BedrockInstructionOperandOverlap}[3]{%
+  \BedrockInstructionRestrictionRow{Operand overlap}{%
+    Operands \texttt{#1}, \texttt{#2}; rule \texttt{#3}.}}
 \newcommand{\BedrockInstructionDescriptionHeading}[1]{%
   \par\Needspace{0.80in}%
   \subsection*{#1}}

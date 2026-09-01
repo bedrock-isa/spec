@@ -33,24 +33,11 @@ from ..semantic_text import (
     TextOrigin,
 )
 from ..terminology import Term, TermCatalog, TermGroup
-from ..type_system import (
-    EffectiveAddressFieldType,
-    EnumConditionFieldType,
-    FlagsFieldType,
-    ImmediateFieldType,
-    MemoryOrderFieldType,
-    PageTableLevelFieldType,
-    RegisterFieldType,
-    RegisterPairSelectorFieldType,
-    RegisterSelectorFieldType,
-    SizeSelectorFieldType,
-)
 from .document_fragment import DocumentFragmentPipeline
 from .latex_source import LatexSourcePreprocessor
 
 if TYPE_CHECKING:
-    from ..encoding import EncodingForm, FieldBinding
-    from ..type_system import FieldType, TypeSystem
+    from ..encoding import EncodingForm, OperandConstraint
 
 
 def tex_escape(value: object) -> str:
@@ -365,7 +352,6 @@ class InstructionEntryRenderer:
     def render(
         self,
         bundle: InstructionBundle,
-        types: "TypeSystem",
         description: str | None = None,
         formats: tuple[InstructionFormatProjection, ...] | None = None,
     ) -> str:
@@ -408,7 +394,7 @@ class InstructionEntryRenderer:
             [
                 r"\BedrockInstructionDescriptionHeading{Detailed Semantics}",
                 description,
-                self._forms(bundle, types, formats or self.project_formats(bundle)),
+                self._forms(bundle, formats or self.project_formats(bundle)),
                 r"\end{BedrockInstruction}",
             ]
         )
@@ -451,7 +437,6 @@ class InstructionEntryRenderer:
     def _forms(
         self,
         bundle: InstructionBundle,
-        types: "TypeSystem",
         formats: tuple[InstructionFormatProjection, ...],
     ) -> str:
         blocks = [r"\begin{BedrockInstructionForms}"]
@@ -475,196 +460,46 @@ class InstructionEntryRenderer:
                     )
                     + r"\par"
                 )
-            descriptions = self._field_descriptions(bundle, form, types)
-            if descriptions:
-                blocks.append(r"\BedrockInstructionFieldsHeading")
-                blocks.extend(descriptions)
+            blocks.extend(self._restrictions(form))
             blocks.append(r"\end{BedrockFormBlock}")
         blocks.append(r"\end{BedrockInstructionForms}")
         return "\n".join(blocks)
 
-    def _field_descriptions(
-        self,
-        bundle: InstructionBundle,
-        form: "EncodingForm",
-        types: "TypeSystem",
-    ) -> list[str]:
-        descriptions: list[str] = []
-        if form.pattern.bit_width >= 18:
-            descriptions.append(
-                r"\BedrockInstructionFieldDescription{Length field \texttt{L}}"
-                r"{Encodes the encoded instruction length as $3+L$ bytes. "
-                r"The encoded length must cover the required instruction length; "
-                r"trailing bytes are uninterpreted padding.}"
-            )
-
-        for field in self._ordered_fields(form):
-            field_type = types.field_types.resolve(field.type)
-            label = self._field_label(field, field_type)
-            description = self._field_description(bundle, form, field, field_type)
-            descriptions.append(
-                rf"\BedrockInstructionFieldDescription{{{label}}}{{{description}}}"
-            )
-
-        for overlap in form.overlaps:
-            left, right = (
-                self._operand_name(operand) for operand in overlap.operands
-            )
-            subjects = f"the {left} and {right} operands"
-            if overlap.type == "same_value":
-                meaning = (
-                    f"When {subjects} designate the same architectural register, "
-                    "the final value equals that register's initial value."
-                )
-            else:
-                meaning = (
-                    f"When {subjects} designate the same architectural register, "
-                    "the instruction raises "
-                    "ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before "
-                    "architectural effects."
-                )
-            descriptions.append(
-                r"\BedrockInstructionFieldDescription{Operand overlap}"
-                rf"{{{tex_escape(meaning)}}}"
-            )
-        return descriptions
+    @classmethod
+    def _restrictions(cls, form: "EncodingForm") -> list[str]:
+        if not form.constraints and not form.overlaps:
+            return []
+        restrictions = [r"\BedrockInstructionRestrictionsHeading"]
+        restrictions.extend(
+            cls._operand_constraint(constraint)
+            for constraint in form.constraints
+        )
+        restrictions.extend(
+            rf"\BedrockInstructionOperandOverlap"
+            rf"{{{tex_escape(overlap.operands[0])}}}"
+            rf"{{{tex_escape(overlap.operands[1])}}}"
+            rf"{{{tex_escape(overlap.type)}}}"
+            for overlap in form.overlaps
+        )
+        return restrictions
 
     @staticmethod
-    def _ordered_fields(form: "EncodingForm") -> tuple["FieldBinding", ...]:
-        ordered: list[FieldBinding] = []
-        seen: set[str] = set()
-        for marker in form.pattern.code:
-            if marker in "01" or marker in seen:
-                continue
-            field = form.field_for_marker(marker)
-            if field is None:
-                raise ValueError(
-                    f"encoding form {form.id!r} has no binding for field {marker!r}"
-                )
-            ordered.append(field)
-            seen.add(marker)
-        ordered.extend(field for field in form.fields if field.marker not in seen)
-        return tuple(ordered)
-
-    @staticmethod
-    def _field_label(field: "FieldBinding", field_type: "FieldType") -> str:
-        names = {
-            SizeSelectorFieldType: "Size field",
-            EffectiveAddressFieldType: "Effective Address field",
-            RegisterSelectorFieldType: "Register field",
-            RegisterFieldType: "Register field",
-            RegisterPairSelectorFieldType: "Register-pair field",
-            EnumConditionFieldType: "Condition field",
-            ImmediateFieldType: "Immediate field",
-            MemoryOrderFieldType: "Memory-order field",
-            FlagsFieldType: "Flags field",
-            PageTableLevelFieldType: "Page-table-level field",
-        }
-        return f"{names[type(field_type)]} {tex_code(field.marker)}"
-
-    def _field_description(
-        self,
-        bundle: InstructionBundle,
-        form: "EncodingForm",
-        field: "FieldBinding",
-        field_type: "FieldType",
-    ) -> str:
-        target = self._operand_target(bundle, field.role)
-        if isinstance(field_type, SizeSelectorFieldType):
-            choices = form.syntax.selected_size_codes or tuple(
-                value.code for value in field_type.values
-            )
-            text = (
-                f"Selects {'/'.join(choices)}."
-                if choices
-                else "Selects the operand size."
-            )
-        elif isinstance(field_type, EffectiveAddressFieldType):
-            text = f"Specifies {target}."
-            if any(
-                constraint.role == field.role
-                and isinstance(constraint, ExcludedOperandConstraint)
-                and "immediate" in constraint.values
-                for constraint in form.constraints
-            ):
-                text += " Immediate addressing is unavailable in this form."
-        elif isinstance(field_type, (RegisterSelectorFieldType, RegisterFieldType)):
-            text = f"Selects {target}."
-        elif isinstance(field_type, RegisterPairSelectorFieldType):
-            text = f"Selects {target} as a register pair."
-        elif isinstance(field_type, EnumConditionFieldType):
-            text = "Selects the condition code."
-        elif isinstance(field_type, ImmediateFieldType):
-            text = "Encodes the immediate value."
-        elif isinstance(field_type, MemoryOrderFieldType):
-            text = "Selects the memory ordering."
-        elif isinstance(field_type, FlagsFieldType):
-            text = "Selects the architectural flags."
-        elif isinstance(field_type, PageTableLevelFieldType):
-            text = "Selects the page-table level."
+    def _operand_constraint(constraint: "OperandConstraint") -> str:
+        if isinstance(constraint, AllowedOperandConstraint):
+            relation = "allowed"
+        elif isinstance(constraint, ExcludedOperandConstraint):
+            relation = "excluded"
         else:
-            raise TypeError(f"unsupported field type {type(field_type).__name__}")
-
-        allowed = self._allowed_values(form, field.role)
-        if allowed and not isinstance(field_type, SizeSelectorFieldType):
-            text += f" Allowed encoded values: {self._value_ranges(allowed)}."
-        return tex_escape(text)
-
-    @staticmethod
-    def _operand_target(bundle: InstructionBundle, role: str) -> str:
-        operands = bundle.instruction.to_dict().get("operands", {})
-        operand = operands.get(role) if isinstance(operands, dict) else None
-        if isinstance(operand, dict):
-            semantic_role = str(operand.get("role", "")).replace("_", "-")
-            if semantic_role:
-                return f"the {semantic_role} operand"
-        return "the operand"
-
-    @staticmethod
-    def _operand_name(role: str) -> str:
-        special = {
-            "dst": "destination",
-            "src": "source",
-            "lhs": "left-hand",
-            "rhs": "right-hand",
-            "govern": "governing-predicate",
-            "sin_dst": "sine destination",
-            "cos_dst": "cosine destination",
-        }
-        return special.get(role, role.replace("_", "-"))
-
-    @staticmethod
-    def _allowed_values(form: "EncodingForm", role: str) -> set[int]:
-        allowed: set[int] = set()
-        for constraint in form.constraints:
-            if constraint.role != role or not isinstance(
-                constraint, AllowedOperandConstraint
-            ):
-                continue
-            for item in constraint.values:
-                if isinstance(item, int):
-                    allowed.add(item)
-                    continue
-                bounds = item.split("..", maxsplit=1)
-                low = int(bounds[0], 0)
-                high = int(bounds[-1], 0)
-                allowed.update(range(low, high + 1))
-        return allowed
-
-    @staticmethod
-    def _value_ranges(values: set[int]) -> str:
-        runs: list[tuple[int, int]] = []
-        start = previous = min(values)
-        for value in sorted(values)[1:]:
-            if value == previous + 1:
-                previous = value
-                continue
-            runs.append((start, previous))
-            start = previous = value
-        runs.append((start, previous))
-        return ", ".join(
-            str(low) if low == high else f"{low}-{high}"
-            for low, high in runs
+            raise TypeError(
+                f"unsupported operand constraint {type(constraint).__name__}"
+            )
+        values = ", ".join(str(value) for value in constraint.values)
+        return (
+            rf"\BedrockInstructionOperandConstraint"
+            rf"{{{tex_escape(constraint.role)}}}"
+            rf"{{{relation}}}"
+            rf"{{{tex_escape(values)}}}"
+            rf"{{{tex_escape(constraint.reason)}}}"
         )
 
     @classmethod
@@ -1002,7 +837,6 @@ class LatexDocumentRenderer:
             formats,
             self.instruction.render(
                 bundle,
-                project.types,
                 description,
                 formats,
             ),

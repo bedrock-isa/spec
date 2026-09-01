@@ -180,6 +180,10 @@ def _replace_instruction_environments(text: str) -> str:
 
 def _normalize_reader_macros(text: str) -> str:
     text = _replace_instruction_environments(text)
+    text = text.replace(
+        r"\BedrockInstructionRestrictionsHeading",
+        r"\par ",
+    )
     text = _replace_command(
         text,
         "BedrockField",
@@ -218,9 +222,21 @@ def _normalize_reader_macros(text: str) -> str:
     )
     text = _replace_command(
         text,
-        "BedrockInstructionFieldDescription",
-        2,
-        lambda label, value: rf"\par\textbf{{{label}}} --- {value}\par ",
+        "BedrockInstructionOperandConstraint",
+        4,
+        lambda role, relation, values, reason: (
+            rf"\par\texttt{{{role}}} --- \texttt{{{relation}}}: "
+            rf"\texttt{{{values}}} [\texttt{{{reason}}}]\par "
+        ),
+    )
+    text = _replace_command(
+        text,
+        "BedrockInstructionOperandOverlap",
+        3,
+        lambda left, right, rule: (
+            rf"\par\texttt{{{left}}}, \texttt{{{right}}} --- "
+            rf"\texttt{{{rule}}}\par "
+        ),
     )
     text = _replace_command(
         text,
