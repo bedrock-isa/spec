@@ -54,7 +54,7 @@ class VisualSpec:
     asset: PurePosixPath
     start: int
     end: int
-    label: str | None
+    labels: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -177,18 +177,22 @@ def _optional_label(text: str, cursor: int, where: str) -> tuple[str | None, int
     return normalized or None, cursor
 
 
-def _label_in_snippet(snippet: str) -> str | None:
-    match = LABEL_RE.search(snippet)
-    if match is None:
-        return None
-    value, _ = _balanced_value(snippet, match.end() - 1, "{", "}", "visual label")
-    return value.strip() or None
+def _labels_in_snippet(snippet: str) -> tuple[str, ...]:
+    labels: list[str] = []
+    for match in LABEL_RE.finditer(snippet):
+        value, _ = _balanced_value(
+            snippet, match.end() - 1, "{", "}", "visual label"
+        )
+        normalized = value.strip()
+        if normalized and normalized not in labels:
+            labels.append(normalized)
+    return tuple(labels)
 
 
 def _environment_visual(
     text: str,
     match: re.Match[str],
-) -> tuple[int, str, str, str | None, str] | None:
+) -> tuple[int, str, str, tuple[str, ...], str] | None:
     environment = match.group("environment")
     if environment is None:
         return None
@@ -208,9 +212,9 @@ def _environment_visual(
                 "}",
                 "direct TikZ caption",
             )
-        return end, title, snippet, _label_in_snippet(snippet), title
+        return end, title, snippet, _labels_in_snippet(snippet), title
     if environment == "tikzpicture":
-        return end, "Diagram", snippet, _label_in_snippet(snippet), "Diagram"
+        return end, "Diagram", snippet, _labels_in_snippet(snippet), "Diagram"
 
     argument_count, has_optional_label = VISUAL_ENVIRONMENTS[environment]
     cursor = match.end()
@@ -225,16 +229,21 @@ def _environment_visual(
     label = None
     if has_optional_label:
         label, _ = _optional_label(text, cursor, f"{environment} label")
+    labels = list(_labels_in_snippet(snippet))
+    if label is not None and label not in labels:
+        labels.insert(0, label)
     if environment == "BedrockVectorExample":
         # The PDF caption and the image's nonvisual equivalent are separately
         # authored.  Existing generic consumers continue to receive title=alt.
-        return end, arguments[4], snippet, label or _label_in_snippet(snippet), arguments[3]
+        return end, arguments[4], snippet, tuple(labels), arguments[3]
     title = arguments[3] if environment.endswith("TikzDiagram") else arguments[0]
-    return end, title, snippet, label or _label_in_snippet(snippet), title
+    return end, title, snippet, tuple(labels), title
 
 
 def _replacement(visual: VisualSpec, title_tex: str) -> str:
-    label = f"\\phantomsection\\label{{{visual.label}}}\n" if visual.label else ""
+    labels = "".join(
+        f"\\phantomsection\\label{{{label}}}\n" for label in visual.labels
+    )
     # Keep site-only reader text intact across Pandoc's LaTeX and GFM writers.
     # Escaped ampersands become literal entity spellings in the Markdown, while
     # the Unicode dash avoids Pandoc dropping the TeX textemdash command.
@@ -245,7 +254,7 @@ def _replacement(visual: VisualSpec, title_tex: str) -> str:
     )
     return (
         "\n\n"
-        + label
+        + labels
         + "\\begin{center}\n"
         + f"\\includegraphics{{{visual.marker}}}\n"
         + f"\\par\\smallskip\\textbf{{{title_tex}}}\n"
@@ -277,7 +286,7 @@ def extract_visuals(
         if parsed is None:
             cursor = _environment_end(text, match.group("environment") or "", match.start())
             continue
-        end, title_tex, snippet, label, caption_tex = parsed
+        end, title_tex, snippet, labels, caption_tex = parsed
         owner = _owner_at(structure, match.start())
         ordinal = owner_counts.get(owner, 0) + 1
         owner_counts[owner] = ordinal
@@ -296,7 +305,7 @@ def extract_visuals(
             asset=asset,
             start=match.start(),
             end=end,
-            label=label,
+            labels=labels,
         )
         visuals.append(visual)
         replacements.append((match.start(), end, _replacement(visual, caption_tex)))

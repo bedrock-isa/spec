@@ -1,14 +1,13 @@
 import unittest
 from dataclasses import replace
 from pathlib import Path
-import shutil
 import tempfile
-
-import yaml
+from types import SimpleNamespace
 
 from engine.allocation import forms_overlap
 from engine.check import (
     BundleValidator,
+    CatalogValidator,
     CheckService,
     ValidationRule,
     ValidationScope,
@@ -21,7 +20,13 @@ from engine.encoding import (
 )
 from engine.encoding_metasyntax import EncodingMetasyntax
 from engine.instruction_metasyntax import InstructionMetasyntax
-from engine.project import ArtifactSet, IsaProject
+from engine.extension import ExtensionSetCatalog
+from engine.project import (
+    ArtifactSet,
+    InstructionSet,
+    InstructionSetCatalog,
+    IsaProject,
+)
 from engine.reference import Reference
 
 
@@ -82,34 +87,38 @@ class CheckServiceTest(unittest.TestCase):
 
         self.assertEqual([item.code for item in diagnostics], ["sail.entry"])
 
-    def test_missing_declared_directory_is_a_catalog_diagnostic(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "schemas").mkdir()
-            (root / "instructions/definitions").mkdir(parents=True)
-            for filename in (
-                "instruction.yaml",
-                "instruction-encodings.yaml",
-                "model.yaml",
-                "ea-mode-compact.yaml",
-                "ea-mode-extended.yaml",
-            ):
-                shutil.copy2(
-                    self.isa_root / "schemas" / filename,
-                    root / "schemas" / filename,
-                )
-            for filename in ("field_types.yaml", "payload_types.yaml"):
-                shutil.copy2(self.isa_root / filename, root / filename)
-            shutil.copytree(self.isa_root / "ea/modes", root / "ea/modes")
-            (root / "instructions/definitions/instructions.yaml").write_text(
-                yaml.safe_dump({"instructions": ["MISSING"]}), encoding="utf-8"
-            )
-            (root / "model.yaml").write_text(
-                "sail:\n  units: []\n", encoding="utf-8"
-            )
+    def test_catalog_validator_reports_missing_declared_instruction_directory(
+        self,
+    ) -> None:
+        source = Path("instructions.yaml")
+        missing = InstructionSetCatalog(
+            owner="base",
+            kind="instruction",
+            source=source,
+            root=Path("instructions"),
+            declared=("MISSING",),
+            actual=(),
+        )
+        extensions = ExtensionSetCatalog(
+            owner="base",
+            kind="extension",
+            source=Path("extensions.yaml"),
+            root=Path("extensions"),
+            declared=(),
+            actual=(),
+        )
+        project = SimpleNamespace(
+            catalog=SimpleNamespace(
+                extension_catalog=extensions,
+                base=InstructionSet(missing, ()),
+                extensions={},
+            ),
+            select=lambda: (),
+        )
 
-            project = IsaProject.load(root)
-            diagnostics = CheckService().check(project)
+        diagnostics = CatalogValidator().validate(
+            project, (), complete=True
+        )
 
         self.assertEqual(
             [item.code for item in diagnostics], ["catalog.missing-directory"]
