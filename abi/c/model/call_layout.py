@@ -211,7 +211,7 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
         next_stack_offset += stack.argument_slot_bytes
         return location
 
-    def allocate(
+    def assign_registers(
         register_class: ResolvedRegisterClass,
         *,
         units: int,
@@ -250,7 +250,7 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
             register_class = value_class.argument_register_class
             if register_class is None or policy.units is None:
                 raise ValueError(f"argument kind {effective_kind!r} has no location policy")
-            location = allocate(
+            location = assign_registers(
                 register_class,
                 units=policy.units,
                 alignment=policy.alignment_units,
@@ -261,7 +261,9 @@ def layout_call(call: Call, rules: CallRules | None = None) -> dict[str, Any]:
                 and register_class.definition.exhaustion == "indirect"
             ):
                 mode = "copy-address"
-                location = allocate(general, units=1, alignment=1, kind="pointer")
+                location = assign_registers(
+                    general, units=1, alignment=1, kind="pointer"
+                )
             if location is None:
                 location = stack_location()
 

@@ -10,6 +10,6 @@ arguments:
 - isa:VECTOR.registers.VECTOR.V7
 results:
 - isa:VECTOR.registers.VECTOR.V0
-allocation: ascending
+assignment_order: ascending
 tuple_alignment: 1
 exhaustion: indirect

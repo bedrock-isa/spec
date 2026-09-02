@@ -1,5 +1,5 @@
 \subsubsection{Other Exception Payloads}
-Integer-divide, instruction-validation, control-state, and privilege failures are independently allocated leaf events.
+Integer-divide, instruction-validation, control-state, and privilege failures are represented by distinct leaf events.
 Their event code identifies the precise condition, so events without a defined payload use BASIC frames and do not
 repeat a cause number in (:ref:base.events.frame.EVENT_FRAME.ERROR_CODE:).
 

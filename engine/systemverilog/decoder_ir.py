@@ -366,7 +366,7 @@ def _derive_limits(
         form_count=len(forms_ir),
         mnemonic_count=len({form.mnemonic for form in forms_ir}),
         max_opcode_width=max(
-            item.allocation_bits for item in ENCODING_CLASSES_BY_NAME.values()
+            item.pattern_bits for item in ENCODING_CLASSES_BY_NAME.values()
         ),
         max_operands=max(len(form.operands) for form in forms_ir),
         max_ea_operands=max(
@@ -626,7 +626,7 @@ def _effective_addresses(project: Any) -> EffectiveAddressIR:
                         raw,
                         False,
                         True,
-                        f"unallocated compact {profile.upper()} value",
+                        f"unassigned compact {profile.upper()} value",
                         "",
                         "invalid",
                         "",
@@ -867,7 +867,7 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
     encoding_class = next(
         item
         for item in ENCODING_CLASSES_BY_NAME.values()
-        if item.allocation_bits == form.pattern.bit_width
+        if item.pattern_bits == form.pattern.bit_width
     )
     operands = _operand_ir(project, bundle, form)
     fields_ir = tuple(

@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from engine.event import AllocatedEventClass, EventCatalog, compose_event_code
+from engine.event import EventCatalog, EventClassDefinition, compose_event_code
 from engine.extension import ExtensionSetCatalog
 
 
@@ -16,7 +16,7 @@ class EventCatalogTest(unittest.TestCase):
     def test_class_overlays_resolve_to_numeric_roots(self) -> None:
         for event_class in self.events.references.classes.values():
             root = self.events.root_class(event_class)
-            self.assertIsInstance(root, AllocatedEventClass)
+            self.assertIsInstance(root, EventClassDefinition)
 
     def test_composes_event_codes(self) -> None:
         self.assertEqual(compose_event_code(0, 0x21), 0x00000021)

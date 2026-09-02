@@ -25,6 +25,6 @@ oneOf:
     not: {required: [value]}
 x-interpretation-rules:
   - The containing directory name equals id.
-  - value allocates a new 32-bit CPUID class value.
+  - value defines the 32-bit CPUID class value.
   - extends reopens an existing class without repeating its numeric value.
   - The fragment reference is derived from its owner and id as <owner>.cpuid.<class>.

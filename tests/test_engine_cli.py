@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from engine.__main__ import main
-from engine.allocation import AllocationAnalyzer
+from engine.encoding_space import EncodingSpaceAnalyzer
 from engine.encoding_architecture import operator_space
 from engine.project import IsaProject
 from engine.workspace import SpecWorkspace
@@ -117,8 +117,8 @@ class EngineCliTest(unittest.TestCase):
         )
         self.assertEqual([item["severity"] for item in diagnostics], ["error"])
 
-    def test_alloc_entries_uses_class_name_and_operator_space(self) -> None:
-        selected = AllocationAnalyzer().entries(
+    def test_encoding_space_entries_uses_class_name_and_operator_space(self) -> None:
+        selected = EncodingSpaceAnalyzer().entries(
             self.project, "extralong", space="vector"
         )[0]
         output = io.StringIO()
@@ -127,7 +127,7 @@ class EngineCliTest(unittest.TestCase):
                 [
                     "--isa-root",
                     str(self.isa_root),
-                    "alloc",
+                    "encoding-space",
                     "entries",
                     "extralong",
                     "--space",
@@ -147,14 +147,14 @@ class EngineCliTest(unittest.TestCase):
         )
         self.assertTrue(all("reclaimed" in item for item in entries))
 
-    def test_alloc_holes_json_reports_namespace_scoped_blocks(self) -> None:
+    def test_encoding_space_holes_json_reports_namespace_scoped_blocks(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):
             result = main(
                 [
                     "--isa-root",
                     str(self.isa_root),
-                    "alloc",
+                    "encoding-space",
                     "holes",
                     "xxlong",
                     "--space",
@@ -172,14 +172,14 @@ class EngineCliTest(unittest.TestCase):
         prefix = operator_space("xxlong", "vector").prefix.replace("x", "?")
         self.assertTrue(all(item["pattern"].startswith(prefix) for item in document))
 
-    def test_alloc_check_rejects_pattern_outside_class_namespace(self) -> None:
+    def test_encoding_space_check_rejects_pattern_outside_class_namespace(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):
             result = main(
                 [
                     "--isa-root",
                     str(self.isa_root),
-                    "alloc",
+                    "encoding-space",
                     "check",
                     "xxlong",
                     "0000",
@@ -192,7 +192,7 @@ class EngineCliTest(unittest.TestCase):
         diagnostic = json.loads(output.getvalue())
         self.assertEqual(
             [item["code"] for item in diagnostic],
-            ["allocation.candidate-outside-namespace"],
+            ["encoding-space.candidate-outside-namespace"],
         )
 
 

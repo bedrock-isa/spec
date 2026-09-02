@@ -240,12 +240,12 @@ fn fetch_instruction_with(
         let second = read(second_address)?;
         let length = usize::from(3 + ((first >> 2) & 0x0f));
         let selector = ((first & 0x03) << 4) | (second >> 4);
-        let allocation_prefix = ((first & 0x03) << 6) | (second >> 2);
+        let encoding_prefix = ((first & 0x03) << 6) | (second >> 2);
         let minimum = if selector <= 59 {
             3
         } else if selector <= 62 {
             4
-        } else if allocation_prefix == 255 {
+        } else if encoding_prefix == 255 {
             6
         } else {
             5

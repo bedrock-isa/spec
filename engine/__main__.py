@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 from typing import Sequence
 
-from .allocation import AllocationAnalyzer, CandidateOutsideNamespaceError
+from .encoding_space import CandidateOutsideNamespaceError, EncodingSpaceAnalyzer
 from .check import CheckService
 from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .document import DocumentBuilder
@@ -50,29 +50,33 @@ def _parser() -> argparse.ArgumentParser:
     check.add_argument(
         "--format", choices=("text", "json"), default="text", dest="output_format"
     )
-    alloc = subparsers.add_parser(
-        "alloc", help="inspect named opcode spaces without editing sources"
+    encoding_space = subparsers.add_parser(
+        "encoding-space", help="inspect named opcode spaces without editing sources"
     )
-    allocation_commands = alloc.add_subparsers(dest="allocation_command", required=True)
+    space_commands = encoding_space.add_subparsers(
+        dest="encoding_space_command", required=True
+    )
 
-    summary = allocation_commands.add_parser("summary", help="show occupancy by class")
+    summary = space_commands.add_parser("summary", help="show occupancy by class")
     _add_format(summary)
 
-    entries = allocation_commands.add_parser("entries", help="list allocations in a class")
+    entries = space_commands.add_parser(
+        "entries", help="list assigned encodings in a class"
+    )
     entries.add_argument("encoding_class", metavar="CLASS")
-    _add_allocation_scope(entries)
+    _add_encoding_space_scope(entries)
     entries.add_argument("--grep", help="case-insensitive instruction/form filter")
     _add_format(entries)
 
-    candidate = allocation_commands.add_parser("check", help="check a candidate prefix")
+    candidate = space_commands.add_parser("check", help="check a candidate prefix")
     candidate.add_argument("encoding_class", metavar="CLASS")
     candidate.add_argument("pattern", metavar="PATTERN")
     candidate.add_argument("--space", help="named operator space")
     _add_format(candidate)
 
-    holes = allocation_commands.add_parser("holes", help="list maximal free prefixes")
+    holes = space_commands.add_parser("holes", help="list maximal free prefixes")
     holes.add_argument("encoding_class", metavar="CLASS")
-    _add_allocation_scope(holes)
+    _add_encoding_space_scope(holes)
     holes.add_argument(
         "--include-reclaimed",
         action="store_true",
@@ -125,7 +129,7 @@ def _add_format(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_allocation_scope(parser: argparse.ArgumentParser) -> None:
+def _add_encoding_space_scope(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--space", help="named operator space")
     parser.add_argument(
         "--leading", help="leading 0/1/? prefix; omitted bits remain wildcards"
@@ -136,7 +140,7 @@ def _load_failure(root: Path, error: Exception) -> DiagnosticBag:
     if isinstance(error, ProjectLookupError):
         code = f"project.lookup.{error.reason.value.replace('_', '-')}"
     elif isinstance(error, CandidateOutsideNamespaceError):
-        code = "allocation.candidate-outside-namespace"
+        code = "encoding-space.candidate-outside-namespace"
     else:
         code = "project.load"
     return DiagnosticBag(
@@ -167,8 +171,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     with log_phase(_LOGGER, "command.run", command=args.command) as phase:
-        if args.command == "alloc":
-            result = _run_allocation(args, project)
+        if args.command == "encoding-space":
+            result = _run_encoding_space(args, project)
         elif args.command == "docs":
             result = _run_docs(args, workspace)
         elif args.command == "artifacts":
@@ -255,10 +259,10 @@ def _run_artifacts(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
         return 1
 
 
-def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
-    analyzer = AllocationAnalyzer()
+def _run_encoding_space(args: argparse.Namespace, project: IsaProject) -> int:
+    analyzer = EncodingSpaceAnalyzer()
     try:
-        if args.allocation_command == "summary":
+        if args.encoding_space_command == "summary":
             summaries = analyzer.summaries(project)
             if args.output_format == "json":
                 print(
@@ -269,7 +273,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                                 "width": item.width,
                                 "forms": item.forms,
                                 "namespace": item.namespace_slots,
-                                "allocated": item.allocated_slots,
+                                "assigned": item.assigned_slots,
                                 "reclaimed": item.reclaimed_slots,
                                 "reserved": item.reserved_slots,
                                 "clean_free": item.clean_free_slots,
@@ -281,18 +285,18 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                     )
                 )
             else:
-                print("class       bits  forms       namespace       allocated       reclaimed        reserved      clean-free       remaining")
+                print("class       bits  forms       namespace        assigned       reclaimed        reserved      clean-free       remaining")
                 for item in summaries:
                     print(
                         f"{item.encoding_class:<11}{item.width:>4}{item.forms:>7}"
-                        f"{item.namespace_slots:>16,}{item.allocated_slots:>16,}"
+                        f"{item.namespace_slots:>16,}{item.assigned_slots:>16,}"
                         f"{item.reclaimed_slots:>16,}{item.reserved_slots:>16,}"
                         f"{item.clean_free_slots:>16,}"
                         f"{item.remaining_slots:>16,}"
                     )
             return 0
 
-        if args.allocation_command == "entries":
+        if args.encoding_space_command == "entries":
             entries = analyzer.entries(
                 project,
                 args.encoding_class,
@@ -327,7 +331,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                     )
             return 0
 
-        if args.allocation_command == "check":
+        if args.encoding_space_command == "check":
             result = analyzer.check_candidate(
                 project,
                 args.encoding_class,
@@ -342,12 +346,12 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                             "pattern": result.pattern,
                             "state": result.state,
                             "slots": result.slots,
-                            "allocated": result.allocated_slots,
+                            "assigned": result.assigned_slots,
                             "reclaimed": result.reclaimed_slots,
                             "reserved": result.reserved_slots,
                             "clean_free": result.clean_free_slots,
-                            "allocated_entries": [
-                                entry.name for entry in result.allocated_entries
+                            "assigned_entries": [
+                                entry.name for entry in result.assigned_entries
                             ],
                             "reclaimed_entries": [
                                 entry.name for entry in result.reclaimed_entries
@@ -364,13 +368,13 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                 print(f"pattern:    {result.pattern}")
                 print(f"state:      {result.state}")
                 print(f"slots:      {result.slots:,}")
-                print(f"allocated:  {result.allocated_slots:,}")
+                print(f"assigned:   {result.assigned_slots:,}")
                 print(f"reclaimed:  {result.reclaimed_slots:,}")
                 print(f"reserved:   {result.reserved_slots:,}")
                 print(f"clean-free: {result.clean_free_slots:,}")
-                if result.allocated_entries:
-                    print("allocated overlaps:")
-                    for entry in result.allocated_entries:
+                if result.assigned_entries:
+                    print("assigned overlaps:")
+                    for entry in result.assigned_entries:
                         print(f"  {entry.name}  {entry.pattern}")
                 if result.reclaimed_entries:
                     print("reclaimed overlaps:")
@@ -380,7 +384,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                     print("reservation overlaps:")
                     for reservation in result.reservations:
                         print(f"  {reservation.id}  {reservation.summary}")
-            return 1 if result.allocated_slots or result.reserved_slots else 0
+            return 1 if result.assigned_slots or result.reserved_slots else 0
 
         holes = analyzer.holes(
             project,
@@ -418,7 +422,7 @@ def _run_allocation(args: argparse.Namespace, project: IsaProject) -> int:
                 )
         return 0
     except (OSError, ValueError) as error:
-        log_caught_exception(_LOGGER, "allocation.command", error)
+        log_caught_exception(_LOGGER, "encoding-space.command", error)
         diagnostics = _load_failure(args.isa_root, error)
         _emit_diagnostics(args, diagnostics)
         return 1

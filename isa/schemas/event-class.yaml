@@ -32,5 +32,5 @@ properties:
     pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.events\.[A-Z][A-Z0-9_]*$
 x-interpretation-rules:
 - A definition owns an 8-bit architectural event class value and its 24-bit selector policy.
-- An extension overlay contributes events to an existing class and owns no second class allocation.
+- An extension overlay contributes events to an existing class and owns no independent class value.
 - An overlay ID must match the class named by extends.

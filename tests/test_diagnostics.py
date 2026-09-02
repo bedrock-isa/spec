@@ -14,7 +14,7 @@ class DiagnosticBagTest(unittest.TestCase):
     def setUp(self) -> None:
         self.diagnostic = Diagnostic(
             Severity.ERROR,
-            "allocation.overlap",
+            "encoding.overlap",
             Path("left.yaml"),
             "forms overlap",
             ("encodings", "left", "pattern"),

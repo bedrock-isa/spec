@@ -47,7 +47,7 @@ class RegisterClass(Entity):
     id: str
     arguments: tuple[QualifiedReference[Register], ...]
     results: tuple[QualifiedReference[Register], ...]
-    allocation: str
+    assignment_order: str
     tuple_alignment: int
     exhaustion: str
 
@@ -325,22 +325,22 @@ class CAbiProject:
         convention = self.calling_convention
         workspace.resolve(convention.stack.pointer)
         workspace.resolve(convention.stack.sret_register)
-        allocated_registers: dict[
+        assigned_registers: dict[
             QualifiedReference[Register], Reference[RegisterClass]
         ] = {}
         for register_class_reference in convention.register_classes:
             register_class = self.register_classes.resolve(register_class_reference)
             for register in register_class.arguments:
-                allocation_owner = allocated_registers.get(register)
-                if allocation_owner is not None:
-                    previous_class = self.register_classes.resolve(allocation_owner)
+                assignment_owner = assigned_registers.get(register)
+                if assignment_owner is not None:
+                    previous_class = self.register_classes.resolve(assignment_owner)
                     register_target = workspace.resolve(register)
                     raise ValueError(
                         f"{register_class.source}: argument register "
-                        f"{register_target.id} is also allocated by "
-                        f"{previous_class.id}"
+                        f"{register_target.id} is assigned to both "
+                        f"{previous_class.id} and {register_class.id}"
                     )
-                allocated_registers[register] = register_class_reference
+                assigned_registers[register] = register_class_reference
         for value_class_reference in convention.value_classes:
             self.value_classes.resolve(value_class_reference)
         promotion_sources: dict[str, Reference[Promotion]] = {}
@@ -515,7 +515,7 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
                 register_class_reference, child_source, child_root, child_id,
                 tuple(QualifiedReference.parse(item) for item in child["arguments"]),
                 tuple(QualifiedReference.parse(item) for item in child["results"]),
-                child["allocation"], child.get("tuple_alignment", 1),
+                child["assignment_order"], child.get("tuple_alignment", 1),
                 child["exhaustion"],
             ),
         )

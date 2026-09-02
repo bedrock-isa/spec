@@ -287,7 +287,7 @@ def _render_catalog(project: CAbiProject, workspace) -> str:
         register_class = project.register_classes.resolve(reference)
         lines.append(
             f"BEDROCK_C_REGISTER_CLASS({register_class.id}, "
-            f"{_token(register_class.allocation)}, "
+            f"{_token(register_class.assignment_order)}, "
             f"{register_class.tuple_alignment}, "
             f"{_token(register_class.exhaustion)})"
         )

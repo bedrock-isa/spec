@@ -1,4 +1,4 @@
-"""Authored reservations within architectural opcode allocation spaces."""
+"""Authored reservations within architectural opcode spaces."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-WRCR is supervisor-only and resolves its 16-bit selector in the architectural (:term:base.terms.control_register:) space. An unallocated
+WRCR is supervisor-only and resolves its 16-bit selector in the architectural (:term:base.terms.control_register:) space. An unassigned
 selector, a read-only register, or a read-only indirect view raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:).
 
 For a writable target, WRCR forms the candidate image according to the selected register's definition and validates every target-owned

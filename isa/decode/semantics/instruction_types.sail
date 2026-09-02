@@ -53,7 +53,7 @@ struct Operand_parse = {
 
 struct Decoded_instruction = {
   form : Catalog_entry,
-  opcode_allocation : bits(64),
+  encoding_bits : bits(64),
   fields : list(Decoded_field),
   operands : list(Decoded_operand),
   encoded_length : int,

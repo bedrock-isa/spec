@@ -3,7 +3,7 @@ $id: bedrock://schemas/c-register-class
 title: Bedrock C calling-convention register class
 type: object
 additionalProperties: false
-required: [id, arguments, results, allocation, exhaustion]
+required: [id, arguments, results, assignment_order, exhaustion]
 properties:
   id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   arguments:
@@ -16,7 +16,7 @@ properties:
     minItems: 1
     uniqueItems: true
     items: {$ref: '#/$defs/register-reference'}
-  allocation: {enum: [ascending, descending]}
+  assignment_order: {enum: [ascending, descending]}
   tuple_alignment: {type: integer, minimum: 1}
   exhaustion: {enum: [permanent, indirect]}
 $defs:

@@ -1,12 +1,12 @@
 enum Record_class = FixedExtraShort | FixedShort | ExtendedMedium | ExtendedLong | ExtendedExtraLong | ExtendedXxlong
 
-function extracted_field(allocation : bits(64), positions : list(range(0, 63)), accumulated : int) -> int =
+function extracted_field(encoding : bits(64), positions : list(range(0, 63)), accumulated : int) -> int =
   match positions {
     [||] => accumulated,
     position :: tail => extracted_field(
-      allocation,
+      encoding,
       tail,
-      accumulated * 2 + (if allocation[position] == bitone then 1 else 0)
+      accumulated * 2 + (if encoding[position] == bitone then 1 else 0)
     ),
   }
 
@@ -16,35 +16,35 @@ function value_in_ranges(value : int, ranges : list(Catalog_range)) -> bool = ma
     (allowed.lower <= value & value <= allowed.upper) | value_in_ranges(value, tail),
 }
 
-function constraint_matches(allocation : bits(64), item : Catalog_constraint) -> bool = {
-  let value = extracted_field(allocation, item.field_positions, 0);
+function constraint_matches(encoding : bits(64), item : Catalog_constraint) -> bool = {
+  let value = extracted_field(encoding, item.field_positions, 0);
   match item.kind {
     AllowRanges => value_in_ranges(value, item.ranges),
     ExcludeImmediate => not_bool(91 <= value & value <= 94),
   }
 }
 
-function constraints_match(allocation : bits(64), constraints : list(Catalog_constraint)) -> bool =
+function constraints_match(encoding : bits(64), constraints : list(Catalog_constraint)) -> bool =
   match constraints {
     [||] => true,
-    item :: tail => constraint_matches(allocation, item) & constraints_match(allocation, tail),
+    item :: tail => constraint_matches(encoding, item) & constraints_match(encoding, tail),
   }
 
-function catalog_entry_matches(allocation : bits(64), entry : Catalog_entry) -> bool =
-  (allocation & entry.mask) == entry.value & constraints_match(allocation, entry.constraints)
+function catalog_entry_matches(encoding : bits(64), entry : Catalog_entry) -> bool =
+  (encoding & entry.mask) == entry.value & constraints_match(encoding, entry.constraints)
 
-function recognize_in_catalog(allocation : bits(64), encoding_class : Encoding_class,
+function recognize_in_catalog(encoding : bits(64), encoding_class : Encoding_class,
                               entries : list(Catalog_entry)) -> option(Form_id) =
   match entries {
     [||] => None(),
     entry :: tail =>
-      if entry.encoding_class == encoding_class & catalog_entry_matches(allocation, entry)
+      if entry.encoding_class == encoding_class & catalog_entry_matches(encoding, entry)
       then Some(entry.form_id)
-      else recognize_in_catalog(allocation, encoding_class, tail),
+      else recognize_in_catalog(encoding, encoding_class, tail),
   }
 
-function recognize_primary_form(allocation : bits(64), encoding_class : Encoding_class) -> option(Form_id) =
-  recognize_in_catalog(allocation, encoding_class, primary_form_catalog_for(encoding_class))
+function recognize_primary_form(encoding : bits(64), encoding_class : Encoding_class) -> option(Form_id) =
+  recognize_in_catalog(encoding, encoding_class, primary_form_catalog_for(encoding_class))
 
 struct Framed_record = {
   record_class : Record_class,
@@ -65,10 +65,10 @@ function class_minimum(record_class : Record_class) -> int = match record_class 
   ExtendedXxlong => 6,
 }
 
-function extended_class(selector : int, allocation_prefix : int) -> Record_class =
+function extended_class(selector : int, encoding_prefix : int) -> Record_class =
   if selector <= 59 then ExtendedMedium
   else if selector <= 62 then ExtendedLong
-  else if allocation_prefix == 255 then ExtendedXxlong
+  else if encoding_prefix == 255 then ExtendedXxlong
   else ExtendedExtraLong
 
 function frame_record(bytes : list(bits(8))) -> option(Framed_record) = match bytes {
@@ -84,8 +84,8 @@ function frame_record(bytes : list(bits(8))) -> option(Framed_record) = match by
     let actual = byte_count(bytes);
     let encoded = 3 + unsigned(byte0[5 .. 2]);
     let selector = unsigned(byte0[1 .. 0] @ byte1[7 .. 4]);
-    let allocation_prefix = unsigned(byte0[1 .. 0] @ byte1[7 .. 2]);
-    let record_class = extended_class(selector, allocation_prefix);
+    let encoding_prefix = unsigned(byte0[1 .. 0] @ byte1[7 .. 2]);
+    let record_class = extended_class(selector, encoding_prefix);
     if byte0[7 .. 6] == 0b11
        & actual == encoded
        & actual >= class_minimum(record_class)

@@ -7,7 +7,7 @@ from .latex_document import tex_escape
 
 
 class ControlRegisterReferenceRenderer(DocumentFragmentProvider):
-    """Render the normative global RDCR/WRCR selector allocation."""
+    """Render the normative global RDCR/WRCR selector assignments."""
 
     PLACEHOLDER = r"\BedrockGeneratedControlRegisterReference"
 
@@ -35,7 +35,7 @@ class ControlRegisterReferenceRenderer(DocumentFragmentProvider):
         return "\n".join(
             [
                 r"\Needspace{1.25in}",
-                r"\BedrockTableCaption{Control-Register Selector Allocations}",
+                r"\BedrockTableCaption{Control-Register Selector Assignments}",
                 r"\begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.55in}@{}}",
                 r"\toprule",
                 r"\rowcolor{BedrockHeaderFill}",

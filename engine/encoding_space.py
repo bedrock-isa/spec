@@ -1,4 +1,4 @@
-"""Read-only, namespace-aware opcode allocation analysis."""
+"""Read-only, namespace-aware opcode-space analysis."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ IMMEDIATE_EA_VALUES = frozenset(range(0x5B, 0x5F))
 
 
 class CandidateOutsideNamespaceError(ValueError):
-    """An allocation candidate is outside its selected namespace."""
+    """An encoding candidate is outside its selected namespace."""
 
     def __init__(
         self,
@@ -38,7 +38,7 @@ class CandidateOutsideNamespaceError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
-class AllocationCube:
+class EncodingCube:
     """A set of bit strings represented by fixed-bit mask and value."""
 
     width: int
@@ -46,7 +46,7 @@ class AllocationCube:
     value: int
 
     @classmethod
-    def parse(cls, pattern: str, width: int | None = None) -> "AllocationCube":
+    def parse(cls, pattern: str, width: int | None = None) -> "EncodingCube":
         normalized = pattern.replace("x", "?").replace("_", "").replace(" ", "")
         target_width = len(normalized) if width is None else width
         if not normalized or len(normalized) > target_width:
@@ -67,7 +67,7 @@ class AllocationCube:
         return cls(target_width, mask, value)
 
     @classmethod
-    def from_encoding(cls, form: EncodingForm) -> "AllocationCube":
+    def from_encoding(cls, form: EncodingForm) -> "EncodingCube":
         return cls(form.pattern.bit_width, form.pattern.fixed_mask, form.pattern.fixed_value)
 
     @property
@@ -89,13 +89,13 @@ class AllocationCube:
     def last(self) -> int:
         return self.value | (((1 << self.width) - 1) ^ self.mask)
 
-    def overlaps(self, other: "AllocationCube") -> bool:
+    def overlaps(self, other: "EncodingCube") -> bool:
         if self.width != other.width:
             return False
         common = self.mask & other.mask
         return (self.value ^ other.value) & common == 0
 
-    def contains(self, other: "AllocationCube") -> bool:
+    def contains(self, other: "EncodingCube") -> bool:
         return (
             self.width == other.width
             and self.mask & other.mask == self.mask
@@ -105,27 +105,27 @@ class AllocationCube:
     def matches(self, value: int) -> bool:
         return value & self.mask == self.value
 
-    def intersection(self, other: "AllocationCube") -> "AllocationCube | None":
+    def intersection(self, other: "EncodingCube") -> "EncodingCube | None":
         if not self.overlaps(other):
             return None
-        return AllocationCube(self.width, self.mask | other.mask, self.value | other.value)
+        return EncodingCube(self.width, self.mask | other.mask, self.value | other.value)
 
-    def split(self) -> tuple["AllocationCube", "AllocationCube"]:
+    def split(self) -> tuple["EncodingCube", "EncodingCube"]:
         wildcard = next(
             (bit for bit in range(self.width - 1, -1, -1) if not self.mask & (1 << bit)),
             None,
         )
         if wildcard is None:
-            raise ValueError("cannot split a fixed allocation cube")
+            raise ValueError("cannot split a fixed encoding cube")
         mask = self.mask | (1 << wildcard)
         return (
-            AllocationCube(self.width, mask, self.value),
-            AllocationCube(self.width, mask, self.value | (1 << wildcard)),
+            EncodingCube(self.width, mask, self.value),
+            EncodingCube(self.width, mask, self.value | (1 << wildcard)),
         )
 
 
 @dataclass(frozen=True, slots=True)
-class AllocationEntry:
+class EncodingSpaceEntry:
     """Raw reservation and constraint-filtered assignment for one form."""
 
     reference: Reference[InstructionBundle]
@@ -134,8 +134,8 @@ class AllocationEntry:
     form_id: str
     source: Path
     pattern: str
-    raw_cubes: tuple[AllocationCube, ...]
-    legal_cubes: tuple[AllocationCube, ...]
+    raw_cubes: tuple[EncodingCube, ...]
+    legal_cubes: tuple[EncodingCube, ...]
 
     @property
     def width(self) -> int:
@@ -159,18 +159,18 @@ class AllocationEntry:
 
 
 @dataclass(frozen=True, slots=True)
-class AllocationCollision:
-    left: AllocationEntry
-    right: AllocationEntry
+class EncodingSpaceCollision:
+    left: EncodingSpaceEntry
+    right: EncodingSpaceEntry
 
 
 @dataclass(frozen=True, slots=True)
-class AllocationSummary:
+class EncodingSpaceSummary:
     encoding_class: str
     width: int
     forms: int
     namespace_slots: int
-    allocated_slots: int
+    assigned_slots: int
     reclaimed_slots: int
     reserved_slots: int
     clean_free_slots: int
@@ -178,8 +178,8 @@ class AllocationSummary:
 
 
 @dataclass(frozen=True, slots=True)
-class AllocationHole:
-    cube: AllocationCube
+class EncodingSpaceHole:
+    cube: EncodingCube
 
     @property
     def pattern(self) -> str:
@@ -195,19 +195,19 @@ class CandidateCheck:
     encoding_class: str
     pattern: str
     slots: int
-    allocated_slots: int
+    assigned_slots: int
     reclaimed_slots: int
     reserved_slots: int
     clean_free_slots: int
-    allocated_entries: tuple[AllocationEntry, ...]
-    reclaimed_entries: tuple[AllocationEntry, ...]
+    assigned_entries: tuple[EncodingSpaceEntry, ...]
+    reclaimed_entries: tuple[EncodingSpaceEntry, ...]
     reservations: tuple[EncodingReservation, ...]
 
     @property
     def state(self) -> str:
         states = []
-        if self.allocated_slots:
-            states.append("allocated")
+        if self.assigned_slots:
+            states.append("assigned")
         if self.reclaimed_slots:
             states.append("reclaimed")
         if self.reserved_slots:
@@ -218,26 +218,26 @@ class CandidateCheck:
 
 
 @dataclass(frozen=True, slots=True)
-class AllocationMap:
-    entries: tuple[AllocationEntry, ...]
-    collisions: tuple[AllocationCollision, ...]
+class EncodingSpaceMap:
+    entries: tuple[EncodingSpaceEntry, ...]
+    collisions: tuple[EncodingSpaceCollision, ...]
 
 
-class AllocationAnalyzer:
-    """Project allocation analysis built from canonical encoding forms."""
+class EncodingSpaceAnalyzer:
+    """Project encoding-space analysis built from canonical encoding forms."""
 
     def analyze(
         self,
         project: IsaProject,
         targets: tuple[str | Path, ...] = (),
-    ) -> AllocationMap:
+    ) -> EncodingSpaceMap:
         all_entries = self.entries(project)
         selected_references = {bundle.reference for bundle in project.select(targets)}
         entries = tuple(
             entry for entry in all_entries if entry.reference in selected_references
         )
         collisions = tuple(
-            AllocationCollision(left, right)
+            EncodingSpaceCollision(left, right)
             for index, left in enumerate(all_entries)
             for right in all_entries[index + 1 :]
             if (
@@ -246,7 +246,7 @@ class AllocationAnalyzer:
             )
             and entries_overlap(left, right)
         )
-        return AllocationMap(entries, collisions)
+        return EncodingSpaceMap(entries, collisions)
 
     def entries(
         self,
@@ -256,7 +256,7 @@ class AllocationAnalyzer:
         space: str | None = None,
         leading: str | None = None,
         grep: str | None = None,
-    ) -> tuple[AllocationEntry, ...]:
+    ) -> tuple[EncodingSpaceEntry, ...]:
         entries = tuple(
             self._entry(bundle, form)
             for bundle in project.select()
@@ -270,38 +270,38 @@ class AllocationAnalyzer:
         return tuple(
             entry
             for entry in entries
-            if entry.width == owner.allocation_bits
+            if entry.width == owner.pattern_bits
             and any(raw.overlaps(region) for raw in entry.raw_cubes for region in regions)
             and (needle is None or needle in entry.name.lower())
         )
 
-    def summaries(self, project: IsaProject) -> tuple[AllocationSummary, ...]:
+    def summaries(self, project: IsaProject) -> tuple[EncodingSpaceSummary, ...]:
         entries = self.entries(project)
         result = []
         for owner in ENCODING_CLASSES:
             regions = _namespace_cubes(owner)
             selected = tuple(
-                entry for entry in entries if entry.width == owner.allocation_bits
+                entry for entry in entries if entry.width == owner.pattern_bits
             )
             raw = tuple(cube for entry in selected for cube in entry.raw_cubes)
             legal = tuple(cube for entry in selected for cube in entry.legal_cubes)
             reserved = reservation_cubes(project, owner.name)
             namespace_slots = sum(region.slots for region in regions)
             raw_slots = covered_slots(regions, raw)
-            allocated_slots = covered_slots(regions, legal)
+            assigned_slots = covered_slots(regions, legal)
             unavailable_slots = covered_slots(regions, (*raw, *reserved))
             result.append(
-                AllocationSummary(
+                EncodingSpaceSummary(
                     owner.name,
-                    owner.allocation_bits,
+                    owner.pattern_bits,
                     len(selected),
                     namespace_slots,
-                    allocated_slots,
-                    raw_slots - allocated_slots,
+                    assigned_slots,
+                    raw_slots - assigned_slots,
                     unavailable_slots - raw_slots,
                     namespace_slots - unavailable_slots,
                     raw_slots
-                    - allocated_slots
+                    - assigned_slots
                     + namespace_slots
                     - unavailable_slots,
                 )
@@ -320,7 +320,7 @@ class AllocationAnalyzer:
         max_slots: int | None = None,
         limit: int = 32,
         sort: str = "address",
-    ) -> tuple[AllocationHole, ...]:
+    ) -> tuple[EncodingSpaceHole, ...]:
         if min_slots <= 0 or (max_slots is not None and max_slots <= 0):
             raise ValueError("hole slot limits must be positive")
         if max_slots is not None and min_slots > max_slots:
@@ -345,7 +345,7 @@ class AllocationAnalyzer:
             cubes.sort(key=lambda cube: cube.first)
         else:
             raise ValueError("hole sort must be 'address' or 'size'")
-        return tuple(AllocationHole(cube) for cube in cubes[:limit])
+        return tuple(EncodingSpaceHole(cube) for cube in cubes[:limit])
 
     def check_candidate(
         self,
@@ -356,7 +356,7 @@ class AllocationAnalyzer:
         space: str | None = None,
     ) -> CandidateCheck:
         owner = encoding_class(class_name)
-        candidate = AllocationCube.parse(pattern, owner.allocation_bits)
+        candidate = EncodingCube.parse(pattern, owner.pattern_bits)
         regions = search_regions(owner, space=space)
         if covered_slots((candidate,), regions) != candidate.slots:
             raise CandidateOutsideNamespaceError(
@@ -383,10 +383,10 @@ class AllocationAnalyzer:
             if region.encoding_class == owner.name
             and candidate.overlaps(reservation_cube(region))
         )
-        allocated_slots = covered_slots((candidate,), legal)
+        assigned_slots = covered_slots((candidate,), legal)
         raw_slots = covered_slots((candidate,), raw)
         unavailable_slots = covered_slots((candidate,), (*raw, *reserved))
-        allocated_entries = tuple(
+        assigned_entries = tuple(
             entry
             for entry in entries
             if any(candidate.overlaps(cube) for cube in entry.legal_cubes)
@@ -401,36 +401,36 @@ class AllocationAnalyzer:
             owner.name,
             candidate.pattern,
             candidate.slots,
-            allocated_slots,
-            raw_slots - allocated_slots,
+            assigned_slots,
+            raw_slots - assigned_slots,
             unavailable_slots - raw_slots,
             candidate.slots - unavailable_slots,
-            allocated_entries,
+            assigned_entries,
             reclaimed_entries,
             reservation_entries,
         )
 
     @staticmethod
-    def _entry(bundle: InstructionBundle, form: EncodingForm) -> AllocationEntry:
-        return AllocationEntry(
+    def _entry(bundle: InstructionBundle, form: EncodingForm) -> EncodingSpaceEntry:
+        return EncodingSpaceEntry(
             bundle.reference,
             bundle.owner,
             bundle.instruction.mnemonic,
             form.id,
             bundle.encodings.source,
             form.pattern.code,
-            (AllocationCube.from_encoding(form),),
+            (EncodingCube.from_encoding(form),),
             form_cubes(form),
         )
 
 
 def unavailable_cubes(
-    entries: tuple[AllocationEntry, ...],
+    entries: tuple[EncodingSpaceEntry, ...],
     *,
     include_reclaimed: bool,
-    reservations: tuple[AllocationCube, ...] = (),
-) -> tuple[AllocationCube, ...]:
-    """Return the occupied cubes under the requested allocation policy."""
+    reservations: tuple[EncodingCube, ...] = (),
+) -> tuple[EncodingCube, ...]:
+    """Return the occupied cubes under the requested space policy."""
 
     assigned = tuple(
         cube
@@ -440,16 +440,16 @@ def unavailable_cubes(
     return (*assigned, *reservations)
 
 
-def reservation_cube(region: EncodingReservationRegion) -> AllocationCube:
+def reservation_cube(region: EncodingReservationRegion) -> EncodingCube:
     """Lower one authored reservation prefix into its encoding-class cube."""
 
     owner = encoding_class(region.encoding_class)
-    return AllocationCube.parse(region.prefix, owner.allocation_bits)
+    return EncodingCube.parse(region.prefix, owner.pattern_bits)
 
 
 def reservation_cubes(
     project: IsaProject, class_name: str
-) -> tuple[AllocationCube, ...]:
+) -> tuple[EncodingCube, ...]:
     """Return authored reservation cubes in one encoding class."""
 
     return tuple(
@@ -483,7 +483,7 @@ def _constraint_values(values: tuple[int | str, ...], width: int) -> set[int]:
     return {value for value in result if 0 <= value < 1 << width}
 
 
-def form_cubes(form: EncodingForm) -> tuple[AllocationCube, ...]:
+def form_cubes(form: EncodingForm) -> tuple[EncodingCube, ...]:
     """Lower a form and all constraints into disjoint legal cubes."""
 
     constrained: list[tuple[str, tuple[int, ...]]] = []
@@ -520,7 +520,7 @@ def form_cubes(form: EncodingForm) -> tuple[AllocationCube, ...]:
                 value |= 1 << position
             else:
                 value &= ~(1 << position)
-        cubes.append(AllocationCube(form.pattern.bit_width, mask, value))
+        cubes.append(EncodingCube(form.pattern.bit_width, mask, value))
     return _compress_cubes(tuple(cubes))
 
 
@@ -528,17 +528,17 @@ def forms_overlap(left: EncodingForm, right: EncodingForm) -> bool:
     return any(a.overlaps(b) for a in form_cubes(left) for b in form_cubes(right))
 
 
-def entries_overlap(left: AllocationEntry, right: AllocationEntry) -> bool:
+def entries_overlap(left: EncodingSpaceEntry, right: EncodingSpaceEntry) -> bool:
     return any(a.overlaps(b) for a in left.legal_cubes for b in right.legal_cubes)
 
 
-def _compress_cubes(cubes: tuple[AllocationCube, ...]) -> tuple[AllocationCube, ...]:
+def _compress_cubes(cubes: tuple[EncodingCube, ...]) -> tuple[EncodingCube, ...]:
     """Merge complete sibling pairs without enumerating the represented slots."""
 
     current = set(cubes)
     while True:
-        consumed: set[AllocationCube] = set()
-        merged: set[AllocationCube] = set()
+        consumed: set[EncodingCube] = set()
+        merged: set[EncodingCube] = set()
         for cube in sorted(current, key=lambda item: (item.mask, item.value)):
             if cube in consumed:
                 continue
@@ -546,11 +546,11 @@ def _compress_cubes(cubes: tuple[AllocationCube, ...]) -> tuple[AllocationCube, 
                 flag = 1 << bit
                 if not cube.mask & flag:
                     continue
-                sibling = AllocationCube(cube.width, cube.mask, cube.value ^ flag)
+                sibling = EncodingCube(cube.width, cube.mask, cube.value ^ flag)
                 if sibling in current and sibling not in consumed:
                     consumed.update((cube, sibling))
                     merged.add(
-                        AllocationCube(
+                        EncodingCube(
                             cube.width,
                             cube.mask ^ flag,
                             cube.value & ~flag,
@@ -568,15 +568,15 @@ def search_regions(
     *,
     space: str | None = None,
     leading: str | None = None,
-) -> tuple[AllocationCube, ...]:
+) -> tuple[EncodingCube, ...]:
     regions = _namespace_cubes(owner)
     filters = []
     if space is not None:
         filters.append(
-            AllocationCube.parse(operator_space(owner.name, space).prefix, owner.allocation_bits)
+            EncodingCube.parse(operator_space(owner.name, space).prefix, owner.pattern_bits)
         )
     if leading is not None:
-        filters.append(AllocationCube.parse(leading, owner.allocation_bits))
+        filters.append(EncodingCube.parse(leading, owner.pattern_bits))
     for selected_filter in filters:
         regions = tuple(
             intersection
@@ -588,19 +588,19 @@ def search_regions(
     return regions
 
 
-def _namespace_cubes(owner: EncodingClass) -> tuple[AllocationCube, ...]:
-    return tuple(AllocationCube.parse(pattern) for pattern in owner.namespace)
+def _namespace_cubes(owner: EncodingClass) -> tuple[EncodingCube, ...]:
+    return tuple(EncodingCube.parse(pattern) for pattern in owner.namespace)
 
 
 def covered_slots(
-    regions: tuple[AllocationCube, ...], cubes: tuple[AllocationCube, ...]
+    regions: tuple[EncodingCube, ...], cubes: tuple[EncodingCube, ...]
 ) -> int:
     """Count the union of ``cubes`` clipped to disjoint search regions."""
 
     return sum(_covered(region, cubes) for region in regions)
 
 
-def _covered(region: AllocationCube, cubes: tuple[AllocationCube, ...]) -> int:
+def _covered(region: EncodingCube, cubes: tuple[EncodingCube, ...]) -> int:
     relevant = tuple(cube for cube in cubes if cube.overlaps(region))
     if not relevant:
         return 0
@@ -613,8 +613,8 @@ def _covered(region: AllocationCube, cubes: tuple[AllocationCube, ...]) -> int:
 
 
 def _uncovered(
-    region: AllocationCube, unavailable: tuple[AllocationCube, ...]
-) -> tuple[AllocationCube, ...]:
+    region: EncodingCube, unavailable: tuple[EncodingCube, ...]
+) -> tuple[EncodingCube, ...]:
     relevant = tuple(cube for cube in unavailable if cube.overlaps(region))
     if not relevant:
         return (region,)
@@ -626,7 +626,7 @@ def _uncovered(
     return (*_uncovered(left, relevant), *_uncovered(right, relevant))
 
 
-def _cap_cube(cube: AllocationCube, max_slots: int) -> tuple[AllocationCube, ...]:
+def _cap_cube(cube: EncodingCube, max_slots: int) -> tuple[EncodingCube, ...]:
     if cube.slots <= max_slots:
         return (cube,)
     left, right = cube.split()

@@ -199,7 +199,7 @@ class DocumentTest(unittest.TestCase):
                 self.assertIn(edge["target"], node_ids)
                 self.assertGreater(edge["occurrences"], 0)
 
-    def test_event_code_rows_preserve_resolved_fixed_allocations(self) -> None:
+    def test_event_code_rows_preserve_resolved_fixed_assignments(self) -> None:
         for resolved in self.project.events.resolved_events():
             if resolved.code.value is None:
                 continue

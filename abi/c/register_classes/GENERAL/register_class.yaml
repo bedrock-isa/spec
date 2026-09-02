@@ -11,6 +11,6 @@ arguments:
 results:
 - isa:base.registers.GPR.R0
 - isa:base.registers.GPR.R1
-allocation: ascending
+assignment_order: ascending
 tuple_alignment: 2
 exhaustion: permanent

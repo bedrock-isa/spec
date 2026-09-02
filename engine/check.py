@@ -9,12 +9,12 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from .allocation import AllocationCube, forms_overlap, numeric_bounds, reservation_cube
+from .encoding_space import EncodingCube, forms_overlap, numeric_bounds, reservation_cube
 from .cpuid import (
-    AllocatedCpuidClass,
-    AllocatedCpuidLeaf,
+    CpuidClassDefinition,
     CpuidCatalog,
     CpuidLeaf,
+    CpuidLeafDefinition,
     CpuidLeafOverlay,
     CpuidQuery,
     CpuidResolutionError,
@@ -28,7 +28,7 @@ from .encoding_reservation import (
     EncodingReservationCatalog,
     EncodingReservationRegion,
 )
-from .event import AllocatedEventClass, EventCatalog, EventClass, EventClassOverlay
+from .event import EventCatalog, EventClass, EventClassDefinition, EventClassOverlay
 from .observability import log_phase
 from .project import IsaProject, InstructionBundle
 from .reference import Reference, ReferenceError
@@ -104,20 +104,20 @@ class BundleValidator:
             owner = ENCODING_CLASSES_BY_WIDTH.get(form.pattern.bit_width)
             if owner is None:
                 yield _error(
-                    "allocation.class",
+                    "encoding.class",
                     source,
                     f"pattern width {form.pattern.bit_width} has no encoding class",
                     *base,
                     "pattern",
                 )
             else:
-                raw_cube = AllocationCube.from_encoding(form)
+                raw_cube = EncodingCube.from_encoding(form)
                 namespaces = tuple(
-                    AllocationCube.parse(pattern) for pattern in owner.namespace
+                    EncodingCube.parse(pattern) for pattern in owner.namespace
                 )
                 if not any(namespace.contains(raw_cube) for namespace in namespaces):
                     yield _error(
-                        "allocation.namespace",
+                        "encoding.namespace",
                         source,
                         f"pattern is outside the {owner.name} namespace",
                         *base,
@@ -134,7 +134,7 @@ class BundleValidator:
                         if not raw_cube.overlaps(reserved_cube):
                             continue
                         yield _error(
-                            "allocation.reserved",
+                            "encoding.reserved",
                             source,
                             f"{mnemonic}.{form.id} overlaps opcode reservation "
                             f"{reservation.id}",
@@ -374,7 +374,7 @@ class BundleValidator:
 
 
 class CatalogValidator:
-    """Validate declared inventories and cross-form opcode allocation."""
+    """Validate declared inventories and cross-form opcode relationships."""
 
     def validate(
         self,
@@ -458,7 +458,7 @@ class CatalogValidator:
                     ),
                 )
                 yield _error(
-                    "allocation.overlap",
+                    "encoding.overlap",
                     left_bundle.encodings.source,
                     f"{left_bundle.instruction.mnemonic}.{left.id} overlaps "
                     f"{right_bundle.instruction.mnemonic}.{right.id}",
@@ -470,7 +470,7 @@ class CatalogValidator:
 
 
 class EncodingReservationValidator:
-    """Validate the closed reservation inventory and its allocation relations."""
+    """Validate the closed reservation inventory and its encoding relations."""
 
     def validate(self, catalog: EncodingReservationCatalog) -> Iterator[Diagnostic]:
         inventory = catalog.inventory
@@ -499,7 +499,7 @@ class EncodingReservationValidator:
                 EncodingReservation,
                 int,
                 EncodingReservationRegion,
-                AllocationCube,
+                EncodingCube,
             ]
         ] = []
         for reservation in catalog.reservations.values():
@@ -528,7 +528,7 @@ class EncodingReservationValidator:
                     )
                     continue
                 namespaces = tuple(
-                    AllocationCube.parse(pattern) for pattern in owner.namespace
+                    EncodingCube.parse(pattern) for pattern in owner.namespace
                 )
                 if not any(namespace.contains(cube) for namespace in namespaces):
                     yield _error(
@@ -565,7 +565,7 @@ class EncodingReservationValidator:
 
 
 class CpuidValidator:
-    """Validate distributed CPUID catalogs, overlays, and allocations."""
+    """Validate distributed CPUID catalogs, overlays, and numeric values."""
 
     def validate(self, catalog: CpuidCatalog) -> Iterator[Diagnostic]:
         yield from self._validate_inventories(catalog)
@@ -581,9 +581,9 @@ class CpuidValidator:
         leaf_roots = {
             item.leaf.reference: item.root_leaf.reference for item in resolved
         }
-        yield from self._validate_class_allocations(catalog)
-        yield from self._validate_leaf_allocations(catalog, leaf_values)
-        yield from self._validate_query_allocations(catalog, leaf_values, leaf_roots)
+        yield from self._validate_class_values(catalog)
+        yield from self._validate_leaf_values(catalog, leaf_values)
+        yield from self._validate_query_indexes(catalog, leaf_values, leaf_roots)
 
     @staticmethod
     def _validate_inventories(catalog: CpuidCatalog) -> Iterator[Diagnostic]:
@@ -615,11 +615,11 @@ class CpuidValidator:
                     )
 
     @staticmethod
-    def _validate_class_allocations(catalog: CpuidCatalog) -> Iterator[Diagnostic]:
+    def _validate_class_values(catalog: CpuidCatalog) -> Iterator[Diagnostic]:
         definitions = [
             cpuid_class
             for cpuid_class in catalog.references.classes.values()
-            if isinstance(cpuid_class, AllocatedCpuidClass)
+            if isinstance(cpuid_class, CpuidClassDefinition)
         ]
         for index, left in enumerate(definitions):
             for right in definitions[index + 1 :]:
@@ -628,15 +628,15 @@ class CpuidValidator:
                 yield _error(
                     "cpuid.class.value-overlap",
                     left.source,
-                    f"class value 0x{left.value:08x} is also allocated by {right.id!r}",
+                    f"class value 0x{left.value:08x} is also assigned to {right.id!r}",
                     "value",
                     related=(
-                        RelatedLocation(right.source, "conflicting class allocation"),
+                        RelatedLocation(right.source, "conflicting class value"),
                     ),
                 )
 
     @staticmethod
-    def _validate_leaf_allocations(
+    def _validate_leaf_values(
         catalog: CpuidCatalog,
         leaf_values: Mapping[Reference[CpuidLeaf], tuple[int, int]],
     ) -> Iterator[Diagnostic]:
@@ -653,21 +653,21 @@ class CpuidValidator:
             for right_selector, right in definitions[index + 1 :]:
                 if left_selector != right_selector:
                     continue
-                path = ("value",) if isinstance(left, AllocatedCpuidLeaf) else ()
+                path = ("value",) if isinstance(left, CpuidLeafDefinition) else ()
                 yield _error(
                     "cpuid.leaf.value-overlap",
                     left.source,
                     f"leaf value 0x{left_selector[1]:04x} in class "
                     f"0x{left_selector[0]:08x} "
-                    f"is also allocated by {right.id!r}",
+                    f"is also assigned to {right.id!r}",
                     *path,
                     related=(
-                        RelatedLocation(right.source, "conflicting leaf allocation"),
+                        RelatedLocation(right.source, "conflicting leaf value"),
                     ),
                 )
 
     @staticmethod
-    def _validate_query_allocations(
+    def _validate_query_indexes(
         catalog: CpuidCatalog,
         leaf_values: Mapping[Reference[CpuidLeaf], tuple[int, int]],
         leaf_roots: Mapping[Reference[CpuidLeaf], Reference[CpuidLeaf]],
@@ -721,7 +721,7 @@ class CpuidValidator:
                         "queries",
                         related=(
                             RelatedLocation(
-                                right.source, "conflicting query allocation"
+                                right.source, "conflicting query index"
                             ),
                         ),
                     )
@@ -738,14 +738,14 @@ class CpuidValidator:
                                 related=(
                                     RelatedLocation(
                                         right_field.source,
-                                        "conflicting result-field allocation",
+                                        "conflicting result field",
                                     ),
                                 ),
                             )
 
 
 class EventValidator:
-    """Validate distributed event inventories, overlays, and code allocation."""
+    """Validate distributed event inventories, overlays, and event codes."""
 
     def validate(self, catalog: EventCatalog) -> Iterator[Diagnostic]:
         yield from self._validate_inventories(catalog)
@@ -853,7 +853,7 @@ class EventValidator:
         definitions = [
             event_class
             for event_class in catalog.references.classes.values()
-            if isinstance(event_class, AllocatedEventClass)
+            if isinstance(event_class, EventClassDefinition)
         ]
         for index, left in enumerate(definitions):
             for right in definitions[index + 1 :]:
@@ -862,10 +862,10 @@ class EventValidator:
                 yield _error(
                     "event.class.value-overlap",
                     left.source,
-                    f"class value 0x{left.value:02x} is also allocated by {right.id!r}",
+                    f"class value 0x{left.value:02x} is also assigned to {right.id!r}",
                     "value",
                     related=(
-                        RelatedLocation(right.source, "conflicting class allocation"),
+                        RelatedLocation(right.source, "conflicting class value"),
                     ),
                 )
 
@@ -874,11 +874,11 @@ class EventValidator:
         catalog: EventCatalog,
         roots: Mapping[Reference[EventClass], EventClass],
     ) -> Iterator[Diagnostic]:
-        allocated: dict[tuple[Reference[EventClass], int], Any] = {}
+        assigned_codes: dict[tuple[Reference[EventClass], int], Any] = {}
         event_ids: dict[str, Any] = {}
         for event_class in catalog.references.classes.values():
             root = roots.get(event_class.reference)
-            if not isinstance(root, AllocatedEventClass):
+            if not isinstance(root, EventClassDefinition):
                 continue
             for event in event_class.events.values():
                 previous_id = event_ids.get(event.id)
@@ -914,12 +914,12 @@ class EventValidator:
                         )
                         continue
                     key = (root.reference, event.code)
-                    previous = allocated.get(key)
+                    previous = assigned_codes.get(key)
                     if previous is not None:
                         yield _error(
                             "event.code.overlap",
                             event.source,
-                            f"event code 0x{event.code:06x} is also allocated by "
+                            f"event code 0x{event.code:06x} is also assigned to "
                             f"{previous.id!r}",
                             "code",
                             related=(
@@ -929,7 +929,7 @@ class EventValidator:
                             ),
                         )
                     else:
-                        allocated[key] = event
+                        assigned_codes[key] = event
                 elif event.code is not None:
                     yield _error(
                         "event.code.external-selector",
@@ -1008,7 +1008,7 @@ class RegisterValidator:
                                 "register.encoding.duplicate",
                                 register.source,
                                 f"encoding {register.encoding} in group {group.id!r} "
-                                "is allocated more than once",
+                                "is used more than once",
                                 "encoding",
                                 related=(
                                     RelatedLocation(

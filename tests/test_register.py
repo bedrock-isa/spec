@@ -46,7 +46,7 @@ class RegisterCatalogTest(unittest.TestCase):
             with self.assertRaises(RegisterWidthDomainOrderError):
                 RegisterCatalog.load(root)
 
-    def test_preserves_performance_selector_allocations(self) -> None:
+    def test_preserves_performance_selector_assignments(self) -> None:
         registers = self.catalog.references.registers
 
         self.assertEqual(registers[Reference.parse("base.registers.PERFORMANCE.CYCLE")].encoding, 1)

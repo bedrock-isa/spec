@@ -6,6 +6,6 @@ arguments:
 - isa:VECTOR.registers.PREDICATE.P3
 results:
 - isa:VECTOR.registers.PREDICATE.P0
-allocation: ascending
+assignment_order: ascending
 tuple_alignment: 1
 exhaustion: indirect

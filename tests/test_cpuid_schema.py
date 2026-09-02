@@ -16,7 +16,7 @@ class CpuidSchemaTest(unittest.TestCase):
             yaml.safe_load((schemas / "cpuid-leaf.yaml").read_text(encoding="utf-8"))
         )
 
-    def test_class_requires_exactly_one_allocation_source(self) -> None:
+    def test_class_requires_exactly_one_definition_source(self) -> None:
         definition = {"id": "BASE", "name": "Base", "value": 0}
         overlay = {
             "id": "EXTENSIONS",

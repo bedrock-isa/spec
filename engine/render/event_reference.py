@@ -1,4 +1,4 @@
-"""Explicit LaTeX projection of normative architectural-event code allocations."""
+"""Explicit LaTeX projection of normative architectural-event code assignments."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def _identifier(value: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class EventCodeRow:
-    """One explicitly selected fixed event-code allocation."""
+    """One explicitly selected fixed event-code assignment."""
 
     reference: Reference[ArchitecturalEvent]
     code: int
@@ -101,7 +101,7 @@ class EventReferenceRenderer(DocumentFragmentProvider):
         if resolved is None:
             raise KeyError(reference)
         if resolved.code.value is None:
-            raise ValueError(f"event {reference} is not a fixed event-code allocation")
+            raise ValueError(f"event {reference} has no fixed event-code assignment")
         return EventCodeRow(
             resolved.event.reference,
             resolved.code.value,
@@ -178,6 +178,6 @@ class EventReferenceRenderer(DocumentFragmentProvider):
                 r"\bottomrule",
                 r"\end{BedrockTabular}",
                 "",
-                r"Class values not listed above are reserved. Fixed selectors are allocated by this specification; platform and source selectors are supplied by the corresponding event source.",
+                r"Class values not listed above are reserved. Fixed selectors are assigned by this specification; platform and source selectors are supplied by the corresponding event source.",
             ]
         )

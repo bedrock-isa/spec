@@ -48,7 +48,7 @@ class CpuidLeafProjection:
             raise ValueError(
                 f"CPUID leaf projection requires a root leaf, not {leaf.reference}"
             )
-        allocation = catalog.resolve_leaf(leaf)
+        resolved = catalog.resolve_leaf(leaf)
         fields_by_query: dict[tuple[str, int, int, int], list[CpuidField]] = {}
         for namespace in catalog.namespaces.values():
             for cpuid_class in namespace.classes.values():
@@ -80,8 +80,8 @@ class CpuidLeafProjection:
         )
         return cls(
             leaf,
-            allocation.class_value,
-            allocation.leaf_value,
+            resolved.class_value,
+            resolved.leaf_value,
             queries,
         )
 
@@ -276,7 +276,7 @@ class CpuidLeafFragmentRenderer(DocumentFragmentProvider):
                 rf"$\mathbin{{|}}\,\mathit{{index}}$, where $\mathit{{index}}$ is "
                 r"the 16-bit query index below.",
                 "",
-                rf"\BedrockTableCaption{{{caption} CPUID Query Allocations}}",
+                rf"\BedrockTableCaption{{{caption} CPUID Query-Index Assignments}}",
                 r"\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{4.10in}@{}}",
                 r"\toprule",
                 r"\rowcolor{BedrockHeaderFill}",

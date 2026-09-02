@@ -11,6 +11,6 @@ arguments:
 results:
 - isa:FP.registers.FPR.F0
 - isa:FP.registers.FPR.F1
-allocation: ascending
+assignment_order: ascending
 tuple_alignment: 1
 exhaustion: permanent

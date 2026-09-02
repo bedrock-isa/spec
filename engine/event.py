@@ -29,7 +29,7 @@ class EventSelector:
 
 @dataclass(frozen=True, slots=True)
 class ArchitecturalEvent(Entity):
-    """One independently allocated leaf architectural event."""
+    """One independently defined leaf architectural event."""
 
     reference: Reference["ArchitecturalEvent"]
     source: Path
@@ -56,7 +56,7 @@ class EventClass(Entity):
 
 
 @dataclass(frozen=True, slots=True)
-class AllocatedEventClass(EventClass):
+class EventClassDefinition(EventClass):
     name: str
     value: int
     selector: EventSelector
@@ -88,7 +88,7 @@ class ResolvedEvent:
 
     owner: str
     event_class: EventClass
-    root_class: AllocatedEventClass
+    root_class: EventClassDefinition
     event: ArchitecturalEvent
     code: EventCode
 
@@ -113,7 +113,7 @@ class EventReferenceIndexes:
 
 @dataclass(frozen=True, slots=True)
 class EventCatalog:
-    """The union of base and extension-owned event allocations."""
+    """The union of base and extension-owned event definitions."""
 
     namespaces: Mapping[str, EventNamespace]
     references: EventReferenceIndexes
@@ -144,7 +144,7 @@ class EventCatalog:
         except KeyError as error:
             raise ValueError(f"unknown event namespace {owner!r}") from error
 
-    def root_class(self, event_class: EventClass) -> AllocatedEventClass:
+    def root_class(self, event_class: EventClass) -> EventClassDefinition:
         """Resolve an event class overlay to its numeric class definition."""
 
         active: list[Reference[EventClass]] = []
@@ -157,7 +157,7 @@ class EventCatalog:
                 )
             active.append(current.reference)
             current = self.references.classes.resolve(current.extends)
-        if not isinstance(current, AllocatedEventClass):
+        if not isinstance(current, EventClassDefinition):
             raise ValueError(f"incomplete event class definition {current.id!r}")
         return current
 
@@ -266,7 +266,7 @@ def _load_class(
             *common, Reference.parse(cast(str, raw["extends"]))
         )
     selector_raw = cast(Mapping[str, object], raw["selector"])
-    return AllocatedEventClass(
+    return EventClassDefinition(
         *common,
         cast(str, raw["name"]),
         cast(int, raw["value"]),

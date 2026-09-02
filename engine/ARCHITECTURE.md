@@ -3,7 +3,7 @@
 ## Objective
 
 The authoring tools provide operations over the current ISA source tree,
-including `check` and `alloc`, and typed projections for later Sail and document
+including `check` and `encoding-space`, and typed projections for later Sail and document
 commands. Every projection is derived from the current source objects and
 metasyntax parsers rather than a parallel consumer-specific model.
 
@@ -351,19 +351,19 @@ classDiagram
         +validate(project) Iterable~Diagnostic~
     }
 
-    class AllocationAnalyzer {
-        +analyze(project, targets) AllocationMap
-        +summaries(project) tuple~AllocationSummary~
-        +entries(project, class, filters) tuple~AllocationEntry~
+    class EncodingSpaceAnalyzer {
+        +analyze(project, targets) EncodingSpaceMap
+        +summaries(project) tuple~EncodingSpaceSummary~
+        +entries(project, class, filters) tuple~EncodingSpaceEntry~
         +check_candidate(project, class, pattern) CandidateCheck
-        +holes(project, class, filters) tuple~AllocationHole~
+        +holes(project, class, filters) tuple~EncodingSpaceHole~
     }
 
     class EncodingClass {
         +str name
         +int opcode_space_bytes
         +int framing_bits
-        +int allocation_bits
+        +int pattern_bits
         +tuple~str~ namespace
     }
 
@@ -373,27 +373,27 @@ classDiagram
         +str prefix
     }
 
-    class AllocationMap {
-        +tuple~AllocationEntry~ entries
-        +tuple~AllocationCollision~ collisions
-        +summaries() tuple~AllocationSummary~
+    class EncodingSpaceMap {
+        +tuple~EncodingSpaceEntry~ entries
+        +tuple~EncodingSpaceCollision~ collisions
+        +summaries() tuple~EncodingSpaceSummary~
         +render_text() str
         +render_json() str
     }
 
-    class AllocationEntry {
+    class EncodingSpaceEntry {
         +Reference reference
         +str mnemonic
         +str form_id
         +str pattern
-        +tuple~AllocationCube~ raw_cubes
-        +tuple~AllocationCube~ legal_cubes
+        +tuple~EncodingCube~ raw_cubes
+        +tuple~EncodingCube~ legal_cubes
         +int raw_slots
         +int assigned_slots
         +int reclaimed_slots
     }
 
-    class AllocationCube {
+    class EncodingCube {
         +int width
         +int mask
         +int value
@@ -401,16 +401,16 @@ classDiagram
         +str pattern
         +overlaps(other) bool
         +contains(other) bool
-        +intersection(other) AllocationCube
+        +intersection(other) EncodingCube
     }
 
-    class AllocationCollision {
-        +AllocationEntry left
-        +AllocationEntry right
+    class EncodingSpaceCollision {
+        +EncodingSpaceEntry left
+        +EncodingSpaceEntry right
     }
 
-    class AllocationHole {
-        +AllocationCube cube
+    class EncodingSpaceHole {
+        +EncodingCube cube
         +str pattern
         +int slots
     }
@@ -418,7 +418,7 @@ classDiagram
     class CandidateCheck {
         +str encoding_class
         +str pattern
-        +int allocated_slots
+        +int assigned_slots
         +int reclaimed_slots
         +int clean_free_slots
     }
@@ -499,16 +499,16 @@ classDiagram
     CheckService --> DiagnosticBag
     BundleValidator --> Diagnostic
     CatalogValidator --> Diagnostic
-    AllocationAnalyzer --> IsaProject
-    AllocationAnalyzer --> EncodingClass
+    EncodingSpaceAnalyzer --> IsaProject
+    EncodingSpaceAnalyzer --> EncodingClass
     EncodingClass o-- OperatorSpace
-    AllocationAnalyzer --> AllocationMap
-    AllocationMap *-- "many" AllocationEntry
-    AllocationMap *-- "many" AllocationCollision
-    AllocationEntry *-- "many" AllocationCube
-    AllocationCollision --> AllocationEntry
-    AllocationAnalyzer --> AllocationHole
-    AllocationAnalyzer --> CandidateCheck
+    EncodingSpaceAnalyzer --> EncodingSpaceMap
+    EncodingSpaceMap *-- "many" EncodingSpaceEntry
+    EncodingSpaceMap *-- "many" EncodingSpaceCollision
+    EncodingSpaceEntry *-- "many" EncodingCube
+    EncodingSpaceCollision --> EncodingSpaceEntry
+    EncodingSpaceAnalyzer --> EncodingSpaceHole
+    EncodingSpaceAnalyzer --> CandidateCheck
     PreviewService --> InstructionBundle
     PreviewService --> InstructionPreview
     HtmlPreviewRenderer --> InstructionPreview
@@ -538,10 +538,10 @@ Python and architectural invariants rather than authored database properties.
 
 `EventNamespace` owns the event fragments stored beneath the base ISA root or
 one declared extension root. Every namespace uses the hierarchy
-`events/classes/<class>/events/<event>`. Base class definitions allocate the
+`events/classes/<class>/events/<event>`. Base class definitions own the
 8-bit event class and select how its 24-bit selector is obtained. Extension
 class fragments use `extends` to contribute leaf events to an existing class;
-the extension never duplicates the numeric class allocation.
+the extension never duplicates the numeric class value.
 
 Every `ArchitecturalEvent` is directly deliverable. Former cause values are
 represented as separate leaf events rather than as a second dispatch space.
@@ -549,7 +549,7 @@ represented as separate leaf events rather than as a second dispatch space.
 encoded or delivered. Runtime address, access, syndrome, and combined
 floating-point condition information remains event payload. Logical references
 use `<owner>.events.<class>.<event>`, while numeric collision checking follows
-class overlays to their shared base allocation.
+class overlays to their shared base definition.
 
 `Extension` is the aggregate boundary for an optional architectural feature.
 It owns the metadata and dependency declarations from `extension.yaml` and the
@@ -562,7 +562,7 @@ dependency order, rejecting missing requirements and cycles before publishing
 the immutable extension mapping.  Resolution does not depend on the order of
 entries in `extensions.yaml`.
 Each extension also authors only its local `required_cpuid_flags` as logical
-references to one-bit `CpuidField` allocations. Discovery resolves those
+references to one-bit `CpuidField` definitions. Discovery resolves those
 references through `CpuidCatalog`, conjoins requirements inherited through the
 extension dependency graph, and attaches the resulting ordered set to both the
 resolved `Extension` and each of its `InstructionBundle` objects. An operation
@@ -650,7 +650,7 @@ document by implication.
 delegates instruction pages to `InstructionEntryRenderer`. The instruction
 renderer consumes `InstructionBundle`, including inherited CPUID requirements,
 logical operands, encoding forms, constraints, and authored
-`descriptions.tex`. Allocation diagrams are generated directly from
+`descriptions.tex`. Encoding diagrams are generated directly from
 `EncodingMetasyntax`; no second encoding parser is maintained.
 
 Generated islands inside authored topics are supplied by independent
@@ -788,7 +788,7 @@ objects.  It does not compute Rust, Sail, LLVM, or SystemVerilog projections.
 - overlapping opcode regions after applicable constraints are considered.
 
 `CpuidValidator` resolves class and leaf overlays across base and extension
-namespaces. It checks closed-world catalogs, numeric class and leaf allocation,
+namespaces. It checks closed-world catalogs, numeric class and leaf values,
 query-index ranges, and result-field ranges. Matching query fragments may add
 disjoint result fields only when their leaves resolve to the same definition;
 all other selector or bit overlap is diagnosed.
@@ -796,8 +796,8 @@ all other selector or bit overlap is diagnosed.
 `EventValidator` resolves event-class overlays, validates the closed-world
 class and event inventories, and checks class values, fixed leaf selectors,
 externally selected classes, globally unique event IDs, and payload/frame
-agreement. Extension-owned events participate in their base class's numeric
-allocation without moving their source outside the extension directory.
+agreement. Extension-owned events reuse their base class's numeric value
+without moving their source outside the extension directory.
 
 Validation returns diagnostics instead of raising on the first authoring
 error.  Loader failures that prevent a source object from being represented are
@@ -810,9 +810,9 @@ bundles, and whether the request is complete. Bundle, catalog, CPUID, event, and
 register validators are adapted through separate rules, so adding a domain does
 not require another hard-coded branch inside the service.
 
-### Allocation
+### Encoding-space analysis
 
-`AllocationAnalyzer` consumes the same `EncodingForm` values used by checking.
+`EncodingSpaceAnalyzer` consumes the same `EncodingForm` values used by checking.
 It owns no second instruction-pattern parser. `EncodingClass` restores the
 architectural names (`extrashort` through `xxlong`) and their selector
 namespaces; `OperatorSpace` adds the named `base`, `fpu`, and `vector` prefix
@@ -820,7 +820,7 @@ partitions where they exist.
 
 Each form becomes one raw reservation cube plus constraint-filtered legal
 cubes. Numeric ranges and the authored `immediate` EA predicate are lowered to
-bits, so reports can distinguish allocated, reclaimed, and clean-free slots.
+bits, so reports can distinguish assigned, reclaimed, and clean-free slots.
 `holes` walks the prefix tree and emits maximal aligned free blocks without
 enumerating large 34- or 42-bit spaces. Candidate checks and hole searches are
 always clipped to the selected class namespace and optional operator space.
@@ -851,17 +851,17 @@ The CLI uses functions rather than one class per subcommand:
 engine.__main__.main
   check   -> CheckService
   preview -> PreviewService -> HtmlPreviewRenderer
-  alloc summary -> AllocationAnalyzer.summaries
-  alloc entries -> AllocationAnalyzer.entries
-  alloc check   -> AllocationAnalyzer.check_candidate
-  alloc holes   -> AllocationAnalyzer.holes
+  encoding-space summary -> EncodingSpaceAnalyzer.summaries
+  encoding-space entries -> EncodingSpaceAnalyzer.entries
+  encoding-space check   -> EncodingSpaceAnalyzer.check_candidate
+  encoding-space holes   -> EncodingSpaceAnalyzer.holes
   docs validate -> DocumentBuilder (TeX gate only)
   docs build    -> DocumentBuilder (TeX gate, then PDF)
   new     -> ScaffoldService
   fmt     -> FormatService
 ```
 
-All commands accept `--isa-root`. Allocation commands use encoding-class names
+All commands accept `--isa-root`. Encoding-space commands use encoding-class names
 instead of bare widths. `entries` and `holes` accept `--space` and `--leading`
 filters; `holes --include-reclaimed` makes constraint-reclaimed slots reusable.
 
@@ -880,7 +880,7 @@ engine/
 ├── diagnostics.py    Diagnostic, DiagnosticBag, rendering
 ├── check.py          CheckService and validators
 ├── encoding_architecture.py  class namespaces and named operator spaces
-├── allocation.py     AllocationAnalyzer and disposable result types
+├── encoding_space.py EncodingSpaceAnalyzer and disposable result types
 ├── preview.py        preview model, service, and HTML renderer
 ├── authoring.py      scaffold and formatting services
 └── existing files    Instruction, EAMode, TypeSystem, references, metasyntax
@@ -907,7 +907,7 @@ interfaces/c/         C target builtins, documents, and public headers
 2. Add `IsaProject`, declared catalog discovery, and bundle lookup.
 3. Add diagnostics and the bundle validator.
 4. Add catalog and overlap validation, completing `check`.
-5. Add the read-only allocation analyzer.
+5. Add the read-only encoding-space analyzer.
 6. Add single-instruction HTML preview.
 7. Add safe scaffolding and formatting commands.
 
@@ -916,8 +916,8 @@ The first executable milestone is:
 ```sh
 python -m engine check
 python -m engine check ADD
-python -m engine alloc summary
-python -m engine alloc entries extralong --space vector
-python -m engine alloc holes xxlong --space vector --min-slots 16
+python -m engine encoding-space summary
+python -m engine encoding-space entries extralong --space vector
+python -m engine encoding-space holes xxlong --space vector --min-slots 16
 python -m pytest -q tests
 ```

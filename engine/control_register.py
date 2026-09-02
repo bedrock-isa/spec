@@ -110,7 +110,7 @@ class ControlRegisterCatalog:
                 if previous is not None:
                     raise ValueError(
                         f"{register.source}: control-register selector "
-                        f"0x{register.selector:04x} is also allocated by "
+                        f"0x{register.selector:04x} is also defined by "
                         f"{previous.source}"
                     )
                 selectors[register.selector] = register

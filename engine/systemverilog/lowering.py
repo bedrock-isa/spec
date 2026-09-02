@@ -310,7 +310,7 @@ def reference_d0(
     ]
     if accepted:
         return "success", accepted[0].index
-    return ("constraint_rejected", None) if raw else ("unallocated_opcode", None)
+    return ("constraint_rejected", None) if raw else ("unassigned_opcode", None)
 
 
 def reference_ea(
@@ -714,7 +714,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
         0,
         """typedef enum logic [1:0] {
     D0_INVALID_INPUT = 2'd0,
-    D0_UNALLOCATED_OPCODE = 2'd1,
+    D0_UNASSIGNED_OPCODE = 2'd1,
     D0_CONSTRAINT_REJECTED = 2'd2,
     D0_SUCCESS = 2'd3
   } d0_status_e;
@@ -973,19 +973,19 @@ def _render_opcode_class_bytes_function(ir: decode_ir.DecodeIR) -> str:
 
 def _render_operator_space_function(names: Names) -> str:
     cases: list[str] = []
-    allocations_by_class: dict[str, list[OperatorSpace]] = {}
-    for allocation in OPERATOR_SPACES:
-        allocations_by_class.setdefault(allocation.encoding_class, []).append(
-            allocation
+    spaces_by_class: dict[str, list[OperatorSpace]] = {}
+    for space in OPERATOR_SPACES:
+        spaces_by_class.setdefault(space.encoding_class, []).append(
+            space
         )
-    for encoding_class, allocations in sorted(allocations_by_class.items()):
-        allocation_bits = ENCODING_CLASSES_BY_NAME[encoding_class].allocation_bits
-        prefix_high = allocation_bits - 1
+    for encoding_class, spaces in sorted(spaces_by_class.items()):
+        pattern_bits = ENCODING_CLASSES_BY_NAME[encoding_class].pattern_bits
+        prefix_high = pattern_bits - 1
         rows = "\n".join(
-            f"            {OPERATOR_SPACE_PREFIX_BITS}'b{allocation.prefix}: "
+            f"            {OPERATOR_SPACE_PREFIX_BITS}'b{space.prefix}: "
             f"operator_space_from_opcode = "
-            f"OPERATOR_SPACE_{_identifier(allocation.name)};"
-            for allocation in allocations
+            f"OPERATOR_SPACE_{_identifier(space.name)};"
+            for space in spaces
         )
         cases.append(
             "\n".join(

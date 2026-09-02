@@ -1,6 +1,6 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: bedrock://schemas/encoding-reservation
-title: Bedrock opcode allocation reservation
+title: Bedrock opcode-space reservation
 type: object
 additionalProperties: false
 required: [id, summary, regions]
@@ -30,6 +30,6 @@ x-interpretation-rules:
 - encoding/reservations/reservations.yaml declares base-architecture reservation membership.
 - Each declared member owns encoding/reservations/<ID>/reservation.yaml.
 - Each regions member reserves one prefix within one encoding class for the owning reservation purpose.
-- A region prefix is written most-significant bit first within encoding_class allocation bits; omitted trailing bits remain reserved.
-- Region order is not a public allocation or presentation order.
-- Inventory order declares membership only and does not define allocation or public presentation order.
+- A region prefix is written most-significant bit first within the encoding-class pattern bits; omitted trailing bits remain reserved.
+- Region order defines neither precedence nor public presentation order.
+- Inventory order declares membership only and defines neither reservation precedence nor public presentation order.

@@ -11,7 +11,7 @@ class OperatorSpaceUnavailableError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class EncodingClass:
-    """One allocation namespace in the instruction framing grammar."""
+    """One opcode namespace in the instruction framing grammar."""
 
     name: str
     opcode_space_bytes: int
@@ -19,16 +19,16 @@ class EncodingClass:
     selectors: tuple[str, ...] = ()
 
     @property
-    def allocation_bits(self) -> int:
+    def pattern_bits(self) -> int:
         return self.opcode_space_bytes * 8 - self.framing_bits
 
     @property
     def namespace(self) -> tuple[str, ...]:
         if not self.selectors:
-            return ("?" * self.allocation_bits,)
+            return ("?" * self.pattern_bits,)
         return tuple(
             selector.replace("x", "?")
-            + "?" * (self.allocation_bits - len(selector))
+            + "?" * (self.pattern_bits - len(selector))
             for selector in self.selectors
         )
 
@@ -56,7 +56,7 @@ ENCODING_CLASSES = (
     EncodingClass("xxlong", 6, 6, ("11111111",)),
 )
 ENCODING_CLASSES_BY_NAME = {item.name: item for item in ENCODING_CLASSES}
-ENCODING_CLASSES_BY_WIDTH = {item.allocation_bits: item for item in ENCODING_CLASSES}
+ENCODING_CLASSES_BY_WIDTH = {item.pattern_bits: item for item in ENCODING_CLASSES}
 
 OPERATOR_SPACES = (
     OperatorSpace("extralong", "base", "111111000?"),
@@ -121,14 +121,14 @@ def _validate() -> None:
     if len(ENCODING_CLASSES_BY_WIDTH) != len(ENCODING_CLASSES):
         raise ValueError("duplicate encoding class width")
     for item in ENCODING_CLASSES:
-        if any(len(pattern) != item.allocation_bits for pattern in item.namespace):
+        if any(len(pattern) != item.pattern_bits for pattern in item.namespace):
             raise ValueError(f"{item.name}: namespace width mismatch")
     for index, space in enumerate(OPERATOR_SPACES):
         owner = encoding_class(space.encoding_class)
         pattern = space.prefix.replace("x", "?") + "?" * (
-            owner.allocation_bits - len(space.prefix)
+            owner.pattern_bits - len(space.prefix)
         )
-        if len(space.prefix) > owner.allocation_bits or set(space.prefix) - set("01x?"):
+        if len(space.prefix) > owner.pattern_bits or set(space.prefix) - set("01x?"):
             raise ValueError(f"{space.name}: invalid operator-space prefix")
         if not any(_pattern_subset(pattern, namespace) for namespace in owner.namespace):
             raise ValueError(f"{space.name}: prefix is outside {owner.name}")

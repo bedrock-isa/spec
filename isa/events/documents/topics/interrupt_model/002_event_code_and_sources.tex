@@ -4,10 +4,10 @@ class\textquotesingle{}s namespace.
 
 \BedrockGeneratedEventCodeReference
 
-The following fixed event codes are allocated by this specification. Each row answers only which symbolic event is
+The following fixed event codes are assigned by this specification. Each row answers only which symbolic event is
 assigned to a fixed code; the event's behavior, frame, and (:term:base.terms.payload:) are defined by the topic that owns that behavior.
 
-\BedrockTableCaption{Fixed Architectural Event-Code Allocations}
+\BedrockTableCaption{Fixed Architectural Event-Code Assignments}
 \begin{BedrockLongTable}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{4.55in}@{}}
 \toprule
 \rowcolor{BedrockHeaderFill}
@@ -74,7 +74,7 @@ acknowledgement or end-of-interrupt protocol belong to the platform ABI. A valid
 target logical processor's architectural interrupt file; the delivered event code has class \texttt{0x01} and that
 identity in its low 24 bits.
 
-Deadline-timer expiry uses the same posting operation with the identity supplied by TARM. It does not allocate a
+Deadline-timer expiry uses the same posting operation with the identity supplied by TARM. It does not define a
 fixed timer identity or a separate interrupt-source catalog member.
 
 A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the

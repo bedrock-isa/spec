@@ -1,11 +1,11 @@
 import unittest
 from pathlib import Path
 
-from engine.allocation import (
-    AllocationEntry,
-    AllocationAnalyzer,
-    AllocationCube,
+from engine.encoding_space import (
     CandidateOutsideNamespaceError,
+    EncodingCube,
+    EncodingSpaceAnalyzer,
+    EncodingSpaceEntry,
     unavailable_cubes,
 )
 from engine.encoding_architecture import (
@@ -20,7 +20,7 @@ from engine.reference import Reference
 
 class EncodingArchitectureTest(unittest.TestCase):
     def test_named_classes_retain_architectural_namespaces(self) -> None:
-        self.assertEqual(encoding_class("short").allocation_bits, 14)
+        self.assertEqual(encoding_class("short").pattern_bits, 14)
         self.assertEqual(
             encoding_class("medium").namespace,
             (
@@ -38,34 +38,34 @@ class EncodingArchitectureTest(unittest.TestCase):
             operator_space("long", "vector")
 
 
-class AllocationCubeTest(unittest.TestCase):
+class EncodingCubeTest(unittest.TestCase):
     def test_short_pattern_is_right_padded_and_intersected(self) -> None:
-        prefix = AllocationCube.parse("1111", 8)
-        subset = AllocationCube.parse("111100??")
+        prefix = EncodingCube.parse("1111", 8)
+        subset = EncodingCube.parse("111100??")
 
         self.assertEqual(prefix.pattern, "1111????")
         self.assertTrue(prefix.contains(subset))
         self.assertEqual(prefix.intersection(subset), subset)
 
 
-class AllocationAnalyzerTest(unittest.TestCase):
+class EncodingSpaceAnalyzerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.isa_root = Path(__file__).parents[1] / "isa"
         cls.project = IsaProject.load(cls.isa_root)
-        cls.analyzer = AllocationAnalyzer()
+        cls.analyzer = EncodingSpaceAnalyzer()
         cls.entries = cls.analyzer.entries(cls.project)
 
     def test_complete_map_contains_every_form_without_collisions(self) -> None:
-        allocation = self.analyzer.analyze(self.project)
+        analysis = self.analyzer.analyze(self.project)
         form_count = sum(
             len(bundle.encodings.forms) for bundle in self.project.select()
         )
 
-        self.assertEqual(len(allocation.entries), form_count)
-        self.assertEqual(allocation.collisions, ())
+        self.assertEqual(len(analysis.entries), form_count)
+        self.assertEqual(analysis.collisions, ())
 
-    def test_summary_partitions_allocated_reclaimed_reserved_and_free(self) -> None:
+    def test_summary_partitions_assigned_reclaimed_reserved_and_free(self) -> None:
         summaries = self.analyzer.summaries(self.project)
 
         by_class = {item.encoding_class: item for item in summaries}
@@ -73,7 +73,7 @@ class AllocationAnalyzerTest(unittest.TestCase):
         for item in summaries:
             self.assertEqual(
                 item.namespace_slots,
-                item.allocated_slots
+                item.assigned_slots
                 + item.reclaimed_slots
                 + item.reserved_slots
                 + item.clean_free_slots,
@@ -104,9 +104,9 @@ class AllocationAnalyzerTest(unittest.TestCase):
         self.assertIsNone(caught.exception.space)
 
     def test_reclaimed_policy_uses_legal_instead_of_raw_reservation(self) -> None:
-        raw = AllocationCube.parse("10??")
-        legal = AllocationCube.parse("100?")
-        entry = AllocationEntry(
+        raw = EncodingCube.parse("10??")
+        legal = EncodingCube.parse("100?")
+        entry = EncodingSpaceEntry(
             Reference.parse("base.instructions.SYNTHETIC"),
             "base",
             "SYNTHETIC",
@@ -135,9 +135,9 @@ class AllocationAnalyzerTest(unittest.TestCase):
             limit=5,
         )
         space = operator_space("xxlong", "vector")
-        scope = AllocationCube.parse(
+        scope = EncodingCube.parse(
             space.prefix,
-            encoding_class(space.encoding_class).allocation_bits,
+            encoding_class(space.encoding_class).pattern_bits,
         )
         raw = tuple(
             cube

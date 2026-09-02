@@ -130,7 +130,7 @@ x-interpretation-rules:
   - Generated encoding IDs must be unique within the containing instruction.
   - An encoding's logical reference uses its encodings key as the element name under the containing instruction path.
   - Pattern lengths 7, 14, 18, 26, 34, and 42 select the extrashort, short, medium, long, extralong, and xxlong encoding classes respectively; class is not repeated in the encoding.
-  - A pattern contains only the allocation bits following the class framing bits and is written most-significant bit first.
+  - A pattern contains only the bits following the class framing bits and is written most-significant bit first.
   - Pattern obeys encoding-metasyntax; syntax obeys instruction-metasyntax and names the containing instruction mnemonic.
   - Every lowercase pattern marker has exactly one fields entry, and every fields entry occurs in the pattern.
   - The occurrence count of a pattern marker equals the bits value of its resolved field type; marker bits need not be contiguous.

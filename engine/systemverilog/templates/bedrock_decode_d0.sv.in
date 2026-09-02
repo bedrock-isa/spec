@@ -76,7 +76,7 @@ module bedrock_decode_d0
       result_o.form_low_decode = 32'h00000001 << class_form[4:0];
       result_o.operator_space =
         operator_space_from_opcode(opcode_class_i, opcode_i);
-      result_o.status = D0_UNALLOCATED_OPCODE;
+      result_o.status = D0_UNASSIGNED_OPCODE;
       if (class_selection.valid) begin
         result_o.status = D0_SUCCESS;
         result_o.form = form_id_e'(class_form);

@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 
-from engine.allocation import forms_overlap
+from engine.encoding_space import forms_overlap
 from engine.check import (
     BundleValidator,
     CatalogValidator,

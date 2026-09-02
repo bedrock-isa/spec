@@ -98,10 +98,10 @@ $defs:
         maximum: 64
 x-interpretation-rules:
   - The containing directory name equals id.
-  - value allocates a new 16-bit leaf value in the containing class.
+  - value defines the 16-bit leaf value in the containing class.
   - extends reopens an existing leaf without repeating its numeric value.
   - A root leaf contributed by an extension to numeric class 1 omits both value and extends; its value is derived from that extension's sole class-1 leaf-0 directory bit.
   - Query index ranges are inclusive; omitted stride is one.
   - A query may use one local layout and may add fields of its own.
-  - Unallocated result bits are reserved and return zero.
+  - Unassigned result bits are reserved and return zero.
   - Query and field references use <owner>.cpuid.<class>.<leaf>.<query>[.<field>].

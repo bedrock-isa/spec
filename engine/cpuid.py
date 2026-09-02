@@ -1,4 +1,4 @@
-"""Distributed CPUID allocation loading and logical lookup."""
+"""Distributed CPUID definition loading and logical lookup."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ class CpuidIndexRange:
 
 @dataclass(frozen=True, slots=True)
 class CpuidField(Entity):
-    """One named allocation in a 64-bit CPUID result."""
+    """One named field in a 64-bit CPUID result."""
 
     reference: Reference["CpuidField"]
     source: Path
@@ -87,7 +87,7 @@ class CpuidCommonHeader(Entity):
 
 @dataclass(frozen=True, slots=True)
 class CpuidQuery(Entity):
-    """One fixed or indexed CPUID query allocation."""
+    """One fixed or indexed CPUID query definition."""
 
     reference: Reference["CpuidQuery"]
     source: Path
@@ -110,7 +110,7 @@ class CpuidLeaf(Entity):
 
 
 @dataclass(frozen=True, slots=True)
-class AllocatedCpuidLeaf(CpuidLeaf):
+class CpuidLeafDefinition(CpuidLeaf):
     value: int
 
 
@@ -138,7 +138,7 @@ class CpuidClass(Entity):
 
 
 @dataclass(frozen=True, slots=True)
-class AllocatedCpuidClass(CpuidClass):
+class CpuidClassDefinition(CpuidClass):
     value: int
 
 
@@ -149,7 +149,7 @@ class CpuidClassOverlay(CpuidClass):
 
 @dataclass(frozen=True, slots=True)
 class CpuidNamespace:
-    """All CPUID allocations authored by base or one extension."""
+    """All CPUID fragments authored by base or one extension."""
 
     owner: str
     root: Path
@@ -172,7 +172,7 @@ class CpuidReferenceIndexes:
 
 
 class CpuidResolutionError(ValueError):
-    """A source-located error while resolving a CPUID allocation."""
+    """A source-located error while resolving a CPUID definition."""
 
     def __init__(self, source: Path, message: str) -> None:
         super().__init__(message)
@@ -181,7 +181,7 @@ class CpuidResolutionError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class ResolvedCpuidLeaf:
-    """One leaf fragment joined with its root and numeric allocation."""
+    """One leaf fragment joined with its root and numeric selector values."""
 
     leaf: CpuidLeaf
     root_leaf: CpuidLeaf
@@ -191,7 +191,7 @@ class ResolvedCpuidLeaf:
 
 @dataclass(frozen=True, slots=True)
 class CpuidCatalog:
-    """The union of distributed base and extension CPUID allocations."""
+    """The union of distributed base and extension CPUID definitions."""
 
     namespaces: Mapping[str, CpuidNamespace]
     common_header: CpuidCommonHeader
@@ -232,7 +232,7 @@ class CpuidCatalog:
         except KeyError as error:
             raise ValueError(f"unknown CPUID namespace {owner!r}") from error
 
-    def root_class(self, cpuid_class: CpuidClass) -> AllocatedCpuidClass:
+    def root_class(self, cpuid_class: CpuidClass) -> CpuidClassDefinition:
         """Resolve a CPUID class overlay to its numeric class definition."""
 
         active: list[Reference[CpuidClass]] = []
@@ -256,7 +256,7 @@ class CpuidCatalog:
                     f"ID {target.id!r}",
                 )
             current = target
-        if not isinstance(current, AllocatedCpuidClass):
+        if not isinstance(current, CpuidClassDefinition):
             raise CpuidResolutionError(
                 current.source, f"incomplete CPUID class definition {current.id!r}"
             )
@@ -281,7 +281,7 @@ class CpuidCatalog:
         return roots[0]
 
     def resolve_leaf(self, leaf: CpuidLeaf) -> ResolvedCpuidLeaf:
-        """Resolve one leaf fragment through its owning allocation policy."""
+        """Resolve one leaf fragment through its definition and overlays."""
 
         active: list[Reference[CpuidLeaf]] = []
 
@@ -375,7 +375,7 @@ class CpuidCatalog:
                     current, current, root_class.value, leaf_value
                 )
 
-            if not isinstance(current, AllocatedCpuidLeaf):
+            if not isinstance(current, CpuidLeafDefinition):
                 raise CpuidResolutionError(
                     current.source, f"incomplete CPUID leaf definition {current.id!r}"
                 )
@@ -531,7 +531,7 @@ def _load_class(
         return CpuidClassOverlay(
             *common, Reference.parse(cast(str, document["extends"]))
         )
-    return AllocatedCpuidClass(*common, document["value"])
+    return CpuidClassDefinition(*common, document["value"])
 
 
 def _load_leaf(
@@ -629,7 +629,7 @@ def _load_leaf(
             *common, Reference.parse(cast(str, document["extends"]))
         )
     if "value" in document:
-        return AllocatedCpuidLeaf(*common, document["value"])
+        return CpuidLeafDefinition(*common, document["value"])
     return CpuidDiscoveryLeaf(*common)
 
 
@@ -637,7 +637,7 @@ def _parse_indexes(raw: object) -> CpuidIndexRange:
     if isinstance(raw, int) and not isinstance(raw, bool):
         return CpuidIndexRange(raw, raw)
     if not isinstance(raw, Mapping):
-        raise ValueError(f"invalid CPUID index allocation {raw!r}")
+        raise ValueError(f"invalid CPUID index specification {raw!r}")
     return CpuidIndexRange(raw["first"], raw["last"], raw.get("stride", 1))
 
 

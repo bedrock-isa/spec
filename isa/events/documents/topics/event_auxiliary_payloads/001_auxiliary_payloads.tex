@@ -5,7 +5,7 @@ For an AUXILIARY frame, (:ref:base.events.frame.EVENT_FRAME.ERROR_CODE:) bit 26 
 (:ref:base.events.payloads.BUS_FAILURE_ERROR_CODE.EVENT_AUX_VALID:) field. Bits 24 and 25 are the corresponding address-validity fields when the event can supply those addresses. Every
 unassigned bit is zero, and an auxiliary or address value not produced is zero with its validity bit clear.
 
-Delivery-failure stages are independently allocated leaf events. Their (:ref:base.events.frame.EVENT_FRAME.EVENT_INFO.EVENT_CODE:) identifies the failed stage; the
+Delivery-failure stages are represented by distinct leaf events. Their (:ref:base.events.frame.EVENT_FRAME.EVENT_INFO.EVENT_CODE:) identifies the failed stage; the
 (:ref:base.events.frame.EVENT_FRAME.EVENT_AUX:) (:term:base.terms.payload:) records the event whose delivery failed.
 
 \begin{BedrockListedFormatDiagram}{Delivery-Failure Auxiliary Format}
