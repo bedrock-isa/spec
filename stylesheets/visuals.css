@@ -1,0 +1,5 @@
+.md-content img[src*="assets/visuals/"] {
+  display: block;
+  width: 100%;
+  height: auto;
+}

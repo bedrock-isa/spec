@@ -48,6 +48,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/visuals.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -14680,7 +14682,7 @@
 <p>Software treats the optional-extension directory as the first availability gate. Before using an optional architectural behavior or consuming one of its parameter leaves, software establishes every extension predicate required by that extension. A result returned by a parameter leaf does not by itself establish extension availability.</p>
 <p>Each advertised extension owns exactly one discovery leaf in class <code>0x00000001</code>. If its availability field is bit <span class="arithmatex">\(m\)</span> of directory index <span class="arithmatex">\(n\)</span>, where <span class="arithmatex">\(1 \le n \le 1023\)</span> and <span class="arithmatex">\(0 \le m \le 63\)</span>, its discovery leaf is <span class="arithmatex">\(64(n-1)+m+1\)</span>. This relation is one-to-one; an extension with no additional discovery payload still provides the leaf with its index-zero <a href="../terminology/#term-header">header</a>.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0000</code> uses the 64-bit query selector <code>0x0000000100000000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Extension Directory CPUID Query Allocations</strong></p>
+<p><strong>Extension Directory CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -14706,7 +14708,7 @@
 <p>When <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp"><code>FP</code></a> is available, the floating-point registers, state, event, addressing forms, and instructions defined available subject to their <a href="../terminology/#term-ordinary">ordinary</a> legality checks and any feature-specific predicates below.</p>
 <p>When <a href="#cpuid-field-fp-cpuid-extensions-fp-features-features-fp16-convert"><code>FP16_CONVERT</code></a> is available, binary16 conversion is available through every form of <a href="../instructions/fcvth/"><code>FCVTH</code></a> and <a href="../instructions/fcvtuh/"><code>FCVTUH</code></a>, the H forms of <a href="../instructions/fcvts/"><code>FCVTS</code></a>, and the H forms of <a href="../instructions/fcvtd/"><code>FCVTD</code></a>. It does not advertise binary16 arithmetic. The reported value is stable until reset. Executing one of those forms while <a href="#cpuid-field-fp-cpuid-extensions-fp-features-features-fp16-convert"><code>FP16_CONVERT</code></a> is clear raises <a href="../architectural-event-processing-model/#event-unavailable-instruction-extension"><code>UNAVAILABLE_INSTRUCTION_EXTENSION</code></a> before operand or floating-point-state access.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0001</code> uses the 64-bit query selector <code>0x0000000100010000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Floating-Point Features CPUID Query Allocations</strong></p>
+<p><strong>Floating-Point Features CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -14731,7 +14733,7 @@
 <h2 id="vector-parameter-discovery">Vector-Parameter Discovery</h2>
 <p>After establishing <a href="#cpuid-field-vector-cpuid-extensions-directory-features-vector"><code>VECTOR</code></a> availability, software uses this leaf to obtain the architectural VLEN reported by <a href="#cpuid-field-vector-cpuid-extensions-vector-parameters-parameters-vlen-log2-bits"><code>VLEN_LOG2_BITS</code></a>. VLEN is <span class="arithmatex">\(2^{\text{\hyperref[cpuid-field:vector-cpuid-extensions-vector-parameters-parameters-vlen-log2-bits]{\texttt{VLEN\_\allowbreak{}LOG2\_\allowbreak{}BITS}}}}\)</span> bits and is an implementation-selected power of two from 128 through 2048 bits. It determines vector-register width, predicate storage, the number of lanes for a selected element width, and the size of each <a href="../terminology/#term-vector-register">vector register</a> and <a href="../terminology/#term-predicate-register">predicate register</a> image. <code>SAVE_AREA_LAYOUT</code> remains the authority for save-component placement and size. This leaf does not establish availability of <a href="#cpuid-field-vectorfp-cpuid-extensions-directory-features-vectorfp"><code>VECTORFP</code></a> or any other extension that consumes vector state.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0003</code> uses the 64-bit query selector <code>0x0000000100030000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Vector Parameters CPUID Query Allocations</strong></p>
+<p><strong>Vector Parameters CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -14756,7 +14758,7 @@
 <h2 id="vector-floating-point-discovery">Vector Floating-Point Discovery</h2>
 <p>Software establishes <a href="#cpuid-field-vectorfp-cpuid-extensions-directory-features-vectorfp"><code>VECTORFP</code></a>, <a href="#cpuid-field-vector-cpuid-extensions-directory-features-vector"><code>VECTOR</code></a>, and <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp"><code>FP</code></a> through the <a href="#section-cpuid-extension-directory">Optional-Extension Directory</a> before using this extension. This extension defines no additional discovery payload, so its discovery leaf contains only the common <a href="../terminology/#term-header">header</a>.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0004</code> uses the 64-bit query selector <code>0x0000000100040000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Vector Floating-Point Discovery CPUID Query Allocations</strong></p>
+<p><strong>Vector Floating-Point Discovery CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -14971,7 +14973,7 @@
 <h2 id="wait-extension-discovery">WAIT Extension Discovery <a href="#section-wait-extension-discovery" id="section-wait-extension-discovery"></a></h2>
 <p>Software establishes the <a href="#cpuid-field-wait-cpuid-extensions-directory-features-wait"><code>WAIT</code></a> extension predicate before executing WAIT or WAKE. The extension has no implementation-varying architectural parameters.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0005</code> uses the 64-bit query selector <code>0x0000000100050000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Address Wait Discovery CPUID Query Allocations</strong></p>
+<p><strong>Address Wait Discovery CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -14991,7 +14993,7 @@
 <h2 id="cfi-extension-discovery">CFI Extension Discovery <a href="#section-cfi-extension-discovery" id="section-cfi-extension-discovery"></a></h2>
 <p>Software establishes the <a href="#cpuid-field-cfi-cpuid-extensions-directory-features-cfi"><code>CFI</code></a> extension predicate before using CFILAND or the CFI control registers. The extension has no implementation-varying architectural parameters.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0006</code> uses the 64-bit query selector <code>0x0000000100060000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Control-Flow Integrity Discovery CPUID Query Allocations</strong></p>
+<p><strong>Control-Flow Integrity Discovery CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -15010,7 +15012,7 @@
 <p><strong>Control-Flow Integrity Discovery CPUID Result Formats</strong></p>
 <h2 id="implementation-class-directory">Implementation-Class Directory</h2>
 <p>Class <code>0x00000002</code>, leaf <code>0x0000</code> uses the 64-bit query selector <code>0x0000000200000000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Implementation Directory CPUID Query Allocations</strong></p>
+<p><strong>Implementation Directory CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -15108,7 +15110,7 @@
 <p>This leaf determines whether an RDPMC counter ID is available on the current <a href="../terminology/#term-logical-processor">logical processor</a>. Counter IDs form a sparse space: the <a href="../terminology/#term-header">header</a> bounds the selectors that software may examine but does not imply that every intervening ID is present. Software checks the selected ID before issuing RDPMC.</p>
 <p>The standard counter events are defined by <a href="../instructions/rdpmc/"><code>RDPMC</code></a>. An implementation-defined counter additionally requires implementation documentation that names the event counted by its ID.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0002</code> uses the 64-bit query selector <code>0x0000000200020000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Performance Counters CPUID Query Allocations</strong></p>
+<p><strong>Performance Counters CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -15145,7 +15147,7 @@
 <p><a href="#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> is the authoritative physical-address bound for the current <a href="../terminology/#term-logical-processor">logical processor</a> and has a value from 32 through 56. A <a href="../terminology/#term-physical-address">physical address</a> is representable only when it is less than <span class="arithmatex">\(2^{\text{\hyperref[cpuid-field:base-cpuid-implementation-address-widths-parameters-pabits]{\texttt{PABITS}}}}\)</span>. Page-table roots, every present leaf <a href="../memory-address-translation/#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a>, every present table-pointer <a href="../memory-address-translation/#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a>, translated results, and paging-disabled <a href="../terminology/#term-physical-address">physical addresses</a> are subject to that bound.</p>
 <p><a href="#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> does not select a translation-table format or translation-cache identity. <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> selects the complete translation-table format, while the translation-cache contract separately defines entry identity.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0003</code> uses the 64-bit query selector <code>0x0000000200030000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Address Widths CPUID Query Allocations</strong></p>
+<p><strong>Address Widths CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -15248,7 +15250,7 @@
 <tr>
 <td style="text-align: left;"><code>31..0</code></td>
 <td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-max-size-bytes" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-max-size-bytes"></a><code>MAX_SIZE_BYTES</code></td>
-<td style="text-align: left;">allocated component size</td>
+<td style="text-align: left;">maximum component size</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>47..32</code></td>
@@ -15272,7 +15274,7 @@
 <h2 id="timebase-discovery">Timebase Discovery</h2>
 <p>The mandatory architectural timebase advances at the exact nonzero integer rate reported by <a href="#cpuid-field-base-cpuid-implementation-timebase-parameters-ticks-per-second"><code>TICKS_PER_SECOND</code></a>. The value is invariant for one cold-reset epoch and is preserved by warm RESET. Software uses this rate to convert differences between RDTIME results and absolute deadline values into elapsed time.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0005</code> uses the 64-bit query selector <code>0x0000000200050000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Architectural Timebase CPUID Query Allocations</strong></p>
+<p><strong>Architectural Timebase CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -15297,7 +15299,7 @@
 <h2 id="debug-trigger-discovery">Debug-Trigger Discovery</h2>
 <p>The mandatory Base trigger array has at least four slots per <a href="../terminology/#term-logical-processor">logical processor</a>. <a href="#cpuid-field-base-cpuid-implementation-debug-triggers-parameters-slot-count"><code>SLOT_COUNT</code></a> reports the exact number accepted by <a href="../architectural-debug/#register-field-base-control-registers-dtrsel-slot"><code>DTRSEL.SLOT</code></a>; software does not probe selector values beyond that count.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0006</code> uses the 64-bit query selector <code>0x0000000200060000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
-<p><strong>Architectural Debug Triggers CPUID Query Allocations</strong></p>
+<p><strong>Architectural Debug Triggers CPUID Query-Index Assignments</strong></p>
 <table>
 <thead>
 <tr>

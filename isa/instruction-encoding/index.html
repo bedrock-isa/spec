@@ -48,6 +48,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/visuals.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -711,10 +713,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unavailable-and-unallocated-encodings" class="md-nav__link">
+  <a href="#unavailable-and-unassigned-encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unavailable and Unallocated Encodings
+        Unavailable and Unassigned Encodings
       
     </span>
   </a>
@@ -14133,10 +14135,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unavailable-and-unallocated-encodings" class="md-nav__link">
+  <a href="#unavailable-and-unassigned-encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unavailable and Unallocated Encodings
+        Unavailable and Unassigned Encodings
       
     </span>
   </a>
@@ -14356,8 +14358,8 @@
 </tr>
 </tbody>
 </table>
-<h2 id="unavailable-and-unallocated-encodings">Unavailable and Unallocated Encodings</h2>
-<p>An unallocated encoding or an encoding marked <a href="../terminology/#term-reserved">reserved</a> does not define alternative architectural behavior. Instruction <a href="../terminology/#term-opcode">opcodes</a>, extension <a href="../terminology/#term-opcode">opcodes</a>, and effective-address forms with that designation, together with encodings for an optional instruction group whose CPUID feature bit is clear, raise <a href="../architectural-event-processing-model/#event-unavailable-instruction-extension"><code>UNAVAILABLE_INSTRUCTION_EXTENSION</code></a> during decode.</p>
+<h2 id="unavailable-and-unassigned-encodings">Unavailable and Unassigned Encodings</h2>
+<p>An unassigned encoding or an encoding marked <a href="../terminology/#term-reserved">reserved</a> does not define alternative architectural behavior. Instruction <a href="../terminology/#term-opcode">opcodes</a>, extension <a href="../terminology/#term-opcode">opcodes</a>, and effective-address forms with that designation, together with encodings for an optional instruction group whose CPUID feature bit is clear, raise <a href="../architectural-event-processing-model/#event-unavailable-instruction-extension"><code>UNAVAILABLE_INSTRUCTION_EXTENSION</code></a> during decode.</p>
 <h2 id="instruction-payload-ordering">Instruction Payload Ordering</h2>
 <p>The instruction <a href="../terminology/#term-header">header</a> is byte 0 for extrashort and short instructions and the first two bytes for medium and longer instructions. The <a href="../terminology/#term-opcode-space">opcode space</a> may continue after the <a href="../terminology/#term-header">header</a>. If a descriptor, immediate, displacement, or bitmap follows the <a href="../terminology/#term-opcode-space">opcode space</a>, each independently determined unit is a separate <a href="../terminology/#term-payload">payload</a>, and the <a href="../terminology/#term-payload">payloads</a> occupy increasing addresses in decode order. All extended EA descriptors precede every other <a href="../terminology/#term-payload">payload</a>, and multiple extended EA descriptors appear in declared instruction operand order. The remaining <a href="../terminology/#term-payload">payloads</a> then appear in declared instruction operand order. An extended EA descriptor and a following displacement are therefore separate <a href="../terminology/#term-payload">payloads</a>, and the displacement follows every extended EA descriptor in the instruction.</p>
 <p>Signed displacement and immediate <a href="../terminology/#term-payload">payloads</a> use two's-complement representation at their declared width before any sign extension performed by the consuming instruction or effective-address encoding.</p>

@@ -48,6 +48,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/visuals.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -14171,7 +14173,8 @@
 <p><code>WRCR Rn(s), &lt;imm16&gt;</code></p>
 <h2 id="privilege">Privilege</h2>
 <p>Supervisor only</p>
-<p>WRCR validates and atomically writes the selected <a href="../../terminology/#term-control-register">control register</a> in supervisor mode. The WRCR Selector Rules table defines each writable image, validation condition, and translation or event-state side effect.</p>
+<p>WRCR is supervisor-only and resolves its 16-bit selector in the architectural <a href="../../terminology/#term-control-register">control register</a> space. An unassigned selector, a read-only register, or a read-only indirect view raises <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>.</p>
+<p>For a writable target, WRCR forms the candidate image according to the selected register’s definition and validates every target-owned image and transition condition before changing <a href="../../terminology/#term-architectural-state">architectural state</a>. A rejected write leaves the register and every associated selector, bank, cache, and transition state unchanged. A successful write commits the candidate image and all target-defined side effects atomically. The selected register or its owning subsystem defines writable and ignored fields, image constraints, transition constraints, and commit effects.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>WRCR Rn(s), &lt;imm16&gt;</code></strong></p>

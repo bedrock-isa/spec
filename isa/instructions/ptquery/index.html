@@ -48,6 +48,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/visuals.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -14173,7 +14175,7 @@
 <h2 id="privilege">Privilege</h2>
 <p>Supervisor only</p>
 <p>PTQUERY reads the raw descriptor selected by a <a href="../../terminology/#term-linear-address">linear address</a> and requested page-table level, or returns zero when the requested entry cannot be read. <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> reports structural validity under the layout selected by <a href="../../memory-address-translation/#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a>; <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> are zero.</p>
-<p>The requested level is the low three bits of the level operand. Values outside 1 through 4 raise <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>. With <a href="../../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a><code>=010</code>, an L4 query is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query before reading a PTE. With an unallocated <a href="../../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> encoding, no geometry is selected and every query is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query before reading a PTE.</p>
+<p>The requested level is the low three bits of the level operand. Values outside 1 through 4 raise <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>. With <a href="../../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a><code>=010</code>, an L4 query is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query before reading a PTE. With an unassigned <a href="../../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> encoding, no geometry is selected and every query is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query before reading a PTE.</p>
 <ol>
 <li>
 <p>Compute the <a href="../../terminology/#term-linear-address">linear address</a> without reading the source memory and reject a noncanonical address as an unsuccessful query.</p>

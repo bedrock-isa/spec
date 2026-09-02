@@ -48,6 +48,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/visuals.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -14570,7 +14572,7 @@
 <p><a href="#table-sreg-encoding" id="table-sreg-encoding"></a></p>
 <h2 id="control-registers">Control Registers <a href="#section-control-registers" id="section-control-registers"></a></h2>
 <p>RDCR and WRCR use a 16-bit selector and transfer a 64-bit <a href="../terminology/#term-register-image">register image</a>. Both instructions are supervisor-only. Selectors not listed below raise <a href="../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>. Reserved register bits read as zero, and a write with a nonzero <a href="../terminology/#term-reserved">reserved</a> bit raises <a href="../architectural-event-processing-model/#event-reserved-control-bits"><code>RESERVED_CONTROL_BITS</code></a> without changing the register. The entry, stack, and user-return registers are per-logical-processor <a href="../terminology/#term-architectural-state">architectural state</a>.</p>
-<p><strong>Control-Register Selectors</strong></p>
+<p><strong>Control-Register Selector Assignments</strong></p>
 <table>
 <thead>
 <tr>
@@ -14752,127 +14754,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>WRCR Selector Rules</strong></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Register</strong></th>
-<th style="text-align: left;"><strong>Writable Image</strong></th>
-<th style="text-align: left;"><strong>Validation</strong></th>
-<th style="text-align: left;"><strong>Commit and Side Effect</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>PTCR</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>, <a href="#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a>, and <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a>; <a href="../terminology/#term-reserved">reserved</a> bits <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;">when <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> is one, <a href="#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> is <code>010</code> or <code>011</code> and the root frame fits <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a></td>
-<td style="text-align: left;">apply the translation-cache transition selected by the changed <a href="../terminology/#term-field">fields</a></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ASCR</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a> and <a href="#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a>; <a href="../terminology/#term-reserved">reserved</a> bits <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;">the complete ASCR image is validated before commit</td>
-<td style="text-align: left;">apply the translation-cache transition selected by the changed <a href="../terminology/#term-field">fields</a></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ECR</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-ecr-max-edepth"><code>ECR.MAX_EDEPTH</code></a> and <a href="#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a>; <a href="#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> is hardware managed and the supplied value is <a href="../terminology/#term-ignored">ignored</a></td>
-<td style="text-align: left;">setting <a href="#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a> validates EPC, ECS, EDS, and all configured event stack pairs</td>
-<td style="text-align: left;">replace the complete writable image atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ICAP</code>, <code>ITOP</code></td>
-<td style="text-align: left;">none</td>
-<td style="text-align: left;">every write raises <a href="../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a></td>
-<td style="text-align: left;">no state change</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ITHRESH</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-ithresh-threshold"><code>ITHRESH.THRESHOLD</code></a>; bits 63 through 24 <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;">reject a nonzero <a href="../terminology/#term-reserved">reserved</a> bit</td>
-<td style="text-align: left;">replace the threshold atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ISEL</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-isel-bank"><code>ISEL.BANK</code></a> and <a href="#register-field-base-control-registers-isel-word"><code>ISEL.WORD</code></a>; bits 63 through 20 <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-isel-word"><code>ISEL.WORD</code></a> must select at least one implemented nonzero identity</td>
-<td style="text-align: left;">replace the selector atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>IDATA</code></td>
-<td style="text-align: left;">bank-dependent 64-bit word</td>
-<td style="text-align: left;">reject pending-bank writes and bits outside the implemented identity range</td>
-<td style="text-align: left;">apply W1S, W1C, or enable-word replacement atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>DTRSEL</code></td>
-<td style="text-align: left;"><a href="../architectural-debug/#register-field-base-control-registers-dtrsel-slot"><code>DTRSEL.SLOT</code></a> and <a href="../architectural-debug/#register-field-base-control-registers-dtrsel-bank"><code>DTRSEL.BANK</code></a>; bits 63 through 18 <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;"><a href="../architectural-debug/#register-field-base-control-registers-dtrsel-slot"><code>DTRSEL.SLOT</code></a> must be below <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-debug-triggers-parameters-slot-count"><code>SLOT_COUNT</code></a> and <a href="../architectural-debug/#register-field-base-control-registers-dtrsel-bank"><code>DTRSEL.BANK</code></a> must be 0 through 2</td>
-<td style="text-align: left;">replace the selector atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>DTRDATA</code></td>
-<td style="text-align: left;">selected <a href="../architectural-debug/#debug-trigger-base-debug-triggers-trigger-slot-config"><code>CONFIG</code></a>, <a href="../architectural-debug/#debug-trigger-base-debug-triggers-trigger-slot-low"><code>LOW</code></a>, or <a href="../architectural-debug/#debug-trigger-base-debug-triggers-trigger-slot-high"><code>HIGH</code></a> word</td>
-<td style="text-align: left;">active slots permit only an exact <a href="../architectural-debug/#debug-trigger-base-debug-triggers-trigger-slot-config-valid"><code>CONFIG.VALID</code></a>-clear <a href="../architectural-debug/#debug-trigger-base-debug-triggers-trigger-slot-config"><code>CONFIG</code></a> write; activation validates the complete staged slot</td>
-<td style="text-align: left;">replace the selected word or activate the staged slot atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EPC</code></td>
-<td style="text-align: left;">complete 64-bit entry address</td>
-<td style="text-align: left;">16-byte aligned, canonical, and executable under the matching code-segment image</td>
-<td style="text-align: left;">replace the selected register atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>ECS</code>, <code>EDS</code>, <code>SSS</code>, <code>ISS</code>, <code>FSS</code>, <code>DSS</code></td>
-<td style="text-align: left;">complete 64-bit segment image</td>
-<td style="text-align: left;">apply the architectural segment-image validity rule</td>
-<td style="text-align: left;">replace the selected register atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>SSP</code>, <code>ISP</code>, <code>FSP</code>, <code>DSP</code></td>
-<td style="text-align: left;">complete 64-bit configured stack top</td>
-<td style="text-align: left;">64-byte aligned</td>
-<td style="text-align: left;">replace the selected register atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>UPC</code>, <code>USP</code>, <code>UCS</code>, <code>UDS</code>, <code>USS</code></td>
-<td style="text-align: left;">complete 64-bit saved user-return value</td>
-<td style="text-align: left;">defer complete-bank validation until <a href="#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a> is set</td>
-<td style="text-align: left;">replace the selected register atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>UINFO</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-uinfo-event-code"><code>UINFO.EVENT_CODE</code></a> in bits 31 through 0; bits 63 through 32 <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;">reject a nonzero <a href="../terminology/#term-reserved">reserved</a> bit; validate the event-code-dependent bank when <a href="#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a> is set</td>
-<td style="text-align: left;">replace UINFO atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>UCTL</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a>, <a href="#register-field-base-control-registers-uctl-status"><code>UCTL.STATUS</code></a>, and <a href="#register-field-base-control-registers-uctl-flags"><code>UCTL.FLAGS</code></a>; <a href="../terminology/#term-reserved">reserved</a> bits <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;">setting <a href="#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a> validates the complete user-return bank and requires saved <a href="#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a>, <a href="#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a>, <a href="#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>, and <a href="#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> to be zero</td>
-<td style="text-align: left;">replace UCTL atomically after complete-bank validation</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>BOOTPC</code></td>
-<td style="text-align: left;">complete 64-bit warm-reset target</td>
-<td style="text-align: left;">the value is used as the exact PC after warm RESET</td>
-<td style="text-align: left;">replace BOOTPC atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>BOOTCFG</code></td>
-<td style="text-align: left;">complete opaque 64-bit platform boot configuration</td>
-<td style="text-align: left;">no image transformation</td>
-<td style="text-align: left;">replace BOOTCFG atomically</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>PMC</code></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-pmc-en"><code>PMC.EN</code></a>; <a href="../terminology/#term-reserved">reserved</a> bits <a href="../terminology/#term-must-be-zero">must be zero</a></td>
-<td style="text-align: left;"><a href="#register-field-base-control-registers-pmc-en"><code>PMC.EN</code></a> is Boolean</td>
-<td style="text-align: left;">replace PMC atomically</td>
-</tr>
-</tbody>
-</table>
+<p>The selector table is complete for the architectural <a href="../terminology/#term-control-register">control registers</a> defined by this manual and is ordered by selector value. The selected register or the subsystem that owns it defines the accepted WRCR source image, validation conditions, and successful-commit effects.</p>
 <p><img alt="PTCR Format" src="../../assets/visuals/isa/programming-model-09.svg" /></p>
 <p><strong>PTCR Format</strong></p>
 <p>In the diagram, <code>P</code> abbreviates <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a>.</p>
@@ -14936,7 +14818,7 @@
 </tr>
 </tbody>
 </table>
-<p>The reset PTCR image is zero. When <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> is zero, ordinary memory accesses do not interpret <a href="#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> or <a href="#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>. When <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> is one, <a href="#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> must be <code>010</code> or <code>011</code> and <a href="#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a> must satisfy the implementation <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> constraint.</p>
+<p>The reset PTCR image is zero. When <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> is zero, ordinary memory accesses do not interpret <a href="#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> or <a href="#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>. When <a href="#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> is one, <a href="#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> must be <code>010</code> or <code>011</code> and <a href="#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a> must satisfy the implementation <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> constraint. A successful WRCR of PTCR commits the complete image and the translation-cache transition selected by its changed fields atomically.</p>
 <p><img alt="UINFO Format" src="../../assets/visuals/isa/programming-model-10.svg" /></p>
 <p><strong>UINFO Format</strong></p>
 <p><strong>UINFO Fields</strong></p>
@@ -14996,6 +14878,7 @@
 </tr>
 </tbody>
 </table>
+<p>A successful WRCR validates the complete ASCR image, then commits it and the translation-cache transition selected by the changed <a href="#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a> or <a href="#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> field atomically.</p>
 <p><img alt="ECR Format" src="../../assets/visuals/isa/programming-model-12.svg" /></p>
 <p><strong>ECR Format</strong></p>
 <p><strong>ECR Fields</strong></p>
@@ -15041,7 +14924,7 @@
 <p>Each logical processor owns an interrupt file for identities 1 through <a href="#register-field-base-control-registers-icap-max-id" id="register-field-base-control-registers-icap-max-id"></a><code>ICAP.MAX_ID</code>; identity zero is reserved. Each implemented identity has one pending bit and one enable bit. Posting a valid identity sets its pending bit, repeated postings coalesce, and posting zero or an identity above <a href="#register-field-base-control-registers-icap-max-id"><code>ICAP.MAX_ID</code></a> has no effect.</p>
 <p>An identity is eligible when both bits are set and <a href="#register-field-base-control-registers-ithresh-threshold" id="register-field-base-control-registers-ithresh-threshold"></a><code>ITHRESH.THRESHOLD</code> is zero or the identity is numerically less than the threshold. Lower identity numbers have higher priority. <a href="#register-field-base-control-registers-itop-top" id="register-field-base-control-registers-itop-top"></a><code>ITOP.TOP</code> reads as the lowest eligible identity, or zero when none is eligible. <code>ICAP</code> and <code>ITOP</code> are read-only.</p>
 <p><a href="#register-field-base-control-registers-isel-word" id="register-field-base-control-registers-isel-word"></a><code>ISEL.WORD</code> selects a 64-identity word and <a href="#register-field-base-control-registers-isel-bank" id="register-field-base-control-registers-isel-bank"></a><code>ISEL.BANK</code> selects its view through <code>IDATA</code>. Bank zero reads pending bits and is read-only. Bank one reads zero and writes pending bits with write-one-to-set semantics. Bank two reads zero and clears pending bits with write-one-to-clear semantics. Bank three reads enable bits and replaces the selected enable word on write. A selected word is valid only when it contains at least one implemented nonzero identity. Bits for identity zero or identities above <a href="#register-field-base-control-registers-icap-max-id"><code>ICAP.MAX_ID</code></a> are reserved.</p>
-<p>Writing <code>ICAP</code>, <code>ITOP</code>, pending bank zero, or an invalid <a href="#register-field-base-control-registers-isel-word"><code>ISEL.WORD</code></a> raises <a href="../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>. Nonzero reserved bits in <code>ISEL</code>, <code>ITHRESH</code>, or a writable <code>IDATA</code> bank raise <a href="../architectural-event-processing-model/#event-reserved-control-bits"><code>RESERVED_CONTROL_BITS</code></a>. Validation precedes the write, so a fault changes neither the interrupt file nor its selector.</p>
+<p>Writing <code>ICAP</code>, <code>ITOP</code>, pending bank zero, or an invalid <a href="#register-field-base-control-registers-isel-word"><code>ISEL.WORD</code></a> raises <a href="../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>. Nonzero reserved bits in <code>ISEL</code>, <code>ITHRESH</code>, or a writable <code>IDATA</code> bank raise <a href="../architectural-event-processing-model/#event-reserved-control-bits"><code>RESERVED_CONTROL_BITS</code></a>. Validation precedes the write, so a fault changes neither the interrupt file nor its selector. A successful WRCR of <code>ITHRESH</code> or <code>ISEL</code> atomically replaces the selected threshold or selector. A successful WRCR of <code>IDATA</code> atomically applies the selected bank’s write-one-to-set, write-one-to-clear, or enable-word replacement operation.</p>
 <p><img alt="UCTL Format" src="../../assets/visuals/isa/programming-model-14.svg" /></p>
 <p><strong>UCTL Format</strong></p>
 <p><strong>UCTL Fields</strong></p>
@@ -15101,10 +14984,10 @@
 </tr>
 </tbody>
 </table>
-<p>EPC is the exact common event-entry address, must be 16-byte aligned, and must be canonical and executable under ECS. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or return. ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100 through 0x0102 are <a href="../terminology/#term-reserved">reserved</a>. A write that establishes <a href="#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a> validates the complete user bank and requires saved <a href="#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a>, <a href="#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a>, <a href="#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>, and <a href="#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> to be zero. ERET revalidates the selected return source before committing. BOOTPC and BOOTCFG are initialized by the platform during cold reset and <a href="../terminology/#term-preserved">preserved</a> by RESET.</p>
+<p>WRCR accepts <a href="#register-field-base-control-registers-pmc-en"><code>PMC.EN</code></a> with every reserved bit zero and atomically replaces PMC. Clearing the field freezes the current performance-counter values without clearing them. Selectors 0x0100 through 0x0102 are <a href="../terminology/#term-reserved">reserved</a>.</p>
 <h2 id="control-flow-integrity-controls">Control-Flow Integrity Controls <a href="#section-cfi-control-registers" id="section-cfi-control-registers"></a></h2>
-<p><a href="#register-field-cfi-control-registers-cfictl-l" id="register-field-cfi-control-registers-cfictl-l"></a><code>CFICTL.L</code> enables indirect-landing enforcement and <a href="#register-field-cfi-control-registers-cfictl-s" id="register-field-cfi-control-registers-cfictl-s"></a><code>CFICTL.S</code> enables shadow-return enforcement; every other bit is reserved and must be zero. CFISS is a validated segment image used only by implicit shadow-stack accesses. CFISP is 16-byte aligned. A shadow frame stores the continuation PC at offset 0 and its code-segment image at offset 8.</p>
-<p>RDCR and WRCR use selectors <code>0x1200</code>, <code>0x1201</code>, and <code>0x1202</code> for CFICTL, CFISS, and CFISP.</p>
+<p><a href="#register-field-cfi-control-registers-cfictl-l" id="register-field-cfi-control-registers-cfictl-l"></a><code>CFICTL.L</code> enables indirect-landing enforcement and <a href="#register-field-cfi-control-registers-cfictl-s" id="register-field-cfi-control-registers-cfictl-s"></a><code>CFICTL.S</code> enables shadow-return enforcement; every other bit is reserved and must be zero. CFISS must be a valid, enabled segment image used only by implicit shadow-stack accesses, and CFISP must be 16-byte aligned. A shadow frame stores the continuation PC at offset 0 and its code-segment image at offset 8.</p>
+<p>RDCR and WRCR use selectors <code>0x1200</code>, <code>0x1201</code>, and <code>0x1202</code> for CFICTL, CFISS, and CFISP. WRCR to CFICTL accepts only L and S. Enabling S, or writing CFISS or CFISP while S remains set, requires the complete candidate shadow-stack state to admit a 16-byte push. A successful write atomically replaces the selected register.</p>
 
 
 
