@@ -58,7 +58,7 @@ static i32 screen_y[8];
 static volatile u32 delay_sink;
 static u64 l3_table[2048] __attribute__((aligned(16384)));
 static u64 l2_table[2048] __attribute__((aligned(16384)));
-static u64 l1_table[2048] __attribute__((aligned(16384)));
+static u64 l1_table[512] __attribute__((aligned(4096)));
 
 static void map16k(u64 va, u64 pa, u64 flags) {
   u64 l3i = (va >> 34) & 2047ULL;

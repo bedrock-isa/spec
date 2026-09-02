@@ -15,8 +15,11 @@ function paging_root_level(ptcr : bits(64)) -> option(int) =
   else if ptcr[3 .. 1] == 0b011 then Some(4)
   else None()
 
-function paging_pfn_mask(ptcr : bits(64)) -> bits(64) =
+function paging_leaf_pfn_mask(ptcr : bits(64)) -> bits(64) =
   0x00FFFFFFFFFFC000
+
+function paging_next_table_mask(ptcr : bits(64)) -> bits(64) =
+  0x00FFFFFFFFFFF000
 
 function physical_address_fits_pabits(address : bits(64)) -> bool =
   address[63 .. 56] == 0x00
@@ -42,7 +45,8 @@ function pte_structurally_valid(pte : bits(64), level : int) -> bool =
   if pte[0] == bitzero then false
   else if (pte & 0xFC00000000000000) != 0x0000000000000000 then false
   else if pte[1] == bitone then
-    level > 1 & (pte & 0x0000000000003F40) == 0x0000000000000000
+    level > 1 & (pte & 0x0000000000000F40) == 0x0000000000000000
+      & (level == 2 | (pte & 0x0000000000003000) == 0x0000000000000000)
       & pte[4 .. 2] != 0b000
   else (pte & 0x0000000000003800) == 0x0000000000000000
     & (pte & paging_leaf_alignment_mask(level)) == 0x0000000000000000
@@ -197,7 +201,7 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
           state, advance_pc(evaluated.image, instruction), instruction, CommitControl,
           destination, PhasePteRead, 0, linear, bits_from_int(target_level),
           pte_read_request(state, ptquery, linear,
-                           ptcr & paging_pfn_mask(ptcr),
+                           ptcr & paging_leaf_pfn_mask(ptcr),
                            root_level, target_level, 0)
         ),
     }

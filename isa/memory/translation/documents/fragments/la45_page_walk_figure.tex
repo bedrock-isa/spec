@@ -26,19 +26,19 @@
 \draw[->,black,densely dashed,line width=0.35pt] (1.315,5.68) -- (1.315,5.42) -- (canon.north);
 
 \node[draw,align=center,minimum width=0.72in,minimum height=0.34in,inner sep=1.5pt] (root) at (0.70,4.38) {PTCR\\root\_page};
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl0) at (1.75,4.38) {L3\\table page};
+\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl0) at (1.75,4.38) {16-KiB L3\\table object};
 \node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent0) at (3.25,4.38) {selected L3 PTE\\leaf or table};
 \draw[->] (root.east) -- (tbl0.west);
 \draw[->] (tbl0.east) -- node[above,align=center,font=\scriptsize] {L3 idx\\bits 44..34} (ent0.west);
 \draw[->,black,densely dashed,line width=0.35pt] (2.525,5.68) -- (2.525,5.54) -- (3.93,5.54) -- (3.93,4.38) -- (ent0.east);
 
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl1) at (1.75,3.58) {L2\\table page};
+\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl1) at (1.75,3.58) {16-KiB L2\\table object};
 \node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent1) at (3.25,3.58) {selected L2 PTE\\leaf or table};
 \draw[->] (ent0.south) -- (3.25,3.94) -- (1.75,3.94) -- (tbl1.north);
 \draw[->] (tbl1.east) -- node[above,align=center,font=\scriptsize] {L2 idx\\bits 33..23} (ent1.west);
 \draw[->,black,densely dashed,line width=0.35pt] (3.41,5.68) -- (3.41,5.50) -- (4.03,5.50) -- (4.03,3.58) -- (ent1.east);
 
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl2) at (1.75,2.78) {L1\\table page};
+\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl2) at (1.75,2.78) {4-KiB L1\\table object};
 \node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent2) at (3.25,2.78) {selected\\L1 leaf PTE\\(:ref:base.memory.translation.PTE.PFN:) + flags};
 \draw[->] (ent1.south) -- (3.25,3.14) -- (1.75,3.14) -- (tbl2.north);
 \draw[->] (tbl2.east) -- node[above,align=center,font=\scriptsize] {L1 idx\\bits 22..14} (ent2.west);
@@ -52,7 +52,8 @@
 \draw[->] (plus.east) -- (phys.west);
 \draw[->,black,densely dashed,line width=0.35pt] (5.14,5.68) -- (5.14,5.42) -- (4.33,5.42) -- (4.33,2.14) -- (3.12,2.14) -- (plus.north);
 
-\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.30) {Maximum-depth walk shown. At L3 and L2, (:ref:base.memory.translation.PTE.T:)\texttt{=1} continues and (:ref:base.memory.translation.PTE.T:)\texttt{=0} terminates at an aligned byte leaf;\\the terminating level selects the offset width. L1 terminates as a byte leaf.};
+\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.30) {Maximum-depth walk shown. At L3 and L2, (:ref:base.memory.translation.PTE.T:)\texttt{=1} continues and (:ref:base.memory.translation.PTE.T:)\texttt{=0} terminates at an aligned leaf;\\the terminating level selects the offset width. L3-to-L2 requires 16-KiB alignment;\\L2-to-L1 consumes the full 4-KiB-aligned (:ref:base.memory.translation.PTE.NEXT_TABLE:).};
 \end{tikzpicture}
+\par
 \BedrockFigureCaption{LA45 Three-Level Page Walk}
 \end{center}

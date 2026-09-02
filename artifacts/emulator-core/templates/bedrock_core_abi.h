@@ -27,7 +27,8 @@ typedef enum bedrock_core_status {
   BEDROCK_CORE_BAD_ARGUMENT = 4,
   BEDROCK_CORE_OUT_OF_MEMORY = 5,
   BEDROCK_CORE_BAD_STATE = 6,
-  BEDROCK_CORE_VECTOR_LANE = 7
+  BEDROCK_CORE_VECTOR_LANE = 7,
+  BEDROCK_CORE_DEBUG_STOP = 8
 } bedrock_core_status;
 
 typedef struct bedrock_core_fault {

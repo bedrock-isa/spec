@@ -4,15 +4,26 @@
 
 #define PAGE_POOL_COUNT 50u
 #define USER_FRAME_COUNT 4u
+#define L1_TABLE_SIZE 4096u
+#define L1_TABLES_PER_FRAME (PAGE_SIZE / L1_TABLE_SIZE)
 
 static u8 page_pool[PAGE_POOL_COUNT][PAGE_SIZE]
     __attribute__((aligned(PAGE_SIZE), section(".page_pool")));
 static u64 user_frames[USER_FRAME_COUNT];
 static u32 next_page;
+static u64 l1_backing_frame;
+static u32 next_l1_slot;
 
 static void zero_page(u64 address) {
   volatile u64 *words = (volatile u64 *)address;
   for (u32 i = 0; i < PAGE_SIZE / sizeof(u64); i++) {
+    words[i] = 0;
+  }
+}
+
+static void zero_l1_table(u64 address) {
+  volatile u64 *words = (volatile u64 *)address;
+  for (u32 i = 0; i < L1_TABLE_SIZE / sizeof(u64); i++) {
     words[i] = 0;
   }
 }
@@ -25,6 +36,8 @@ static u64 align_up(u64 value) {
 
 void memory_init(void) {
   next_page = 0;
+  l1_backing_frame = 0;
+  next_l1_slot = L1_TABLES_PER_FRAME;
   for (u32 i = 0; i < USER_FRAME_COUNT; i++) {
     user_frames[i] = memory_alloc_page();
   }
@@ -40,6 +53,21 @@ u64 memory_alloc_page(void) {
   zero_page(page);
   g_kernel_stats.page_count = next_page;
   return page;
+}
+
+static u64 memory_alloc_l1_table(void) {
+  if (next_l1_slot >= L1_TABLES_PER_FRAME) {
+    l1_backing_frame = memory_alloc_page();
+    if (l1_backing_frame == 0) {
+      return 0;
+    }
+    next_l1_slot = 0;
+  }
+
+  u64 table = l1_backing_frame + (u64)next_l1_slot * L1_TABLE_SIZE;
+  next_l1_slot++;
+  zero_l1_table(table);
+  return table;
 }
 
 void memory_fill_page(u64 addr, u32 seed) {
@@ -101,7 +129,7 @@ u32 memory_map_page(u64 ptcr, u64 virtual_address, u64 physical_address,
     volatile u64 *slot = (volatile u64 *)((u64)table + ((u64)index << 3));
     u64 entry = *slot;
     if ((entry & PAGE_PRESENT) == 0u) {
-      u64 child = memory_alloc_page();
+      u64 child = level == 0u ? memory_alloc_page() : memory_alloc_l1_table();
       if (child == 0) {
         return 0;
       }
@@ -110,7 +138,8 @@ u32 memory_map_page(u64 ptcr, u64 virtual_address, u64 physical_address,
     } else if ((entry & PAGE_TABLE) == 0u) {
       return 0;
     }
-    table = (u64 *)(entry & ~(PAGE_SIZE - 1u));
+    u64 child_size = level == 0u ? PAGE_SIZE : L1_TABLE_SIZE;
+    table = (u64 *)(entry & ~(child_size - 1u));
   }
 
   u64 leaf_index = (virtual_address >> 14) & 0x1ffu;

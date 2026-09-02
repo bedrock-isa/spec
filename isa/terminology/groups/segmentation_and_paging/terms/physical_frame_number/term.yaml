@@ -6,6 +6,6 @@ abbreviation:
   canonical: PFN
 article: a
 definition: >-
-  a 16-KiB frame identifier used by page-table entries. An L1, L2, L3, or L4
+  a 16-KiB frame identifier used by leaf page-table entries. An L1, L2, L3, or L4
   leaf PTE combines its naturally aligned PFN base with the low 14, 23, 34, or
   45 linear-address bits respectively to form a byte address.

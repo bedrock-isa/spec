@@ -26,7 +26,8 @@ generation needs a Python environment other than `python3`.
   images, and enables paging before entering the shell. `EDS` stays flat
   because kernel C address arithmetic can materialize non-address intermediate
   values through `LEA`.
-- `memory.c` owns a 16 KiB page allocator, LA45 three-level page-table builder, the
+- `memory.c` owns a 16 KiB frame allocator, a four-slot 4 KiB L1-table allocator,
+  an LA45 three-level page-table builder, the
   shared user-image frame arena, and PTCR/ASID switching. Kernel code is RX,
   kernel data and MMIO are RW/NX, and supervisor mappings omit the user bit.
 - `process.c` tracks the shell process plus one process record per embedded

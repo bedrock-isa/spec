@@ -1,7 +1,7 @@
 \subsection{Address-Width Discovery}
 (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) is the authoritative physical-address bound for the current
 (:term:base.terms.logical_processor:) and has a value from 32 through 56. A (:term:base.terms.physical_address:) is
-representable only when it is less than $2^{\text{(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)}}$. Page-table roots, every present (:ref:base.memory.translation.PTE.PFN:), translated
+representable only when it is less than $2^{\text{(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)}}$. Page-table roots, every present leaf (:ref:base.memory.translation.PTE.PFN:), every present table-pointer (:ref:base.memory.translation.PTE.NEXT_TABLE:), translated
 results, and paging-disabled (:term:base.terms.physical_address|plural:) are subject to that bound.
 
 (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) does not select a translation-table format or translation-cache identity. (:ref:base.control_registers.PTCR.TT:) selects the

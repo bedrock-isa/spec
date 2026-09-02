@@ -18,10 +18,12 @@ const PTE_USER: u64 = 1 << 5;
 const PTE_ACCESSED: u64 = 1 << 7;
 const PTE_DIRTY: u64 = 1 << 8;
 const PTE_CP_MASK: u64 = 0b11 << 9;
-const PTE_PFN_MASK: u64 = PHYSICAL_MASK & !0x3fff;
+const PTE_LEAF_PFN_MASK: u64 = PHYSICAL_MASK & !0x3fff;
+const PTE_NEXT_TABLE_MASK: u64 = PHYSICAL_MASK & !0x0fff;
 const PTE_UPPER_RESERVED_MASK: u64 = 0b11_1111 << 58;
 const PTE_LEAF_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0b111 << 11);
-const PTE_TABLE_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0b11_1111 << 8) | (1 << 6);
+const PTE_TABLE_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0b1111 << 8) | (1 << 6);
+const PTE_UPPER_TABLE_ALIGNMENT_MASK: u64 = 0b11 << 12;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TranslationAccess {
@@ -130,7 +132,7 @@ pub(crate) fn translate(
         let valid = if leaf {
             valid_leaf_entry(entry, level)
         } else {
-            level > 1 && valid_table_entry(entry)
+            valid_table_entry(entry, level)
         };
         if !valid {
             return Err(page_fault(2, format!("invalid level-{level} PTE")));
@@ -174,7 +176,7 @@ pub(crate) fn translate(
         }
 
         if leaf {
-            let address = (entry & PTE_PFN_MASK) | (linear & leaf_offset_mask(level));
+            let address = (entry & PTE_LEAF_PFN_MASK) | (linear & leaf_offset_mask(level));
             return Ok(TranslationResult {
                 address,
                 access_class: i32::from(((entry & PTE_AM_MASK) >> 2) >= 5),
@@ -182,7 +184,7 @@ pub(crate) fn translate(
                 cache_policy: ((entry & PTE_CP_MASK) >> 9) as i64,
             });
         }
-        table = entry & PTE_PFN_MASK;
+        table = entry & PTE_NEXT_TABLE_MASK;
     }
     Err(page_fault(2, "page walk did not reach a leaf PTE"))
 }
@@ -220,9 +222,11 @@ fn access_fault(detail: impl Into<String>) -> TranslationError {
     })
 }
 
-const fn valid_table_entry(entry: u64) -> bool {
-    entry & (PTE_PRESENT | PTE_TABLE) == (PTE_PRESENT | PTE_TABLE)
+const fn valid_table_entry(entry: u64, level: u8) -> bool {
+    level > 1
+        && entry & (PTE_PRESENT | PTE_TABLE) == (PTE_PRESENT | PTE_TABLE)
         && entry & PTE_TABLE_RESERVED_MASK == 0
+        && (level == 2 || entry & PTE_UPPER_TABLE_ALIGNMENT_MASK == 0)
         && entry & (PTE_TABLE_R | PTE_TABLE_W | PTE_TABLE_X) != 0
 }
 
@@ -230,7 +234,7 @@ const fn valid_leaf_entry(entry: u64, level: u8) -> bool {
     entry & PTE_PRESENT != 0
         && entry & PTE_TABLE == 0
         && entry & PTE_LEAF_RESERVED_MASK == 0
-        && entry & (leaf_offset_mask(level) & PTE_PFN_MASK) == 0
+        && entry & (leaf_offset_mask(level) & PTE_LEAF_PFN_MASK) == 0
 }
 
 const fn table_permissions(entry: u64) -> (bool, bool, bool) {
@@ -325,6 +329,44 @@ mod tests {
             TranslationError::Fault(TranslationFault {
                 kind: FAULT_TRANSLATION,
                 cause: 3,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn l2_pointer_preserves_four_kibibyte_aligned_l1_base() {
+        let mut ram = Ram::new(0x20_000);
+        ram.write_u64(0x4000, 0x8000 | TABLE).unwrap();
+        ram.write_u64(0x8000, 0x9000 | TABLE).unwrap();
+        ram.write_u64(0x9010, 0x1_4000 | LEAF_RW).unwrap();
+
+        let result = translate(
+            &mut ram,
+            0x8000,
+            0x4005,
+            TranslationAccess::Read,
+            false,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(result.address, 0x1_4000);
+    }
+
+    #[test]
+    fn upper_table_pointer_requires_sixteen_kibibyte_alignment() {
+        let mut ram = Ram::new(0x20_000);
+        ram.write_u64(0x4000, 0x9000 | TABLE).unwrap();
+
+        let error =
+            translate(&mut ram, 0, 0x4005, TranslationAccess::Read, false, true).unwrap_err();
+
+        assert!(matches!(
+            error,
+            TranslationError::Fault(TranslationFault {
+                kind: FAULT_TRANSLATION,
+                cause: 2,
                 ..
             })
         ));

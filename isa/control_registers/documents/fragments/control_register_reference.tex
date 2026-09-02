@@ -40,8 +40,8 @@ In the diagram, \texttt{P} abbreviates (:ref:base.control_registers.PTCR.PE:).
 \rowcolor{BedrockHeaderFill}
 \textbf{Encoding} & \textbf{Translation-Table Format}\\
 \midrule
-\texttt{010} & 16-KiB table pages with LA45 three-level paging\\
-\texttt{011} & 16-KiB table pages with LA56 four-level paging\\
+\texttt{010} & LA45 three-level paging with 16-KiB L3/L2 and 4-KiB L1 table objects\\
+\texttt{011} & LA56 four-level paging with 16-KiB L4/L3/L2 and 4-KiB L1 table objects\\
 all others & (:term:base.terms.reserved:)\\
 \bottomrule
 \end{BedrockTabular}

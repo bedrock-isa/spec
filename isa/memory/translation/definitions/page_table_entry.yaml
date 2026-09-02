@@ -5,7 +5,6 @@ common_fields:
 - {id: T, lsb: 1, bits: 1}
 - {id: U, lsb: 5, bits: 1}
 - {id: A, lsb: 7, bits: 1}
-- {id: PFN, lsb: 14, bits: 42}
 - {id: SW, lsb: 56, bits: 2}
 layouts:
   leaf:
@@ -14,8 +13,10 @@ layouts:
     - {id: G, lsb: 6, bits: 1}
     - {id: D, lsb: 8, bits: 1}
     - {id: CP, lsb: 9, bits: 2}
+    - {id: PFN, lsb: 14, bits: 42}
   table_pointer:
     fields:
     - {id: R, lsb: 2, bits: 1}
     - {id: W, lsb: 3, bits: 1}
     - {id: X, lsb: 4, bits: 1}
+    - {id: NEXT_TABLE, lsb: 12, bits: 44}

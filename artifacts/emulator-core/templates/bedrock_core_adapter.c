@@ -96,6 +96,9 @@ static bedrock_core_status bedrock_core_accept_execution(
     core->fault.error_code = fault->zerror_code;
     core->fault.bus_error = fault->zbus_error ? 1 : 0;
     core->last_status = BEDROCK_CORE_FAULT;
+  } else if (execution->zdebug_stop.kind == Kind_zSomezIRDebug_stopzK) {
+    bedrock_core_discard_pending(core);
+    core->last_status = BEDROCK_CORE_DEBUG_STOP;
   } else if (execution->zawaiting_environment) {
     struct zPrimitive_request *request =
         (struct zPrimitive_request *)&execution->zrequest;

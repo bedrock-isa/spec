@@ -5,14 +5,20 @@ the walk can produce a translation, the (:term:base.terms.linear_address:) must 
 (:ref:base.control_registers.PTCR.TT:). A noncanonical address raises (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:). With paging disabled, the memory system uses
 the (:term:base.terms.linear_address:) directly and does not interpret (:ref:base.control_registers.PTCR.TT:) or (:ref:base.control_registers.PTCR.ROOT_PAGE:).
 
-Every table page is one 16-KiB-aligned physical frame, and every page-table entry is one naturally aligned 64-bit descriptor. L4, L3, and L2 use
-an 11-bit address (:term:base.terms.field:) to select one of 2048 entries. L1 uses a nine-bit address (:term:base.terms.field:) to select one of 512 entries in bytes
-\texttt{0x0000..0x0fff}; the walker does not access bytes \texttt{0x1000..0x3fff} of an L1 table page. For a table-page base address $B$ and
-index $i$, the selected entry is always at $B+8i$. PTEs are a dense array of eight-byte descriptors. The architecture does not define packed
-L1 tables, sub-page table pointers, or table fragments. The trailing L1 bytes are not reserved storage attached to individual PTEs.
+Every page-table entry is one naturally aligned 64-bit descriptor. L4, L3, and
+L2 are 16-KiB-aligned table objects containing 2048 entries selected by an
+11-bit address (:term:base.terms.field:). L1 is a 4-KiB-aligned table object containing exactly 512
+entries selected by a nine-bit address (:term:base.terms.field:). For a table-object base address $B$
+and index $i$, the selected entry is always at $B+8i$. PTEs are a dense array
+of eight-byte descriptors; an L1 object has no architecturally unreachable
+trailing storage.
 
-The walker starts at the physical table page named by (:ref:base.control_registers.PTCR.ROOT_PAGE:) for the selected format. At each active level,
-a present selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=1} points to the next 16-KiB table page; this form is valid only above L1.
+The walker starts at the 16-KiB-aligned physical table object named by (:ref:base.control_registers.PTCR.ROOT_PAGE:) for the selected format. At each active level,
+a present selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=1} supplies
+(:ref:base.memory.translation.PTE.NEXT_TABLE:), the exact base address of the next table object; this form is valid only above L1.
+An L4-to-L3 or L3-to-L2 transition requires a 16-KiB-aligned target. An
+L2-to-L1 transition requires only a 4-KiB-aligned target, so the walker
+preserves (:ref:base.memory.translation.PTE.NEXT_TABLE:)\texttt{[13:12]} for that transition.
 A selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=0} terminates the walk as a byte-addressed leaf. Define the number of low
 linear-address bits supplied by a leaf at level $L$ as $o(L1)=14$, $o(L2)=23$, $o(L3)=34$, and $o(L4)=45$. The leaf
 (:ref:base.memory.translation.PTE.PFN:) supplies a naturally aligned physical base, and the final byte address is:
@@ -24,6 +30,19 @@ linear-address bits supplied by a leaf at level $L$ as $o(L1)=14$, $o(L2)=23$, $
 
 The resulting L1 through L4 leaf sizes are 16 KiB, 8 MiB, 16 GiB, and 32 TiB. Bit 7 is (:ref:base.memory.translation.PTE.A:) in both descriptor
 layouts and does not participate in address formation.
+
+Software may place up to four independent L1 objects in one 16-KiB physical
+backing frame, including objects belonging to different roots or ASIDs in the
+same supervisor-owned physical-memory domain. Such co-location does not combine
+address-space permissions: each table pointer and leaf continues to govern its
+own subtree or mapping. A backing frame is used only for L1 storage while any
+of its four slots is live. Slot allocation, ownership, zeroing before linking,
+reference counting, and reclamation are software responsibilities. Independently
+protected physical ownership domains may use separate allocator pools without
+changing the descriptor format. Software may instead allocate every L1 object
+at a 16-KiB-aligned address by keeping
+(:ref:base.memory.translation.PTE.NEXT_TABLE:)\texttt{[13:12]=00}; every conforming walker must nevertheless
+accept all four 4-KiB-aligned L1 positions.
 
 The walker intersects table-pointer (:ref:base.memory.translation.PTE.R:)/(:ref:base.memory.translation.PTE.W:)/(:ref:base.memory.translation.PTE.X:)/(:ref:base.memory.translation.PTE.U:) (:term:base.terms.field|plural:) while descending. The
 terminating leaf supplies decoded (:ref:base.memory.translation.PTE.AM:) permissions, (:ref:base.memory.translation.PTE.U:), the final (:ref:base.memory.translation.PTE.PFN:),

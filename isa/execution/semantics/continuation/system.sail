@@ -27,7 +27,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
           if previous.request.role == RequestRolePtqueryPte then
             query_result(previous, 0x0000000000000000, false)
           else {
-          let physical = (raw & paging_pfn_mask(
+          let physical = (raw & paging_leaf_pfn_mask(
                             control_register_value(previous.state,
                                                    ControlRegister_BASE_PTCR)))
                        | (previous.request.value & paging_leaf_offset_mask(level));
@@ -36,7 +36,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
         }
         else {
           let next_level = level - 1;
-          let table = raw & paging_pfn_mask(
+          let table = raw & paging_next_table_mask(
             control_register_value(previous.state, ControlRegister_BASE_PTCR));
           continue_with_request(
             previous, PhasePteRead, pending_transaction(previous.pending).ordinal + 1,

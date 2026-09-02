@@ -40,6 +40,7 @@ pub enum SailCoreStatus {
     OutOfMemory = 5,
     BadState = 6,
     VectorLane = 7,
+    DebugStop = 8,
 }
 
 impl SailCoreStatus {
@@ -53,6 +54,7 @@ impl SailCoreStatus {
             5 => Self::OutOfMemory,
             6 => Self::BadState,
             7 => Self::VectorLane,
+            8 => Self::DebugStop,
             _ => panic!("emulator-core returned unknown status {raw}"),
         }
     }

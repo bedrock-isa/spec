@@ -59,6 +59,7 @@ impl From<BusError> for SailBusExecutionError {
 enum SailBusCompletion {
     Retired,
     VectorLane,
+    DebugStop,
 }
 
 impl SailCore {
@@ -75,14 +76,16 @@ impl SailCore {
             let bytes = fetch_virtual_instruction(self, bus, pc)?;
             self.execute_bus_transaction(bus, &bytes)
         })();
-        if let Ok(completion) = &result {
-            bus.commit_transaction();
-            if monitoring_enabled && *completion == SailBusCompletion::Retired {
-                self.environment.retired_instruction_counter =
-                    self.environment.retired_instruction_counter.wrapping_add(1);
+        let retired = matches!(result, Ok(SailBusCompletion::Retired));
+        match &result {
+            Ok(SailBusCompletion::Retired | SailBusCompletion::VectorLane) => {
+                bus.commit_transaction();
             }
-        } else {
-            bus.rollback_transaction();
+            Ok(SailBusCompletion::DebugStop) | Err(_) => bus.rollback_transaction(),
+        }
+        if monitoring_enabled && retired {
+            self.environment.retired_instruction_counter =
+                self.environment.retired_instruction_counter.wrapping_add(1);
         }
         result.map(|_| ())
     }
@@ -96,10 +99,11 @@ impl SailCore {
     ) -> Result<(), SailBusExecutionError> {
         bus.begin_transaction()?;
         let result = self.execute_bus_transaction(bus, bytes);
-        if result.is_ok() {
-            bus.commit_transaction();
-        } else {
-            bus.rollback_transaction();
+        match &result {
+            Ok(SailBusCompletion::Retired | SailBusCompletion::VectorLane) => {
+                bus.commit_transaction();
+            }
+            Ok(SailBusCompletion::DebugStop) | Err(_) => bus.rollback_transaction(),
         }
         result.map(|_| ())
     }
@@ -115,6 +119,7 @@ impl SailCore {
             match status {
                 SailCoreStatus::Ok => return Ok(SailBusCompletion::Retired),
                 SailCoreStatus::VectorLane => return Ok(SailBusCompletion::VectorLane),
+                SailCoreStatus::DebugStop => return Ok(SailBusCompletion::DebugStop),
                 SailCoreStatus::NeedsEnvironment => {
                     let request = self.last_request().map_err(SailBusExecutionError::Core)?;
                     active_request = Some(Box::new(request.clone()));
@@ -692,6 +697,16 @@ mod tests {
     use crate::{SailCore, SailCoreMemoryRange, SailCoreRequest, SailCoreStatus};
     use bedrock_bus::{Bus, BusResult, Ram};
 
+    fn write_control(core: &mut SailCore, selector: u16, value: u64) {
+        assert_eq!(core.set_register(0, value), SailCoreStatus::Ok);
+        let [low, high] = selector.to_le_bytes();
+        assert_eq!(
+            core.execute(&[0xcb, 0xb5, 0x10, low, high]),
+            SailCoreStatus::Ok,
+            "WRCR {selector:#06x} with {value:#018x}"
+        );
+    }
+
     struct RejectTargetAccessBus;
 
     impl Bus for RejectTargetAccessBus {
@@ -764,6 +779,44 @@ mod tests {
 
         assert!(response.success);
         assert_eq!(response.body, 0x8877_6655_4433_2211u64.to_le_bytes());
+    }
+
+    #[test]
+    fn watchpoint_stopped_store_leaves_dirty_bit_clear() {
+        const TABLE: u64 = 0x1f;
+        const LEAF_RW: u64 = 0x0d;
+        const DIRTY: u64 = 1 << 8;
+        const DTRSEL: u16 = 0x0400;
+        const DTRDATA: u16 = 0x0401;
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.status |= 1 << 4;
+        state.supervisor = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        write_control(&mut core, DTRSEL, 1 << 16);
+        write_control(&mut core, DTRDATA, 0x8000);
+        write_control(&mut core, DTRSEL, 2 << 16);
+        write_control(&mut core, DTRDATA, 0x8008);
+        write_control(&mut core, DTRSEL, 0);
+        write_control(&mut core, DTRDATA, 0x29);
+
+        let mut ram = Ram::new(0x20_000);
+        ram.write_u64(0x4000, 0x8000 | TABLE).unwrap();
+        ram.write_u64(0x8000, 0xc000 | TABLE).unwrap();
+        ram.write_u64(0xc010, 0x1_0000 | LEAF_RW).unwrap();
+        ram.write_u64(0x1_0000, 0xaabb_ccdd_eeff_0011).unwrap();
+        let mut state = core.state().unwrap();
+        state.controls.base_ptcr = 0x4005;
+        state.pc = 0;
+        state.sp = 0x8008;
+        state.registers[0] = 0x1122_3344_5566_7788;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        core.execute_on_bus(&mut ram, &[0x30]).unwrap();
+
+        assert_eq!(ram.read_u64(0x1_0000).unwrap(), 0xaabb_ccdd_eeff_0011);
+        assert_eq!(ram.read_u64(0xc010).unwrap() & DIRTY, 0);
     }
 
     #[test]

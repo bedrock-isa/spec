@@ -1,12 +1,13 @@
 \clearpage
 \subsection{Page-Table Entry Format}\label{section:page-table-entry-format}
 
-Every page-table entry is one naturally aligned 64-bit descriptor. Bits
-\texttt{55..14} are a fixed (:term:base.terms.physical_frame_number:) (:term:base.terms.field:), so this format has a
-56-bit architectural physical-address ceiling. An implementation reports its
-exact (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) value, from 32 through 56, through CPUID
-\texttt{ADDRESS\_WIDTHS}. In a present descriptor, (:ref:base.memory.translation.PTE.PFN:) bits at or above that
-value (:term:base.terms.must_be_zero:). Bits \texttt{13..11} are (:term:base.terms.reserved:) and (:term:base.terms.must_be_zero:) in a present descriptor.
+Every page-table entry is one naturally aligned 64-bit descriptor. A leaf owns
+(:ref:base.memory.translation.PTE.PFN:)\texttt{[55:14]}, while a table pointer owns
+(:ref:base.memory.translation.PTE.NEXT_TABLE:)\texttt{[55:12]}. Both layouts therefore have a 56-bit
+architectural physical-address ceiling. An implementation reports its exact
+(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) value, from 32 through 56, through CPUID
+\texttt{ADDRESS\_WIDTHS}. In a present descriptor, bits of the layout-selected
+physical-address field at or above that value (:term:base.terms.must_be_zero:).
 Bits \texttt{57..56} are (:ref:base.memory.translation.PTE.SW:)\texttt{[1:0]} and are (:term:base.terms.ignored:)
 by hardware; bits \texttt{63..58} are (:term:base.terms.reserved:) and (:term:base.terms.must_be_zero:).
 
@@ -67,14 +68,19 @@ physical page may have different permissions, (:ref:base.memory.translation.PTE.
 (:ref:base.memory.translation.PTE.U:) & \texttt{5} & subtree maximum user-domain permission\\
 (:term:base.terms.reserved:) & \texttt{6} & (:term:base.terms.must_be_zero:)\\
 (:ref:base.memory.translation.PTE.A:) & \texttt{7} & accessed state\\
-(:term:base.terms.reserved:) & \texttt{13..8} & (:term:base.terms.must_be_zero:)\\
-(:ref:base.memory.translation.PTE.PFN:) & \texttt{55..14} & next-table (:term:base.terms.physical_frame_number:)\\
+(:term:base.terms.reserved:) & \texttt{11..8} & (:term:base.terms.must_be_zero:)\\
+(:pte-field-target:base.memory.translation.PTE.NEXT_TABLE:)\texttt{NEXT\_TABLE} & \texttt{55..12} & physical base address of the next table object\\
 (:ref:base.memory.translation.PTE.SW:)\texttt{[1:0]} & \texttt{57..56} & software-defined, (:term:base.terms.ignored:) by hardware\\
 (:term:base.terms.reserved:) & \texttt{63..58} & (:term:base.terms.must_be_zero:)\\
 \bottomrule
 \end{BedrockTabular}
 
 A table pointer with (:ref:base.memory.translation.PTE.R:)\texttt{=}(:ref:base.memory.translation.PTE.W:)\texttt{=}(:ref:base.memory.translation.PTE.X:)\texttt{=0}, or a table pointer at L1, is malformed.
+An L4-to-L3 or L3-to-L2 pointer targets a 16-KiB table object and is malformed
+when (:ref:base.memory.translation.PTE.NEXT_TABLE:)\texttt{[13:12]} is nonzero. An L2-to-L1 pointer targets a
+4-KiB table object and may use all four values of those bits. Every walker,
+PTQUERY implementation, and page-walk cache preserves the complete
+(:ref:base.memory.translation.PTE.NEXT_TABLE:) value while descending.
 The walker begins with (:ref:base.memory.translation.PTE.R:), (:ref:base.memory.translation.PTE.W:), (:ref:base.memory.translation.PTE.X:), and (:ref:base.memory.translation.PTE.U:) enabled, intersects each table bitmap and
 (:ref:base.memory.translation.PTE.U:) bit, then intersects the terminating leaf\textquotesingle{}s decoded (:ref:base.memory.translation.PTE.AM:) permissions and (:ref:base.memory.translation.PTE.U:) bit.
 The leaf alone supplies (:ref:base.memory.translation.PTE.G:), (:ref:base.memory.translation.PTE.CP:), and Normal/MMIO class. An L1, L2, L3, or L4 leaf must
@@ -87,7 +93,9 @@ weakens an MMIO execution rule.
 
 Hardware sets (:ref:base.memory.translation.PTE.A:) on each structurally valid descriptor consumed by a completed
 walk and may also set (:ref:base.memory.translation.PTE.A:) during a speculative walk whose instruction later
-faults or is squashed. (:ref:base.memory.translation.PTE.D:) is set only when the corresponding store or atomic update
+faults or is squashed. In that latter case, (:ref:base.memory.translation.PTE.A:) is an imprecise, PTE-owned usage
+hint; it is not instruction progress, restart state, or generic continuation state.
+(:ref:base.memory.translation.PTE.D:) is set only when the corresponding store or atomic update
 commits, and every required (:ref:base.memory.translation.PTE.D:) update succeeds before its memory update becomes
 visible. Hardware (:ref:base.memory.translation.PTE.A:)/(:ref:base.memory.translation.PTE.D:) changes are conditional atomic updates of the complete
 64-bit PTE and preserve every other (:term:base.terms.field:). A concurrent change causes a
