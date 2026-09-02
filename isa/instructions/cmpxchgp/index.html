@@ -14195,18 +14195,15 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>CMPXCHGP</code></p>
-<p>Treats each canonical register pair as a 128-bit little-endian integer: the even register supplies bits 63:0 and the following odd register supplies bits 127:64. The instruction atomically reads a naturally aligned 16-byte memory value, compares it with the original expected pair, and stores the original desired pair only when both halves compare equal. In both cases the expected pair receives the old memory value. Z is set exactly when the store occurs; N, C, and V are cleared.</p>
+<p>Treats each canonical register pair as a 128-bit little-endian integer: the even register supplies bits 63:0 and the following odd register supplies bits 127:64. The instruction atomically reads a naturally aligned 16-byte memory value, compares it with the original expected pair, and stores the original desired pair only when both halves compare equal. In both cases the expected pair receives the old memory value. <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> is set exactly when the store occurs; <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> are cleared.</p>
 <p>The encoded memory-order selector governs the complete operation on both outcomes under the same success and failure rules as <a href="../cmpxchg/"><code>CMPXCHG</code></a>. An alignment or memory-access fault exposes no register, flag, or memory update.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>CMPXCHGP/order(o) PAIRn(x), PAIRn(d), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for CMPXCHGP/order(o) PAIRn(x), PAIRn(d), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/cmpxchgp-01.svg" /></p>
 <p><strong>Format: Instruction format for CMPXCHGP/order(o) PAIRn(x), PAIRn(d), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Memory-order field <code>o</code></strong> — Selects the memory ordering. Allowed encoded values: 0-4.</p>
-<p><strong>Register-pair field <code>x</code></strong> — Selects the destination operand as a register pair.</p>
-<p><strong>Register-pair field <code>d</code></strong> — Selects the source operand as a register pair.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>order</code> — <code>allowed</code>: <code>0x0..0x4</code> [<code>memory_order_reserved_reclaimed</code>]</p>
+<p><code>memory</code> — <code>excluded</code>: <code>immediate</code> [<code>memory_operand_required</code>]</p>
 
 
 

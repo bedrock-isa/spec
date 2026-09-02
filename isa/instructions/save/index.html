@@ -14173,20 +14173,16 @@
 <h2 id="privilege">Privilege</h2>
 <p>Unprivileged</p>
 <p>SAVE writes base <a href="../../terminology/#term-architectural-state">architectural state</a> and modified enabled extension state to a 4-KiB-aligned, CPUID-defined save area.</p>
-<p>SAVE treats its address-role EA as the base of the save area without first reading an EA-sized operand. It writes the fixed base block, <code>FMT=0</code>, <code>GS_VALID=0x3f</code>, the state-block bitmap, R0 through R15, GS0 through GS5, FLAGS, STATUS including EDEPTH and UO, and the hidden current-DFA bit according to the Processor-State Save and Restore layout. Enabled modified extension components are written to their CPUID-defined offsets; a component known to equal its initial state may be omitted and reported clear in the bitmap. SAVE does not change a component's clean or modified state.</p>
-<p>The complete <code>SAVE_AREA_SIZE_BYTES</code> range reported by CPUID is validated before any byte is written. Any address or access fault leaves the architectural register state and save area unchanged.</p>
+<p>SAVE treats its address-role EA as the base of the save area without first reading an EA-sized operand. It writes the fixed base block, <a href="../../processor-state-save-and-restore/#save-area-field-base-state-save-area-base-header-fmt"><code>BASE_HEADER.FMT</code></a><code>=0</code>, <a href="../../processor-state-save-and-restore/#save-area-field-base-state-save-area-base-header-gs-valid"><code>BASE_HEADER.GS_VALID</code></a><code>=0x3f</code>, the state-block bitmap, R0 through R15, GS0 through GS5, <a href="../../processor-state-save-and-restore/#save-area-field-base-state-save-area-base-header-flags"><code>BASE_HEADER.FLAGS</code></a>, <a href="../../processor-state-save-and-restore/#save-area-field-base-state-save-area-base-header-status"><code>BASE_HEADER.STATUS</code></a> including <a href="../../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a> and <a href="../../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a>, and the hidden <a href="../../processor-state-save-and-restore/#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a> bit according to the Processor-State Save and Restore layout. Enabled modified extension components are written to their CPUID-defined offsets; a component known to equal its initial state may be omitted and reported clear in the bitmap. SAVE does not change a component's clean or modified state.</p>
+<p>The complete <a href="../../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-save-area-layout-save-area-size-save-area-size-bytes"><code>SAVE_AREA_SIZE_BYTES</code></a> range reported by CPUID is validated before any byte is written. Any address or access fault leaves the architectural register state and save area unchanged.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>SAVE &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SAVE &lt;ea&gt;(e)" src="../../../assets/visuals/isa/save-01.svg" /></p>
 <p><strong>Format: Instruction format for SAVE &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p>2.75in <strong><code>SAVE Rn(r)</code></strong></p>
 <p><img alt="Format: Instruction format for SAVE Rn(r)" src="../../../assets/visuals/isa/save-02.svg" /></p>
 <p><strong>Format: Instruction format for SAVE Rn(r)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>r</code></strong> — Selects the address operand.</p>
 
 
 

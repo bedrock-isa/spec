@@ -14544,28 +14544,28 @@
 <tbody>
 <tr>
 <td style="text-align: left;">class 0, leaf 0, index 0</td>
-<td style="text-align: left;"><code>MAX_CLASS</code></td>
-<td style="text-align: left;"><code>MAX_LEAF</code></td>
-<td style="text-align: left;"><code>MAX_INDEX</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-common-header-max-class" id="cpuid-field-base-cpuid-common-header-max-class"></a><code>MAX_CLASS</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-common-header-max-leaf" id="cpuid-field-base-cpuid-common-header-max-leaf"></a><code>MAX_LEAF</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-common-header-max-index" id="cpuid-field-base-cpuid-common-header-max-index"></a><code>MAX_INDEX</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">other class, leaf 0, index 0</td>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a>, zero</td>
-<td style="text-align: left;"><code>MAX_LEAF</code></td>
-<td style="text-align: left;"><code>MAX_INDEX</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-common-header-max-leaf"><code>COMMON_HEADER.MAX_LEAF</code></a></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-common-header-max-index"><code>COMMON_HEADER.MAX_INDEX</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;">any class, leaf 1 or greater, index 0</td>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a>, zero</td>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a>, zero</td>
-<td style="text-align: left;"><code>MAX_INDEX</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-common-header-max-index"><code>COMMON_HEADER.MAX_INDEX</code></a></td>
 </tr>
 </tbody>
 </table>
-<p><code>MAX_CLASS</code> is the greatest class recognized by the implementation, <code>MAX_LEAF</code> is the greatest leaf recognized within the selected class, and <code>MAX_INDEX</code> is the greatest index recognized within the selected leaf. Each <a href="../terminology/#term-field">field</a> gives the greatest recognized selector value. A leaf may be sparse below <code>MAX_INDEX</code>. Software ignores <a href="../terminology/#term-reserved">reserved</a> bits in every returned value.</p>
+<p><a href="#cpuid-field-base-cpuid-common-header-max-class"><code>COMMON_HEADER.MAX_CLASS</code></a> is the greatest class recognized by the implementation, <a href="#cpuid-field-base-cpuid-common-header-max-leaf"><code>COMMON_HEADER.MAX_LEAF</code></a> is the greatest leaf recognized within the selected class, and <a href="#cpuid-field-base-cpuid-common-header-max-index"><code>COMMON_HEADER.MAX_INDEX</code></a> is the greatest index recognized within the selected leaf. Each <a href="../terminology/#term-field">field</a> gives the greatest recognized selector value. A leaf may be sparse below <a href="#cpuid-field-base-cpuid-common-header-max-index"><code>COMMON_HEADER.MAX_INDEX</code></a>. Software ignores <a href="../terminology/#term-reserved">reserved</a> bits in every returned value.</p>
 <p>CPUID bit <a href="../terminology/#term-field">fields</a> are feature predicates unless the leaf description says they encode a numeric value. Reserved result bits are <a href="../terminology/#term-ignored">ignored</a> by software.</p>
 <p>A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal privilege, operand, and availability checks still apply.</p>
-<p>Numeric <a href="../terminology/#term-field">fields</a> use names that describe their unit. <code>SAVE_AREA_SIZE_BYTES</code>, <code>OFFSET_BYTES</code>, <code>MAX_SIZE_BYTES</code>, and <code>ALIGNMENT_BYTES</code> are byte counts.</p>
+<p>Numeric <a href="../terminology/#term-field">fields</a> use names that describe their unit. <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-save-area-size-save-area-size-bytes"><code>SAVE_AREA_SIZE_BYTES</code></a>, <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-offset-bytes"><code>OFFSET_BYTES</code></a>, <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-max-size-bytes"><code>MAX_SIZE_BYTES</code></a>, and <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-alignment-bytes"><code>ALIGNMENT_BYTES</code></a> are byte counts.</p>
 <h2 id="discovery-classes">Discovery Classes</h2>
 <p>Discovery classes partition architectural information by subject. Software first checks the class and leaf directory before consuming optional feature bits.</p>
 <p>The base class describes the mandatory scalar ISA and implementation identity. Optional groups are reported in the optional-extension directory.</p>
@@ -14643,7 +14643,7 @@
 </tbody>
 </table>
 <h2 id="base-identity">Base Identity</h2>
-<p>Class <code>0x00000000</code>, leaf <code>0x0000</code> reports <code>MAX_LEAF=0</code> and <code>MAX_INDEX=18</code> in its index-zero <a href="../terminology/#term-header">header</a>. An implementation recognizing only the classes defined by this specification reports <code>MAX_CLASS=2</code>; an implementation that recognizes a higher implementation-defined class reports the highest such selector. The base-identity <a href="../terminology/#term-payload">payload</a> is:</p>
+<p>Class <code>0x00000000</code>, leaf <code>0x0000</code> reports <a href="#cpuid-field-base-cpuid-base-identity-header-max-leaf" id="cpuid-field-base-cpuid-base-identity-header-max-leaf"></a><code>MAX_LEAF``=0</code> and <a href="#cpuid-field-base-cpuid-base-identity-header-max-index" id="cpuid-field-base-cpuid-base-identity-header-max-index"></a><code>MAX_INDEX``=18</code> in its index-zero <a href="../terminology/#term-header">header</a>. An implementation recognizing only the classes defined by this specification reports <a href="#cpuid-field-base-cpuid-base-identity-header-max-class" id="cpuid-field-base-cpuid-base-identity-header-max-class"></a><code>MAX_CLASS``=2</code>; an implementation that recognizes a higher implementation-defined class reports the highest such selector. The base-identity <a href="../terminology/#term-payload">payload</a> is:</p>
 <p><img alt="CPUID Base Identity Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-03.svg" /></p>
 <p><strong>CPUID Base Identity Result Formats</strong></p>
 <p><strong>Base Identity Indexes</strong></p>
@@ -14657,11 +14657,11 @@
 <tbody>
 <tr>
 <td style="text-align: left;">1</td>
-<td style="text-align: left;">bits 31..0 <code>IMPLEMENTATION_ID</code>; bits 47..32 <code>ARCHITECTURE_ID</code>; bits 63..48 <code>VENDOR_ID</code></td>
+<td style="text-align: left;">bits 31..0  <a href="#cpuid-field-base-cpuid-base-identity-identity-implementation-id" id="cpuid-field-base-cpuid-base-identity-identity-implementation-id"></a><code>IMPLEMENTATION_ID</code>; bits 47..32  <a href="#cpuid-field-base-cpuid-base-identity-identity-architecture-id" id="cpuid-field-base-cpuid-base-identity-identity-architecture-id"></a><code>ARCHITECTURE_ID</code>; bits 63..48  <a href="#cpuid-field-base-cpuid-base-identity-identity-vendor-id" id="cpuid-field-base-cpuid-base-identity-identity-vendor-id"></a><code>VENDOR_ID</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">2</td>
-<td style="text-align: left;">bits 15..0 <code>ARCHITECTURE_REVISION</code>; bits 31..16 <code>IMPLEMENTATION_REVISION</code>; bits 63..32 zero</td>
+<td style="text-align: left;">bits 15..0  <a href="#cpuid-field-base-cpuid-base-identity-revisions-architecture-revision" id="cpuid-field-base-cpuid-base-identity-revisions-architecture-revision"></a><code>ARCHITECTURE_REVISION</code>; bits 31..16  <a href="#cpuid-field-base-cpuid-base-identity-revisions-implementation-revision" id="cpuid-field-base-cpuid-base-identity-revisions-implementation-revision"></a><code>IMPLEMENTATION_REVISION</code>; bits 63..32 zero</td>
 </tr>
 <tr>
 <td style="text-align: left;">3–10</td>
@@ -14673,8 +14673,8 @@
 </tr>
 </tbody>
 </table>
-<p><code>VENDOR_ID</code> selects the vendor namespace in which <code>IMPLEMENTATION_ID</code> is interpreted. <code>IMPLEMENTATION_ID</code> is assigned within that <code>VENDOR_ID</code> namespace. <code>ARCHITECTURE_ID</code> identifies the base ISA definition implemented by the processor, while the <code>(VENDOR_ID, IMPLEMENTATION_ID)</code> pair identifies the implementation.</p>
-<p><code>ARCHITECTURE_REVISION</code> is the unsigned 16-bit revision of the base ISA definition selected by <code>ARCHITECTURE_ID</code>; it does not imply the behavior of any other revision. Optional instruction groups, <a href="../terminology/#term-processor-state">processor state</a>, and feature-specific parameters are reported separately by their CPUID leaves and feature bits. <code>IMPLEMENTATION_REVISION</code> is an unsigned revision assigned by the vendor and is compared only when both <code>VENDOR_ID</code> and <code>IMPLEMENTATION_ID</code> match.</p>
+<p><a href="#cpuid-field-base-cpuid-base-identity-identity-vendor-id"><code>VENDOR_ID</code></a> selects the vendor namespace in which <a href="#cpuid-field-base-cpuid-base-identity-identity-implementation-id"><code>IMPLEMENTATION_ID</code></a> is interpreted. <a href="#cpuid-field-base-cpuid-base-identity-identity-implementation-id"><code>IMPLEMENTATION_ID</code></a> is assigned within that <a href="#cpuid-field-base-cpuid-base-identity-identity-vendor-id"><code>VENDOR_ID</code></a> namespace. <a href="#cpuid-field-base-cpuid-base-identity-identity-architecture-id"><code>ARCHITECTURE_ID</code></a> identifies the base ISA definition implemented by the processor, while the (<a href="#cpuid-field-base-cpuid-base-identity-identity-vendor-id"><code>VENDOR_ID</code></a>, <a href="#cpuid-field-base-cpuid-base-identity-identity-implementation-id"><code>IMPLEMENTATION_ID</code></a>) pair identifies the implementation.</p>
+<p><a href="#cpuid-field-base-cpuid-base-identity-revisions-architecture-revision"><code>ARCHITECTURE_REVISION</code></a> is the unsigned 16-bit revision of the base ISA definition selected by <a href="#cpuid-field-base-cpuid-base-identity-identity-architecture-id"><code>ARCHITECTURE_ID</code></a>; it does not imply the behavior of any other revision. Optional instruction groups, <a href="../terminology/#term-processor-state">processor state</a>, and feature-specific parameters are reported separately by their CPUID leaves and feature bits. <a href="#cpuid-field-base-cpuid-base-identity-revisions-implementation-revision"><code>IMPLEMENTATION_REVISION</code></a> is an unsigned revision assigned by the vendor and is compared only when both <a href="#cpuid-field-base-cpuid-base-identity-identity-vendor-id"><code>VENDOR_ID</code></a> and <a href="#cpuid-field-base-cpuid-base-identity-identity-implementation-id"><code>IMPLEMENTATION_ID</code></a> match.</p>
 <p>The name <a href="../terminology/#term-field">fields</a> are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero byte and all remaining bytes are zero. A 64-byte name has no terminator. Producers must not split a multi-byte UTF-8 code point at the <a href="../terminology/#term-field">field</a> boundary. Consumers stop at that boundary and replace any invalid sequence.</p>
 <h2 id="optional-extension-directory">Optional-Extension Directory <a href="#section-cpuid-extension-directory" id="section-cpuid-extension-directory"></a></h2>
 <p>Software treats the optional-extension directory as the first availability gate. Before using an optional architectural behavior or consuming one of its parameter leaves, software establishes every extension predicate required by that extension. A result returned by a parameter leaf does not by itself establish extension availability.</p>
@@ -14699,11 +14699,12 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#cpuid-field-cfi-cpuid-extensions-directory-features-cfi" id="cpuid-field-cfi-cpuid-extensions-directory-features-cfi"></a> <a href="#cpuid-field-wait-cpuid-extensions-directory-features-wait" id="cpuid-field-wait-cpuid-extensions-directory-features-wait"></a> <a href="#cpuid-field-vectorfp-cpuid-extensions-directory-features-vectorfp" id="cpuid-field-vectorfp-cpuid-extensions-directory-features-vectorfp"></a> <a href="#cpuid-field-vector-cpuid-extensions-directory-features-vector" id="cpuid-field-vector-cpuid-extensions-directory-features-vector"></a> <a href="#cpuid-field-fptransa-cpuid-extensions-directory-features-fptransa" id="cpuid-field-fptransa-cpuid-extensions-directory-features-fptransa"></a> <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp" id="cpuid-field-fp-cpuid-extensions-directory-features-fp"></a></p>
 <p><img alt="Extension Directory CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-04.svg" /></p>
 <p><strong>Extension Directory CPUID Result Formats</strong></p>
 <h2 id="floating-point-extension-discovery">Floating-Point Extension Discovery</h2>
-<p>When <code>FP</code> is available, the floating-point registers, state, event, addressing forms, and instructions defined available subject to their <a href="../terminology/#term-ordinary">ordinary</a> legality checks and any feature-specific predicates below.</p>
-<p>When <code>FP16_CONVERT</code> is available, binary16 conversion is available through every form of <a href="../instructions/fcvth/"><code>FCVTH</code></a> and <a href="../instructions/fcvtuh/"><code>FCVTUH</code></a>, the H forms of <a href="../instructions/fcvts/"><code>FCVTS</code></a>, and the H forms of <a href="../instructions/fcvtd/"><code>FCVTD</code></a>. It does not advertise binary16 arithmetic. The reported value is stable until reset. Executing one of those forms while <code>FP16_CONVERT</code> is clear raises <a href="../architectural-event-processing-model/#event-unavailable-instruction-extension"><code>UNAVAILABLE_INSTRUCTION_EXTENSION</code></a> before operand or floating-point-state access.</p>
+<p>When <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp"><code>FP</code></a> is available, the floating-point registers, state, event, addressing forms, and instructions defined available subject to their <a href="../terminology/#term-ordinary">ordinary</a> legality checks and any feature-specific predicates below.</p>
+<p>When <a href="#cpuid-field-fp-cpuid-extensions-fp-features-features-fp16-convert"><code>FP16_CONVERT</code></a> is available, binary16 conversion is available through every form of <a href="../instructions/fcvth/"><code>FCVTH</code></a> and <a href="../instructions/fcvtuh/"><code>FCVTUH</code></a>, the H forms of <a href="../instructions/fcvts/"><code>FCVTS</code></a>, and the H forms of <a href="../instructions/fcvtd/"><code>FCVTD</code></a>. It does not advertise binary16 arithmetic. The reported value is stable until reset. Executing one of those forms while <a href="#cpuid-field-fp-cpuid-extensions-fp-features-features-fp16-convert"><code>FP16_CONVERT</code></a> is clear raises <a href="../architectural-event-processing-model/#event-unavailable-instruction-extension"><code>UNAVAILABLE_INSTRUCTION_EXTENSION</code></a> before operand or floating-point-state access.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0001</code> uses the 64-bit query selector <code>0x0000000100010000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Floating-Point Features CPUID Query Allocations</strong></p>
 <table>
@@ -14724,10 +14725,11 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#cpuid-field-fp-cpuid-extensions-fp-features-features-fp16-convert" id="cpuid-field-fp-cpuid-extensions-fp-features-features-fp16-convert"></a></p>
 <p><img alt="Floating-Point Features CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-05.svg" /></p>
 <p><strong>Floating-Point Features CPUID Result Formats</strong></p>
 <h2 id="vector-parameter-discovery">Vector-Parameter Discovery</h2>
-<p>After establishing <code>VECTOR</code> availability, software uses this leaf to obtain the architectural VLEN. VLEN is <span class="arithmatex">\(2^{\mathtt{VLEN\_LOG2\_BITS}}\)</span> bits and is an implementation-selected power of two from 128 through 2048 bits. It determines vector-register width, predicate storage, the number of lanes for a selected element width, and the size of each <a href="../terminology/#term-vector-register">vector register</a> and <a href="../terminology/#term-predicate-register">predicate register</a> image. <code>SAVE_AREA_LAYOUT</code> remains the authority for save-component placement and size. This leaf does not establish availability of <code>VECTORFP</code> or any other extension that consumes vector state.</p>
+<p>After establishing <a href="#cpuid-field-vector-cpuid-extensions-directory-features-vector"><code>VECTOR</code></a> availability, software uses this leaf to obtain the architectural VLEN reported by <a href="#cpuid-field-vector-cpuid-extensions-vector-parameters-parameters-vlen-log2-bits"><code>VLEN_LOG2_BITS</code></a>. VLEN is <span class="arithmatex">\(2^{\text{\hyperref[cpuid-field:vector-cpuid-extensions-vector-parameters-parameters-vlen-log2-bits]{\texttt{VLEN\_\allowbreak{}LOG2\_\allowbreak{}BITS}}}}\)</span> bits and is an implementation-selected power of two from 128 through 2048 bits. It determines vector-register width, predicate storage, the number of lanes for a selected element width, and the size of each <a href="../terminology/#term-vector-register">vector register</a> and <a href="../terminology/#term-predicate-register">predicate register</a> image. <code>SAVE_AREA_LAYOUT</code> remains the authority for save-component placement and size. This leaf does not establish availability of <a href="#cpuid-field-vectorfp-cpuid-extensions-directory-features-vectorfp"><code>VECTORFP</code></a> or any other extension that consumes vector state.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0003</code> uses the 64-bit query selector <code>0x0000000100030000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Vector Parameters CPUID Query Allocations</strong></p>
 <table>
@@ -14748,10 +14750,11 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#cpuid-field-vector-cpuid-extensions-vector-parameters-parameters-vlen-log2-bits" id="cpuid-field-vector-cpuid-extensions-vector-parameters-parameters-vlen-log2-bits"></a></p>
 <p><img alt="Vector Parameters CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-06.svg" /></p>
 <p><strong>Vector Parameters CPUID Result Formats</strong></p>
 <h2 id="vector-floating-point-discovery">Vector Floating-Point Discovery</h2>
-<p>Software establishes <code>VECTORFP</code>, <code>VECTOR</code>, and <code>FP</code> through the <a href="#section-cpuid-extension-directory">Optional-Extension Directory</a> before using this extension. This extension defines no additional discovery payload, so its discovery leaf contains only the common <a href="../terminology/#term-header">header</a>.</p>
+<p>Software establishes <a href="#cpuid-field-vectorfp-cpuid-extensions-directory-features-vectorfp"><code>VECTORFP</code></a>, <a href="#cpuid-field-vector-cpuid-extensions-directory-features-vector"><code>VECTOR</code></a>, and <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp"><code>FP</code></a> through the <a href="#section-cpuid-extension-directory">Optional-Extension Directory</a> before using this extension. This extension defines no additional discovery payload, so its discovery leaf contains only the common <a href="../terminology/#term-header">header</a>.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0004</code> uses the 64-bit query selector <code>0x0000000100040000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Vector Floating-Point Discovery CPUID Query Allocations</strong></p>
 <table>
@@ -14771,11 +14774,11 @@
 <p><img alt="Vector Floating-Point Discovery CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-07.svg" /></p>
 <p><strong>Vector Floating-Point Discovery CPUID Result Formats</strong></p>
 <h2 id="fptransa-accuracy-discovery">FPTRANSA Accuracy Discovery</h2>
-<p>The <code>FPTRANSA</code> predicate requires <code>FP</code> and reports that at least one approximate transcendental contract may be available. Software determines each operation's availability separately from its accuracy-contract result. Class <code>0x00000001</code>, leaf <code>0x0002</code> uses indexes 1 through <code>0x0044</code> as a sparse space of stable 16-bit accuracy-contract IDs. Index zero is the common <a href="../terminology/#term-header">header</a> and reports <code>MAX_INDEX=0x0044</code>. A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors, and mathematical properties; it is independent of instruction encoding placement. A different tuple of those properties uses a different ID, and a retired ID is not reused. The contracts defined here use <code>CONTRACT_REVISION=1</code>. A changed guarantee, domain, or error metric names a different contract ID. An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the same ID and revision.</p>
+<p>The <a href="#cpuid-field-fptransa-cpuid-extensions-directory-features-fptransa"><code>FPTRANSA</code></a> predicate requires <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp"><code>FP</code></a> and reports that at least one approximate transcendental contract may be available. Software determines each operation's availability separately from its accuracy-contract result. Class <code>0x00000001</code>, leaf <code>0x0002</code> uses indexes 1 through <code>0x0044</code> as a sparse space of stable 16-bit accuracy-contract IDs. Index zero is the common <a href="../terminology/#term-header">header</a> and reports <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-header-max-index" id="cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-header-max-index"></a><code>MAX_INDEX``=0x0044</code>. A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors, and mathematical properties; it is independent of instruction encoding placement. A different tuple of those properties uses a different ID, and a retired ID is not reused. The contracts defined here use <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-contract-revision"><code>CONTRACT_REVISION</code></a><code>=1</code>. A changed guarantee, domain, or error metric names a different contract ID. An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the same ID and revision.</p>
 <p>The sparse ID space reserves <code>0x0001..0x000F</code> for reduced-domain circular trigonometric functions, <code>0x0010..0x001F</code> for inverse trigonometric functions, <code>0x0020..0x002F</code> for hyperbolic and inverse hyperbolic functions, <code>0x0030..0x003F</code> for exponential functions, and <code>0x0040..0x004F</code> for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and actual contracts in each family begin at low nibble one.</p>
 <p><img alt="FPTRANSA Accuracy Result Format" src="../../assets/visuals/isa/cpuid-feature-discovery-08.svg" /></p>
 <p><strong>FPTRANSA Accuracy Result Format</strong></p>
-<p><code>P</code> is <code>PRESENT</code>; <code>REV</code> is <code>CONTRACT_REVISION</code>; the D and S ULP <a href="../terminology/#term-field">fields</a> use unsigned Q8.8.</p>
+<p><code>P</code> is <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-present"><code>PRESENT</code></a>; <code>REV</code> is <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-contract-revision"><code>CONTRACT_REVISION</code></a>; the D and S ULP <a href="../terminology/#term-field">fields</a> use unsigned Q8.8.</p>
 <p><strong>FPTRANSA Accuracy Result</strong></p>
 <table>
 <thead>
@@ -14788,17 +14791,17 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>0..15</code></td>
-<td style="text-align: left;"><code>S_MAX_ULP_Q8_8</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-s-max-ulp-q8-8" id="cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-s-max-ulp-q8-8"></a><code>S_MAX_ULP_Q8_8</code></td>
 <td style="text-align: left;">certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>16..31</code></td>
-<td style="text-align: left;"><code>D_MAX_ULP_Q8_8</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-d-max-ulp-q8-8" id="cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-d-max-ulp-q8-8"></a><code>D_MAX_ULP_Q8_8</code></td>
 <td style="text-align: left;">certified worst-case D-format ULP bound, rounded upward to unsigned Q8.8</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>32..39</code></td>
-<td style="text-align: left;"><code>CONTRACT_REVISION</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-contract-revision" id="cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-contract-revision"></a><code>CONTRACT_REVISION</code></td>
 <td style="text-align: left;">value 1 for the contracts defined here</td>
 </tr>
 <tr>
@@ -14808,16 +14811,16 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>63</code></td>
-<td style="text-align: left;"><code>PRESENT</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-present" id="cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-present"></a><code>PRESENT</code></td>
 <td style="text-align: left;">the instruction and both S and D encodings are available</td>
 </tr>
 </tbody>
 </table>
 <p>For a certified bound <span class="arithmatex">\(K\)</span>, the <a href="../terminology/#term-field">field</a> value is <span class="arithmatex">\(\lceil 256K\rceil\)</span> and the advertised bound is the <a href="../terminology/#term-field">field</a> divided by 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as <code>0x0080</code>, <code>0x0100</code>, <code>0x0180</code>, <code>0x0200</code>, and <code>0x0400</code>. A present contract has both <a href="../terminology/#term-field">fields</a> in <code>0x0001..0x0400</code>. An unrecognized returned revision does not satisfy the contracts defined here.</p>
-<p>Software first checks <code>FP</code> and <code>FPTRANSA</code> in <code>EXTENSION_DIRECTORY</code>, then queries the intended contract ID in <code>FPTRANSA_ACCURACY</code>. It uses the instruction only when <code>PRESENT</code> is set, the returned <code>CONTRACT_REVISION</code> is 1, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it does not use the instruction under that accuracy contract. For example, a D-format <a href="../instructions/flog2a/"><code>FLOG2A</code></a> path requiring at most 2 ULP accepts selector <code>0x0000000100020043</code> only when the returned D <a href="../terminology/#term-field">field</a> is at most <code>0x0200</code>.</p>
+<p>Software first checks <a href="#cpuid-field-fp-cpuid-extensions-directory-features-fp"><code>FP</code></a> and <a href="#cpuid-field-fptransa-cpuid-extensions-directory-features-fptransa"><code>FPTRANSA</code></a> in <code>EXTENSION_DIRECTORY</code>, then queries the intended contract ID in <code>FPTRANSA_ACCURACY</code>. It uses the instruction only when <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-present"><code>PRESENT</code></a> is set, the returned <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-contract-revision"><code>CONTRACT_REVISION</code></a> is 1, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it does not use the instruction under that accuracy contract. For example, a D-format <a href="../instructions/flog2a/"><code>FLOG2A</code></a> path requiring at most 2 ULP accepts selector <code>0x0000000100020043</code> only when the returned D <a href="../terminology/#term-field">field</a> is at most <code>0x0200</code>.</p>
 <p>The selector is <span class="arithmatex">\((\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0002} \ll 16) \mathbin{|}
 \textit{contract-id}\)</span>. For example, <a href="../instructions/fsina/"><code>FSINA</code></a> uses selector <code>0x0000000100020001</code>, and <a href="../instructions/flog2a/"><code>FLOG2A</code></a> uses <code>0x0000000100020043</code>. An implementation that certifies <a href="../instructions/fsina/"><code>FSINA</code></a> at 1.5 ULP for S and 2 ULP for D returns <code>0x8000000102000180</code>.</p>
-<p><code>PRESENT=1</code> establishes the accuracy contract for both S and D encodings but does not waive the instruction's <a href="../terminology/#term-ordinary">ordinary</a> legality checks. The S and D bounds are worst-case bounds over every input in the contract domain and apply to every execution on the <a href="../terminology/#term-logical-processor">logical processor</a> that returned the CPUID result until reset. Executing the instruction with <code>PRESENT=0</code> raises <a href="../architectural-event-processing-model/#event-invalid-operand-relation"><code>INVALID_OPERAND_RELATION</code></a> before operand or floating-point-state access.</p>
+<p><a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-present"><code>PRESENT</code></a><code>=1</code> establishes the accuracy contract for both S and D encodings but does not waive the instruction's <a href="../terminology/#term-ordinary">ordinary</a> legality checks. The S and D bounds are worst-case bounds over every input in the contract domain and apply to every execution on the <a href="../terminology/#term-logical-processor">logical processor</a> that returned the CPUID result until reset. Executing the instruction with <a href="#cpuid-field-fptransa-cpuid-extensions-fptransa-accuracy-accuracy-present"><code>PRESENT</code></a><code>=0</code> raises <a href="../architectural-event-processing-model/#event-invalid-operand-relation"><code>INVALID_OPERAND_RELATION</code></a> before operand or floating-point-state access.</p>
 <p><strong>FPTRANSA Accuracy Contracts</strong></p>
 <table>
 <thead>
@@ -14966,7 +14969,7 @@
 </tbody>
 </table>
 <h2 id="wait-extension-discovery">WAIT Extension Discovery <a href="#section-wait-extension-discovery" id="section-wait-extension-discovery"></a></h2>
-<p>Software establishes the WAIT extension predicate before executing WAIT or WAKE. The extension has no implementation-varying architectural parameters.</p>
+<p>Software establishes the <a href="#cpuid-field-wait-cpuid-extensions-directory-features-wait"><code>WAIT</code></a> extension predicate before executing WAIT or WAKE. The extension has no implementation-varying architectural parameters.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0005</code> uses the 64-bit query selector <code>0x0000000100050000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Address Wait Discovery CPUID Query Allocations</strong></p>
 <table>
@@ -14986,7 +14989,7 @@
 <p><img alt="Address Wait Discovery CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-09.svg" /></p>
 <p><strong>Address Wait Discovery CPUID Result Formats</strong></p>
 <h2 id="cfi-extension-discovery">CFI Extension Discovery <a href="#section-cfi-extension-discovery" id="section-cfi-extension-discovery"></a></h2>
-<p>Software establishes the CFI extension predicate before using CFILAND or the CFI control registers. The extension has no implementation-varying architectural parameters.</p>
+<p>Software establishes the <a href="#cpuid-field-cfi-cpuid-extensions-directory-features-cfi"><code>CFI</code></a> extension predicate before using CFILAND or the CFI control registers. The extension has no implementation-varying architectural parameters.</p>
 <p>Class <code>0x00000001</code>, leaf <code>0x0006</code> uses the 64-bit query selector <code>0x0000000100060000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Control-Flow Integrity Discovery CPUID Query Allocations</strong></p>
 <table>
@@ -15025,10 +15028,10 @@
 <p><img alt="Implementation Directory CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-11.svg" /></p>
 <p><strong>Implementation Directory CPUID Result Formats</strong></p>
 <h2 id="cache-topology-discovery">Cache-Topology Discovery</h2>
-<p>Class <code>0x00000002</code>, leaf <code>0x0001</code> reports the cache-maintenance granule and the cache instances visible to the current <a href="../terminology/#term-logical-processor">logical processor</a>. Index zero is the common <a href="../terminology/#term-header">header</a>. Index one is the maintenance-properties result, and indexes 2 through <code>MAX_INDEX</code> are a dense array of cache descriptors. With <span class="arithmatex">\(N\)</span> descriptors, <code>MAX_INDEX=1+N</code>.</p>
+<p>Class <code>0x00000002</code>, leaf <code>0x0001</code> reports the cache-maintenance granule and the cache instances visible to the current <a href="../terminology/#term-logical-processor">logical processor</a>. Index zero is the common <a href="../terminology/#term-header">header</a>. Index one is the maintenance-properties result, and indexes 2 through <a href="#cpuid-field-base-cpuid-implementation-cache-topology-header-max-index" id="cpuid-field-base-cpuid-implementation-cache-topology-header-max-index"></a><code>MAX_INDEX</code> are a dense array of cache descriptors. With <span class="arithmatex">\(N\)</span> descriptors, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-header-max-index"><code>MAX_INDEX</code></a><code>=1+N</code>.</p>
 <p><img alt="Cache-Maintenance Properties Result" src="../../assets/visuals/isa/cpuid-feature-discovery-12.svg" /></p>
 <p><strong>Cache-Maintenance Properties Result</strong></p>
-<p><code>GRANULE</code> is <code>MAINTENANCE_GRANULE_BYTES</code>.</p>
+<p><code>GRANULE</code> is <a href="#cpuid-field-base-cpuid-implementation-cache-topology-maintenance-properties-maintenance-granule-bytes"><code>MAINTENANCE_GRANULE_BYTES</code></a>.</p>
 <p><strong>Cache-Maintenance Properties</strong></p>
 <table>
 <thead>
@@ -15043,7 +15046,7 @@
 <tr>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;"><code>15..0</code></td>
-<td style="text-align: left;"><code>MAINTENANCE_GRANULE_BYTES</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-maintenance-properties-maintenance-granule-bytes" id="cpuid-field-base-cpuid-implementation-cache-topology-maintenance-properties-maintenance-granule-bytes"></a><code>MAINTENANCE_GRANULE_BYTES</code></td>
 <td style="text-align: left;">one-block cache-maintenance granule in bytes</td>
 </tr>
 <tr>
@@ -15056,7 +15059,7 @@
 </table>
 <p><img alt="Cache-Topology Descriptor Format" src="../../assets/visuals/isa/cpuid-feature-discovery-13.svg" /></p>
 <p><strong>Cache-Topology Descriptor Format</strong></p>
-<p><code>SID</code>, <code>LP-1</code>, <code>SL</code>, <code>LL2</code>, <code>LV</code>, and <code>T</code> denote <code>SHARING_ID</code>, <code>SHARING_LP_COUNT_MINUS1</code>, <code>SHARING_LEVEL</code>, <code>LINE_LOG2</code>, <code>LEVEL</code>, and <code>TYPE</code>.</p>
+<p><code>SID</code>, <code>LP-1</code>, <code>SL</code>, <code>LL2</code>, <code>LV</code>, and <code>T</code> denote <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-id"><code>SHARING_ID</code></a>, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-lp-count-minus1"><code>SHARING_LP_COUNT_MINUS1</code></a>, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-level"><code>SHARING_LEVEL</code></a>, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-line-log2"><code>LINE_LOG2</code></a>, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-level"><code>LEVEL</code></a>, and <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-type"><code>TYPE</code></a>.</p>
 <p><strong>Cache-Topology Descriptor</strong></p>
 <table>
 <thead>
@@ -15069,38 +15072,38 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>1..0</code></td>
-<td style="text-align: left;"><code>TYPE</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-type" id="cpuid-field-base-cpuid-implementation-cache-topology-descriptor-type"></a><code>TYPE</code></td>
 <td style="text-align: left;">1 data; 2 instruction; 3 unified</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>5..2</code></td>
-<td style="text-align: left;"><code>LEVEL</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-level" id="cpuid-field-base-cpuid-implementation-cache-topology-descriptor-level"></a><code>LEVEL</code></td>
 <td style="text-align: left;">cache level, in the range 1 through 15</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>11..6</code></td>
-<td style="text-align: left;"><code>LINE_LOG2</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-line-log2" id="cpuid-field-base-cpuid-implementation-cache-topology-descriptor-line-log2"></a><code>LINE_LOG2</code></td>
 <td style="text-align: left;">cache-line bytes are 1 shifted left by this value</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>15..12</code></td>
-<td style="text-align: left;"><code>SHARING_LEVEL</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-level" id="cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-level"></a><code>SHARING_LEVEL</code></td>
 <td style="text-align: left;">nested cache-sharing scope; zero is one <a href="../terminology/#term-logical-processor">logical processor</a></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>31..16</code></td>
-<td style="text-align: left;"><code>SHARING_LP_COUNT_MINUS1</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-lp-count-minus1" id="cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-lp-count-minus1"></a><code>SHARING_LP_COUNT_MINUS1</code></td>
 <td style="text-align: left;">logical-processor count in the sharing scope, minus one</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>63..32</code></td>
-<td style="text-align: left;"><code>SHARING_ID</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-id" id="cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-id"></a><code>SHARING_ID</code></td>
 <td style="text-align: left;">identifier of the processor set at the reported sharing level</td>
 </tr>
 </tbody>
 </table>
-<p><code>MAINTENANCE_GRANULE_BYTES</code> is a nonzero power of two no greater than 4096 and has the same value on every <a href="../terminology/#term-logical-processor">logical processor</a> in one normal-memory coherence domain. Every reported cache-line size divides the maintenance granule. A descriptor has <code>TYPE</code> 1, 2, or 3 and a nonzero <code>LEVEL</code>. Descriptors are ordered by increasing cache level, cache type, sharing level, and sharing ID.</p>
-<p><code>SHARING_LEVEL</code> values describe strictly nested processor sets. The pair <code>(SHARING_LEVEL, SHARING_ID)</code> is equal exactly when two descriptors name the same logical-processor set. At sharing level zero, <code>SHARING_LP_COUNT_MINUS1</code> is zero. At a greater sharing level, the count <a href="../terminology/#term-field">field</a> equals the number of <a href="../terminology/#term-logical-processor">logical processors</a> in that set minus one. The tuple of cache type, cache level, sharing level, and sharing ID is unique within the leaf.</p>
+<p><a href="#cpuid-field-base-cpuid-implementation-cache-topology-maintenance-properties-maintenance-granule-bytes"><code>MAINTENANCE_GRANULE_BYTES</code></a> is a nonzero power of two no greater than 4096 and has the same value on every <a href="../terminology/#term-logical-processor">logical processor</a> in one normal-memory coherence domain. Every reported cache-line size divides the maintenance granule. A descriptor has <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-type"><code>TYPE</code></a> 1, 2, or 3 and a nonzero <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-level"><code>LEVEL</code></a>. Descriptors are ordered by increasing cache level, cache type, sharing level, and sharing ID.</p>
+<p><a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-level"><code>SHARING_LEVEL</code></a> values describe strictly nested processor sets. The pair (<a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-level"><code>SHARING_LEVEL</code></a>, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-id"><code>SHARING_ID</code></a>) is equal exactly when two descriptors name the same logical-processor set. At sharing level zero, <a href="#cpuid-field-base-cpuid-implementation-cache-topology-descriptor-sharing-lp-count-minus1"><code>SHARING_LP_COUNT_MINUS1</code></a> is zero. At a greater sharing level, the count <a href="../terminology/#term-field">field</a> equals the number of <a href="../terminology/#term-logical-processor">logical processors</a> in that set minus one. The tuple of cache type, cache level, sharing level, and sharing ID is unique within the leaf.</p>
 <h2 id="performance-counter-discovery">Performance-Counter Discovery <a href="#section-performance-counter-discovery" id="section-performance-counter-discovery"></a></h2>
 <p>This leaf determines whether an RDPMC counter ID is available on the current <a href="../terminology/#term-logical-processor">logical processor</a>. Counter IDs form a sparse space: the <a href="../terminology/#term-header">header</a> bounds the selectors that software may examine but does not imply that every intervening ID is present. Software checks the selected ID before issuing RDPMC.</p>
 <p>The standard counter events are defined by <a href="../instructions/rdpmc/"><code>RDPMC</code></a>. An implementation-defined counter additionally requires implementation documentation that names the event counted by its ID.</p>
@@ -15139,8 +15142,8 @@
 <p><img alt="Performance Counters CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-14.svg" /></p>
 <p><strong>Performance Counters CPUID Result Formats</strong></p>
 <h2 id="address-width-discovery">Address-Width Discovery</h2>
-<p><code>PABITS</code> is the authoritative physical-address bound for the current <a href="../terminology/#term-logical-processor">logical processor</a> and has a value from 32 through 56. A <a href="../terminology/#term-physical-address">physical address</a> is representable only when it is less than <span class="arithmatex">\(2^{\mathtt{PABITS}}\)</span>. Page-table roots, every present PTE PFN, translated results, and paging-disabled <a href="../terminology/#term-physical-address">physical addresses</a> are subject to that bound.</p>
-<p><code>PABITS</code> does not select page-table geometry or translation-cache identity. <code>PTCR.LA57</code> selects the walk geometry, while the translation-cache contract separately defines entry identity.</p>
+<p><a href="#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> is the authoritative physical-address bound for the current <a href="../terminology/#term-logical-processor">logical processor</a> and has a value from 32 through 56. A <a href="../terminology/#term-physical-address">physical address</a> is representable only when it is less than <span class="arithmatex">\(2^{\text{\hyperref[cpuid-field:base-cpuid-implementation-address-widths-parameters-pabits]{\texttt{PABITS}}}}\)</span>. Page-table roots, every present leaf <a href="../memory-address-translation/#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a>, every present table-pointer <a href="../memory-address-translation/#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a>, translated results, and paging-disabled <a href="../terminology/#term-physical-address">physical addresses</a> are subject to that bound.</p>
+<p><a href="#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> does not select a translation-table format or translation-cache identity. <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> selects the complete translation-table format, while the translation-cache contract separately defines entry identity.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0003</code> uses the 64-bit query selector <code>0x0000000200030000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Address Widths CPUID Query Allocations</strong></p>
 <table>
@@ -15161,10 +15164,11 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits" id="cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"></a></p>
 <p><img alt="Address Widths CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-15.svg" /></p>
 <p><strong>Address Widths CPUID Result Formats</strong></p>
 <h2 id="save-area-layout-discovery">SAVE-Area Layout Discovery</h2>
-<p>Class <code>0x00000002</code>, leaf <code>0x0004</code> describes the memory image used by SAVE and RESTORE. Index zero is the common <a href="../terminology/#term-header">header</a>. Indexes one and two describe the complete image and its fixed block. Each available extension component contributes descriptor A followed by descriptor B, so for <span class="arithmatex">\(N\)</span> components <code>MAX_INDEX=2+2N</code>. Component descriptors are ordered by increasing <code>COMPONENT_ID</code>.</p>
+<p>Class <code>0x00000002</code>, leaf <code>0x0004</code> describes the memory image used by SAVE and RESTORE. Index zero is the common <a href="../terminology/#term-header">header</a>. Indexes one and two describe the complete image and its fixed block. Each available extension component contributes descriptor A followed by descriptor B, so for <span class="arithmatex">\(N\)</span> components <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-header-max-index" id="cpuid-field-base-cpuid-implementation-save-area-layout-header-max-index"></a><code>MAX_INDEX``=2+2N</code>. Component descriptors are ordered by increasing <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-component-id"><code>COMPONENT_ID</code></a>.</p>
 <p><strong>SAVE-AREA-LAYOUT Indexes</strong></p>
 <table>
 <thead>
@@ -15180,11 +15184,11 @@
 </tr>
 <tr>
 <td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>SAVE_AREA_SIZE_BYTES</code> in bits 63..0</td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-save-area-size-save-area-size-bytes" id="cpuid-field-base-cpuid-implementation-save-area-layout-save-area-size-save-area-size-bytes"></a><code>SAVE_AREA_SIZE_BYTES</code> in bits 63..0</td>
 </tr>
 <tr>
 <td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>FIXED_SIZE_BYTES[15:0]</code>, <code>COMPONENT_COUNT[31:16]</code>, <code>BITMAP_WORDS[47:32]</code>, <code>FMT[51:48]</code>; bits 63..52 are zero</td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-fixed-size-bytes" id="cpuid-field-base-cpuid-implementation-save-area-layout-layout-fixed-size-bytes"></a><code>FIXED_SIZE_BYTES[15:0]</code>,  <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-component-count" id="cpuid-field-base-cpuid-implementation-save-area-layout-layout-component-count"></a><code>COMPONENT_COUNT[31:16]</code>,  <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-bitmap-words" id="cpuid-field-base-cpuid-implementation-save-area-layout-layout-bitmap-words"></a><code>BITMAP_WORDS[47:32]</code>,  <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-fmt" id="cpuid-field-base-cpuid-implementation-save-area-layout-layout-fmt"></a><code>FMT[51:48]</code>; bits 63..52 are zero</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>3+2i</code></td>
@@ -15198,7 +15202,7 @@
 </table>
 <p><img alt="SAVE-Area Layout CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-16.svg" /></p>
 <p><strong>SAVE-Area Layout CPUID Result Formats</strong></p>
-<p>Diagram labels abbreviate the <a href="../terminology/#term-field">field</a> names in the descriptor tables below; <code>BITMAP</code>, <code>COUNT</code>, and <code>FIXED_SIZE</code> are <code>BITMAP_WORDS</code>, <code>COMPONENT_COUNT</code>, and <code>FIXED_SIZE_BYTES</code>.</p>
+<p>Diagram labels abbreviate the <a href="../terminology/#term-field">field</a> names in the descriptor tables below; <code>BITMAP</code>, <code>COUNT</code>, and <code>FIXED_SIZE</code> are <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-bitmap-words"><code>BITMAP_WORDS</code></a>, <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-component-count"><code>COMPONENT_COUNT</code></a>, and <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-fixed-size-bytes"><code>FIXED_SIZE_BYTES</code></a>.</p>
 <p><strong>SAVE Component Descriptor A</strong></p>
 <table>
 <thead>
@@ -15211,12 +15215,12 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>15..0</code></td>
-<td style="text-align: left;"><code>COMPONENT_ID</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-component-id" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-component-id"></a><code>COMPONENT_ID</code></td>
 <td style="text-align: left;">stable component identifier</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>21..16</code></td>
-<td style="text-align: left;"><code>BITMAP_BIT</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-bitmap-bit" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-bitmap-bit"></a><code>BITMAP_BIT</code></td>
 <td style="text-align: left;">bit selecting this component</td>
 </tr>
 <tr>
@@ -15226,7 +15230,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>63..32</code></td>
-<td style="text-align: left;"><code>OFFSET_BYTES</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-offset-bytes" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-offset-bytes"></a><code>OFFSET_BYTES</code></td>
 <td style="text-align: left;">offset from the save-area base</td>
 </tr>
 </tbody>
@@ -15243,17 +15247,17 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>31..0</code></td>
-<td style="text-align: left;"><code>MAX_SIZE_BYTES</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-max-size-bytes" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-max-size-bytes"></a><code>MAX_SIZE_BYTES</code></td>
 <td style="text-align: left;">allocated component size</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>47..32</code></td>
-<td style="text-align: left;"><code>ALIGNMENT_BYTES</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-alignment-bytes" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-alignment-bytes"></a><code>ALIGNMENT_BYTES</code></td>
 <td style="text-align: left;">required component alignment</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>55..48</code></td>
-<td style="text-align: left;"><code>INIT_POLICY</code></td>
+<td style="text-align: left;"><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-init-policy" id="cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-init-policy"></a><code>INIT_POLICY</code></td>
 <td style="text-align: left;">1 restores the component-defined initial state when its bitmap bit is clear</td>
 </tr>
 <tr>
@@ -15263,10 +15267,10 @@
 </tr>
 </tbody>
 </table>
-<p><code>SAVE_AREA_SIZE_BYTES</code> is the complete byte range validated and accessed by SAVE or RESTORE. It is at least <code>FIXED_SIZE_BYTES</code>, covers the end of every component, and is a multiple of 64 bytes. <code>FIXED_SIZE_BYTES</code> is <code>0x00c0</code>, <code>BITMAP_WORDS</code> is 1, and <code>FMT</code> is zero for the save-image format defined by this specification.</p>
-<p>Each descriptor names one available extension component. Component IDs and bitmap bits are unique. Component regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block bitmap bit selects the descriptor carrying the same <code>BITMAP_BIT</code>. <code>INIT_POLICY=1</code> means that RESTORE reconstructs the component-defined initial state when that component's bitmap bit is clear.</p>
+<p><a href="#cpuid-field-base-cpuid-implementation-save-area-layout-save-area-size-save-area-size-bytes"><code>SAVE_AREA_SIZE_BYTES</code></a> is the complete byte range validated and accessed by SAVE or RESTORE. It is at least <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-fixed-size-bytes"><code>FIXED_SIZE_BYTES</code></a>, covers the end of every component, and is a multiple of 64 bytes. <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-fixed-size-bytes"><code>FIXED_SIZE_BYTES</code></a> is <code>0x00c0</code>, <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-bitmap-words"><code>BITMAP_WORDS</code></a> is 1, and <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-layout-fmt"><code>FMT</code></a> is zero for the save-image format defined by this specification.</p>
+<p>Each descriptor names one available extension component. Component IDs and bitmap bits are unique. Component regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block bitmap bit selects the descriptor carrying the same <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-a-bitmap-bit"><code>BITMAP_BIT</code></a>. <a href="#cpuid-field-base-cpuid-implementation-save-area-layout-component-descriptor-b-init-policy"><code>INIT_POLICY</code></a><code>=1</code> means that RESTORE reconstructs the component-defined initial state when that component's bitmap bit is clear.</p>
 <h2 id="timebase-discovery">Timebase Discovery</h2>
-<p>The mandatory architectural timebase advances at the exact nonzero integer rate reported by <code>TICKS_PER_SECOND</code>. The value is invariant for one cold-reset epoch and is preserved by warm RESET. Software uses this rate to convert differences between RDTIME results and absolute deadline values into elapsed time.</p>
+<p>The mandatory architectural timebase advances at the exact nonzero integer rate reported by <a href="#cpuid-field-base-cpuid-implementation-timebase-parameters-ticks-per-second"><code>TICKS_PER_SECOND</code></a>. The value is invariant for one cold-reset epoch and is preserved by warm RESET. Software uses this rate to convert differences between RDTIME results and absolute deadline values into elapsed time.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0005</code> uses the 64-bit query selector <code>0x0000000200050000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Architectural Timebase CPUID Query Allocations</strong></p>
 <table>
@@ -15287,10 +15291,11 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#cpuid-field-base-cpuid-implementation-timebase-parameters-ticks-per-second" id="cpuid-field-base-cpuid-implementation-timebase-parameters-ticks-per-second"></a></p>
 <p><img alt="Architectural Timebase CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-17.svg" /></p>
 <p><strong>Architectural Timebase CPUID Result Formats</strong></p>
 <h2 id="debug-trigger-discovery">Debug-Trigger Discovery</h2>
-<p>The mandatory Base trigger array has at least four slots per <a href="../terminology/#term-logical-processor">logical processor</a>. <code>SLOT_COUNT</code> reports the exact number accepted by <code>DTRSEL.SLOT</code>; software does not probe selector values beyond that count.</p>
+<p>The mandatory Base trigger array has at least four slots per <a href="../terminology/#term-logical-processor">logical processor</a>. <a href="#cpuid-field-base-cpuid-implementation-debug-triggers-parameters-slot-count"><code>SLOT_COUNT</code></a> reports the exact number accepted by <a href="../architectural-debug/#register-field-base-control-registers-dtrsel-slot"><code>DTRSEL.SLOT</code></a>; software does not probe selector values beyond that count.</p>
 <p>Class <code>0x00000002</code>, leaf <code>0x0006</code> uses the 64-bit query selector <code>0x0000000200060000</code> <span class="arithmatex">\(\mathbin{|}\,\mathit{index}\)</span>, where <span class="arithmatex">\(\mathit{index}\)</span> is the 16-bit query index below.</p>
 <p><strong>Architectural Debug Triggers CPUID Query Allocations</strong></p>
 <table>
@@ -15311,6 +15316,7 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#cpuid-field-base-cpuid-implementation-debug-triggers-parameters-slot-count" id="cpuid-field-base-cpuid-implementation-debug-triggers-parameters-slot-count"></a></p>
 <p><img alt="Architectural Debug Triggers CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-18.svg" /></p>
 <p><strong>Architectural Debug Triggers CPUID Result Formats</strong></p>
 

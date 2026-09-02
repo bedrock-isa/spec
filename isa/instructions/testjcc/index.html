@@ -14178,19 +14178,11 @@
 <p><strong><code>TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), &lt;imm8s&gt;</code></strong></p>
 <p><img alt="Format: Instruction format for TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), &lt;imm8s&gt;" src="../../../assets/visuals/isa/testjcc-01.svg" /></p>
 <p><strong>Format: Instruction format for TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), &lt;imm8s&gt;</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed encoded values: 2-15.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the source operand.</p>
+<p><code>cc</code> — <code>allowed</code>: <code>0x2..0xf</code> [<code>condition_true_false_reclaimed</code>]</p>
 <p>2.75in <strong><code>TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), &lt;imm16s&gt;</code></strong></p>
 <p><img alt="Format: Instruction format for TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), &lt;imm16s&gt;" src="../../../assets/visuals/isa/testjcc-02.svg" /></p>
 <p><strong>Format: Instruction format for TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), &lt;imm16s&gt;</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed encoded values: 2-15.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the source operand.</p>
+<p><code>cc</code> — <code>allowed</code>: <code>0x2..0xf</code> [<code>condition_true_false_reclaimed</code>]</p>
 
 
 

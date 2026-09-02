@@ -14258,12 +14258,7 @@
 <p><strong><code>FSINCOSA.{S|D}(z) Fn(s), Fn(d), Fn(c)</code></strong></p>
 <p><img alt="Format: Instruction format for FSINCOSA.{S|D}(z) Fn(s), Fn(d), Fn(c)" src="../../../assets/visuals/isa/fsincosa-01.svg" /></p>
 <p><strong>Format: Instruction format for FSINCOSA.{S|D}(z) Fn(s), Fn(d), Fn(c)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Operand overlap</strong> — When the sine destination and cosine destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>sin_dst</code>, <code>cos_dst</code> — <code>illegal_instruction</code></p>
 
 
 

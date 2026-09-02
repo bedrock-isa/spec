@@ -14221,33 +14221,18 @@
 <p><code>FP</code></p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible</p>
-<p>FBNDXX treats both bounds as exclusive. It sets V when the value is unordered or outside (lo, hi) and clears Z, N, and C. IEEE-754 FFLAGS causes continue to accrue independently.</p>
+<p>FBNDXX treats both bounds as exclusive. It sets <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> when the value is unordered or outside (lo, hi) and clears <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>. IEEE-754 FFLAGS causes continue to accrue independently.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>FBNDXX.{S|D}(z) Fn(l), Fn(v), Fn(h)</code></strong></p>
 <p><img alt="Format: Instruction format for FBNDXX.{S|D}(z) Fn(l), Fn(v), Fn(h)" src="../../../assets/visuals/isa/fbndxx-01.svg" /></p>
 <p><strong>Format: Instruction format for FBNDXX.{S|D}(z) Fn(l), Fn(v), Fn(h)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Register field <code>l</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>h</code></strong> — Selects the source operand.</p>
 <p>2.75in <strong><code>FBNDXX.{S|D}(z) Fn(l), &lt;ea&gt;(v), Fn(h)</code></strong></p>
 <p><img alt="Format: Instruction format for FBNDXX.{S|D}(z) Fn(l), &lt;ea&gt;(v), Fn(h)" src="../../../assets/visuals/isa/fbndxx-02.svg" /></p>
 <p><strong>Format: Instruction format for FBNDXX.{S|D}(z) Fn(l), &lt;ea&gt;(v), Fn(h)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Register field <code>l</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>h</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>v</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>FBNDXX.{S|D}(z) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)</code></strong></p>
 <p><img alt="Format: Instruction format for FBNDXX.{S|D}(z) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)" src="../../../assets/visuals/isa/fbndxx-03.svg" /></p>
 <p><strong>Format: Instruction format for FBNDXX.{S|D}(z) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>l</code></strong> — Specifies the source operand.</p>
-<p><strong>Effective Address field <code>h</code></strong> — Specifies the source operand.</p>
 
 
 

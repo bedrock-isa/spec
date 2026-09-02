@@ -14172,7 +14172,7 @@
 <h2 id="privilege">Privilege</h2>
 <p>Unprivileged</p>
 <p><strong>Performance-Counter IDs</strong></p>
-<p>RDPMC selects a 64-bit counter with its 16-bit immediate ID. The three standard counters are mandatory and wrap modulo <span class="arithmatex">\(2^{64}\)</span>. Cold reset and warm RESET clear them to zero. PMC.EN controls whether they increment.</p>
+<p>RDPMC selects a 64-bit counter with its 16-bit immediate ID. The three standard counters are mandatory and wrap modulo <span class="arithmatex">\(2^{64}\)</span>. Cold reset and warm RESET clear them to zero. <a href="../../programming-model/#register-field-base-control-registers-pmc-en"><code>PMC.EN</code></a> controls whether they increment.</p>
 <p><strong>Standard Performance Counters</strong></p>
 <table>
 <thead>
@@ -14186,7 +14186,7 @@
 <tr>
 <td style="text-align: left;"><code>1</code></td>
 <td style="text-align: left;"><code>CYCLE</code></td>
-<td style="text-align: left;">each implementation cycle while PMC.EN is set</td>
+<td style="text-align: left;">each implementation cycle while <a href="../../programming-model/#register-field-base-control-registers-pmc-en"><code>PMC.EN</code></a> is set</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>2</code></td>
@@ -14201,14 +14201,12 @@
 </tbody>
 </table>
 <p>Each successfully committed repeat-body iteration contributes one INSTRET event. A faulting instruction does not. PTWALK includes a walk that later reports a page fault, but excludes a segment-bound or canonical-address failure detected before a walk begins. ID zero is unavailable because index zero of the CPUID performance-counter leaf is its common discovery <a href="../../terminology/#term-header">header</a>. Other IDs beyond the standard set are implementation-defined and are discovered through that leaf.</p>
-<p>Every privilege level may read every implemented counter. Clearing PMC.EN freezes the current counter values without clearing them.</p>
+<p>Every privilege level may read every implemented counter. Clearing <a href="../../programming-model/#register-field-base-control-registers-pmc-en"><code>PMC.EN</code></a> freezes the current counter values without clearing them.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>RDPMC &lt;imm16&gt;, Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for RDPMC &lt;imm16&gt;, Rn(d)" src="../../../assets/visuals/isa/rdpmc-01.svg" /></p>
 <p><strong>Format: Instruction format for RDPMC &lt;imm16&gt;, Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 
 
 

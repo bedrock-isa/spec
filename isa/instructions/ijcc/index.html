@@ -14178,19 +14178,11 @@
 <p><strong><code>IJcc Rn(i), Rn(b), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for IJcc Rn(i), Rn(b), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/ijcc-01.svg" /></p>
 <p><strong>Format: Instruction format for IJcc Rn(i), Rn(b), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed encoded values: 0, 2-15.</p>
-<p><strong>Register field <code>i</code></strong> — Selects the counter operand.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the control-target operand.</p>
+<p><code>cc</code> — <code>allowed</code>: <code>0, 0x2..0xf</code> [<code>condition_false_reclaimed</code>]</p>
 <p>2.75in <strong><code>IJcc Rn(i), Rn(b), Rn(e)</code></strong></p>
 <p><img alt="Format: Instruction format for IJcc Rn(i), Rn(b), Rn(e)" src="../../../assets/visuals/isa/ijcc-02.svg" /></p>
 <p><strong>Format: Instruction format for IJcc Rn(i), Rn(b), Rn(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed encoded values: 0, 2-15.</p>
-<p><strong>Register field <code>i</code></strong> — Selects the counter operand.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>e</code></strong> — Selects the control-target operand.</p>
+<p><code>cc</code> — <code>allowed</code>: <code>0, 0x2..0xf</code> [<code>condition_false_reclaimed</code>]</p>
 
 
 

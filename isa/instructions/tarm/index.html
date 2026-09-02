@@ -14171,16 +14171,13 @@
 <p><code>TARM Rn(d), Rn(i)</code></p>
 <h2 id="privilege">Privilege</h2>
 <p>Supervisor only</p>
-<p>TARM atomically installs the absolute deadline from the first <a href="../../terminology/#term-rn-register">Rn register</a> and the interrupt identity from the second. The identity must be in the implemented range 1 through <code>ICAP.MAX_ID</code>; otherwise TARM raises <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a> without changing timer state.</p>
+<p>TARM atomically installs the absolute deadline from the first <a href="../../terminology/#term-rn-register">Rn register</a> and the interrupt identity from the second. The identity must be in the implemented range 1 through <a href="../../programming-model/#register-field-base-control-registers-icap-max-id"><code>ICAP.MAX_ID</code></a>; otherwise TARM raises <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a> without changing timer state.</p>
 <p>The signed modular distance from the current timebase to the supplied deadline determines whether the deadline is future. A positive distance arms the timer and replaces any prior arm. Zero or a negative distance immediately posts the identity to the executing logical processor's interrupt file and leaves the timer disarmed. TARM does not clear pending state posted by an earlier expiry and does not order memory operations.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>TARM Rn(d), Rn(i)</code></strong></p>
 <p><img alt="Format: Instruction format for TARM Rn(d), Rn(i)" src="../../../assets/visuals/isa/tarm-01.svg" /></p>
 <p><strong>Format: Instruction format for TARM Rn(d), Rn(i)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>i</code></strong> — Selects the source operand.</p>
 
 
 

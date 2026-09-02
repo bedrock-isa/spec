@@ -14191,91 +14191,91 @@
 <td style="text-align: left;"><code>0010</code></td>
 <td style="text-align: left;"><code>EQ</code></td>
 <td style="text-align: left;"><code>Z</code></td>
-<td style="text-align: left;">Z == 1</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> <code>== 1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0011</code></td>
 <td style="text-align: left;"><code>NE</code></td>
 <td style="text-align: left;"><code>NZ</code></td>
-<td style="text-align: left;">Z == 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> <code>== 0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0100</code></td>
 <td style="text-align: left;"><code>ULT</code></td>
 <td style="text-align: left;"><code>C</code></td>
-<td style="text-align: left;">C == 1</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> <code>== 1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0101</code></td>
 <td style="text-align: left;"><code>UGE</code></td>
 <td style="text-align: left;"><code>NC</code></td>
-<td style="text-align: left;">C == 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> <code>== 0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0110</code></td>
 <td style="text-align: left;"><code>MI</code></td>
 <td style="text-align: left;"><code>N</code></td>
-<td style="text-align: left;">N == 1</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> <code>== 1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>0111</code></td>
 <td style="text-align: left;"><code>PL</code></td>
 <td style="text-align: left;"><code>NN</code></td>
-<td style="text-align: left;">N == 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> <code>== 0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1000</code></td>
 <td style="text-align: left;"><code>VS</code></td>
 <td style="text-align: left;"><code>V</code></td>
-<td style="text-align: left;">V == 1</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> <code>== 1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1001</code></td>
 <td style="text-align: left;"><code>VC</code></td>
 <td style="text-align: left;"><code>NV</code></td>
-<td style="text-align: left;">V == 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> <code>== 0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1010</code></td>
 <td style="text-align: left;"><code>ULE</code></td>
 <td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">C == 1 || Z == 1</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> <code>== 1 ||</code> <a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> <code>== 1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1011</code></td>
 <td style="text-align: left;"><code>UGT</code></td>
 <td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">C == 0 &amp;&amp; Z == 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> <code>== 0 &amp;&amp;</code> <a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> <code>== 0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1100</code></td>
 <td style="text-align: left;"><code>LT</code></td>
 <td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">N != V</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> <code>!=</code> <a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1101</code></td>
 <td style="text-align: left;"><code>GE</code></td>
 <td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">N == V</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> <code>==</code> <a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1110</code></td>
 <td style="text-align: left;"><code>LE</code></td>
 <td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">Z == 1 || N != V</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> <code>== 1 ||</code> <a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> <code>!=</code> <a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1111</code></td>
 <td style="text-align: left;"><code>GT</code></td>
 <td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">Z == 0 &amp;&amp; N == V</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> <code>== 0 &amp;&amp;</code> <a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> <code>==</code> <a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a></td>
 </tr>
 </tbody>
 </table>
 <p><a href="#table-condition-code-encoding" id="table-condition-code-encoding"></a></p>
 <h2 id="flag-meanings">Flag Meanings</h2>
-<p>Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction description explicitly defines a FLAGS write. Every FLAGS-writing instruction replaces the complete Z, N, C, and V image; partial FLAGS writes do not exist. An instruction that does not write FLAGS preserves the complete image.</p>
+<p>Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction description explicitly defines a FLAGS write. Every FLAGS-writing instruction replaces the complete <a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> image; partial FLAGS writes do not exist. An instruction that does not write FLAGS preserves the complete image.</p>
 <p>For an operand width of n bits, <a href="../terminology/#term-ordinary">ordinary</a> integer ALU results are evaluated modulo 2^n unless the instruction explicitly defines a wider intermediate.</p>
 <p>Explicit FLAGS-writing integer instructions include CMP, TEST, ADC, SBB, INCF, DECF, BTEST, BSET, BCLR, BCHG, SETF, WRFLAGS, CMPXCHG, SEGLEA, and the bounds-check instructions. CMPJcc and TESTJcc compute temporary condition flags for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts, rotates, moves, extensions, min/max, and multiply/divide instructions leave FLAGS unchanged.</p>
 <p><strong>Integer Condition-Code Bits</strong></p>
@@ -14289,22 +14289,22 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Z</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a></td>
 <td style="text-align: left;">zero</td>
 <td style="text-align: left;">Set when the result value is zero.</td>
 </tr>
 <tr>
-<td style="text-align: left;">N</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a></td>
 <td style="text-align: left;">negative</td>
 <td style="text-align: left;">Set from the most significant result bit at the operand size.</td>
 </tr>
 <tr>
-<td style="text-align: left;">C</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a></td>
 <td style="text-align: left;">carry/borrow</td>
 <td style="text-align: left;">Set on unsigned carry out for addition or unsigned borrow for subtraction.</td>
 </tr>
 <tr>
-<td style="text-align: left;">V</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a></td>
 <td style="text-align: left;">overflow</td>
 <td style="text-align: left;">Set on signed overflow or an explicitly reported exceptional condition.</td>
 </tr>

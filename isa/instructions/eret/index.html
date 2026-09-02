@@ -14174,28 +14174,28 @@
 <p>Classify the return source before stack access, then atomically return through a valid staged or outer-event U bank, or restore a valid active supervisor event frame.</p>
 <ol>
 <li>
-<p>Classify the return source before any stack access. A staged direct user entry requires supervisor mode, EA clear, EDEPTH zero, UO clear, and UCTL.V set. An outer user-event return requires EA set, EDEPTH one, UO set, and UCTL.V set. Other active supervisor returns use the memory frame.</p>
+<p>Classify the return source before any stack access. A staged direct user entry requires supervisor mode, <a href="../../programming-model/#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a> clear, <a href="../../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a> zero, <a href="../../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> clear, and <a href="../../programming-model/#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a> set. An outer user-event return requires <a href="../../programming-model/#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a> set, <a href="../../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a> one, <a href="../../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> set, and <a href="../../programming-model/#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a> set. Other active supervisor returns use the memory frame.</p>
 </li>
 <li>
-<p>For a U-bank return, validate UCTL, UINFO, the user segments and pointers, and the executable UPC, then atomically restore user state, clear UCTL.V, EDEPTH, UO, EA, and current DFA, and perform no stack access.</p>
+<p>For a U-bank return, validate UCTL, UINFO, the user segments and pointers, and the executable UPC, then atomically restore user state, clear <a href="../../programming-model/#register-field-base-control-registers-uctl-v"><code>UCTL.V</code></a>, <a href="../../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>, <a href="../../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a>, <a href="../../programming-model/#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a>, and current DFA, and perform no stack access.</p>
 </li>
 <li>
-<p>For a stacked return, read and decode <code>FRAME_CONTROL</code> at SS:SP without changing SP. Accept only the defined BASIC, ERROR, PAGE, and AUXILIARY sizes, with all <a href="../../terminology/#term-reserved">reserved</a> bits zero.</p>
+<p>For a stacked return, read and decode <a href="../../architectural-event-processing-model/#event-structure-base-events-frame-event-frame-frame-control"><code>FRAME_CONTROL</code></a> at SS:SP without changing SP. Accept only the defined BASIC, ERROR, PAGE, and AUXILIARY sizes, with all <a href="../../terminology/#term-reserved">reserved</a> bits zero.</p>
 </li>
 <li>
-<p>Validate that saved STATUS.EDEPTH plus one equals the current depth and that saved and current UO preserve the outer-origin chain.</p>
+<p>Validate that saved <a href="../../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a> plus one equals the current depth and that saved and current <a href="../../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> preserve the outer-origin chain.</p>
 </li>
 <li>
-<p>Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing <a href="../../terminology/#term-architectural-state">architectural state</a>.</p>
+<p>Read the complete selected frame and validate <a href="../../architectural-event-processing-model/#event-structure-base-events-frame-event-frame-frame-control-flags"><code>FRAME_CONTROL.FLAGS</code></a>, <a href="../../architectural-event-processing-model/#event-structure-base-events-frame-event-frame-frame-control-status"><code>FRAME_CONTROL.STATUS</code></a>, CS, DS, SS, SP, and an executable canonical PC without changing <a href="../../terminology/#term-architectural-state">architectural state</a>.</p>
 </li>
 <li>
-<p>Ignore the value in the fixed-header <a href="../../terminology/#term-padding">padding</a> slot at offset +0x38.</p>
+<p>Ignore the value in the fixed-header <a href="../../architectural-event-processing-model/#event-structure-base-events-frame-event-frame-padding"><code>PADDING</code></a> slot at offset +0x38.</p>
 </li>
 <li>
-<p>Atomically restore the validated <a href="../../terminology/#term-architectural-state">architectural state</a> and current DFA from <code>FRAME_CONTROL.SAVED_DFA</code>. Hidden repeat state remains clear; if SAVED_PC identifies a repeat prefix, that prefix is decoded and executed normally after return.</p>
+<p>Atomically restore the validated <a href="../../terminology/#term-architectural-state">architectural state</a> and current DFA from <a href="../../architectural-event-processing-model/#event-structure-base-events-frame-event-frame-frame-control-saved-dfa"><code>FRAME_CONTROL.SAVED_DFA</code></a>. Hidden repeat state remains clear; if <a href="../../architectural-event-processing-model/#event-structure-base-events-frame-event-frame-saved-pc"><code>SAVED_PC</code></a> identifies a repeat prefix, that prefix is decoded and executed normally after return.</p>
 </li>
 <li>
-<p>After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI_P is set.</p>
+<p>After restoration, admit a pending NMI before the next instruction boundary when <a href="../../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a> is clear and <a href="../../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> is set.</p>
 </li>
 </ol>
 <p>2.75in</p>

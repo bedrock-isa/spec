@@ -14204,23 +14204,13 @@
 <p><strong><code>VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), Vn(w), Pn(q)</code></strong></p>
 <p><img alt="Format: Instruction format for VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), Vn(w), Pn(q)" src="../../../assets/visuals/isa/vcmpcc-01.svg" /></p>
 <p><strong>Format: Instruction format for VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), Vn(w), Pn(q)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>x</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed encoded values: 2-5, 10-15.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>q</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>w</code></strong> — Selects the source operand.</p>
+<p><code>size</code> — <code>allowed</code>: <code>0x0..0x3</code> [<code>reserved_vector_element_type</code>]</p>
+<p><code>cc</code> — <code>allowed</code>: <code>0x2..0x5, 0xa..0xf</code> [<code>reserved_vector_comparison_condition</code>]</p>
 <p>2.75in <strong><code>VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), &lt;ea&gt;(e), Pn(q)</code></strong></p>
 <p><img alt="Format: Instruction format for VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), &lt;ea&gt;(e), Pn(q)" src="../../../assets/visuals/isa/vcmpcc-02.svg" /></p>
 <p><strong>Format: Instruction format for VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), &lt;ea&gt;(e), Pn(q)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>x</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed encoded values: 2-5, 10-15.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>q</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
+<p><code>size</code> — <code>allowed</code>: <code>0x0..0x3</code> [<code>reserved_vector_element_type</code>]</p>
+<p><code>cc</code> — <code>allowed</code>: <code>0x2..0x5, 0xa..0xf</code> [<code>reserved_vector_comparison_condition</code>]</p>
 
 
 

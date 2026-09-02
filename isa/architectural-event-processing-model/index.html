@@ -14686,12 +14686,12 @@
 <p>A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. A faulting repeat iteration rolls back without decrementing its counter, then saves the repeat-prefix address. After a successful repeat iteration, the counter decrement commits before an event may be admitted between iterations; that event also saves the repeat-prefix address. Event entry clears hidden repeat state, and ERET executes the saved prefix normally without restoring repeat <a href="../terminology/#term-continuation">continuation</a>.</p>
 <h2 id="event-priority-and-debug-stops">Event Priority and Debug Stops <a href="#section-event-priority-and-debug" id="section-event-priority-and-debug"></a></h2>
 <p>When events compete at one architectural boundary, delivery failure is selected before machine check. Instruction and operand validation, address formation, translation, permission, alignment, and other higher-priority synchronous faults precede debug-trigger evaluation. A pre-effect execution breakpoint or memory watchpoint is selected before any result of the stopped instruction and before NMI or a maskable interrupt at the same boundary. After successful completion, an explicit <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> is selected before <a href="#event-single-step"><code>SINGLE_STEP</code></a>; NMI and maskable interrupts follow automatic debug events. An asynchronous event that is not selected remains pending.</p>
-<p>A <a href="../terminology/#term-trace-unit">trace unit</a> is one <a href="../terminology/#term-ordinary">ordinary</a> committed instruction or one committed REP or REPcc body iteration. Completion of a zero-count REP or REPcc is also one <a href="../terminology/#term-trace-unit">trace unit</a>. TF is sampled at the start of the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then delivers <a href="#event-single-step"><code>SINGLE_STEP</code></a> with the following trace-unit boundary as its saved PC.</p>
+<p>A <a href="../terminology/#term-trace-unit">trace unit</a> is one <a href="../terminology/#term-ordinary">ordinary</a> committed instruction or one committed REP or REPcc body iteration. Completion of a zero-count REP or REPcc is also one <a href="../terminology/#term-trace-unit">trace unit</a>. <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a> is sampled at the start of the unit. If sampled <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a> is one and sampled <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> is zero, successful completion commits the unit and then delivers <a href="#event-single-step"><code>SINGLE_STEP</code></a> with the following trace-unit boundary as its saved PC.</p>
 <p>The <a href="../instructions/trace/"><code>TRACE</code></a> marker instruction is an <a href="../terminology/#term-ordinary">ordinary</a> instruction for this rule. Its marker is recorded before a pending SINGLE_STEP is delivered. The <a href="../terminology/#term-group-tracing">Tracing Terms</a> section distinguishes the marker instruction, <a href="../terminology/#term-trace-unit">trace unit</a>, and SINGLE_STEP event.</p>
-<p>RF suppresses SINGLE_STEP and every automatic execution or memory trigger for one trace unit. It does not suppress <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> or the TRACE marker. If sampled RF is one, successful trace-unit completion clears RF. A fault or asynchronous event before successful completion preserves it. Event entry saves the old STATUS image and clears live TF and RF. Entry for a pre-effect hardware-trigger event first sets RF in the saved return STATUS image, allowing a normal return to retry the instruction once without an immediate retrigger. A handler may clear that saved RF bit to request deliberate retriggering.</p>
+<p><a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> suppresses SINGLE_STEP and every automatic execution or memory trigger for one trace unit. It does not suppress <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> or the TRACE marker. If sampled <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> is one, successful trace-unit completion clears <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a>. A fault or asynchronous event before successful completion preserves it. Event entry saves the old STATUS image and clears live <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a> and <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a>. Entry for a pre-effect hardware-trigger event first sets <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> in the saved return STATUS image, allowing a normal return to retry the instruction once without an immediate retrigger. A handler may clear that saved <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> bit to request deliberate retriggering.</p>
 <h2 id="entry-admission-and-event-depth">Entry Admission and Event Depth</h2>
-<p>The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V, STATUS.IE, and the depth limit all permit it: the current event depth must be less than ECR.MAX_EDEPTH. The interrupt file additionally requires a pending and enabled identity that passes ITHRESH; ITOP chooses the numerically lowest such identity. Otherwise the identity remains pending in the interrupt file. A synchronous exception that requires delivery while ECR.V is clear cannot be deferred and enters SHUTDOWN. An NMI observed while ECR.V is clear sets the hardware-managed ECR.NMI_P latch and is not admitted. After ECR.V becomes one, hardware admits that pending NMI before the next instruction boundary when STATUS.NI is clear. While STATUS.NI remains set, the NMI remains pending. Multiple NMI observations coalesce in ECR.NMI_P.</p>
-<p>Event depth is zero outside event handling. A successful entry saves STATUS in the selected return context and increments STATUS.EDEPTH. ECR.MAX_EDEPTH equal to zero prevents maskable interrupt admission; values 1 through 15 limit only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal: any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create an <code>EVENT_DELIVERY_FAILURE</code> family frame; at depth 15 there is no representable child frame.</p>
+<p>The event-entry state is usable only while <a href="../programming-model/#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a> is set. A maskable interrupt is admitted only when <a href="../programming-model/#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-ie"><code>STATUS.IE</code></a>, and the depth limit all permit it: the current event depth must be less than <a href="../programming-model/#register-field-base-control-registers-ecr-max-edepth"><code>ECR.MAX_EDEPTH</code></a>. The interrupt file additionally requires a pending and enabled identity that passes ITHRESH; ITOP chooses the numerically lowest such identity. Otherwise the identity remains pending in the interrupt file. A synchronous exception that requires delivery while <a href="../programming-model/#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a> is clear cannot be deferred and enters SHUTDOWN. An NMI observed while <a href="../programming-model/#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a> is clear sets the hardware-managed <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> latch and is not admitted. After <a href="../programming-model/#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a> becomes one, hardware admits that pending NMI before the next instruction boundary when <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a> is clear. While <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a> remains set, the NMI remains pending. Multiple NMI observations coalesce in <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a>.</p>
+<p>Event depth is zero outside event handling. A successful entry saves STATUS in the selected return context and increments <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>. <a href="../programming-model/#register-field-base-control-registers-ecr-max-edepth"><code>ECR.MAX_EDEPTH</code></a> equal to zero prevents maskable interrupt admission; values 1 through 15 limit only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal: any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create an <code>EVENT_DELIVERY_FAILURE</code> family frame; at depth 15 there is no representable child frame.</p>
 <h2 id="supervisor-event-stacks-and-nesting">Supervisor Event Stacks and Nesting</h2>
 <p>The configured supervisor stack pairs select only the first user-origin entry and delivery-failure recovery.</p>
 <p><strong>Supervisor Stack Roles</strong></p>
@@ -14730,15 +14730,16 @@
 <p>For user-origin entry, hardware rounds only the event <a href="../terminology/#term-payload">payload</a> to 16 bytes and subtracts it from the configured top. BASIC events have zero <a href="../terminology/#term-payload">payload</a> and perform no stack access. For supervisor or nested entry, hardware subtracts the complete full-frame size from current SP. Each nonzero range is validated and stored atomically before the new SP commits; configured tops are never modified.</p>
 <p>Events in the <code>EVENT_DELIVERY_FAILURE</code> family use DSS:DSP. Supervisor-origin and nested events retain the current SS:SP; ERET validates and restores the saved STATUS depth and origin chain.</p>
 <h2 id="event-entry-state">Event Entry State</h2>
-<p>Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame storage range. It then stores the frame, loads the entry segments and PC, sets STATUS.PM and STATUS.EA, and clears STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged; the common entry code preserves whatever its software ABI requires.</p>
-<p>NMI entry additionally sets STATUS.NI. Other event classes preserve NI. A further NMI observed while NI is set is recorded by setting ECR.NMI_P. ECR.NMI_P is hardware managed, so WRCR ignores the supplied value for that bit. When entry of an NMI admitted from ECR.NMI_P commits, hardware clears ECR.NMI_P as part of the same architectural transition. A newly observed NMI may set the latch again. An entry failure does not clear the latch before committing the specified delivery-failure result. When ERET successfully restores NI to zero, a pending NMI is delivered before the next instruction boundary.</p>
+<p>Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame storage range. It then stores the frame, loads the entry segments and PC, sets <a href="../programming-model/#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a> and <a href="../programming-model/#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a>, and clears <a href="../programming-model/#register-field-base-registers-state-status-ie"><code>STATUS.IE</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a>, and <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged; the common entry code preserves whatever its software ABI requires.</p>
+<p>NMI entry additionally sets <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a>. Other event classes preserve <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a>. A further NMI observed while <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a> is set is recorded by setting <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a>. <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> is hardware managed, so WRCR ignores the supplied value for that bit. When entry of an NMI admitted from <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> commits, hardware clears <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> as part of the same architectural transition. A newly observed NMI may set the latch again. An entry failure does not clear the latch before committing the specified delivery-failure result. When ERET successfully restores <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a> to zero, a pending NMI is delivered before the next instruction boundary.</p>
 <p>When maskable-interrupt entry commits, hardware clears exactly the delivered identity’s pending bit in the same architectural transition. Entry validation, target probing, frame-address, or frame-store failure preserves that bit; a later posting of the same identity continues to coalesce while it remains pending.</p>
-<p>STATUS.EA, STATUS.EDEPTH, STATUS.UO, and STATUS.PM are hardware-managed transition state. WRSTATUS must preserve their current values. An attempted change raises <a href="#event-reserved-control-bits"><code>RESERVED_CONTROL_BITS</code></a> without modifying STATUS. WRSTATUS may change IE, NI, TF, and RF. Clearing NI while ECR.NMI_P is one admits the pending NMI at the next instruction boundary. ERET classifies direct U-bank, outer U-bank, and stacked returns before any stack access; an invalid combination raises <a href="#event-invalid-control-transition"><code>INVALID_CONTROL_TRANSITION</code></a> without consuming either return source.</p>
+<p><a href="../programming-model/#register-field-base-registers-state-status-ea"><code>STATUS.EA</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a>, and <a href="../programming-model/#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a> are hardware-managed transition state. WRSTATUS must preserve their current values. An attempted change raises <a href="#event-reserved-control-bits"><code>RESERVED_CONTROL_BITS</code></a> without modifying STATUS. WRSTATUS may change <a href="../programming-model/#register-field-base-registers-state-status-ie"><code>STATUS.IE</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a>, and <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a>. Clearing <a href="../programming-model/#register-field-base-registers-state-status-ni"><code>STATUS.NI</code></a> while <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> is one admits the pending NMI at the next instruction boundary. ERET classifies direct U-bank, outer U-bank, and stacked returns before any stack access; an invalid combination raises <a href="#event-invalid-control-transition"><code>INVALID_CONTROL_TRANSITION</code></a> without consuming either return source.</p>
 <h2 id="architectural-event-frame">Architectural Event Frame</h2>
-<p>Every event frame begins with exactly eight 64-bit slots. EVENT_INFO contains the event code in bits 31 through 0; its upper half is zero. FRAME_CONTROL contains only frame shape, saved nesting state, saved FLAGS, and saved STATUS. Event classification is carried exclusively by EVENT_INFO.</p>
+<p>Every event frame begins with exactly eight 64-bit slots. <a href="#event-structure-base-events-frame-event-frame-event-info"><code>EVENT_INFO</code></a> contains <a href="#event-structure-base-events-frame-event-frame-event-info-event-code"><code>EVENT_INFO.EVENT_CODE</code></a> in bits 31 through 0; its upper half is zero. <a href="#event-structure-base-events-frame-event-frame-frame-control"><code>FRAME_CONTROL</code></a> contains only frame shape, saved nesting state, saved <a href="#event-structure-base-events-frame-event-frame-frame-control-flags"><code>FRAME_CONTROL.FLAGS</code></a>, and saved <a href="#event-structure-base-events-frame-event-frame-frame-control-status"><code>FRAME_CONTROL.STATUS</code></a>. Event classification is carried exclusively by <a href="#event-structure-base-events-frame-event-frame-event-info"><code>EVENT_INFO</code></a>.</p>
 <p><img alt="Architectural Event Frame" src="../../assets/visuals/isa/architectural-event-processing-model-02.svg" /></p>
 <p><strong>Architectural Event Frame</strong></p>
 <p><strong>Architectural Event Frame Fields</strong></p>
+<p><a href="#event-structure-base-events-frame-event-frame-event-aux" id="event-structure-base-events-frame-event-frame-event-aux"></a></p>
 <table>
 <thead>
 <tr>
@@ -14750,70 +14751,71 @@
 <tbody>
 <tr>
 <td style="text-align: left;">+0x00</td>
-<td style="text-align: left;">FRAME_CONTROL</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-frame-control" id="event-structure-base-events-frame-event-frame-frame-control"></a><code>FRAME_CONTROL</code></td>
 <td style="text-align: left;">frame shape, nesting metadata, saved FLAGS, and saved STATUS</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x08</td>
-<td style="text-align: left;">EVENT_INFO</td>
-<td style="text-align: left;">event code in bits 31..0; bits 63..32 are zero</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-event-info" id="event-structure-base-events-frame-event-frame-event-info"></a><code>EVENT_INFO</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-event-info-event-code" id="event-structure-base-events-frame-event-frame-event-info-event-code"></a><code>EVENT_CODE</code> in bits 31..0; bits 63..32 are zero</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x10</td>
-<td style="text-align: left;">SAVED_PC</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-saved-pc" id="event-structure-base-events-frame-event-frame-saved-pc"></a><code>SAVED_PC</code></td>
 <td style="text-align: left;">saved <a href="../terminology/#term-program-counter">program counter</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x18</td>
-<td style="text-align: left;">SAVED_SP</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-saved-sp" id="event-structure-base-events-frame-event-frame-saved-sp"></a><code>SAVED_SP</code></td>
 <td style="text-align: left;">saved stack pointer</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x20</td>
-<td style="text-align: left;">SAVED_CS</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-saved-cs" id="event-structure-base-events-frame-event-frame-saved-cs"></a><code>SAVED_CS</code></td>
 <td style="text-align: left;">saved code-segment image</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x28</td>
-<td style="text-align: left;">SAVED_DS</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-saved-ds" id="event-structure-base-events-frame-event-frame-saved-ds"></a><code>SAVED_DS</code></td>
 <td style="text-align: left;">saved data-segment image</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x30</td>
-<td style="text-align: left;">SAVED_SS</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-saved-ss" id="event-structure-base-events-frame-event-frame-saved-ss"></a><code>SAVED_SS</code></td>
 <td style="text-align: left;">saved stack-segment image</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x38</td>
-<td style="text-align: left;">PADDING</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-padding" id="event-structure-base-events-frame-event-frame-padding"></a><code>PADDING</code></td>
 <td style="text-align: left;"><a href="../terminology/#term-ignored">ignored</a> by ERET; software may write any value</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x40</td>
-<td style="text-align: left;">ERROR_CODE</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-error-code" id="event-structure-base-events-frame-event-frame-error-code"></a><code>ERROR_CODE</code></td>
 <td style="text-align: left;">exception-specific error code; unassigned bits are zero</td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x48</td>
-<td style="text-align: left;">FAULT_EA</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-ea" id="event-structure-base-events-frame-event-frame-fault-ea"></a><code>FAULT_EA</code></td>
 <td style="text-align: left;">numeric <a href="../terminology/#term-effective-address">effective address</a> before <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x50</td>
-<td style="text-align: left;">FAULT_LINEAR</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-linear" id="event-structure-base-events-frame-event-frame-fault-linear"></a><code>FAULT_LINEAR</code></td>
 <td style="text-align: left;">address after <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">+0x58</td>
-<td style="text-align: left;">EVENT_AUX</td>
+<td style="text-align: left;"><code>EVENT_AUX</code></td>
 <td style="text-align: left;">delivery-failure, machine-check, or bus-failure auxiliary information</td>
 </tr>
 </tbody>
 </table>
 <p><img alt="FRAME_CONTROL Format" src="../../assets/visuals/isa/architectural-event-processing-model-03.svg" /></p>
 <p><strong>FRAME_CONTROL Format</strong></p>
-<p>In the diagram, <code>D</code> abbreviates <code>SAVED_DFA</code>.</p>
+<p>In the diagram, <code>D</code> abbreviates <a href="#event-structure-base-events-frame-event-frame-frame-control-saved-dfa"><code>FRAME_CONTROL.SAVED_DFA</code></a>.</p>
 <p><strong>FRAME_CONTROL Fields</strong></p>
+<p><a href="#event-structure-base-events-frame-event-frame-frame-control-status" id="event-structure-base-events-frame-event-frame-frame-control-status"></a></p>
 <table>
 <thead>
 <tr>
@@ -14824,17 +14826,17 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">frame_size</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-frame-control-frame-size" id="event-structure-base-events-frame-event-frame-frame-control-frame-size"></a><code>FRAME_SIZE</code></td>
 <td style="text-align: left;">0..7</td>
 <td style="text-align: left;">total allocated frame size in 8-byte units</td>
 </tr>
 <tr>
-<td style="text-align: left;">frame_type</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-frame-control-frame-type" id="event-structure-base-events-frame-event-frame-frame-control-frame-type"></a><code>FRAME_TYPE</code></td>
 <td style="text-align: left;">8..11</td>
 <td style="text-align: left;">optional <a href="../terminology/#term-payload">payload</a> layout code; it does not classify the event</td>
 </tr>
 <tr>
-<td style="text-align: left;">saved_dfa</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-frame-control-saved-dfa" id="event-structure-base-events-frame-event-frame-frame-control-saved-dfa"></a><code>SAVED_DFA</code></td>
 <td style="text-align: left;">12</td>
 <td style="text-align: left;">prior hidden delivery-failure-active state</td>
 </tr>
@@ -14844,14 +14846,14 @@
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a>; <a href="../terminology/#term-must-be-zero">must be zero</a></td>
 </tr>
 <tr>
-<td style="text-align: left;">flags</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-frame-control-flags" id="event-structure-base-events-frame-event-frame-frame-control-flags"></a><code>FLAGS</code></td>
 <td style="text-align: left;">32..35</td>
 <td style="text-align: left;">saved FLAGS image</td>
 </tr>
 <tr>
-<td style="text-align: left;">status</td>
+<td style="text-align: left;"><code>STATUS</code></td>
 <td style="text-align: left;">36..51</td>
-<td style="text-align: left;">saved STATUS image, including EDEPTH and UO</td>
+<td style="text-align: left;">saved STATUS image, including <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a> and <a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
@@ -14860,8 +14862,8 @@
 </tr>
 </tbody>
 </table>
-<p>ERET first validates the frame shape and nesting metadata. BASIC requires frame_size 8, ERROR requires 10, and PAGE and AUXILIARY require 12. It requires saved STATUS.PM=1, saved STATUS.EDEPTH plus one to equal the current depth, and saved STATUS.UO to match the active outer-origin chain.</p>
-<p>Only after those checks does ERET validate the saved control state, segment images, SP, and PC. On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the fixed-header <a href="../terminology/#term-padding">padding</a> slot at +0x38 and restores no hidden repeat state. EVENT_INFO and the event-specific <a href="../terminology/#term-payload">payload</a> remain available to software.</p>
+<p>ERET first validates the frame shape and nesting metadata. BASIC requires <a href="#event-structure-base-events-frame-event-frame-frame-control-frame-size"><code>FRAME_CONTROL.FRAME_SIZE</code></a><code>=8</code>, ERROR requires <code>10</code>, and PAGE and AUXILIARY require <code>12</code>. It requires saved <a href="../programming-model/#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a><code>=1</code>, saved <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a> plus one to equal the current depth, and saved <a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> to match the active outer-origin chain.</p>
+<p>Only after those checks does ERET validate the saved control state, segment images, SP, and PC. On success it restores <a href="#event-structure-base-events-frame-event-frame-frame-control-flags"><code>FRAME_CONTROL.FLAGS</code></a>, <a href="#event-structure-base-events-frame-event-frame-frame-control-status"><code>FRAME_CONTROL.STATUS</code></a>, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the fixed-header <a href="#event-structure-base-events-frame-event-frame-padding"><code>PADDING</code></a> slot at +0x38 and restores no hidden repeat state. <a href="#event-structure-base-events-frame-event-frame-event-info"><code>EVENT_INFO</code></a> and the event-specific <a href="../terminology/#term-payload">payload</a> remain available to software.</p>
 <h2 id="event-payloads">Event Payloads</h2>
 <p>Payload starts at offset +0x40. Hardware allocates only the defined <a href="../terminology/#term-payload">payload</a> prefix, rounds it up to a 16-byte boundary, and zeros the <a href="../terminology/#term-padding">padding</a>. The frame-size unit remains one 8-byte slot.</p>
 <p><strong>Architectural Event Frame Types and Sizes</strong></p>
@@ -14894,7 +14896,7 @@
 <td style="text-align: left;">16</td>
 <td style="text-align: left;">80</td>
 <td style="text-align: left;">10</td>
-<td style="text-align: left;">ERROR_CODE</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;">0x2</td>
@@ -14903,7 +14905,7 @@
 <td style="text-align: left;">32</td>
 <td style="text-align: left;">96</td>
 <td style="text-align: left;">12</td>
-<td style="text-align: left;">FAULT_LINEAR</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;">0x3</td>
@@ -14912,19 +14914,20 @@
 <td style="text-align: left;">32</td>
 <td style="text-align: left;">96</td>
 <td style="text-align: left;">12</td>
-<td style="text-align: left;">EVENT_AUX</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a></td>
 </tr>
 </tbody>
 </table>
-<p>The delivered leaf event determines the frame type. ERROR_CODE is defined separately by each event that uses it and has zero in every unassigned bit. PAGE frames extend that slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT_AUX to describe delivery-failure, machine-check, or bus-failure state.</p>
-<p>A misaligned atomic memory operand raises <a href="#event-atomic-alignment-fault"><code>ATOMIC_ALIGNMENT_FAULT</code></a> and uses the PAGE frame. FAULT_EA identifies the misaligned effective-address operand and FAULT_LINEAR contains its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory read, memory write, or architectural result update.</p>
+<p>The delivered leaf event determines the frame type. <a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a> is defined separately by each event that uses it and has zero in every unassigned bit. PAGE frames extend that slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits <a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a> to describe delivery-failure, machine-check, or bus-failure state.</p>
+<p>A misaligned atomic memory operand raises <a href="#event-atomic-alignment-fault"><code>ATOMIC_ALIGNMENT_FAULT</code></a> and uses the PAGE frame. <a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> identifies the misaligned effective-address operand and <a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> contains its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory read, memory write, or architectural result update.</p>
 <p>Execution-breakpoint and memory-watchpoint payloads are defined in the debug-event payload format. Their pre-effect timing is part of the <a href="../architectural-debug/">Architectural Debug Triggers</a> contract.</p>
 <h3 id="address-context-payload">Address-Context Payload</h3>
-<p>Events in the <code>ADDRESS_TRANSLATION</code> and <code>PHYSICAL_ACCESS</code> families use the PAGE frame. The leaf event code identifies the failure; ERROR_CODE carries only the access context common to those events.</p>
+<p>Events in the <code>ADDRESS_TRANSLATION</code> and <code>PHYSICAL_ACCESS</code> families use the PAGE frame. The leaf event code identifies the failure; <a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a> carries only the access context common to those events.</p>
 <p><img alt="PAGE Event ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-04.svg" /></p>
 <p><strong>PAGE Event ERROR_CODE Format</strong></p>
-<p><code>SZ</code>, <code>L</code>, <code>E</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <code>ACCESS_SIZE</code>, <code>FAULT_LINEAR_VALID</code>, <code>FAULT_EA_VALID</code>, <code>OPERAND</code>, <code>WALK_LEVEL</code>, and <code>ACCESS</code>; <code>A</code> and <code>U</code> denote <code>ATOMIC</code> and <code>USER_DOMAIN</code>.</p>
+<p><code>SZ</code>, <code>L</code>, <code>E</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <a href="#event-structure-base-events-payloads-page-error-code-access-size"><code>PAGE_ERROR_CODE.ACCESS_SIZE</code></a>, <a href="#event-structure-base-events-payloads-page-error-code-fault-linear-valid"><code>PAGE_ERROR_CODE.FAULT_LINEAR_VALID</code></a>, <a href="#event-structure-base-events-payloads-page-error-code-fault-ea-valid"><code>PAGE_ERROR_CODE.FAULT_EA_VALID</code></a>, <a href="#event-structure-base-events-payloads-page-error-code-operand"><code>PAGE_ERROR_CODE.OPERAND</code></a>, <a href="#event-structure-base-events-payloads-page-error-code-walk-level"><code>PAGE_ERROR_CODE.WALK_LEVEL</code></a>, and <a href="#event-structure-base-events-payloads-page-error-code-access"><code>PAGE_ERROR_CODE.ACCESS</code></a>; <code>A</code> and <code>U</code> denote <a href="#event-structure-base-events-payloads-page-error-code-atomic"><code>PAGE_ERROR_CODE.ATOMIC</code></a> and <a href="#event-structure-base-events-payloads-page-error-code-user-domain"><code>PAGE_ERROR_CODE.USER_DOMAIN</code></a>.</p>
 <p><strong>PAGE Event ERROR_CODE Fields</strong></p>
+<p><a href="#event-structure-base-events-payloads-page-error-code-access-size" id="event-structure-base-events-payloads-page-error-code-access-size"></a></p>
 <table>
 <thead>
 <tr>
@@ -14937,27 +14940,27 @@
 <tr>
 <td style="text-align: left;">7..0</td>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
-<td style="text-align: left;">zero; failure identity is carried by EVENT_CODE</td>
+<td style="text-align: left;">zero; failure identity is carried by <a href="#event-structure-base-events-frame-event-frame-event-info-event-code"><code>EVENT_INFO.EVENT_CODE</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;">9..8</td>
-<td style="text-align: left;"><code>ACCESS</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-access" id="event-structure-base-events-payloads-page-error-code-access"></a><code>ACCESS</code></td>
 <td style="text-align: left;">0 none, 1 read, 2 write, 3 execute</td>
 </tr>
 <tr>
 <td style="text-align: left;">10</td>
-<td style="text-align: left;"><code>USER_DOMAIN</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-user-domain" id="event-structure-base-events-payloads-page-error-code-user-domain"></a><code>USER_DOMAIN</code></td>
 <td style="text-align: left;">access selected the user-domain permission path</td>
 </tr>
 <tr>
 <td style="text-align: left;">11</td>
-<td style="text-align: left;"><code>ATOMIC</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-atomic" id="event-structure-base-events-payloads-page-error-code-atomic"></a><code>ATOMIC</code></td>
 <td style="text-align: left;">access was an atomic read-modify-write</td>
 </tr>
 <tr>
 <td style="text-align: left;">14..12</td>
-<td style="text-align: left;"><code>WALK_LEVEL</code></td>
-<td style="text-align: left;">0 before or without a walk; 1 through 5 identify the PTE level</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-walk-level" id="event-structure-base-events-payloads-page-error-code-walk-level"></a><code>WALK_LEVEL</code></td>
+<td style="text-align: left;">0 before or without a walk; 1 through 4 identify the PTE level</td>
 </tr>
 <tr>
 <td style="text-align: left;">15</td>
@@ -14966,18 +14969,18 @@
 </tr>
 <tr>
 <td style="text-align: left;">23..16</td>
-<td style="text-align: left;"><code>OPERAND</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-operand" id="event-structure-base-events-payloads-page-error-code-operand"></a><code>OPERAND</code></td>
 <td style="text-align: left;">zero-based explicit operand ordinal; <code>0xff</code> for implicit fetch or stack access</td>
 </tr>
 <tr>
 <td style="text-align: left;">24</td>
-<td style="text-align: left;"><code>FAULT_EA_VALID</code></td>
-<td style="text-align: left;"><code>FAULT_EA</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-fault-ea-valid" id="event-structure-base-events-payloads-page-error-code-fault-ea-valid"></a><code>FAULT_EA_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">25</td>
-<td style="text-align: left;"><code>FAULT_LINEAR_VALID</code></td>
-<td style="text-align: left;"><code>FAULT_LINEAR</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-page-error-code-fault-linear-valid" id="event-structure-base-events-payloads-page-error-code-fault-linear-valid"></a><code>FAULT_LINEAR_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">26</td>
@@ -14996,18 +14999,19 @@
 </tr>
 </tbody>
 </table>
-<p>Saved <code>STATUS.PM</code> records the originating privilege. <code>USER_DOMAIN</code> distinguishes the <a href="../terminology/#term-ordinary">ordinary</a> user permission path from the checked user-access path used by supervisor instructions such as <a href="../instructions/movuc/"><code>MOVUC</code></a>, <a href="../instructions/movcu/"><code>MOVCU</code></a>, and <a href="../instructions/movuu/"><code>MOVUU</code></a>. An atomic read-modify-write reports <code>ACCESS=write</code>. Events detected during a page-table walk report the applicable level; events detected before a walk and every event in the <code>PHYSICAL_ACCESS</code> family report level zero.</p>
-<p><code>ACCESS_SIZE</code> records the architectural transfer width when one of the B, W, L, or Q widths applies. It is zero when no such width is available or applicable. <code>FAULT_EA</code> is the numeric <a href="../terminology/#term-effective-address">effective address</a> before <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. <code>FAULT_LINEAR</code> is the result after <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. A value not produced is zero and has its corresponding validity bit clear.</p>
+<p>Saved <a href="../programming-model/#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a> records the originating privilege. <a href="#event-structure-base-events-payloads-page-error-code-user-domain"><code>PAGE_ERROR_CODE.USER_DOMAIN</code></a> distinguishes the <a href="../terminology/#term-ordinary">ordinary</a> user permission path from the checked user-access path used by supervisor instructions such as <a href="../instructions/movuc/"><code>MOVUC</code></a>, <a href="../instructions/movcu/"><code>MOVCU</code></a>, and <a href="../instructions/movuu/"><code>MOVUU</code></a>. An atomic read-modify-write reports <a href="#event-structure-base-events-payloads-page-error-code-access"><code>PAGE_ERROR_CODE.ACCESS</code></a><code>=write</code>. Events detected during a page-table walk report the applicable level; events detected before a walk and every event in the <code>PHYSICAL_ACCESS</code> family report level zero.</p>
+<p><a href="#event-structure-base-events-payloads-page-error-code-access-size"><code>PAGE_ERROR_CODE.ACCESS_SIZE</code></a> records the architectural transfer width when one of the B, W, L, or Q widths applies. It is zero when no such width is available or applicable. <a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> is the numeric <a href="../terminology/#term-effective-address">effective address</a> before <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. <a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> is the result after <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. A value not produced is zero and has its corresponding validity bit clear.</p>
 <h3 id="other-exception-payloads">Other Exception Payloads</h3>
-<p>Integer-divide, instruction-validation, control-state, and privilege failures are independently allocated leaf events. Their event code identifies the precise condition, so events without a defined payload use BASIC frames and do not repeat a cause number in ERROR_CODE.</p>
-<p>The bounds instructions report comparison failure through <code>FLAGS.V</code>. Segment bounds failures raise <a href="#event-segment-bounds-violation"><code>SEGMENT_BOUNDS_VIOLATION</code></a>. Debug-event payloads are defined separately for their distinct event identities.</p>
+<p>Integer-divide, instruction-validation, control-state, and privilege failures are independently allocated leaf events. Their event code identifies the precise condition, so events without a defined payload use BASIC frames and do not repeat a cause number in <a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a>.</p>
+<p>The bounds instructions report comparison failure through <a href="../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a>. Segment bounds failures raise <a href="#event-segment-bounds-violation"><code>SEGMENT_BOUNDS_VIOLATION</code></a>. Debug-event payloads are defined separately for their distinct event identities.</p>
 <h3 id="debug-event-payloads">Debug Event Payloads</h3>
-<p><a href="#event-single-step"><code>SINGLE_STEP</code></a> and <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> use BASIC frames and carry no address payload. <a href="#event-execution-breakpoint"><code>EXECUTION_BREAKPOINT</code></a> uses an ERROR frame; ERROR_CODE bits 15 through 0 contain the zero-based winning trigger-slot number and all other bits are zero. Its saved PC is the matched address.</p>
-<p>The three memory-watchpoint events use PAGE frames. FAULT_EA contains the matched pre-segment effective address and FAULT_LINEAR contains its segment-pretranslated linear address. ERROR_CODE has the following event-specific format.</p>
+<p><a href="#event-single-step"><code>SINGLE_STEP</code></a> and <a href="#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> use BASIC frames and carry no address payload. <a href="#event-execution-breakpoint"><code>EXECUTION_BREAKPOINT</code></a> uses an ERROR frame; <a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a> bits 15 through 0 contain the <a href="#event-structure-base-events-payloads-execution-breakpoint-error-code-trigger-slot" id="event-structure-base-events-payloads-execution-breakpoint-error-code-trigger-slot"></a><code>TRIGGER_SLOT</code> number and all other bits are zero. Its saved PC is the matched address.</p>
+<p>The three memory-watchpoint events use PAGE frames. <a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> contains the matched pre-segment effective address and <a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> contains its segment-pretranslated linear address. <a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a> has the following event-specific format.</p>
 <p><img alt="Memory-Watchpoint ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-05.svg" /></p>
 <p><strong>Memory-Watchpoint ERROR_CODE Format</strong></p>
-<p><code>L</code>, <code>M</code>, and <code>U</code> abbreviate <code>LINEAR_VALID</code>, <code>MMIO</code>, and <code>USER_DOMAIN</code>.</p>
+<p><code>L</code>, <code>M</code>, and <code>U</code> abbreviate <a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-linear-valid"><code>MEMORY_WATCHPOINT_ERROR_CODE.LINEAR_VALID</code></a>, <a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-mmio"><code>MEMORY_WATCHPOINT_ERROR_CODE.MMIO</code></a>, and <a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-user-domain"><code>MEMORY_WATCHPOINT_ERROR_CODE.USER_DOMAIN</code></a>.</p>
 <p><strong>Memory-Watchpoint ERROR_CODE Fields</strong></p>
+<p><a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-linear-valid" id="event-structure-base-events-payloads-memory-watchpoint-error-code-linear-valid"></a></p>
 <table>
 <thead>
 <tr>
@@ -15019,33 +15023,33 @@
 <tbody>
 <tr>
 <td style="text-align: left;">15..0</td>
-<td style="text-align: left;"><code>TRIGGER_SLOT</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-trigger-slot" id="event-structure-base-events-payloads-memory-watchpoint-error-code-trigger-slot"></a><code>TRIGGER_SLOT</code></td>
 <td style="text-align: left;">zero-based winning trigger-slot number</td>
 </tr>
 <tr>
 <td style="text-align: left;">23..16</td>
-<td style="text-align: left;"><code>OPERAND</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-operand" id="event-structure-base-events-payloads-memory-watchpoint-error-code-operand"></a><code>OPERAND</code></td>
 <td style="text-align: left;">zero-based explicit memory-operand ordinal; <code>0xff</code> for an implicit data access</td>
 </tr>
 <tr>
 <td style="text-align: left;">39..24</td>
-<td style="text-align: left;"><code>ACCESS_SIZE</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-access-size" id="event-structure-base-events-payloads-memory-watchpoint-error-code-access-size"></a><code>ACCESS_SIZE</code></td>
 <td style="text-align: left;">number of bytes in the matched architectural access</td>
 </tr>
 <tr>
 <td style="text-align: left;">40</td>
-<td style="text-align: left;"><code>USER_DOMAIN</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-user-domain" id="event-structure-base-events-payloads-memory-watchpoint-error-code-user-domain"></a><code>USER_DOMAIN</code></td>
 <td style="text-align: left;">access selected the user permission domain</td>
 </tr>
 <tr>
 <td style="text-align: left;">41</td>
-<td style="text-align: left;"><code>MMIO</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-memory-watchpoint-error-code-mmio" id="event-structure-base-events-payloads-memory-watchpoint-error-code-mmio"></a><code>MMIO</code></td>
 <td style="text-align: left;">translated access was classified as MMIO rather than Normal</td>
 </tr>
 <tr>
 <td style="text-align: left;">42</td>
 <td style="text-align: left;"><code>LINEAR_VALID</code></td>
-<td style="text-align: left;">FAULT_LINEAR contains the segment-pretranslated address</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> contains the segment-pretranslated address</td>
 </tr>
 <tr>
 <td style="text-align: left;">63..43</td>
@@ -15062,16 +15066,16 @@
 <h2 id="control-flow-integrity-violation">Control-Flow Integrity Violation <a href="#section-cfi-violation" id="section-cfi-violation"></a></h2>
 <p>The <a href="#event-control-flow-integrity-violation"><code>CONTROL_FLOW_INTEGRITY_VIOLATION</code></a> event uses an error frame. ERROR_CODE values 1, 2, 3, and 4 identify a missing landing marker, a shadow PC mismatch, a shadow code-segment mismatch, and invalid configured CFI state respectively. A failed check commits neither the control transfer nor CFISP.</p>
 <h3 id="auxiliary-payloads">Auxiliary Payloads</h3>
-<p>For an AUXILIARY frame, <code>ERROR_CODE</code> bit 26 is <code>EVENT_AUX_VALID</code>. Bits 24 and 25 are <code>FAULT_EA_VALID</code> and <code>FAULT_LINEAR_VALID</code> when the event can supply those addresses. Every unassigned bit is zero, and an auxiliary or address value not produced is zero with its validity bit clear.</p>
-<p>Delivery-failure stages are independently allocated leaf events. Their EVENT_CODE identifies the failed stage; the auxiliary <a href="../terminology/#term-payload">payload</a> records the event whose delivery failed.</p>
+<p>For an AUXILIARY frame, <a href="#event-structure-base-events-frame-event-frame-error-code"><code>ERROR_CODE</code></a> bit 26 is the applicable <a href="#event-structure-base-events-payloads-delivery-failure-error-code-event-aux-valid"><code>DELIVERY_FAILURE_ERROR_CODE.EVENT_AUX_VALID</code></a>, <a href="#event-structure-base-events-payloads-machine-check-error-code-event-aux-valid"><code>MACHINE_CHECK_ERROR_CODE.EVENT_AUX_VALID</code></a>, or <a href="#event-structure-base-events-payloads-bus-failure-error-code-event-aux-valid"><code>BUS_FAILURE_ERROR_CODE.EVENT_AUX_VALID</code></a> field. Bits 24 and 25 are the corresponding address-validity fields when the event can supply those addresses. Every unassigned bit is zero, and an auxiliary or address value not produced is zero with its validity bit clear.</p>
+<p>Delivery-failure stages are independently allocated leaf events. Their <a href="#event-structure-base-events-frame-event-frame-event-info-event-code"><code>EVENT_INFO.EVENT_CODE</code></a> identifies the failed stage; the <a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a> <a href="../terminology/#term-payload">payload</a> records the event whose delivery failed.</p>
 <p><img alt="Delivery-Failure Auxiliary Format" src="../../assets/visuals/isa/architectural-event-processing-model-07.svg" /></p>
 <p><strong>Delivery-Failure Auxiliary Format</strong></p>
-<p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>.</p>
-<p>When valid, <code>EVENT_AUX[31:0]</code> contains the event code whose delivery failed and bits 63..32 are zero. A <a href="#event-event-frame-address-failure"><code>EVENT_FRAME_ADDRESS_FAILURE</code></a> or <a href="#event-event-frame-store-failure"><code>EVENT_FRAME_STORE_FAILURE</code></a> supplies <code>FAULT_EA</code> and <code>FAULT_LINEAR</code> when those values were produced.</p>
+<p><code>E</code>, <code>L</code>, and <code>F</code> are <a href="#event-structure-base-events-payloads-delivery-failure-error-code-event-aux-valid" id="event-structure-base-events-payloads-delivery-failure-error-code-event-aux-valid"></a><code>EVENT_AUX_VALID</code>, <a href="#event-structure-base-events-payloads-delivery-failure-error-code-fault-linear-valid" id="event-structure-base-events-payloads-delivery-failure-error-code-fault-linear-valid"></a><code>FAULT_LINEAR_VALID</code>, and <a href="#event-structure-base-events-payloads-delivery-failure-error-code-fault-ea-valid" id="event-structure-base-events-payloads-delivery-failure-error-code-fault-ea-valid"></a><code>FAULT_EA_VALID</code>.</p>
+<p>When <a href="#event-structure-base-events-payloads-delivery-failure-error-code-event-aux-valid"><code>DELIVERY_FAILURE_ERROR_CODE.EVENT_AUX_VALID</code></a> is one, <a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a><code>[31:0]</code> contains the event code whose delivery failed and bits 63..32 are zero. A <a href="#event-event-frame-address-failure"><code>EVENT_FRAME_ADDRESS_FAILURE</code></a> or <a href="#event-event-frame-store-failure"><code>EVENT_FRAME_STORE_FAILURE</code></a> supplies <a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> and <a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> when those values were produced.</p>
 <p>For <a href="#event-machine-check"><code>MACHINE_CHECK</code></a>, the error code has this layout:</p>
 <p><img alt="MACHINE_CHECK ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-08.svg" /></p>
 <p><strong>MACHINE_CHECK ERROR_CODE Format</strong></p>
-<p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>; <code>P</code>, <code>R</code>, <code>SV</code>, and <code>SRC</code> denote <code>PRECISE</code>, <code>RETRY_SAFE</code>, <code>SEVERITY</code>, and <code>SOURCE</code>.</p>
+<p><code>E</code>, <code>L</code>, and <code>F</code> are <a href="#event-structure-base-events-payloads-machine-check-error-code-event-aux-valid"><code>MACHINE_CHECK_ERROR_CODE.EVENT_AUX_VALID</code></a>, <a href="#event-structure-base-events-payloads-machine-check-error-code-fault-linear-valid"><code>MACHINE_CHECK_ERROR_CODE.FAULT_LINEAR_VALID</code></a>, and <a href="#event-structure-base-events-payloads-machine-check-error-code-fault-ea-valid"><code>MACHINE_CHECK_ERROR_CODE.FAULT_EA_VALID</code></a>; <code>P</code>, <code>R</code>, <code>SV</code>, and <code>SRC</code> denote <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a>, <a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a>, <a href="#event-structure-base-events-payloads-machine-check-error-code-severity"><code>MACHINE_CHECK_ERROR_CODE.SEVERITY</code></a>, and <a href="#event-structure-base-events-payloads-machine-check-error-code-source"><code>MACHINE_CHECK_ERROR_CODE.SOURCE</code></a>.</p>
 <p><strong>MACHINE_CHECK ERROR_CODE Fields</strong></p>
 <table>
 <thead>
@@ -15084,22 +15088,22 @@
 <tbody>
 <tr>
 <td style="text-align: left;">7..0</td>
-<td style="text-align: left;"><code>SOURCE</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-source" id="event-structure-base-events-payloads-machine-check-error-code-source"></a><code>SOURCE</code></td>
 <td style="text-align: left;">0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect</td>
 </tr>
 <tr>
 <td style="text-align: left;">9..8</td>
-<td style="text-align: left;"><code>SEVERITY</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-severity" id="event-structure-base-events-payloads-machine-check-error-code-severity"></a><code>SEVERITY</code></td>
 <td style="text-align: left;">0 corrected; 1 recoverable; 2 fatal; 3 <a href="../terminology/#term-reserved">reserved</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">10</td>
-<td style="text-align: left;"><code>PRECISE</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-precise" id="event-structure-base-events-payloads-machine-check-error-code-precise"></a><code>PRECISE</code></td>
 <td style="text-align: left;">saved PC identifies the responsible instruction and saved <a href="../terminology/#term-architectural-state">architectural state</a> precedes it</td>
 </tr>
 <tr>
 <td style="text-align: left;">11</td>
-<td style="text-align: left;"><code>RETRY_SAFE</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe" id="event-structure-base-events-payloads-machine-check-error-code-retry-safe"></a><code>RETRY_SAFE</code></td>
 <td style="text-align: left;">retry at that precise boundary cannot duplicate an external effect</td>
 </tr>
 <tr>
@@ -15109,18 +15113,18 @@
 </tr>
 <tr>
 <td style="text-align: left;">24</td>
-<td style="text-align: left;"><code>FAULT_EA_VALID</code></td>
-<td style="text-align: left;"><code>FAULT_EA</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-fault-ea-valid" id="event-structure-base-events-payloads-machine-check-error-code-fault-ea-valid"></a><code>FAULT_EA_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">25</td>
-<td style="text-align: left;"><code>FAULT_LINEAR_VALID</code></td>
-<td style="text-align: left;"><code>FAULT_LINEAR</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-fault-linear-valid" id="event-structure-base-events-payloads-machine-check-error-code-fault-linear-valid"></a><code>FAULT_LINEAR_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">26</td>
-<td style="text-align: left;"><code>EVENT_AUX_VALID</code></td>
-<td style="text-align: left;"><code>EVENT_AUX</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-machine-check-error-code-event-aux-valid" id="event-structure-base-events-payloads-machine-check-error-code-event-aux-valid"></a><code>EVENT_AUX_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">63..27</td>
@@ -15129,15 +15133,15 @@
 </tr>
 </tbody>
 </table>
-<p>When valid, <code>EVENT_AUX</code> contains an implementation-defined syndrome. Associated effective and linear addresses are supplied when available.</p>
-<p><code>RETRY_SAFE=1</code> requires <code>PRECISE=1</code>. The valid severity and <a href="../terminology/#term-continuation">continuation</a> combinations are:</p>
+<p>When <a href="#event-structure-base-events-payloads-machine-check-error-code-event-aux-valid"><code>MACHINE_CHECK_ERROR_CODE.EVENT_AUX_VALID</code></a> is one, <a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a> contains an implementation-defined syndrome. Associated effective and linear addresses are supplied when available.</p>
+<p><a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a><code>=1</code> requires <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a><code>=1</code>. The valid <a href="#event-structure-base-events-payloads-machine-check-error-code-severity"><code>MACHINE_CHECK_ERROR_CODE.SEVERITY</code></a> and <a href="../terminology/#term-continuation">continuation</a> combinations are:</p>
 <p><strong>MACHINE_CHECK Valid Continuation Combinations</strong></p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"><strong>Severity</strong></th>
-<th style="text-align: left;"><strong>PRECISE</strong></th>
-<th style="text-align: left;"><strong>RETRY_SAFE</strong></th>
+<th style="text-align: left;"><strong><a href="#event-structure-base-events-payloads-machine-check-error-code-severity"><code>MACHINE_CHECK_ERROR_CODE.SEVERITY</code></a></strong></th>
+<th style="text-align: left;"><strong><a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a></strong></th>
+<th style="text-align: left;"><strong><a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a></strong></th>
 <th style="text-align: left;"><strong>Saved PC and <a href="../terminology/#term-continuation">continuation</a> meaning</strong></th>
 </tr>
 </thead>
@@ -15180,12 +15184,13 @@
 </tr>
 </tbody>
 </table>
-<p>All other combinations are invalid and are not generated. In particular, corrected machine checks never set either bit, <code>PRECISE=0, RETRY_SAFE=1</code> is invalid for every severity, fatal machine checks never set <code>RETRY_SAFE</code>, and severity 3 is <a href="../terminology/#term-reserved">reserved</a>. A fatal event provides no reliable <a href="../terminology/#term-continuation">continuation</a> even when its diagnostic state is precise.</p>
+<p>All other combinations are invalid and are not generated. In particular, corrected machine checks never set either bit, <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a><code>=0</code>, <a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a><code>=1</code> is invalid for every severity, fatal machine checks never set <a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a>, and <a href="#event-structure-base-events-payloads-machine-check-error-code-severity"><code>MACHINE_CHECK_ERROR_CODE.SEVERITY</code></a> 3 is <a href="../terminology/#term-reserved">reserved</a>. A fatal event provides no reliable <a href="../terminology/#term-continuation">continuation</a> even when its diagnostic state is precise.</p>
 <p>For an event in the <code>BUS_FAILURE</code> family, the error code has this layout:</p>
 <p><img alt="BUS_FAILURE ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-09.svg" /></p>
 <p><strong>BUS_FAILURE ERROR_CODE Format</strong></p>
-<p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>; <code>SZ</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <code>ACCESS_SIZE</code>, <code>OPERAND</code>, <code>WALK_LEVEL</code>, and <code>ACCESS</code>; <code>A</code>, <code>U</code>, and <code>R</code> denote <code>ATOMIC</code>, <code>USER_DOMAIN</code>, and <code>RETRY_SAFE</code>.</p>
+<p><code>E</code>, <code>L</code>, and <code>F</code> are <a href="#event-structure-base-events-payloads-bus-failure-error-code-event-aux-valid"><code>BUS_FAILURE_ERROR_CODE.EVENT_AUX_VALID</code></a>, <a href="#event-structure-base-events-payloads-bus-failure-error-code-fault-linear-valid"><code>BUS_FAILURE_ERROR_CODE.FAULT_LINEAR_VALID</code></a>, and <a href="#event-structure-base-events-payloads-bus-failure-error-code-fault-ea-valid"><code>BUS_FAILURE_ERROR_CODE.FAULT_EA_VALID</code></a>; <code>SZ</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <a href="#event-structure-base-events-payloads-bus-failure-error-code-access-size"><code>BUS_FAILURE_ERROR_CODE.ACCESS_SIZE</code></a>, <a href="#event-structure-base-events-payloads-bus-failure-error-code-operand"><code>BUS_FAILURE_ERROR_CODE.OPERAND</code></a>, <a href="#event-structure-base-events-payloads-bus-failure-error-code-walk-level"><code>BUS_FAILURE_ERROR_CODE.WALK_LEVEL</code></a>, and <a href="#event-structure-base-events-payloads-bus-failure-error-code-access"><code>BUS_FAILURE_ERROR_CODE.ACCESS</code></a>; <code>A</code>, <code>U</code>, and <code>R</code> denote <a href="#event-structure-base-events-payloads-bus-failure-error-code-atomic"><code>BUS_FAILURE_ERROR_CODE.ATOMIC</code></a>, <a href="#event-structure-base-events-payloads-bus-failure-error-code-user-domain"><code>BUS_FAILURE_ERROR_CODE.USER_DOMAIN</code></a>, and <a href="#event-structure-base-events-payloads-bus-failure-error-code-retry-safe"><code>BUS_FAILURE_ERROR_CODE.RETRY_SAFE</code></a>.</p>
 <p><strong>BUS_FAILURE ERROR_CODE Fields</strong></p>
+<p><a href="#event-structure-base-events-payloads-bus-failure-error-code-retry-safe" id="event-structure-base-events-payloads-bus-failure-error-code-retry-safe"></a></p>
 <table>
 <thead>
 <tr>
@@ -15198,27 +15203,27 @@
 <tr>
 <td style="text-align: left;">7..0</td>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
-<td style="text-align: left;">zero; failure identity is carried by EVENT_CODE</td>
+<td style="text-align: left;">zero; failure identity is carried by <a href="#event-structure-base-events-frame-event-frame-event-info-event-code"><code>EVENT_INFO.EVENT_CODE</code></a></td>
 </tr>
 <tr>
 <td style="text-align: left;">9..8</td>
-<td style="text-align: left;"><code>ACCESS</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-access" id="event-structure-base-events-payloads-bus-failure-error-code-access"></a><code>ACCESS</code></td>
 <td style="text-align: left;">0 none, 1 read, 2 write, 3 execute</td>
 </tr>
 <tr>
 <td style="text-align: left;">10</td>
-<td style="text-align: left;"><code>USER_DOMAIN</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-user-domain" id="event-structure-base-events-payloads-bus-failure-error-code-user-domain"></a><code>USER_DOMAIN</code></td>
 <td style="text-align: left;">access selected the user-domain permission path</td>
 </tr>
 <tr>
 <td style="text-align: left;">11</td>
-<td style="text-align: left;"><code>ATOMIC</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-atomic" id="event-structure-base-events-payloads-bus-failure-error-code-atomic"></a><code>ATOMIC</code></td>
 <td style="text-align: left;">access was an atomic read-modify-write</td>
 </tr>
 <tr>
 <td style="text-align: left;">14..12</td>
-<td style="text-align: left;"><code>WALK_LEVEL</code></td>
-<td style="text-align: left;">0 outside a walk; 1 through 5 identify the PTE level</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-walk-level" id="event-structure-base-events-payloads-bus-failure-error-code-walk-level"></a><code>WALK_LEVEL</code></td>
+<td style="text-align: left;">0 outside a walk; 1 through 4 identify the PTE level</td>
 </tr>
 <tr>
 <td style="text-align: left;">15</td>
@@ -15227,27 +15232,27 @@
 </tr>
 <tr>
 <td style="text-align: left;">23..16</td>
-<td style="text-align: left;"><code>OPERAND</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-operand" id="event-structure-base-events-payloads-bus-failure-error-code-operand"></a><code>OPERAND</code></td>
 <td style="text-align: left;">zero-based explicit operand ordinal; <code>0xff</code> for implicit fetch or stack access</td>
 </tr>
 <tr>
 <td style="text-align: left;">24</td>
-<td style="text-align: left;"><code>FAULT_EA_VALID</code></td>
-<td style="text-align: left;"><code>FAULT_EA</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-fault-ea-valid" id="event-structure-base-events-payloads-bus-failure-error-code-fault-ea-valid"></a><code>FAULT_EA_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-ea"><code>FAULT_EA</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">25</td>
-<td style="text-align: left;"><code>FAULT_LINEAR_VALID</code></td>
-<td style="text-align: left;"><code>FAULT_LINEAR</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-fault-linear-valid" id="event-structure-base-events-payloads-bus-failure-error-code-fault-linear-valid"></a><code>FAULT_LINEAR_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-fault-linear"><code>FAULT_LINEAR</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">26</td>
-<td style="text-align: left;"><code>EVENT_AUX_VALID</code></td>
-<td style="text-align: left;"><code>EVENT_AUX</code> was produced</td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-event-aux-valid" id="event-structure-base-events-payloads-bus-failure-error-code-event-aux-valid"></a><code>EVENT_AUX_VALID</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a> was produced</td>
 </tr>
 <tr>
 <td style="text-align: left;">29..27</td>
-<td style="text-align: left;"><code>ACCESS_SIZE</code></td>
+<td style="text-align: left;"><a href="#event-structure-base-events-payloads-bus-failure-error-code-access-size" id="event-structure-base-events-payloads-bus-failure-error-code-access-size"></a><code>ACCESS_SIZE</code></td>
 <td style="text-align: left;">0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q</td>
 </tr>
 <tr>
@@ -15262,19 +15267,19 @@
 </tr>
 </tbody>
 </table>
-<p>A bus error during a page walk reports the level whose PTE access failed. When valid, <code>EVENT_AUX</code> contains the final byte address available for the failed access.</p>
+<p>A bus error during a page walk reports the level whose PTE access failed. When <a href="#event-structure-base-events-payloads-bus-failure-error-code-event-aux-valid"><code>BUS_FAILURE_ERROR_CODE.EVENT_AUX_VALID</code></a> is one, <a href="#event-structure-base-events-frame-event-frame-event-aux"><code>EVENT_AUX</code></a> contains the final byte address available for the failed access.</p>
 <h2 id="machine-check-and-bus-error-continuation">Machine-Check and Bus-Error Continuation</h2>
-<p>A corrected <a href="#event-machine-check"><code>MACHINE_CHECK</code></a> is a trap, has both <code>PRECISE</code> and <code>RETRY_SAFE</code> clear, and saves the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table. When <code>PRECISE</code> is one, the saved PC identifies the responsible instruction boundary and logical-processor <a href="../terminology/#term-architectural-state">architectural state</a> is the state from before that instruction. When it is zero, the saved PC is the next instruction that would execute at the delivery boundary and <a href="../terminology/#term-architectural-state">architectural state</a> corresponds to that boundary; neither identifies the responsible operation. <code>RETRY_SAFE</code> may be one only with <code>PRECISE=1</code> and additionally guarantees that returning to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears <code>RETRY_SAFE</code>; <code>PRECISE</code> then describes diagnostic location quality and never guarantees reliable <a href="../terminology/#term-continuation">continuation</a>.</p>
-<p>Every event in the <code>BUS_FAILURE</code> family is a synchronous precise fault. Logical-processor <a href="../terminology/#term-architectural-state">architectural state</a> remains uncommitted and the saved PC identifies the responsible instruction boundary. Its separate <code>RETRY_SAFE</code> bit states whether an external effect might already have occurred. Page-walk and <a href="../terminology/#term-ordinary">ordinary</a> memory bus errors are retry-safe.</p>
+<p>A corrected <a href="#event-machine-check"><code>MACHINE_CHECK</code></a> is a trap, has both <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a> and <a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a> clear, and saves the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table. When <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a> is one, the saved PC identifies the responsible instruction boundary and logical-processor <a href="../terminology/#term-architectural-state">architectural state</a> is the state from before that instruction. When it is zero, the saved PC is the next instruction that would execute at the delivery boundary and <a href="../terminology/#term-architectural-state">architectural state</a> corresponds to that boundary; neither identifies the responsible operation. <a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a> may be one only with <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a><code>=1</code> and additionally guarantees that returning to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears <a href="#event-structure-base-events-payloads-machine-check-error-code-retry-safe"><code>MACHINE_CHECK_ERROR_CODE.RETRY_SAFE</code></a>; <a href="#event-structure-base-events-payloads-machine-check-error-code-precise"><code>MACHINE_CHECK_ERROR_CODE.PRECISE</code></a> then describes diagnostic location quality and never guarantees reliable <a href="../terminology/#term-continuation">continuation</a>.</p>
+<p>Every event in the <code>BUS_FAILURE</code> family is a synchronous precise fault. Logical-processor <a href="../terminology/#term-architectural-state">architectural state</a> remains uncommitted and the saved PC identifies the responsible instruction boundary. Its separate <a href="#event-structure-base-events-payloads-bus-failure-error-code-retry-safe"><code>BUS_FAILURE_ERROR_CODE.RETRY_SAFE</code></a> bit states whether an external effect might already have occurred. Page-walk and <a href="../terminology/#term-ordinary">ordinary</a> memory bus errors are retry-safe.</p>
 <p>Software interprets the machine-check <a href="../terminology/#term-continuation">continuation</a> <a href="../terminology/#term-field">fields</a> before choosing a return or recovery action.</p>
 <h2 id="delivery-failure-and-shutdown">Delivery Failure and Shutdown</h2>
 <p>Failure to validate the common entry context, establish the selected stack, or store a complete event frame is delivered as the corresponding <code>EVENT_DELIVERY_FAILURE</code> leaf event on DSS:DSP. Failure while such an event is already being delivered enters SHUTDOWN. SHUTDOWN retires no further instructions and can be exited only by a platform reset. The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored frame or partially changed execution context.</p>
 <h2 id="event-reset-and-context-state">Event Reset and Context State <a href="#section-event-reset-and-context-state" id="section-event-reset-and-context-state"></a></h2>
 <p>Warm RESET is supervisor-only and affects only the executing <a href="../terminology/#term-logical-processor">logical processor</a>. Before the reset-state transition commits, all earlier <a href="../terminology/#term-memory-effect">memory effects</a> and pending write-combining stores from that <a href="../terminology/#term-logical-processor">logical processor</a> complete. Other <a href="../terminology/#term-logical-processor">logical processors</a> are unchanged.</p>
-<p>The transition clears R0 through R15, SP, and FLAGS. It sets PC to BOOTPC and sets STATUS.PM to one while clearing every other STATUS bit. It clears CS, DS, SS, GS0 through GS5, PTCR, ASCR, ECR, EPC, ECS, EDS, the complete user context bank (UPC, USP, UCS, UDS, USS, UCTL, and UINFO), and the configured event stacks and segments (SSS, SSP, ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWALK. Clearing ECR clears its hardware-managed NMI_P <a href="../terminology/#term-field">field</a> as part of the same transition. It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability reported by ICAP.MAX_ID. It resets DTRSEL and disables every architectural debug-trigger slot. It disarms the deadline timer while preserving the invariant timebase value and frequency. Timer reset does not independently clear interrupt-file state.</p>
+<p>The transition clears R0 through R15, SP, and FLAGS. It sets PC to BOOTPC and sets <a href="../programming-model/#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a> to one while clearing every other STATUS bit. It clears CS, DS, SS, GS0 through GS5, PTCR, ASCR, ECR, EPC, ECS, EDS, the complete user context bank (UPC, USP, UCS, UDS, USS, UCTL, and UINFO), and the configured event stacks and segments (SSS, SSP, ISS, ISP, FSS, FSP, DSS, and DSP). It also clears PMC, CYCLE, INSTRET, and PTWALK. Clearing ECR clears its hardware-managed <a href="../programming-model/#register-field-base-control-registers-ecr-nmi-p"><code>ECR.NMI_P</code></a> as part of the same transition. It clears all interrupt-file pending and enable bits, ITHRESH, and ISEL while preserving the implementation capability reported by <a href="../programming-model/#register-field-base-control-registers-icap-max-id"><code>ICAP.MAX_ID</code></a>. It resets DTRSEL and disables every architectural debug-trigger slot. It disarms the deadline timer while preserving the invariant timebase value and frequency. Timer reset does not independently clear interrupt-file state.</p>
 <p>Warm RESET invalidates hidden repeat state, the load reservation, local translation and page-walk caches, decoded instruction state, and local prefetch state. It clears the hidden current DFA. Coherent data- and instruction-cache contents remain coherent. Instruction-fetch synchronization completes before the first instruction at BOOTPC is fetched, at which point the processor is running at BOOTPC.</p>
-<p>BOOTPC and BOOTCFG are <a href="../terminology/#term-preserved">preserved</a> by warm RESET. Cold reset initializes them from platform-supplied values before applying the same <a href="../terminology/#term-processor-state-image">processor-state image</a> to each <a href="../terminology/#term-logical-processor">logical processor</a> selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V or entering user mode.</p>
-<p>ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, the interrupt file, the debug-trigger array, and the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software includes the applicable non-debug state when switching supervisor contexts; debug-trigger state is managed separately. Payloads and full event frames reside in byte-addressed <a href="../terminology/#term-normal-memory">normal memory</a> owned by the interrupted context.</p>
+<p>BOOTPC and BOOTCFG are <a href="../terminology/#term-preserved">preserved</a> by warm RESET. Cold reset initializes them from platform-supplied values before applying the same <a href="../terminology/#term-processor-state-image">processor-state image</a> to each <a href="../terminology/#term-logical-processor">logical processor</a> selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting <a href="../programming-model/#register-field-base-control-registers-ecr-v"><code>ECR.V</code></a> or entering user mode.</p>
+<p>ECR, entry and stack registers, <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>/<a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a>, hidden current DFA, the interrupt file, the debug-trigger array, and the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software includes the applicable non-debug state when switching supervisor contexts; debug-trigger state is managed separately. Payloads and full event frames reside in byte-addressed <a href="../terminology/#term-normal-memory">normal memory</a> owned by the interrupted context.</p>
 
 
 

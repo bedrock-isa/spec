@@ -14206,27 +14206,16 @@
 <p><strong><code>VFSUB.{H|S|D}(x) Pn(p), Vn(v), Vn(w)</code></strong></p>
 <p><img alt="Format: Instruction format for VFSUB.{H|S|D}(x) Pn(p), Vn(v), Vn(w)" src="../../../assets/visuals/isa/vfsub-01.svg" /></p>
 <p><strong>Format: Instruction format for VFSUB.{H|S|D}(x) Pn(p), Vn(v), Vn(w)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>x</code></strong> — Selects H/S/D.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>w</code></strong> — Selects the destination operand.</p>
+<p><code>size</code> — <code>allowed</code>: <code>0x5..0x7</code> [<code>reserved_vector_element_type</code>]</p>
 <p>2.75in <strong><code>VFSUB.{H|S|D}(x) Pn(p), &lt;ea&gt;(e), Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VFSUB.{H|S|D}(x) Pn(p), &lt;ea&gt;(e), Vn(v)" src="../../../assets/visuals/isa/vfsub-02.svg" /></p>
 <p><strong>Format: Instruction format for VFSUB.{H|S|D}(x) Pn(p), &lt;ea&gt;(e), Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>x</code></strong> — Selects H/S/D.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
+<p><code>size</code> — <code>allowed</code>: <code>0x5..0x7</code> [<code>reserved_vector_element_type</code>]</p>
 <p>2.75in <strong><code>VFSUB.{H|S|D}(x) Pn(p), Vn(v), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for VFSUB.{H|S|D}(x) Pn(p), Vn(v), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/vfsub-03.svg" /></p>
 <p><strong>Format: Instruction format for VFSUB.{H|S|D}(x) Pn(p), Vn(v), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>x</code></strong> — Selects H/S/D.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>size</code> — <code>allowed</code>: <code>0x5..0x7</code> [<code>reserved_vector_element_type</code>]</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 
 
 

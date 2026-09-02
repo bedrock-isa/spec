@@ -14196,25 +14196,15 @@
 <p>Unprivileged</p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible; REPcc observes <code>computed</code></p>
-<p>BNDUII treats both bounds as inclusive. It sets V when unsigned(value) is outside [unsigned(lo), unsigned(hi)] and clears Z, N, and C. The B-sized 0 or 1 violation result supplies the REPcc observed value.</p>
+<p>BNDUII treats both bounds as inclusive. It sets <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> when unsigned(value) is outside [unsigned(lo), unsigned(hi)] and clears <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>. The B-sized 0 or 1 violation result supplies the REPcc observed value.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>BNDUII.{B|W|L|Q}(z) Rn(l), &lt;ea&gt;(e), Rn(h)</code></strong></p>
 <p><img alt="Format: Instruction format for BNDUII.{B|W|L|Q}(z) Rn(l), &lt;ea&gt;(e), Rn(h)" src="../../../assets/visuals/isa/bnduii-01.svg" /></p>
 <p><strong>Format: Instruction format for BNDUII.{B|W|L|Q}(z) Rn(l), &lt;ea&gt;(e), Rn(h)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>l</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>h</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>BNDUII.{B|W|L|Q}(z) Rn(l), Rn(v), Rn(h)</code></strong></p>
 <p><img alt="Format: Instruction format for BNDUII.{B|W|L|Q}(z) Rn(l), Rn(v), Rn(h)" src="../../../assets/visuals/isa/bnduii-02.svg" /></p>
 <p><strong>Format: Instruction format for BNDUII.{B|W|L|Q}(z) Rn(l), Rn(v), Rn(h)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>l</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>h</code></strong> — Selects the source operand.</p>
 
 
 

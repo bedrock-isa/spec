@@ -14208,48 +14208,29 @@
 <p><strong><code>MOV.Q Rn(r), SP</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.Q Rn(r), SP" src="../../../assets/visuals/isa/mov-01.svg" /></p>
 <p><strong>Format: Instruction format for MOV.Q Rn(r), SP</strong></p>
-<p><strong>Register field <code>r</code></strong> — Selects the source operand.</p>
 <p>2.75in <strong><code>MOV.Q SP, Rn(r)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.Q SP, Rn(r)" src="../../../assets/visuals/isa/mov-02.svg" /></p>
 <p><strong>Format: Instruction format for MOV.Q SP, Rn(r)</strong></p>
-<p><strong>Register field <code>r</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>MOV.{L|Q}(z) Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.{L|Q}(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/mov-03.svg" /></p>
 <p><strong>Format: Instruction format for MOV.{L|Q}(z) Rn(s), Rn(d)</strong></p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>MOV.B Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.B Rn(s), Rn(d)" src="../../../assets/visuals/isa/mov-04.svg" /></p>
 <p><strong>Format: Instruction format for MOV.B Rn(s), Rn(d)</strong></p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>MOV.W Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.W Rn(s), Rn(d)" src="../../../assets/visuals/isa/mov-05.svg" /></p>
 <p><strong>Format: Instruction format for MOV.W Rn(s), Rn(d)</strong></p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>MOV.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/mov-06.svg" /></p>
 <p><strong>Format: Instruction format for MOV.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>MOV.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/mov-07.svg" /></p>
 <p><strong>Format: Instruction format for MOV.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>MOV.{B|W|L|Q}(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><img alt="Format: Instruction format for MOV.{B|W|L|Q}(z) &lt;ea&gt;(s), &lt;ea&gt;(d)" src="../../../assets/visuals/isa/mov-08.svg" /></p>
 <p><strong>Format: Instruction format for MOV.{B|W|L|Q}(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Effective Address field <code>s</code></strong> — Specifies the source operand.</p>
-<p><strong>Effective Address field <code>d</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 
 
 

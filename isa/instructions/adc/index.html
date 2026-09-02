@@ -14197,31 +14197,20 @@
 <p>Unprivileged</p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible; REPcc observes <code>dst</code></p>
-<p>Adds the selected-width source value and the incoming C flag to the destination, writes the truncated sum, and updates Z, N, C, and V from the complete addition. The written destination result supplies the REPcc observed value.</p>
-<p>Let <span class="arithmatex">\(n\)</span> be the selected width, <span class="arithmatex">\(d\)</span> and <span class="arithmatex">\(s\)</span> the unsigned operand bit patterns, and <span class="arithmatex">\(c\)</span> the incoming C flag. The written result is $<span class="arithmatex">\(r = (d + s + c) \bmod 2^n .\)</span>$ Z is set when <span class="arithmatex">\(r=0\)</span>, and N receives the most-significant bit of <span class="arithmatex">\(r\)</span>. C reports an unsigned carry out of either addition. V reports signed overflow for the complete <span class="arithmatex">\(d+s+c\)</span> operation.</p>
+<p>Adds the selected-width source value and the incoming <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> flag to the destination, writes the truncated sum, and updates <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> from the complete addition. The written destination result supplies the REPcc observed value.</p>
+<p>Let <span class="arithmatex">\(n\)</span> be the selected width, <span class="arithmatex">\(d\)</span> and <span class="arithmatex">\(s\)</span> the unsigned operand bit patterns, and <span class="arithmatex">\(c\)</span> the incoming <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>. The written result is $<span class="arithmatex">\(r = (d + s + c) \bmod 2^n .\)</span>$ <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> is set when <span class="arithmatex">\(r=0\)</span>, and <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> receives the most-significant bit of <span class="arithmatex">\(r\)</span>. <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> reports an unsigned carry out of either addition. <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> reports signed overflow for the complete <span class="arithmatex">\(d+s+c\)</span> operation.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>ADC.{B|W|L|Q}(z) Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for ADC.{B|W|L|Q}(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/adc-01.svg" /></p>
 <p><strong>Format: Instruction format for ADC.{B|W|L|Q}(z) Rn(s), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>ADC.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for ADC.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/adc-02.svg" /></p>
 <p><strong>Format: Instruction format for ADC.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>ADC.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(s)</code></strong></p>
 <p><img alt="Format: Instruction format for ADC.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(s)" src="../../../assets/visuals/isa/adc-03.svg" /></p>
 <p><strong>Format: Instruction format for ADC.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(s)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 
 
 

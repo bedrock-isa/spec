@@ -14214,58 +14214,40 @@
 <p>2.75in <strong><code>SUB.{L|Q}(z) Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.{L|Q}(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/sub-02.svg" /></p>
 <p><strong>Format: Instruction format for SUB.{L|Q}(z) Rn(s), Rn(d)</strong></p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>SUB.Q imm8(i), SP</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.Q imm8(i), SP" src="../../../assets/visuals/isa/sub-03.svg" /></p>
 <p><strong>Format: Instruction format for SUB.Q imm8(i), SP</strong></p>
-<p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value. Allowed encoded values: 1-255.</p>
+<p><code>imm</code> — <code>allowed</code>: <code>0x1..0xff</code> [<code>zero_immediate_reclaimed</code>]</p>
 <p>2.75in <strong><code>SUB.Q &lt;imm16s&gt;, SP</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.Q &lt;imm16s&gt;, SP" src="../../../assets/visuals/isa/sub-04.svg" /></p>
 <p><strong>Format: Instruction format for SUB.Q &lt;imm16s&gt;, SP</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p>2.75in <strong><code>SUB.Q &lt;imm32s&gt;, SP</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.Q &lt;imm32s&gt;, SP" src="../../../assets/visuals/isa/sub-05.svg" /></p>
 <p><strong>Format: Instruction format for SUB.Q &lt;imm32s&gt;, SP</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p>2.75in <strong><code>SUB.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-06.svg" /></p>
 <p><strong>Format: Instruction format for SUB.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>SUB.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/sub-07.svg" /></p>
 <p><strong>Format: Instruction format for SUB.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>SUB.{B|W|L|Q}(z) &lt;imm8s&gt;, &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.{B|W|L|Q}(z) &lt;imm8s&gt;, &lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-08.svg" /></p>
 <p><strong>Format: Instruction format for SUB.{B|W|L|Q}(z) &lt;imm8s&gt;, &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>SUB.{W|L|Q}(z) &lt;imm16s&gt;, &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.{W|L|Q}(z) &lt;imm16s&gt;, &lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-09.svg" /></p>
 <p><strong>Format: Instruction format for SUB.{W|L|Q}(z) &lt;imm16s&gt;, &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects W/L/Q.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>size</code> — <code>allowed</code>: <code>0x1..0x3</code> [<code>immediate_wider_than_operation_size</code>]</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>SUB.{L|Q}(z) &lt;imm32s&gt;, &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.{L|Q}(z) &lt;imm32s&gt;, &lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-10.svg" /></p>
 <p><strong>Format: Instruction format for SUB.{L|Q}(z) &lt;imm32s&gt;, &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>SUB.Q &lt;imm64&gt;, &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SUB.Q &lt;imm64&gt;, &lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-11.svg" /></p>
 <p><strong>Format: Instruction format for SUB.Q &lt;imm64&gt;, &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 
 
 

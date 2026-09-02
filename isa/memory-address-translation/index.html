@@ -767,10 +767,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#la48-four-level-paging" class="md-nav__link">
+  <a href="#la45-three-level-paging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        LA48 Four-Level Paging
+        LA45 Three-Level Paging
       
     </span>
   </a>
@@ -778,10 +778,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#la57-five-level-paging" class="md-nav__link">
+  <a href="#la56-four-level-paging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        LA57 Five-Level Paging
+        LA56 Four-Level Paging
       
     </span>
   </a>
@@ -14177,10 +14177,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#la48-four-level-paging" class="md-nav__link">
+  <a href="#la45-three-level-paging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        LA48 Four-Level Paging
+        LA45 Three-Level Paging
       
     </span>
   </a>
@@ -14188,10 +14188,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#la57-five-level-paging" class="md-nav__link">
+  <a href="#la56-four-level-paging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        LA57 Five-Level Paging
+        LA56 Four-Level Paging
       
     </span>
   </a>
@@ -14292,19 +14292,19 @@
 <tbody>
 <tr>
 <td style="text-align: left;">disabled</td>
-<td style="text-align: left;">m = 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-segment-m"><code>SEGMENT.M</code></a><code>=0</code></td>
 <td style="text-align: left;">no segment-window check</td>
 <td style="text-align: left;">linear = EA</td>
 </tr>
 <tr>
 <td style="text-align: left;">translated window</td>
-<td style="text-align: left;">m != 0, b = 0</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-segment-m"><code>SEGMENT.M</code></a><code>!=0</code>, <a href="../programming-model/#register-field-base-registers-segment-b"><code>SEGMENT.B</code></a><code>=0</code></td>
 <td style="text-align: left;">complete byte range lies within <span class="arithmatex">\(0 \le \mathrm{EA}&lt;\mathrm{span}\)</span></td>
 <td style="text-align: left;">linear = base + EA</td>
 </tr>
 <tr>
 <td style="text-align: left;">bounds-only window</td>
-<td style="text-align: left;">m != 0, b = 1</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-registers-segment-m"><code>SEGMENT.M</code></a><code>!=0</code>, <a href="../programming-model/#register-field-base-registers-segment-b"><code>SEGMENT.B</code></a><code>=1</code></td>
 <td style="text-align: left;">complete byte range lies within <span class="arithmatex">\(\mathrm{base}\le\mathrm{EA}&lt;\mathrm{limit}\)</span></td>
 <td style="text-align: left;">linear = EA</td>
 </tr>
@@ -14312,28 +14312,30 @@
 </table>
 <p>Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point must be within the selected segment. With paging enabled, the complete byte range is translated in increasing linear-address order after canonicality checks. With paging disabled, the same byte-range rules apply directly.</p>
 <p>Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range failure raises <a href="../architectural-event-processing-model/#event-segment-bounds-violation"><code>SEGMENT_BOUNDS_VIOLATION</code></a> before the instruction's target <a href="../terminology/#term-memory-access">memory access</a> begins.</p>
-<p>The segment result is the <a href="../terminology/#term-linear-address">linear address</a>. With PTCR.PE set, the page-table walker consumes that address and applies the selected PTE frame and attributes. With paging disabled, the <a href="../terminology/#term-linear-address">linear address</a> is the physical byte address and must fit the implementation PABITS value. An out-of-range direct address raises <a href="../architectural-event-processing-model/#event-physical-address-fault"><code>PHYSICAL_ADDRESS_FAULT</code></a>. An invalid segment image raises <a href="../architectural-event-processing-model/#event-invalid-control-image"><code>INVALID_CONTROL_IMAGE</code></a> when written; a failed segment bound or canonical-address check raises <a href="../architectural-event-processing-model/#event-segment-bounds-violation"><code>SEGMENT_BOUNDS_VIOLATION</code></a> or <a href="../architectural-event-processing-model/#event-noncanonical-address"><code>NONCANONICAL_ADDRESS</code></a>, respectively, during access.</p>
+<p>The segment result is the <a href="../terminology/#term-linear-address">linear address</a>. With <a href="../programming-model/#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> set, the page-table walker consumes that address and applies the selected PTE frame and attributes. With paging disabled, the <a href="../terminology/#term-linear-address">linear address</a> is the physical byte address and must fit <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a>. An out-of-range direct address raises <a href="../architectural-event-processing-model/#event-physical-address-fault"><code>PHYSICAL_ADDRESS_FAULT</code></a>. An invalid segment image raises <a href="../architectural-event-processing-model/#event-invalid-control-image"><code>INVALID_CONTROL_IMAGE</code></a> when written; a failed segment bound or canonical-address check raises <a href="../architectural-event-processing-model/#event-segment-bounds-violation"><code>SEGMENT_BOUNDS_VIOLATION</code></a> or <a href="../architectural-event-processing-model/#event-noncanonical-address"><code>NONCANONICAL_ADDRESS</code></a>, respectively, during access.</p>
 <h2 id="paging-stage">Paging Stage</h2>
-<p>Paging is enabled by <code>PTCR.PE</code> and translates the <a href="../terminology/#term-linear-address">linear address</a> produced by <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. Before the walk can produce a translation, the <a href="../terminology/#term-linear-address">linear address</a> must be canonical for the mode selected by <code>PTCR.LA57</code>. A noncanonical address raises <a href="../architectural-event-processing-model/#event-noncanonical-address"><code>NONCANONICAL_ADDRESS</code></a>. With paging disabled, the memory system uses the <a href="../terminology/#term-linear-address">linear address</a> directly.</p>
-<p>Each page-table level uses a nine-bit address <a href="../terminology/#term-field">field</a> to select one of 512 64-bit entries in a 4-KiB table page. For a table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical table page named by <code>PTCR.root_page</code>. At each active level, a present selected entry with <code>T=1</code> points to the next table page; this form is valid only above L1. A selected entry with <code>T=0</code> terminates the walk. A terminating entry is a byte-addressed leaf at any active level. If its level is <span class="arithmatex">\(L\)</span>, its naturally aligned physical base is combined with the low <span class="arithmatex">\(12+9(L-1)\)</span> linear-address bits:</p>
-<div class="arithmatex">\[\mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 12) +
-  \mathit{linear}[12+9(L-1)-1:0].\]</div>
-<p>The resulting L1 through L5 leaf sizes are 4 KiB, 2 MiB, 1 GiB, 512 GiB, and 256 TiB. Bit 7 is the A <a href="../terminology/#term-field">field</a> in both descriptor layouts and does not participate in address formation.</p>
-<p>The walker intersects table-pointer R/W/X/U <a href="../terminology/#term-field">fields</a> while descending. The terminating leaf supplies decoded AM permissions, U, the final frame number, G, CP, and the Normal/MMIO class. The detailed entry-validity, permission, accessed, and dirty rules are specified under Page-Table Entry Format. At each consumed level, result priority is not-present first, structural validity second, and effective permission third; the walker resolves those results before consuming a lower level.</p>
+<p>Paging is enabled by <a href="../programming-model/#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a> and translates the <a href="../terminology/#term-linear-address">linear address</a> produced by <a href="../terminology/#term-segment-pre-translation">segment pre-translation</a>. Before the walk can produce a translation, the <a href="../terminology/#term-linear-address">linear address</a> must be canonical for the translation-table format selected by <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a>. A noncanonical address raises <a href="../architectural-event-processing-model/#event-noncanonical-address"><code>NONCANONICAL_ADDRESS</code></a>. With paging disabled, the memory system uses the <a href="../terminology/#term-linear-address">linear address</a> directly and does not interpret <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> or <a href="../programming-model/#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>.</p>
+<p>Every page-table entry is one naturally aligned 64-bit descriptor. L4, L3, and L2 are 16-KiB-aligned table objects containing 2048 entries selected by an 11-bit address <a href="../terminology/#term-field">field</a>. L1 is a 4-KiB-aligned table object containing exactly 512 entries selected by a nine-bit address <a href="../terminology/#term-field">field</a>. For a table-object base address <span class="arithmatex">\(B\)</span> and index <span class="arithmatex">\(i\)</span>, the selected entry is always at <span class="arithmatex">\(B+8i\)</span>. PTEs are a dense array of eight-byte descriptors; an L1 object has no architecturally unreachable trailing storage.</p>
+<p>The walker starts at the 16-KiB-aligned physical table object named by <a href="../programming-model/#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a> for the selected format. At each active level, a present selected entry with <a href="#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a><code>=1</code> supplies <a href="#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a>, the exact base address of the next table object; this form is valid only above L1. An L4-to-L3 or L3-to-L2 transition requires a 16-KiB-aligned target. An L2-to-L1 transition requires only a 4-KiB-aligned target, so the walker preserves <a href="#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a><code>[13:12]</code> for that transition. A selected entry with <a href="#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a><code>=0</code> terminates the walk as a byte-addressed leaf. Define the number of low linear-address bits supplied by a leaf at level <span class="arithmatex">\(L\)</span> as <span class="arithmatex">\(o(L1)=14\)</span>, <span class="arithmatex">\(o(L2)=23\)</span>, <span class="arithmatex">\(o(L3)=34\)</span>, and <span class="arithmatex">\(o(L4)=45\)</span>. The leaf <a href="#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a> supplies a naturally aligned physical base, and the final byte address is:</p>
+<div class="arithmatex">\[\mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 14) \mathbin{|}
+  \mathit{linear}[o(L)-1:0].\]</div>
+<p>The resulting L1 through L4 leaf sizes are 16 KiB, 8 MiB, 16 GiB, and 32 TiB. Bit 7 is <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> in both descriptor layouts and does not participate in address formation.</p>
+<p>Software may place up to four independent L1 objects in one 16-KiB physical backing frame, including objects belonging to different roots or ASIDs in the same supervisor-owned physical-memory domain. Such co-location does not combine address-space permissions: each table pointer and leaf continues to govern its own subtree or mapping. A backing frame is used only for L1 storage while any of its four slots is live. Slot allocation, ownership, zeroing before linking, reference counting, and reclamation are software responsibilities. Independently protected physical ownership domains may use separate allocator pools without changing the descriptor format. Software may instead allocate every L1 object at a 16-KiB-aligned address by keeping <a href="#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a><code>[13:12]=00</code>; every conforming walker must nevertheless accept all four 4-KiB-aligned L1 positions.</p>
+<p>The walker intersects table-pointer <a href="#pte-field-base-memory-translation-pte-r"><code>PTE.R</code></a>/<a href="#pte-field-base-memory-translation-pte-w"><code>PTE.W</code></a>/<a href="#pte-field-base-memory-translation-pte-x"><code>PTE.X</code></a>/<a href="#pte-field-base-memory-translation-pte-u"><code>PTE.U</code></a> <a href="../terminology/#term-field">fields</a> while descending. The terminating leaf supplies decoded <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a> permissions, <a href="#pte-field-base-memory-translation-pte-u"><code>PTE.U</code></a>, the final <a href="#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a>, <a href="#pte-field-base-memory-translation-pte-g"><code>PTE.G</code></a>, <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a>, and the Normal/MMIO class. The detailed entry-validity, permission, accessed, and dirty rules are specified under Page-Table Entry Format. At each consumed level, result priority is not-present first, structural validity second, and effective permission third; the walker resolves those results before consuming a lower level.</p>
 <p><img alt="Linear-Address Paging Fields" src="../../assets/visuals/isa/memory-address-translation-02.svg" /></p>
 <p><strong>Linear-Address Paging Fields</strong></p>
-<h2 id="la48-four-level-paging">LA48 Four-Level Paging</h2>
-<p>When <code>PTCR.LA57</code> is zero, bits <code>63..48</code> of the <a href="../terminology/#term-linear-address">linear address</a> must equal the sign extension of bit <code>47</code>. Bits <code>47..39</code>, <code>38..30</code>, <code>29..21</code>, and <code>20..12</code> select the L4, L3, L2, and L1 entries respectively. A byte-addressed leaf may terminate the walk at any of those levels; all bits below the terminating level's index form its offset. The L4 table is the root table named by <code>PTCR.root_page</code>.</p>
-<p><img alt="LA48 Four-Level Page Walk" src="../../assets/visuals/isa/memory-address-translation-03.svg" /></p>
-<p><strong>LA48 Four-Level Page Walk</strong></p>
-<h2 id="la57-five-level-paging">LA57 Five-Level Paging</h2>
-<p>When <code>PTCR.LA57</code> is one, bits <code>63..57</code> of the <a href="../terminology/#term-linear-address">linear address</a> must equal the sign extension of bit <code>56</code>. Bits <code>56..48</code> select an additional L5 entry. A table pointer continues into the same L4-through-L1 hierarchy used by LA48, while a byte-addressed leaf at any selected level terminates the walk and uses all lower linear-address bits as its offset. The L5 table is the root table named by <code>PTCR.root_page</code>.</p>
-<p><img alt="LA57 Five-Level Page Walk" src="../../assets/visuals/isa/memory-address-translation-04.svg" /></p>
-<p><strong>LA57 Five-Level Page Walk</strong></p>
+<h2 id="la45-three-level-paging">LA45 Three-Level Paging</h2>
+<p>When <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> is <code>010</code>, bits <code>63..45</code> of the <a href="../terminology/#term-linear-address">linear address</a> must equal the sign extension of bit <code>44</code>. Bits <code>44..34</code>, <code>33..23</code>, and <code>22..14</code> select the L3, L2, and L1 entries respectively. A byte-addressed leaf may terminate the walk at any of those levels and uses the level-specific offset defined by the Paging Stage. The L3 table is the root table named by <a href="../programming-model/#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>.</p>
+<p><img alt="LA45 Three-Level Page Walk" src="../../assets/visuals/isa/memory-address-translation-03.svg" /></p>
+<p><strong>LA45 Three-Level Page Walk</strong></p>
+<h2 id="la56-four-level-paging">LA56 Four-Level Paging</h2>
+<p>When <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> is <code>011</code>, bits <code>63..56</code> of the <a href="../terminology/#term-linear-address">linear address</a> must equal the sign extension of bit <code>55</code>. Bits <code>55..45</code> select an additional L4 entry. A table pointer continues into the same L3-through-L1 hierarchy used by LA45, while a byte-addressed leaf at any selected level terminates the walk and uses the level-specific offset defined by the Paging Stage. The L4 table is the root table named by <a href="../programming-model/#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>.</p>
+<p><img alt="LA56 Four-Level Page Walk" src="../../assets/visuals/isa/memory-address-translation-04.svg" /></p>
+<p><strong>LA56 Four-Level Page Walk</strong></p>
 <h2 id="page-table-entry-format">Page-Table Entry Format <a href="#section-page-table-entry-format" id="section-page-table-entry-format"></a></h2>
-<p>Every page-table entry is one naturally aligned 64-bit descriptor. Bits <code>55..12</code> are a fixed <a href="../terminology/#term-physical-frame-number">physical frame number</a> <a href="../terminology/#term-field">field</a>, so this format has a 56-bit architectural physical-address ceiling. An implementation reports its exact <code>PABITS</code> value, from 32 through 56, through CPUID <code>ADDRESS_WIDTHS</code>. In a present descriptor, PFN bits at or above that value <a href="../terminology/#term-must-be-zero">must be zero</a>. Bits <code>57..56</code> are <code>SW[1:0]</code> and are <a href="../terminology/#term-ignored">ignored</a> by hardware; bits <code>63..58</code> are <a href="../terminology/#term-reserved">reserved</a> and <a href="../terminology/#term-must-be-zero">must be zero</a>.</p>
-<p><code>P</code> in bit 0 is common. When <code>P=0</code>, the remaining bits are <a href="../terminology/#term-ignored">ignored</a> and the entry is not present. When <code>P=1</code>, <code>T</code> in bit 1 selects the leaf or table-pointer layout. A nonzero <a href="../terminology/#term-reserved">reserved</a> bit in a present descriptor raises <a href="../architectural-event-processing-model/#event-malformed-page-table-entry"><code>MALFORMED_PAGE_TABLE_ENTRY</code></a>.</p>
-<p><strong>Leaf Descriptor Fields (P=1, T=0)</strong></p>
+<p>Every page-table entry is one naturally aligned 64-bit descriptor. A leaf owns <a href="#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a><code>[55:14]</code>, while a table pointer owns <a href="#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a><code>[55:12]</code>. Both layouts therefore have a 56-bit architectural physical-address ceiling. An implementation reports its exact <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-address-widths-parameters-pabits"><code>PABITS</code></a> value, from 32 through 56, through CPUID <code>ADDRESS_WIDTHS</code>. In a present descriptor, bits of the layout-selected physical-address field at or above that value <a href="../terminology/#term-must-be-zero">must be zero</a>. Bits <code>57..56</code> are <a href="#pte-field-base-memory-translation-pte-sw"><code>PTE.SW</code></a><code>[1:0]</code> and are <a href="../terminology/#term-ignored">ignored</a> by hardware; bits <code>63..58</code> are <a href="../terminology/#term-reserved">reserved</a> and <a href="../terminology/#term-must-be-zero">must be zero</a>.</p>
+<p><a href="#pte-field-base-memory-translation-pte-p" id="pte-field-base-memory-translation-pte-p"></a><code>P</code> in bit 0 is common. When <a href="#pte-field-base-memory-translation-pte-p"><code>PTE.P</code></a><code>=0</code>, the remaining bits are <a href="../terminology/#term-ignored">ignored</a> and the entry is not present. When <a href="#pte-field-base-memory-translation-pte-p"><code>PTE.P</code></a><code>=1</code>, <a href="#pte-field-base-memory-translation-pte-t" id="pte-field-base-memory-translation-pte-t"></a><code>T</code> in bit 1 selects the leaf or table-pointer layout. A nonzero <a href="../terminology/#term-reserved">reserved</a> bit in a present descriptor raises <a href="../architectural-event-processing-model/#event-malformed-page-table-entry"><code>MALFORMED_PAGE_TABLE_ENTRY</code></a>.</p>
+<p><strong>Leaf Descriptor Fields (<a href="#pte-field-base-memory-translation-pte-p"><code>PTE.P</code></a><code>=1</code>, <a href="#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a><code>=0</code>)</strong></p>
 <table>
 <thead>
 <tr>
@@ -14344,57 +14346,57 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>P</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-p"><code>PTE.P</code></a></td>
 <td style="text-align: left;"><code>0</code></td>
 <td style="text-align: left;">present, one</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>T</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a></td>
 <td style="text-align: left;"><code>1</code></td>
 <td style="text-align: left;">leaf selector, zero</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>AM</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-am" id="pte-field-base-memory-translation-pte-am"></a><code>AM</code></td>
 <td style="text-align: left;"><code>4..2</code></td>
 <td style="text-align: left;">permission and Normal/MMIO access class</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>U</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-u" id="pte-field-base-memory-translation-pte-u"></a><code>U</code></td>
 <td style="text-align: left;"><code>5</code></td>
 <td style="text-align: left;">user-domain permission</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>G</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-g" id="pte-field-base-memory-translation-pte-g"></a><code>G</code></td>
 <td style="text-align: left;"><code>6</code></td>
 <td style="text-align: left;">global translation</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>A</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-a" id="pte-field-base-memory-translation-pte-a"></a><code>A</code></td>
 <td style="text-align: left;"><code>7</code></td>
 <td style="text-align: left;">accessed state</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>D</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-d" id="pte-field-base-memory-translation-pte-d"></a><code>D</code></td>
 <td style="text-align: left;"><code>8</code></td>
 <td style="text-align: left;">exact dirty state</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>CP</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-cp" id="pte-field-base-memory-translation-pte-cp"></a><code>CP</code></td>
 <td style="text-align: left;"><code>10..9</code></td>
 <td style="text-align: left;">cache policy</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../terminology/#term-reserved">reserved</a></td>
-<td style="text-align: left;"><code>11</code></td>
+<td style="text-align: left;"><code>13..11</code></td>
 <td style="text-align: left;"><a href="../terminology/#term-must-be-zero">must be zero</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>PFN</code></td>
-<td style="text-align: left;"><code>55..12</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-pfn" id="pte-field-base-memory-translation-pte-pfn"></a><code>PFN</code></td>
+<td style="text-align: left;"><code>55..14</code></td>
 <td style="text-align: left;">mapped <a href="../terminology/#term-physical-frame-number">physical frame number</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>SW[1:0]</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-sw" id="pte-field-base-memory-translation-pte-sw"></a><code>SW[1:0]</code></td>
 <td style="text-align: left;"><code>57..56</code></td>
 <td style="text-align: left;">software-defined, <a href="../terminology/#term-ignored">ignored</a> by hardware</td>
 </tr>
@@ -14405,11 +14407,11 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Leaf AM Encodings</strong></p>
+<p><strong>Leaf <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a> Encodings</strong></p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"><strong>AM</strong></th>
+<th style="text-align: left;"><strong><a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a></strong></th>
 <th style="text-align: left;"><strong>Permission</strong></th>
 <th style="text-align: left;"><strong>Class</strong></th>
 <th style="text-align: left;"><strong>Name</strong></th>
@@ -14466,8 +14468,8 @@
 </tr>
 </tbody>
 </table>
-<p>No leaf encoding grants both write and execute, and no MMIO leaf grants execute. This W^X property applies to one selected translation. The architecture does not compare aliases: distinct descriptors for the same physical page may have different permissions, AM classes, or CP values.</p>
-<p><strong>Table-Pointer Descriptor Fields (P=1, T=1)</strong></p>
+<p>No leaf encoding grants both write and execute, and no MMIO leaf grants execute. This W^X property applies to one selected translation. The architecture does not compare aliases: distinct descriptors for the same physical page may have different permissions, <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a> classes, or <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a> values.</p>
+<p><strong>Table-Pointer Descriptor Fields (<a href="#pte-field-base-memory-translation-pte-p"><code>PTE.P</code></a><code>=1</code>, <a href="#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a><code>=1</code>)</strong></p>
 <table>
 <thead>
 <tr>
@@ -14478,22 +14480,22 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>P</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-p"><code>PTE.P</code></a></td>
 <td style="text-align: left;"><code>0</code></td>
 <td style="text-align: left;">present, one</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>T</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a></td>
 <td style="text-align: left;"><code>1</code></td>
 <td style="text-align: left;">table-pointer selector, one</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>R/W/X</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-r" id="pte-field-base-memory-translation-pte-r"></a> <a href="#pte-field-base-memory-translation-pte-w" id="pte-field-base-memory-translation-pte-w"></a> <a href="#pte-field-base-memory-translation-pte-x" id="pte-field-base-memory-translation-pte-x"></a><code>R/W/X</code></td>
 <td style="text-align: left;"><code>2/3/4</code></td>
 <td style="text-align: left;">subtree maximum permissions</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>U</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-u"><code>PTE.U</code></a></td>
 <td style="text-align: left;"><code>5</code></td>
 <td style="text-align: left;">subtree maximum user-domain permission</td>
 </tr>
@@ -14503,7 +14505,7 @@
 <td style="text-align: left;"><a href="../terminology/#term-must-be-zero">must be zero</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>A</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a></td>
 <td style="text-align: left;"><code>7</code></td>
 <td style="text-align: left;">accessed state</td>
 </tr>
@@ -14513,12 +14515,12 @@
 <td style="text-align: left;"><a href="../terminology/#term-must-be-zero">must be zero</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>PFN</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-next-table" id="pte-field-base-memory-translation-pte-next-table"></a><code>NEXT_TABLE</code></td>
 <td style="text-align: left;"><code>55..12</code></td>
-<td style="text-align: left;">next-table <a href="../terminology/#term-physical-frame-number">physical frame number</a></td>
+<td style="text-align: left;">physical base address of the next table object</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>SW[1:0]</code></td>
+<td style="text-align: left;"><a href="#pte-field-base-memory-translation-pte-sw"><code>PTE.SW</code></a><code>[1:0]</code></td>
 <td style="text-align: left;"><code>57..56</code></td>
 <td style="text-align: left;">software-defined, <a href="../terminology/#term-ignored">ignored</a> by hardware</td>
 </tr>
@@ -14529,11 +14531,12 @@
 </tr>
 </tbody>
 </table>
-<p>A table pointer with <code>R=W=X=0</code>, or a table pointer at L1, is malformed. The walker begins with R, W, X, and U enabled, intersects each table bitmap and U bit, then intersects the terminating leaf's decoded AM permissions and U bit. The leaf alone supplies G, CP, and Normal/MMIO class. A leaf at level <span class="arithmatex">\(L\)</span> must have a physical base aligned to <span class="arithmatex">\(2^{12+9(L-1)}\)</span> bytes.</p>
-<p>The CP <a href="../terminology/#term-field">field</a> is orthogonal to AM: all 32 AM/CP combinations are structurally valid. CP values 0 through 3 mean cacheable write-back, coherent uncacheable, coherent write-through, and coherent write-combining respectively. CP never weakens an MMIO execution rule.</p>
-<p>Hardware sets A on each structurally valid descriptor consumed by a completed walk and may also set A during a speculative walk whose instruction later faults or is squashed. D is set only when the corresponding store or atomic update commits, and every required D update succeeds before its memory update becomes visible. Hardware A/D changes are conditional atomic updates of the complete 64-bit PTE and preserve every other <a href="../terminology/#term-field">field</a>. A concurrent change causes a re-read and complete revalidation; stale <a href="../terminology/#term-field">fields</a> are never written back. <a href="../instructions/ptquery/"><code>PTQUERY</code></a> and <a href="../instructions/vtop/"><code>VTOP</code></a> do not modify A or D.</p>
+<p>A table pointer with <a href="#pte-field-base-memory-translation-pte-r"><code>PTE.R</code></a><code>=</code><a href="#pte-field-base-memory-translation-pte-w"><code>PTE.W</code></a><code>=</code><a href="#pte-field-base-memory-translation-pte-x"><code>PTE.X</code></a><code>=0</code>, or a table pointer at L1, is malformed. An L4-to-L3 or L3-to-L2 pointer targets a 16-KiB table object and is malformed when <a href="#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a><code>[13:12]</code> is nonzero. An L2-to-L1 pointer targets a 4-KiB table object and may use all four values of those bits. Every walker, PTQUERY implementation, and page-walk cache preserves the complete <a href="#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a> value while descending. The walker begins with <a href="#pte-field-base-memory-translation-pte-r"><code>PTE.R</code></a>, <a href="#pte-field-base-memory-translation-pte-w"><code>PTE.W</code></a>, <a href="#pte-field-base-memory-translation-pte-x"><code>PTE.X</code></a>, and <a href="#pte-field-base-memory-translation-pte-u"><code>PTE.U</code></a> enabled, intersects each table bitmap and <a href="#pte-field-base-memory-translation-pte-u"><code>PTE.U</code></a> bit, then intersects the terminating leaf's decoded <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a> permissions and <a href="#pte-field-base-memory-translation-pte-u"><code>PTE.U</code></a> bit. The leaf alone supplies <a href="#pte-field-base-memory-translation-pte-g"><code>PTE.G</code></a>, <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a>, and Normal/MMIO class. An L1, L2, L3, or L4 leaf must have a physical base aligned to <span class="arithmatex">\(2^{14}\)</span>, <span class="arithmatex">\(2^{23}\)</span>, <span class="arithmatex">\(2^{34}\)</span>, or <span class="arithmatex">\(2^{45}\)</span> bytes respectively.</p>
+<p>The <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a> <a href="../terminology/#term-field">field</a> is orthogonal to <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a>: all 32 <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a>/<a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a> combinations are structurally valid. <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a> values 0 through 3 mean cacheable write-back, coherent uncacheable, coherent write-through, and coherent write-combining respectively. <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a> never weakens an MMIO execution rule.</p>
+<p>Hardware sets <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> on each structurally valid descriptor consumed by a completed walk and may also set <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> during a speculative walk whose instruction later faults or is squashed. In that latter case, <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> is an imprecise, PTE-owned usage hint; it is not instruction progress, restart state, or generic continuation state. <a href="#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a> is set only when the corresponding store or atomic update commits, and every required <a href="#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a> update succeeds before its memory update becomes visible. Hardware <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a>/<a href="#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a> changes are conditional atomic updates of the complete 64-bit PTE and preserve every other <a href="../terminology/#term-field">field</a>. A concurrent change causes a re-read and complete revalidation; stale <a href="../terminology/#term-field">fields</a> are never written back. <a href="../instructions/ptquery/"><code>PTQUERY</code></a> and <a href="../instructions/vtop/"><code>VTOP</code></a> do not modify <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> or <a href="#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a>.</p>
 <h2 id="translation-cache-identity-and-invalidation">Translation-Cache Identity and Invalidation</h2>
-<p>A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it maps. Translation-cache identity excludes PTCR <code>root_page</code>. While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged context is invalidated when PTCR changes.</p>
+<p>A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it maps. Translation-cache identity excludes <a href="../programming-model/#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a>. While <a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> is one, system software binds one <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a> to one PTCR root and translation-table format; it completes the required shootdown before reusing that <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a> for a different PTCR image. While <a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> is zero, the current untagged context is invalidated when PTCR changes.</p>
+<p>No translation-cache entry may be interpreted under a different <a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> value from the one that produced it.</p>
 <p><strong>Translation-Cache Entry Identity</strong></p>
 <table>
 <thead>
@@ -14548,12 +14551,12 @@
 <td style="text-align: left;">every entry</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>LA57</code></td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a></td>
 <td style="text-align: left;">every entry</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>ASID</code></td>
-<td style="text-align: left;">non-global entry while ASCR.AE is one</td>
+<td style="text-align: left;"><a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a></td>
+<td style="text-align: left;">non-global entry while <a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> is one</td>
 </tr>
 </tbody>
 </table>
@@ -14568,22 +14571,22 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>WRCR PTCR with changed root_page</code></td>
-<td style="text-align: left;">invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it</td>
+<td style="text-align: left;"><code>WRCR with changed</code><a href="../programming-model/#register-field-base-control-registers-ptcr-root-page"><code>PTCR.ROOT_PAGE</code></a></td>
+<td style="text-align: left;">invalidate all current untagged entries when <a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> is zero; when <a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> is one software must invalidate the <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a> before rebinding it</td>
 <td style="text-align: left;">preserve only mappings whose complete leaf attributes are identical in every context</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>WRCR PTCR with changed LA57</code></td>
-<td style="text-align: left;">invalidate entries using the old translation geometry</td>
-<td style="text-align: left;">invalidate entries using the old translation geometry</td>
+<td style="text-align: left;"><code>WRCR with changed</code><a href="../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a></td>
+<td style="text-align: left;">invalidate entries using the old translation-table format</td>
+<td style="text-align: left;">invalidate entries using the old translation-table format</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>WRCR ASCR changing ASID while AE remains one</code></td>
-<td style="text-align: left;">select the new ASID-tagged entries</td>
+<td style="text-align: left;"><code>WRCR changing</code><a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a><code>while</code><a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a><code>remains one</code></td>
+<td style="text-align: left;">select the new <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a>-tagged entries</td>
 <td style="text-align: left;">preserve</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>WRCR ASCR changing AE</code></td>
+<td style="text-align: left;"><code>WRCR changing</code><a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a></td>
 <td style="text-align: left;">invalidate the old untagged context or select the new tagged context as applicable</td>
 <td style="text-align: left;">preserve</td>
 </tr>
@@ -14594,17 +14597,17 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../instructions/swpta/"><code>SWPTA</code></a></td>
-<td style="text-align: left;">install PTCR and ASCR and select the new ASID-tagged context</td>
+<td style="text-align: left;">install PTCR and ASCR and select the new <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a>-tagged context</td>
 <td style="text-align: left;">preserve only identical global mappings</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../instructions/invpage/"><code>INVPAGE</code></a></td>
-<td style="text-align: left;">invalidate every mapping containing the addressed linear value for the current ASID, or the current untagged context when AE is zero</td>
+<td style="text-align: left;">invalidate every mapping containing the addressed linear value for the current <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a>, or the current untagged context when <a href="../programming-model/#register-field-base-control-registers-ascr-ae"><code>ASCR.AE</code></a> is zero</td>
 <td style="text-align: left;">invalidate every addressed global mapping containing that linear value</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../instructions/invasid/"><code>INVASID</code></a></td>
-<td style="text-align: left;">invalidate every entry tagged with the selected ASID</td>
+<td style="text-align: left;">invalidate every entry tagged with the selected <a href="../programming-model/#register-field-base-control-registers-ascr-asid"><code>ASCR.ASID</code></a></td>
 <td style="text-align: left;">preserve</td>
 </tr>
 <tr>
@@ -14661,18 +14664,18 @@
 </tr>
 </tbody>
 </table>
-<p>A global leaf ignores ASID matching. Its PFN, effective permissions, AM, and <code>CP</code> attributes must be identical in every context in which that global entry can be used. Changing any of those attributes requires invalidating the global entry on every target <a href="../terminology/#term-logical-processor">logical processor</a>.</p>
-<p>The page-table walker reads page tables as CP0 coherent <a href="../terminology/#term-normal-memory">normal memory</a>. Each 64-bit PTE read observes one coherence version; it does not combine <a href="../terminology/#term-field">fields</a> from different writes. An in-progress walk may complete with the old or new coherence version, so the updater does not reclaim the old mapping until the complete shootdown protocol finishes. The local invalidation instructions affect only the executing <a href="../terminology/#term-logical-processor">logical processor</a>; the request and acknowledgement steps are <a href="../terminology/#term-ordinary">ordinary</a> shared-memory communication ordered by the stated release, acquire, and AFENCE operations.</p>
+<p>A global leaf ignores ASID matching. Its <a href="#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a>, effective permissions, <a href="#pte-field-base-memory-translation-pte-am"><code>PTE.AM</code></a>, and <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a> attributes must be identical in every context in which that global entry can be used. Changing any of those attributes requires invalidating the global entry on every target <a href="../terminology/#term-logical-processor">logical processor</a>.</p>
+<p>The page-table walker reads page tables as <a href="#pte-field-base-memory-translation-pte-cp"><code>PTE.CP</code></a><code>=0</code> coherent <a href="../terminology/#term-normal-memory">normal memory</a>. Each 64-bit PTE read observes one coherence version; it does not combine <a href="../terminology/#term-field">fields</a> from different writes. An in-progress walk may complete with the old or new coherence version, so the updater does not reclaim the old mapping until the complete shootdown protocol finishes. The local invalidation instructions affect only the executing <a href="../terminology/#term-logical-processor">logical processor</a>; the request and acknowledgement steps are <a href="../terminology/#term-ordinary">ordinary</a> shared-memory communication ordered by the stated release, acquire, and AFENCE operations.</p>
 <h2 id="leaf-byte-addresses-and-access-ranges">Leaf Byte Addresses and Access Ranges</h2>
-<p>Every leaf at level <span class="arithmatex">\(L\)</span> forms a byte address with <span class="arithmatex">\(o=12+9(L-1)\)</span>: $<span class="arithmatex">\(\mathit{byte\_address} = (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0].\)</span>$ A width-<span class="arithmatex">\(n\)</span> access covers the half-open byte interval <span class="arithmatex">\([a,a+n)\)</span>. Bit 7 records A and may be set by an <a href="../terminology/#term-ordinary">ordinary</a> walk. Atomics require natural byte alignment; a misaligned operand raises <code>ATOMIC_ALIGNMENT</code> before the memory read or write. PTQUERY returns the raw selected descriptor, while VTOP reports the translated byte address; neither instruction modifies A or D.</p>
+<p>Every leaf at level <span class="arithmatex">\(L\)</span> forms a byte address from <a href="#pte-field-base-memory-translation-pte-pfn"><code>PTE.PFN</code></a>, where <span class="arithmatex">\(o(L1)=14\)</span>, <span class="arithmatex">\(o(L2)=23\)</span>, <span class="arithmatex">\(o(L3)=34\)</span>, and <span class="arithmatex">\(o(L4)=45\)</span>: $<span class="arithmatex">\(\mathit{byte\_address} = (\text{\hyperref[pte-field:base-memory-translation-pte-pfn]{\texttt{PTE.\allowbreak{}PFN}}}\ll14)\mathbin{|}\mathit{linear}[o(L)-1:0].\)</span>$ A width-<span class="arithmatex">\(n\)</span> access covers the half-open byte interval <span class="arithmatex">\([a,a+n)\)</span>. Bit 7 records <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> and may be set by an <a href="../terminology/#term-ordinary">ordinary</a> walk. Atomics require natural byte alignment; a misaligned operand raises <code>ATOMIC_ALIGNMENT</code> before the memory read or write. PTQUERY returns the raw selected descriptor, while VTOP reports the translated byte address; neither instruction modifies <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> or <a href="#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a>.</p>
 <h2 id="physical-class-and-mmio-accesses">Physical Class and MMIO Accesses</h2>
 <p>The platform assigns each <a href="../terminology/#term-physical-address">physical address</a> an authoritative Normal or Device class. A Normal leaf selecting Device physical memory raises <a href="../architectural-event-processing-model/#event-memory-type-fault"><code>MEMORY_TYPE_FAULT</code></a>. A MMIO leaf may select either physical class and imposes MMIO rules; paging-disabled Device accesses also use those rules. Paging-disabled Normal addresses are Normal accesses.</p>
 <p>A permitted MMIO operation is one naturally aligned scalar load or store of 1, 2, 4, or 8 bytes. All complete-range and translation checks finish before one architectural MMIO event is produced, and that event is not split. A permitted scalar that is misaligned raises <a href="../architectural-event-processing-model/#event-mmio-alignment-fault"><code>MMIO_ALIGNMENT_FAULT</code></a>. Atomic, read-modify-write, repeated, and every other operation that is not one permitted scalar load or store raise <a href="../architectural-event-processing-model/#event-unsupported-mmio-operation"><code>UNSUPPORTED_MMIO_OPERATION</code></a> before alignment is considered and before any target effect. A prefetch to MMIO is a no-op. Instruction fetch is never permitted from MMIO.</p>
 <p>Within one memory operand, failures are selected in this order: segment range and wrap, canonicality, complete translation of all covered mappings in increasing address order, physical memory class, MMIO operation class, MMIO or atomic alignment, then the target access and bus fault. Thus a later mapping's translation fault precedes an MMIO condition already visible in an earlier mapping.</p>
 <h2 id="multi-page-accesses">Multi-Page Accesses</h2>
 <p>For a byte range that intersects more than one distinct leaf mapping, translation and accumulated permission checks are resolved once per mapping in increasing linear-address order. Each mapping's walk reaches its existing not-present, structural-validity, and permission result before the next mapping is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.</p>
-<p>Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation, permission or synchronous data-access fault leaves every destination byte and every leaf D bit unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain set when a later mapping faults.</p>
-<p>Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault in a later mapping completes as an instruction-fetch fault before decode or operand evaluation, while earlier instruction-cache and PTE A effects retain their <a href="../terminology/#term-ordinary">ordinary</a> rules.</p>
+<p>Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation, permission or synchronous data-access fault leaves every destination byte and every leaf <a href="#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a> bit unchanged. <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain set when a later mapping faults.</p>
+<p>Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault in a later mapping completes as an instruction-fetch fault before decode or operand evaluation, while earlier instruction-cache and <a href="#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> effects retain their <a href="../terminology/#term-ordinary">ordinary</a> rules.</p>
 
 
 

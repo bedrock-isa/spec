@@ -14195,15 +14195,12 @@
 <p>Unprivileged</p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible; REPcc observes <code>dst</code></p>
-<p>Subtracts one from the selected-width destination, writes the modular result, and updates Z, N, C, and V. The written destination result supplies the REPcc observed value.</p>
+<p>Subtracts one from the selected-width destination, writes the modular result, and updates <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a>. The written destination result supplies the REPcc observed value.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>DECF.{B|W|L|Q}(z) Rn(r)</code></strong></p>
 <p><img alt="Format: Instruction format for DECF.{B|W|L|Q}(z) Rn(r)" src="../../../assets/visuals/isa/decf-01.svg" /></p>
 <p><strong>Format: Instruction format for DECF.{B|W|L|Q}(z) Rn(r)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>r</code></strong> — Selects the destination operand.</p>
 
 
 

@@ -14212,74 +14212,45 @@
 <p><strong><code>EXTSQ.B Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.B Rn(s), Rn(d)" src="../../../assets/visuals/isa/extsq-01.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.B Rn(s), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>EXTSQ.W Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.W Rn(s), Rn(d)" src="../../../assets/visuals/isa/extsq-02.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.W Rn(s), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>EXTSQ.L Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.L Rn(s), Rn(d)" src="../../../assets/visuals/isa/extsq-03.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.L Rn(s), Rn(d)</strong></p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>EXTSQ.B Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.B Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/extsq-04.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.B Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>EXTSQ.B &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.B &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extsq-05.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.B &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>EXTSQ.W Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.W Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/extsq-06.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.W Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>EXTSQ.W &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.W &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extsq-07.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.W &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>EXTSQ.L Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.L Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/extsq-08.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.L Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>EXTSQ.L &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.L &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extsq-09.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.L &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>EXTSQ.B &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.B &lt;ea&gt;(s), &lt;ea&gt;(d)" src="../../../assets/visuals/isa/extsq-10.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.B &lt;ea&gt;(s), &lt;ea&gt;(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Effective Address field <code>s</code></strong> — Specifies the source operand.</p>
-<p><strong>Effective Address field <code>d</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>EXTSQ.W &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.W &lt;ea&gt;(s), &lt;ea&gt;(d)" src="../../../assets/visuals/isa/extsq-11.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.W &lt;ea&gt;(s), &lt;ea&gt;(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Effective Address field <code>s</code></strong> — Specifies the source operand.</p>
-<p><strong>Effective Address field <code>d</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>EXTSQ.L &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><img alt="Format: Instruction format for EXTSQ.L &lt;ea&gt;(s), &lt;ea&gt;(d)" src="../../../assets/visuals/isa/extsq-12.svg" /></p>
 <p><strong>Format: Instruction format for EXTSQ.L &lt;ea&gt;(s), &lt;ea&gt;(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Effective Address field <code>s</code></strong> — Specifies the source operand.</p>
-<p><strong>Effective Address field <code>d</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 
 
 

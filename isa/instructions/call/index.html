@@ -14192,21 +14192,16 @@
 <p><strong><code>CALL &lt;imm16s&gt;</code></strong></p>
 <p><img alt="Format: Instruction format for CALL &lt;imm16s&gt;" src="../../../assets/visuals/isa/call-01.svg" /></p>
 <p><strong>Format: Instruction format for CALL &lt;imm16s&gt;</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p>2.75in <strong><code>CALL &lt;imm32s&gt;</code></strong></p>
 <p><img alt="Format: Instruction format for CALL &lt;imm32s&gt;" src="../../../assets/visuals/isa/call-02.svg" /></p>
 <p><strong>Format: Instruction format for CALL &lt;imm32s&gt;</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p>2.75in <strong><code>CALL &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for CALL &lt;ea&gt;(e)" src="../../../assets/visuals/isa/call-03.svg" /></p>
 <p><strong>Format: Instruction format for CALL &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the control-target operand. Immediate addressing is unavailable in this form.</p>
+<p><code>target</code> — <code>excluded</code>: <code>immediate</code> [<code>canonical_form_reclaim</code>]</p>
 <p>2.75in <strong><code>CALL Rn(r)</code></strong></p>
 <p><img alt="Format: Instruction format for CALL Rn(r)" src="../../../assets/visuals/isa/call-04.svg" /></p>
 <p><strong>Format: Instruction format for CALL Rn(r)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>r</code></strong> — Selects the control-target operand.</p>
 
 
 

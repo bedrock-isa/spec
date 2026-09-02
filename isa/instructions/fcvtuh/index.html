@@ -14223,37 +14223,22 @@
 <p><code>FP16_CONVERT</code></p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible</p>
-<p>Converts between the H conversion format in an Fn operand and an unsigned integer of the suffix width in an Rn or memory operand. Integer-to-H conversion uses <code>FSTATUS.RM</code>; H-to-integer conversion truncates toward zero.</p>
+<p>Converts between the H conversion format in an Fn operand and an unsigned integer of the suffix width in an Rn or memory operand. Integer-to-H conversion uses <a href="../../programming-model/#register-field-fp-registers-state-fstatus-rm"><code>FSTATUS.RM</code></a>; H-to-integer conversion truncates toward zero.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>FCVTUH.{B|W|L|Q}(z) Fn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for FCVTUH.{B|W|L|Q}(z) Fn(s), Rn(d)" src="../../../assets/visuals/isa/fcvtuh-01.svg" /></p>
 <p><strong>Format: Instruction format for FCVTUH.{B|W|L|Q}(z) Fn(s), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>FCVTUH.{B|W|L|Q}(z) Rn(s), Fn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for FCVTUH.{B|W|L|Q}(z) Rn(s), Fn(d)" src="../../../assets/visuals/isa/fcvtuh-02.svg" /></p>
 <p><strong>Format: Instruction format for FCVTUH.{B|W|L|Q}(z) Rn(s), Fn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>FCVTUH.{B|W|L|Q}(z) &lt;ea&gt;(e), Fn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for FCVTUH.{B|W|L|Q}(z) &lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fcvtuh-03.svg" /></p>
 <p><strong>Format: Instruction format for FCVTUH.{B|W|L|Q}(z) &lt;ea&gt;(e), Fn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>FCVTUH.{B|W|L|Q}(z) Fn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for FCVTUH.{B|W|L|Q}(z) Fn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/fcvtuh-04.svg" /></p>
 <p><strong>Format: Instruction format for FCVTUH.{B|W|L|Q}(z) Fn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 
 
 

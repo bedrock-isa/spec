@@ -14220,21 +14220,15 @@
 <p><code>FP</code></p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible</p>
-<p>Compares the selected-format operand with positive zero and writes Z,N,C,V as greater=0000, equal=1000, less=0110, or unordered=0001. A quiet NaN is unordered; a signaling NaN is unordered and generates NV.</p>
+<p>Compares the selected-format operand with positive zero and writes <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> as greater=0000, equal=1000, less=0110, or unordered=0001. A quiet NaN is unordered; a signaling NaN is unordered and generates NV.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>FTEST.{S|D}(z) &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for FTEST.{S|D}(z) &lt;ea&gt;(e)" src="../../../assets/visuals/isa/ftest-01.svg" /></p>
 <p><strong>Format: Instruction format for FTEST.{S|D}(z) &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>FTEST.{S|D}(z) Fn(s)</code></strong></p>
 <p><img alt="Format: Instruction format for FTEST.{S|D}(z) Fn(s)" src="../../../assets/visuals/isa/ftest-02.svg" /></p>
 <p><strong>Format: Instruction format for FTEST.{S|D}(z) Fn(s)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 
 
 

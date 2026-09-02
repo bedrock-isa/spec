@@ -14171,17 +14171,17 @@
 <p><code>CMPXCHG.{B|W|L|Q}(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></p>
 <h2 id="privilege">Privilege</h2>
 <p>Unprivileged</p>
-<p>Compares memory with the expected <a href="../../terminology/#term-rn-register">Rn register</a> and conditionally stores the desired <a href="../../terminology/#term-rn-register">Rn register</a>. After the operation, the expected register contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.</p>
+<p>Compares memory with the expected <a href="../../terminology/#term-rn-register">Rn register</a> and conditionally stores the desired <a href="../../terminology/#term-rn-register">Rn register</a>. After the operation, the expected register contains the observed old memory value. <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a><code>=1</code> means the store happened; <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a><code>=0</code> means memory was left unchanged.</p>
 <p>The memory read, optional memory write, expected-register update, and flag update form one atomic read-modify-write operation. The encoded memory-order selector governs the complete operation on both comparison outcomes. On failure, the operation contributes the observed memory read as its ordering event: acquire orders later <a href="../../terminology/#term-memory-operation">memory operations</a> after that read, release orders earlier <a href="../../terminology/#term-memory-operation">memory operations</a> before that read, and sequential consistency places that read in the global SC order. On success, the memory write carries the same selected order to observers of that write. A failed comparison contributes no memory write and creates no release sequence.</p>
 <ul>
 <li>
-<p>If memory equals the original expected value, the desired value is stored and Z is set.</p>
+<p>If memory equals the original expected value, the desired value is stored and <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> is set.</p>
 </li>
 <li>
-<p>Otherwise memory is unchanged and Z is cleared.</p>
+<p>Otherwise memory is unchanged and <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> is cleared.</p>
 </li>
 <li>
-<p>In both cases the expected register receives the value originally read from memory, and N, C, and V are cleared.</p>
+<p>In both cases the expected register receives the value originally read from memory, and <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> are cleared.</p>
 </li>
 </ul>
 <p>A memory-access fault exposes none of these updates.</p>
@@ -14190,12 +14190,8 @@
 <p><strong><code>CMPXCHG.{B|W|L|Q}(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for CMPXCHG.{B|W|L|Q}(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/cmpxchg-01.svg" /></p>
 <p><strong>Format: Instruction format for CMPXCHG.{B|W|L|Q}(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Memory-order field <code>o</code></strong> — Selects the memory ordering. Allowed encoded values: 0-4.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>order</code> — <code>allowed</code>: <code>0x0..0x4</code> [<code>memory_order_reserved_reclaimed</code>]</p>
+<p><code>memory</code> — <code>excluded</code>: <code>immediate</code> [<code>memory_operand_required</code>]</p>
 
 
 

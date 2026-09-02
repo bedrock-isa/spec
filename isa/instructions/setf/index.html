@@ -14171,14 +14171,12 @@
 <p><code>SETF flags_bitmap(m)</code></p>
 <h2 id="privilege">Privilege</h2>
 <p>Unprivileged</p>
-<p>SETF replaces the complete architectural integer FLAGS image from its encoded bitmap. Bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V; a one writes the corresponding flag to one and a zero writes it to zero. The assembler may provide symbolic bitmap names such as Z, N, C, V, and combinations using |.</p>
+<p>SETF replaces the complete architectural integer FLAGS image from its encoded bitmap. Bit 3 writes <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, bit 2 writes <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, bit 1 writes <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and bit 0 writes <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a>; a one writes the corresponding flag to one and a zero writes it to zero. The assembler may provide symbolic bitmap names such as <code>Z</code>, <code>N</code>, <code>C</code>, <code>V</code>, and combinations using |.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>SETF flags_bitmap(m)</code></strong></p>
 <p><img alt="Format: Instruction format for SETF flags_bitmap(m)" src="../../../assets/visuals/isa/setf-01.svg" /></p>
 <p><strong>Format: Instruction format for SETF flags_bitmap(m)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Flags field <code>m</code></strong> — Selects the architectural flags.</p>
 
 
 

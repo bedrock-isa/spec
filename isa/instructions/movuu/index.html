@@ -14201,10 +14201,8 @@
 <p><strong><code>MOVUU.{B|W|L|Q}(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><img alt="Format: Instruction format for MOVUU.{B|W|L|Q}(z) &lt;ea&gt;(s), &lt;ea&gt;(d)" src="../../../assets/visuals/isa/movuu-01.svg" /></p>
 <p><strong>Format: Instruction format for MOVUU.{B|W|L|Q}(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Effective Address field <code>s</code></strong> — Specifies the source operand. Immediate addressing is unavailable in this form.</p>
-<p><strong>Effective Address field <code>d</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>src</code> — <code>excluded</code>: <code>immediate</code> [<code>user_source_memory_required</code>]</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 
 
 

@@ -14197,29 +14197,18 @@
 <p>Unprivileged</p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible; REPcc observes <code>computed</code></p>
-<p>Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result. The temporary conjunction supplies the REPcc observed value.</p>
+<p>Computes the selected-width bitwise conjunction only to set <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> and <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, clears <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a>, and does not write the temporary result. The temporary conjunction supplies the REPcc observed value.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>TEST.{L|Q}(z) Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for TEST.{L|Q}(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/test-01.svg" /></p>
 <p><strong>Format: Instruction format for TEST.{L|Q}(z) Rn(s), Rn(d)</strong></p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the source operand.</p>
 <p>2.75in <strong><code>TEST.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for TEST.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/test-02.svg" /></p>
 <p><strong>Format: Instruction format for TEST.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p>2.75in <strong><code>TEST.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for TEST.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/test-03.svg" /></p>
 <p><strong>Format: Instruction format for TEST.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 
 
 

@@ -14197,31 +14197,20 @@
 <p>Unprivileged</p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible; REPcc observes <code>dst</code></p>
-<p>Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V. The written destination result supplies the REPcc observed value.</p>
-<p>Let <span class="arithmatex">\(n\)</span> be the selected width, <span class="arithmatex">\(d\)</span> and <span class="arithmatex">\(s\)</span> the unsigned operand bit patterns, and <span class="arithmatex">\(b\)</span> the incoming borrow represented by the C flag. The written result is $<span class="arithmatex">\(r = (d - s - b) \bmod 2^n .\)</span>$ Z is set when <span class="arithmatex">\(r=0\)</span>, and N receives the most-significant bit of <span class="arithmatex">\(r\)</span>. C reports an unsigned borrow from either subtraction. V reports signed overflow for the complete <span class="arithmatex">\(d-s-b\)</span> operation.</p>
+<p>Subtracts the selected-width source value and incoming <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> borrow from the destination, writes the truncated difference, and updates <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a>. The written destination result supplies the REPcc observed value.</p>
+<p>Let <span class="arithmatex">\(n\)</span> be the selected width, <span class="arithmatex">\(d\)</span> and <span class="arithmatex">\(s\)</span> the unsigned operand bit patterns, and <span class="arithmatex">\(b\)</span> the incoming borrow represented by <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>. The written result is $<span class="arithmatex">\(r = (d - s - b) \bmod 2^n .\)</span>$ <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> is set when <span class="arithmatex">\(r=0\)</span>, and <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a> receives the most-significant bit of <span class="arithmatex">\(r\)</span>. <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a> reports an unsigned borrow from either subtraction. <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> reports signed overflow for the complete <span class="arithmatex">\(d-s-b\)</span> operation.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>SBB.{B|W|L|Q}(z) Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for SBB.{B|W|L|Q}(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/sbb-01.svg" /></p>
 <p><strong>Format: Instruction format for SBB.{B|W|L|Q}(z) Rn(s), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>SBB.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for SBB.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/sbb-02.svg" /></p>
 <p><strong>Format: Instruction format for SBB.{B|W|L|Q}(z) Rn(s), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>SBB.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for SBB.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/sbb-03.svg" /></p>
 <p><strong>Format: Instruction format for SBB.{B|W|L|Q}(z) &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 
 
 

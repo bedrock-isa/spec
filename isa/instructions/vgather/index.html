@@ -14211,106 +14211,47 @@
 <p><strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Rn(s)], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Rn(s)], Vn(v)" src="../../../assets/visuals/isa/vgather-01.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Rn(s)], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.L Pn(p), Pn(c), [Vn(x)], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.L Pn(p), Pn(c), [Vn(x)], Vn(v)" src="../../../assets/visuals/isa/vgather-02.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.L Pn(p), Pn(c), [Vn(x)], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.Q Pn(p), Pn(c), [Vn(x)], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.Q Pn(p), Pn(c), [Vn(x)], Vn(v)" src="../../../assets/visuals/isa/vgather-03.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.Q Pn(p), Pn(c), [Vn(x)], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x)], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x)], Vn(v)" src="../../../assets/visuals/isa/vgather-04.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x)], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt;], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt;], Vn(v)" src="../../../assets/visuals/isa/vgather-05.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt;], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp8s&gt;], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp8s&gt;], Vn(v)" src="../../../assets/visuals/isa/vgather-06.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp8s&gt;], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp16s&gt;], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp16s&gt;], Vn(v)" src="../../../assets/visuals/isa/vgather-07.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp16s&gt;], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp32s&gt;], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp32s&gt;], Vn(v)" src="../../../assets/visuals/isa/vgather-08.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp32s&gt;], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 <p>2.75in <strong><code>VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp64&gt;], Vn(v)</code></strong></p>
 <p><img alt="Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp64&gt;], Vn(v)" src="../../../assets/visuals/isa/vgather-09.svg" /></p>
 <p><strong>Format: Instruction format for VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * &lt;scale&gt; + &lt;disp64&gt;], Vn(v)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>p</code></strong> — Selects the governing-predicate operand.</p>
-<p><strong>Register field <code>c</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>v</code></strong> — Selects the destination operand.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the source operand.</p>
-<p><strong>Operand overlap</strong> — When the governing-predicate and completion operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
-<p><strong>Operand overlap</strong> — When the address and destination operands designate the same architectural register, the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION before architectural effects.</p>
+<p><code>govern</code>, <code>completion</code> — <code>illegal_instruction</code></p>
+<p><code>address</code>, <code>dst</code> — <code>illegal_instruction</code></p>
 
 
 

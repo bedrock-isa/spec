@@ -14171,13 +14171,12 @@
 <p><code>TRACE &lt;imm16&gt;</code></p>
 <h2 id="privilege">Privilege</h2>
 <p>Unprivileged</p>
-<p>When the implementation trace stream is enabled, appends the low 16-bit marker and current instruction boundary to that stream; otherwise it completes without changing <a href="../../terminology/#term-architectural-state">architectural state</a>. The tracing terminology distinguishes this marker instruction from a TF-selected <a href="../../terminology/#term-trace-unit">trace unit</a> and the <a href="../../architectural-event-processing-model/#event-single-step"><code>SINGLE_STEP</code></a> architectural event. RF does not suppress the marker.</p>
+<p>When the implementation trace stream is enabled, appends the low 16-bit marker and current instruction boundary to that stream; otherwise it completes without changing <a href="../../terminology/#term-architectural-state">architectural state</a>. The tracing terminology distinguishes this marker instruction from a <a href="../../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a>-selected <a href="../../terminology/#term-trace-unit">trace unit</a> and the <a href="../../architectural-event-processing-model/#event-single-step"><code>SINGLE_STEP</code></a> architectural event. <a href="../../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> does not suppress the marker.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>TRACE &lt;imm16&gt;</code></strong></p>
 <p><img alt="Format: Instruction format for TRACE &lt;imm16&gt;" src="../../../assets/visuals/isa/trace-01.svg" /></p>
 <p><strong>Format: Instruction format for TRACE &lt;imm16&gt;</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 
 
 

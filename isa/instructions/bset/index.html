@@ -14198,33 +14198,23 @@
 <p>Unprivileged</p>
 <h2 id="repeat-eligibility">Repeat eligibility</h2>
 <p>REP eligible; REPcc observes <code>computed</code></p>
-<p>Sets the destination bit selected by the low six bits of the bit index, writes Z from whether that bit was previously clear, and clears N, C, and V. A memory destination is read by an <a href="../../terminology/#term-ordinary">ordinary</a> selected-width load and updated by an <a href="../../terminology/#term-ordinary">ordinary</a> selected-width store. The B-sized 0 or 1 value of the old tested bit supplies the REPcc observed value.</p>
+<p>Sets the destination bit selected by the low six bits of the bit index, writes <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> from whether that bit was previously clear, and clears <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a>. A memory destination is read by an <a href="../../terminology/#term-ordinary">ordinary</a> selected-width load and updated by an <a href="../../terminology/#term-ordinary">ordinary</a> selected-width store. The B-sized 0 or 1 value of the old tested bit supplies the REPcc observed value.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>BSET Rn(b), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for BSET Rn(b), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/bset-01.svg" /></p>
 <p><strong>Format: Instruction format for BSET Rn(b), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>BSET imm6(i), &lt;ea&gt;(e)</code></strong></p>
 <p><img alt="Format: Instruction format for BSET imm6(i), &lt;ea&gt;(e)" src="../../../assets/visuals/isa/bset-02.svg" /></p>
 <p><strong>Format: Instruction format for BSET imm6(i), &lt;ea&gt;(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Immediate addressing is unavailable in this form.</p>
+<p><code>dst</code> — <code>excluded</code>: <code>immediate</code> [<code>invalid_destination</code>]</p>
 <p>2.75in <strong><code>BSET Rn(b), Rn(e)</code></strong></p>
 <p><img alt="Format: Instruction format for BSET Rn(b), Rn(e)" src="../../../assets/visuals/isa/bset-03.svg" /></p>
 <p><strong>Format: Instruction format for BSET Rn(b), Rn(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>e</code></strong> — Selects the destination operand.</p>
 <p>2.75in <strong><code>BSET imm6(i), Rn(e)</code></strong></p>
 <p><img alt="Format: Instruction format for BSET imm6(i), Rn(e)" src="../../../assets/visuals/isa/bset-04.svg" /></p>
 <p><strong>Format: Instruction format for BSET imm6(i), Rn(e)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>e</code></strong> — Selects the destination operand.</p>
-<p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 
 
 

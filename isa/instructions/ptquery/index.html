@@ -14172,8 +14172,8 @@
 <p><code>PTQUERY pt_level(i), Rn(s), Rn(d)</code></p>
 <h2 id="privilege">Privilege</h2>
 <p>Supervisor only</p>
-<p>PTQUERY reads the raw descriptor selected by a <a href="../../terminology/#term-linear-address">linear address</a> and requested page-table level, or returns zero when the requested entry cannot be read. Z reports structural validity under the layout selected by T; N, C, and V are zero.</p>
-<p>The requested level is the low three bits of the level operand. Values outside 1 through 5 raise <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>; level 5 is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query in LA48 mode.</p>
+<p>PTQUERY reads the raw descriptor selected by a <a href="../../terminology/#term-linear-address">linear address</a> and requested page-table level, or returns zero when the requested entry cannot be read. <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> reports structural validity under the layout selected by <a href="../../memory-address-translation/#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a>; <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> are zero.</p>
+<p>The requested level is the low three bits of the level operand. Values outside 1 through 4 raise <a href="../../architectural-event-processing-model/#event-invalid-control-selector"><code>INVALID_CONTROL_SELECTOR</code></a>. With <a href="../../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a><code>=010</code>, an L4 query is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query before reading a PTE. With an unallocated <a href="../../programming-model/#register-field-base-control-registers-ptcr-tt"><code>PTCR.TT</code></a> encoding, no geometry is selected and every query is reported as an <a href="../../terminology/#term-ordinary">ordinary</a> unsuccessful query before reading a PTE.</p>
 <ol>
 <li>
 <p>Compute the <a href="../../terminology/#term-linear-address">linear address</a> without reading the source memory and reject a noncanonical address as an unsuccessful query.</p>
@@ -14185,26 +14185,18 @@
 <p>Stop after reading the requested level. A structurally malformed entry or valid leaf terminates the query at that level.</p>
 </li>
 <li>
-<p>Return the requested raw PTE and set Z only when it is structurally valid under the table-pointer or leaf layout selected by T at that level. N, C, and V are zero.</p>
+<p>Return the requested raw PTE and set <a href="../../programming-model/#register-field-base-registers-state-flags-z"><code>FLAGS.Z</code></a> only when it is structurally valid under the table-pointer or leaf layout selected by <a href="../../memory-address-translation/#pte-field-base-memory-translation-pte-t"><code>PTE.T</code></a> at that level. Table-pointer validity uses the current source level, and traversal preserves the complete <a href="../../memory-address-translation/#pte-field-base-memory-translation-pte-next-table"><code>PTE.NEXT_TABLE</code></a> value. <a href="../../programming-model/#register-field-base-registers-state-flags-n"><code>FLAGS.N</code></a>, <a href="../../programming-model/#register-field-base-registers-state-flags-c"><code>FLAGS.C</code></a>, and <a href="../../programming-model/#register-field-base-registers-state-flags-v"><code>FLAGS.V</code></a> are zero.</p>
 </li>
 </ol>
-<p>Failure before the requested entry is read returns zero and clears all four flags. The walk ignores PTCR.PE, does not set PTE A or D, does not modify a TLB, and does not raise an <code>ADDRESS_TRANSLATION</code> family event for walk failure.</p>
+<p>Failure before the requested entry is read returns zero and clears all four flags. The walk ignores <a href="../../programming-model/#register-field-base-control-registers-ptcr-pe"><code>PTCR.PE</code></a>, does not set <a href="../../memory-address-translation/#pte-field-base-memory-translation-pte-a"><code>PTE.A</code></a> or <a href="../../memory-address-translation/#pte-field-base-memory-translation-pte-d"><code>PTE.D</code></a>, does not modify a TLB, and does not raise an <code>ADDRESS_TRANSLATION</code> family event for walk failure.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>PTQUERY pt_level(i), &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for PTQUERY pt_level(i), &lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/ptquery-01.svg" /></p>
 <p><strong>Format: Instruction format for PTQUERY pt_level(i), &lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Page-table-level field <code>i</code></strong> — Selects the page-table level.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p>2.75in <strong><code>PTQUERY pt_level(i), Rn(s), Rn(d)</code></strong></p>
 <p><img alt="Format: Instruction format for PTQUERY pt_level(i), Rn(s), Rn(d)" src="../../../assets/visuals/isa/ptquery-02.svg" /></p>
 <p><strong>Format: Instruction format for PTQUERY pt_level(i), Rn(s), Rn(d)</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Page-table-level field <code>i</code></strong> — Selects the page-table level.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the address operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 
 
 

@@ -14185,15 +14185,15 @@
 <h1 id="architectural-debug-triggers">Architectural Debug Triggers</h1>
 <p>The Base debug facility defines stopping events, trigger configuration, and retry behavior for one <a href="../terminology/#term-logical-processor">logical processor</a>. External debugger transport, authentication, forced halt and resume, multicore coordination, and platform policy are outside the processor ISA.</p>
 <h2 id="debug-event-identities">Debug Event Identities</h2>
-<p><a href="../architectural-event-processing-model/#event-single-step"><code>SINGLE_STEP</code></a> is the post-success event selected by STATUS.TF. <a href="../architectural-event-processing-model/#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> is the post-success event produced by <a href="../instructions/bkpt/"><code>BKPT</code></a>. Both save the following architectural boundary.</p>
+<p><a href="../architectural-event-processing-model/#event-single-step"><code>SINGLE_STEP</code></a> is the post-success event selected by <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a>. <a href="../architectural-event-processing-model/#event-explicit-breakpoint"><code>EXPLICIT_BREAKPOINT</code></a> is the post-success event produced by <a href="../instructions/bkpt/"><code>BKPT</code></a>. Both save the following architectural boundary.</p>
 <p><a href="../architectural-event-processing-model/#event-execution-breakpoint"><code>EXECUTION_BREAKPOINT</code></a>, <a href="../architectural-event-processing-model/#event-memory-read-watchpoint"><code>MEMORY_READ_WATCHPOINT</code></a>, <a href="../architectural-event-processing-model/#event-memory-write-watchpoint"><code>MEMORY_WRITE_WATCHPOINT</code></a>, and <a href="../architectural-event-processing-model/#event-atomic-memory-watchpoint"><code>ATOMIC_MEMORY_WATCHPOINT</code></a> are fault-like, pre-effect events. They save the current instruction for retry. The event identity itself states the stopping reason; there is no generic debug-cause event. <a href="../instructions/trace/"><code>TRACE</code></a> remains a non-stopping trace-stream marker.</p>
 <h2 id="trigger-slot-array-and-programming-model">Trigger-Slot Array and Programming Model</h2>
-<p>Each logical processor owns an array of at least four trigger slots. The implementation reports the exact count through CPUID <code>DEBUG_TRIGGERS.SLOT_COUNT</code>. Trigger state is accessed by the supervisor-only <code>DTRSEL</code>/<code>DTRDATA</code> selector-data pair. <code>DTRSEL.SLOT</code> selects a slot and <code>DTRSEL.BANK</code> selects the word read or written through <code>DTRDATA</code>.</p>
+<p>Each logical processor owns an array of at least four trigger slots. The implementation reports the exact count through CPUID <a href="../cpuid-feature-discovery/#cpuid-field-base-cpuid-implementation-debug-triggers-parameters-slot-count"><code>SLOT_COUNT</code></a>. Trigger state is accessed by the supervisor-only <code>DTRSEL</code>/<code>DTRDATA</code> selector-data pair. <a href="#register-field-base-control-registers-dtrsel-slot" id="register-field-base-control-registers-dtrsel-slot"></a><code>DTRSEL.SLOT</code> selects a slot and <a href="#register-field-base-control-registers-dtrsel-bank" id="register-field-base-control-registers-dtrsel-bank"></a><code>DTRSEL.BANK</code> selects the word read or written through <code>DTRDATA</code>.</p>
 <p><strong>DTRSEL Bank Selection</strong></p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"><strong>BANK</strong></th>
+<th style="text-align: left;"><strong><a href="#register-field-base-control-registers-dtrsel-bank"><code>DTRSEL.BANK</code></a></strong></th>
 <th style="text-align: left;"><strong>Word</strong></th>
 <th style="text-align: left;"><strong>Meaning</strong></th>
 </tr>
@@ -14201,17 +14201,17 @@
 <tbody>
 <tr>
 <td style="text-align: left;">0</td>
-<td style="text-align: left;"><code>CONFIG</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config" id="debug-trigger-base-debug-triggers-trigger-slot-config"></a><code>CONFIG</code></td>
 <td style="text-align: left;">validity, access-kind, and privilege-domain controls</td>
 </tr>
 <tr>
 <td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>LOW</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-low" id="debug-trigger-base-debug-triggers-trigger-slot-low"></a><code>LOW</code></td>
 <td style="text-align: left;">inclusive low effective-address or PC bound</td>
 </tr>
 <tr>
 <td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>HIGH</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-high" id="debug-trigger-base-debug-triggers-trigger-slot-high"></a><code>HIGH</code></td>
 <td style="text-align: left;">exclusive high effective-address or PC bound</td>
 </tr>
 <tr>
@@ -14223,7 +14223,7 @@
 </table>
 <p><img alt="Debug-Trigger CONFIG Word" src="../../assets/visuals/isa/architectural-debug-01.svg" /></p>
 <p><strong>Debug-Trigger CONFIG Word</strong></p>
-<p><code>V</code>, <code>X</code>, <code>R</code>, <code>W</code>, <code>U</code>, and <code>S</code> abbreviate <code>VALID</code>, <code>MATCH_EXECUTE</code>, <code>MATCH_READ</code>, <code>MATCH_WRITE</code>, <code>MATCH_USER</code>, and <code>MATCH_SUPERVISOR</code>.</p>
+<p><code>V</code>, <code>X</code>, <code>R</code>, <code>W</code>, <code>U</code>, and <code>S</code> abbreviate <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-valid"><code>CONFIG.VALID</code></a>, <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-execute"><code>CONFIG.MATCH_EXECUTE</code></a>, <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-read"><code>CONFIG.MATCH_READ</code></a>, <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-write"><code>CONFIG.MATCH_WRITE</code></a>, <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-user"><code>CONFIG.MATCH_USER</code></a>, and <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-supervisor"><code>CONFIG.MATCH_SUPERVISOR</code></a>.</p>
 <p><strong>Debug-Trigger CONFIG Fields</strong></p>
 <table>
 <thead>
@@ -14235,32 +14235,32 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>VALID</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config-valid" id="debug-trigger-base-debug-triggers-trigger-slot-config-valid"></a><code>VALID</code></td>
 <td style="text-align: left;">0</td>
 <td style="text-align: left;">slot participates in matching</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>MATCH_EXECUTE</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-execute" id="debug-trigger-base-debug-triggers-trigger-slot-config-match-execute"></a><code>MATCH_EXECUTE</code></td>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;">match instruction execution at the architectural PC</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>MATCH_READ</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-read" id="debug-trigger-base-debug-triggers-trigger-slot-config-match-read"></a><code>MATCH_READ</code></td>
 <td style="text-align: left;">2</td>
 <td style="text-align: left;">match instruction-owned data reads</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>MATCH_WRITE</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-write" id="debug-trigger-base-debug-triggers-trigger-slot-config-match-write"></a><code>MATCH_WRITE</code></td>
 <td style="text-align: left;">3</td>
 <td style="text-align: left;">match instruction-owned data writes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>MATCH_USER</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-user" id="debug-trigger-base-debug-triggers-trigger-slot-config-match-user"></a><code>MATCH_USER</code></td>
 <td style="text-align: left;">4</td>
 <td style="text-align: left;">match accesses in the user permission domain</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>MATCH_SUPERVISOR</code></td>
+<td style="text-align: left;"><a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-supervisor" id="debug-trigger-base-debug-triggers-trigger-slot-config-match-supervisor"></a><code>MATCH_SUPERVISOR</code></td>
 <td style="text-align: left;">5</td>
 <td style="text-align: left;">match accesses in the supervisor permission domain</td>
 </tr>
@@ -14271,15 +14271,15 @@
 </tr>
 </tbody>
 </table>
-<p>A slot is staged while <code>VALID=0</code>. Software writes CONFIG, LOW, and HIGH in any order, then writes <code>VALID=1</code> as the final operation. Activation atomically validates that LOW is less than HIGH, at least one of X/R/W is set, at least one of U/S is set, and every reserved bit is zero. To replace an active slot, software first writes its current CONFIG image with only VALID cleared. While active, no other CONFIG change and no LOW or HIGH write is permitted. A rejected write changes neither the slot nor the selector.</p>
+<p>A slot is staged while <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-valid"><code>CONFIG.VALID</code></a><code>=0</code>. Software writes <a href="#debug-trigger-base-debug-triggers-trigger-slot-config"><code>CONFIG</code></a>, <a href="#debug-trigger-base-debug-triggers-trigger-slot-low"><code>LOW</code></a>, and <a href="#debug-trigger-base-debug-triggers-trigger-slot-high"><code>HIGH</code></a> in any order, then writes <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-valid"><code>CONFIG.VALID</code></a><code>=1</code> as the final operation. Activation atomically validates that <a href="#debug-trigger-base-debug-triggers-trigger-slot-low"><code>LOW</code></a> is less than <a href="#debug-trigger-base-debug-triggers-trigger-slot-high"><code>HIGH</code></a>, at least one of <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-execute"><code>CONFIG.MATCH_EXECUTE</code></a>/<a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-read"><code>CONFIG.MATCH_READ</code></a>/<a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-write"><code>CONFIG.MATCH_WRITE</code></a> is set, at least one of <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-user"><code>CONFIG.MATCH_USER</code></a>/<a href="#debug-trigger-base-debug-triggers-trigger-slot-config-match-supervisor"><code>CONFIG.MATCH_SUPERVISOR</code></a> is set, and every reserved bit is zero. To replace an active slot, software first writes its current <a href="#debug-trigger-base-debug-triggers-trigger-slot-config"><code>CONFIG</code></a> image with only <a href="#debug-trigger-base-debug-triggers-trigger-slot-config-valid"><code>CONFIG.VALID</code></a> cleared. While active, no other <a href="#debug-trigger-base-debug-triggers-trigger-slot-config"><code>CONFIG</code></a> change and no <a href="#debug-trigger-base-debug-triggers-trigger-slot-low"><code>LOW</code></a> or <a href="#debug-trigger-base-debug-triggers-trigger-slot-high"><code>HIGH</code></a> write is permitted. A rejected write changes neither the slot nor the selector.</p>
 <h2 id="matching-coordinates-and-selection">Matching Coordinates and Selection</h2>
-<p>Each slot describes one non-wrapping half-open range <span class="arithmatex">\([\mathrm{LOW},\mathrm{HIGH})\)</span>. An execution trigger matches when the pre-segment architectural PC is in that range. A data trigger matches when the byte range of an instruction-owned memory operation overlaps it; the compared coordinate is the pre-segment effective address. An exact one-byte range is expressed by <code>HIGH=LOW+1</code>.</p>
+<p>Each slot describes one non-wrapping half-open range <span class="arithmatex">\([\mathrm{LOW},\mathrm{HIGH})\)</span> using <a href="#debug-trigger-base-debug-triggers-trigger-slot-low"><code>LOW</code></a> and <a href="#debug-trigger-base-debug-triggers-trigger-slot-high"><code>HIGH</code></a>. An execution trigger matches when the pre-segment architectural PC is in that range. A data trigger matches when the byte range of an instruction-owned memory operation overlaps it; the compared coordinate is the pre-segment effective address. An exact one-byte range is expressed by <a href="#debug-trigger-base-debug-triggers-trigger-slot-high"><code>HIGH</code></a><code>=</code><a href="#debug-trigger-base-debug-triggers-trigger-slot-low"><code>LOW</code></a><code>+1</code>.</p>
 <p>Read and write matching may both be enabled. An atomic read-modify-write qualifies for both bits, but any winning match raises <a href="../architectural-event-processing-model/#event-atomic-memory-watchpoint"><code>ATOMIC_MEMORY_WATCHPOINT</code></a>. Trigger matching considers only range, access kind, and user or supervisor permission domain. Data values, masks, and value-change conditions are not part of the Base trigger model. If multiple slots match one operation, the lowest-numbered slot wins.</p>
 <h2 id="pre-effect-memory-evaluation">Pre-Effect Memory Evaluation</h2>
 <p>For a candidate memory operation, the processor validates the instruction and operands, resolves its condition or predicate, computes the effective address, and completes segmentation, translation, permission, and alignment validation before evaluating triggers. A winning trigger is reported before the memory or device access and before any architectural result commits. Consequently, earlier synchronous faults take priority; a matching load performs no read, a matching store is not visible, a matching atomic performs no read-modify-write action, and a matching MMIO operation does not access the device. A bus or data fault can still occur after event return when the operation is retried.</p>
 <p>Explicit and implicit instruction data accesses participate. Instruction fetch, page-table walks, event-entry frame accesses, prefetch hints, and cache-maintenance accesses do not. False-conditioned operations and inactive vector lanes do not participate. REP and REPcc evaluate before each iteration’s memory effect and preserve completed prior iterations. Gather and scatter evaluate before the next active lane access and preserve completed lane and predicate progress.</p>
 <h2 id="trigger-state-and-retry">Trigger State and Retry</h2>
-<p>Reset disables every slot and resets DTRSEL. Event entry does not modify the array. The array is per-processor debug state rather than computational context and is not part of the normal SAVE/RESTORE image. STATUS.TF and STATUS.RF remain execution-context state. RF suppression, automatic saved-image RF for pre-effect hardware events, and event priority are specified in <a href="../architectural-event-processing-model/#section-event-priority-and-debug">Event Priority and Debug Stops</a>.</p>
+<p>Reset disables every slot and resets DTRSEL. Event entry does not modify the array. The array is per-processor debug state rather than computational context and is not part of the normal SAVE/RESTORE image. <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a> and <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> remain execution-context state. <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> suppression, automatic saved-image <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> for pre-effect hardware events, and event priority are specified in <a href="../architectural-event-processing-model/#section-event-priority-and-debug">Event Priority and Debug Stops</a>.</p>
 
 
 
