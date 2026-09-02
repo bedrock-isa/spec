@@ -335,6 +335,20 @@ document$.subscribe(() => {
     )
 
 
+def _write_visual_stylesheet(source_root: Path) -> None:
+    destination = source_root / "stylesheets" / "visuals.css"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        """.md-content img[src*="assets/visuals/"] {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+""",
+        encoding="utf-8",
+    )
+
+
 def _write_mkdocs_configuration(
     path: Path,
     source_root: Path,
@@ -372,6 +386,7 @@ def _write_mkdocs_configuration(
             "javascripts/mathjax.js",
             "https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js",
         ],
+        "extra_css": ["stylesheets/visuals.css"],
         "nav": site.navigation(),
     }
     path.write_text(
@@ -617,6 +632,7 @@ def render_site_output(
         )
 
     _write_mathjax_configuration(source_root)
+    _write_visual_stylesheet(source_root)
     _write_mkdocs_configuration(configuration, source_root, output_root, site)
     _build_mkdocs_site(
         configuration,
