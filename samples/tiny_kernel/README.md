@@ -26,7 +26,7 @@ generation needs a Python environment other than `python3`.
   images, and enables paging before entering the shell. `EDS` stays flat
   because kernel C address arithmetic can materialize non-address intermediate
   values through `LEA`.
-- `memory.c` owns a 4 KiB page allocator, four-level page-table builder, the
+- `memory.c` owns a 16 KiB page allocator, LA45 three-level page-table builder, the
   shared user-image frame arena, and PTCR/ASID switching. Kernel code is RX,
   kernel data and MMIO are RW/NX, and supervisor mappings omit the user bit.
 - `process.c` tracks the shell process plus one process record per embedded
@@ -102,8 +102,8 @@ used by the LLVM integration test as an acceptance check:
 - `0x64..0x65`: low bytes of the configured supervisor segment window.
 - `0x66..0x67`: low bytes of the configured GS0 user TLS segment window.
 
-Each shell/application process has a distinct four-level root and uses its PID
-as the ASID. Embedded applications keep their ABI virtual base at `0x80000`,
+Each shell/application process has a distinct LA45 three-level root and uses its PID
+as the ASID. Embedded applications keep their ABI virtual base at `0x200000`,
 but their PT_LOAD pages are copied into a reusable physical arena and mapped as
 RXU or RWU from the ELF flags. The active app is the only runnable application,
 so the arena is cleared and reused on every exec while page-table roots remain

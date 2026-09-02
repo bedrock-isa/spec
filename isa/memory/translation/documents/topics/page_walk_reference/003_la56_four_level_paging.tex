@@ -1,0 +1,8 @@
+\subsection{LA56 Four-Level Paging}
+
+When (:ref:base.control_registers.PTCR.TT:) is \texttt{011}, bits \texttt{63..56} of the (:term:base.terms.linear_address:) must equal the sign extension of bit
+\texttt{55}. Bits \texttt{55..45} select an additional L4 entry. A table pointer continues into the same L3-through-L1 hierarchy used by
+LA45, while a byte-addressed leaf at any selected level terminates the walk and uses the level-specific offset defined by the Paging Stage.
+The L4 table is the root table named by (:ref:base.control_registers.PTCR.ROOT_PAGE:).
+
+\input{isa/memory/translation/documents/fragments/la56_page_walk_figure.tex}

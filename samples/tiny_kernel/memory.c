@@ -2,8 +2,8 @@
 
 #include <bedrockmmuintrin.h>
 
-#define PAGE_POOL_COUNT 72u
-#define USER_FRAME_COUNT 16u
+#define PAGE_POOL_COUNT 50u
+#define USER_FRAME_COUNT 4u
 
 static u8 page_pool[PAGE_POOL_COUNT][PAGE_SIZE]
     __attribute__((aligned(PAGE_SIZE), section(".page_pool")));
@@ -85,7 +85,7 @@ u64 segment_window_for_range(u64 start, u64 end, u32 bounds_only) {
 
 u32 memory_map_page(u64 ptcr, u64 virtual_address, u64 physical_address,
                     u64 flags) {
-  static const u32 shifts[3] = {39u, 30u, 21u};
+  static const u32 shifts[2] = {34u, 23u};
   u64 *table = (u64 *)(ptcr & ~(PAGE_SIZE - 1u));
   const u64 table_flags =
       PAGE_PRESENT | PAGE_TABLE | PAGE_TABLE_R | PAGE_TABLE_W | PAGE_TABLE_X |
@@ -96,8 +96,8 @@ u32 memory_map_page(u64 ptcr, u64 virtual_address, u64 physical_address,
     return 0;
   }
 
-  for (u32 level = 0; level < 3u; level++) {
-    u32 index = (u32)((virtual_address >> shifts[level]) & 0x1ffu);
+  for (u32 level = 0; level < 2u; level++) {
+    u32 index = (u32)((virtual_address >> shifts[level]) & 0x7ffu);
     volatile u64 *slot = (volatile u64 *)((u64)table + ((u64)index << 3));
     u64 entry = *slot;
     if ((entry & PAGE_PRESENT) == 0u) {
@@ -113,7 +113,7 @@ u32 memory_map_page(u64 ptcr, u64 virtual_address, u64 physical_address,
     table = (u64 *)(entry & ~(PAGE_SIZE - 1u));
   }
 
-  u64 leaf_index = (virtual_address >> 12) & 0x1ffu;
+  u64 leaf_index = (virtual_address >> 14) & 0x1ffu;
   *(volatile u64 *)((u64)table + (leaf_index << 3)) =
       physical_address | PAGE_PRESENT | flags;
   return 1;
@@ -139,7 +139,7 @@ u64 memory_create_address_space(u32 asid, u32 include_shell) {
   if (root == 0) {
     return 0;
   }
-  u64 ptcr = root | 1u;
+  u64 ptcr = root | 5u;
 
   if (!map_identity_range(ptcr, (u64)__kernel_text_start,
                           (u64)__kernel_text_end, PAGE_AM_RX)) {

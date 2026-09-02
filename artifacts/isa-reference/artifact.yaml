@@ -61,8 +61,8 @@ body:
 - topic: base.memory.translation.memory-address-translation.memory-address-translation
 - topic: base.memory.translation.memory-address-translation.segment-pre-translation
 - topic: base.memory.translation.page-walk-reference.paging-stage
-- topic: base.memory.translation.page-walk-reference.la48-four-level-paging
-- topic: base.memory.translation.page-walk-reference.la57-five-level-paging
+- topic: base.memory.translation.page-walk-reference.la45-three-level-paging
+- topic: base.memory.translation.page-walk-reference.la56-four-level-paging
 - topic: base.memory.translation.page-table-entry-reference.page-table-entry-format
 - topic: base.memory.translation.memory-address-translation.translation-cache-identity-and-invalidation
 - topic: base.memory.translation.memory-address-translation.leaf-byte-addresses-and-access-ranges

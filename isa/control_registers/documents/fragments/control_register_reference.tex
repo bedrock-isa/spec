@@ -10,16 +10,14 @@ stack, and user-return registers are per-logical-processor (:term:base.terms.arc
 \begin{BedrockFormatDiagram}{PTCR Format}
 \BedrockFormatRow{PTCR[63:0]}{%
 \BedrockFormatReserved{(:term:base.terms.reserved:)}{8}
-\BedrockFormatField{ROOT\_PAGE}{44}
-\BedrockFormatReserved{res.}{4}
-\BedrockFormatField{L}{1}
-\BedrockFormatReserved{(:term:base.terms.reserved:)}{6}
+\BedrockFormatField{ROOT\_PAGE}{42}
+\BedrockFormatReserved{res.}{10}
+\BedrockFormatField{TT}{3}
 \BedrockFormatField{P}{1}
 }
 \end{BedrockFormatDiagram}
 {\small
-In the diagram, \texttt{L} and \texttt{P} abbreviate
-(:ref:base.control_registers.PTCR.LA57:) and (:ref:base.control_registers.PTCR.PE:).
+In the diagram, \texttt{P} abbreviates (:ref:base.control_registers.PTCR.PE:).
 \par}
 
 \BedrockTableCaption{PTCR Fields}
@@ -29,13 +27,29 @@ In the diagram, \texttt{L} and \texttt{P} abbreviate
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 (:term:base.terms.reserved:) & \texttt{63..56} & (:term:base.terms.must_be_zero:) in this page-table format\\
-(:register-field-target:base.control_registers.PTCR.ROOT_PAGE:)\texttt{ROOT\_PAGE} & \texttt{55..12} & (:term:base.terms.physical_frame_number:) of the page-table root; must fit (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)\\
-(:term:base.terms.reserved:) & \texttt{11..8} & (:term:base.terms.must_be_zero:)\\
-(:register-field-target:base.control_registers.PTCR.LA57:)\texttt{LA57} & \texttt{7} & zero selects four levels; one selects five levels\\
-(:term:base.terms.reserved:) & \texttt{6..1} & (:term:base.terms.must_be_zero:)\\
+(:register-field-target:base.control_registers.PTCR.ROOT_PAGE:)\texttt{ROOT\_PAGE} & \texttt{55..14} & (:term:base.terms.physical_frame_number:) of the selected page-table root; when (:ref:base.control_registers.PTCR.PE:) is one, must fit (:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)\\
+(:term:base.terms.reserved:) & \texttt{13..4} & (:term:base.terms.must_be_zero:)\\
+(:register-field-target:base.control_registers.PTCR.TT:)\texttt{TT} & \texttt{3..1} & complete translation-table format selector\\
 (:register-field-target:base.control_registers.PTCR.PE:)\texttt{PE} & \texttt{0} & (:term:base.terms.page_table_translation:) enable\\
 \bottomrule
 \end{BedrockTabular}
+
+\BedrockTableCaption{PTCR \texttt{TT} Encodings}
+\begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{4.35in}@{}}
+\toprule
+\rowcolor{BedrockHeaderFill}
+\textbf{Encoding} & \textbf{Translation-Table Format}\\
+\midrule
+\texttt{010} & 16-KiB table pages with LA45 three-level paging\\
+\texttt{011} & 16-KiB table pages with LA56 four-level paging\\
+all others & (:term:base.terms.reserved:)\\
+\bottomrule
+\end{BedrockTabular}
+
+The reset PTCR image is zero. When (:ref:base.control_registers.PTCR.PE:) is zero, ordinary memory accesses do not interpret
+(:ref:base.control_registers.PTCR.TT:) or (:ref:base.control_registers.PTCR.ROOT_PAGE:). When (:ref:base.control_registers.PTCR.PE:) is one,
+(:ref:base.control_registers.PTCR.TT:) must be \texttt{010} or \texttt{011} and (:ref:base.control_registers.PTCR.ROOT_PAGE:) must satisfy the implementation
+(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) constraint.
 
 \begin{BedrockFormatDiagram}{UINFO Format}
 \BedrockFormatRow{UINFO[63:0]}{%

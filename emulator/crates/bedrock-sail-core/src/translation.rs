@@ -5,7 +5,9 @@ pub(crate) const FAULT_ACCESS: i32 = 14;
 
 const IMPLEMENTATION_PABITS: u32 = 56;
 const PHYSICAL_MASK: u64 = (1u64 << IMPLEMENTATION_PABITS) - 1;
-const PTCR_DEFINED_MASK: u64 = (PHYSICAL_MASK & !0xfff) | (1 << 7) | 1;
+const PTCR_ROOT_MASK: u64 = PHYSICAL_MASK & !0x3fff;
+const PTCR_TT_MASK: u64 = 0b111 << 1;
+const PTCR_DEFINED_MASK: u64 = PTCR_ROOT_MASK | PTCR_TT_MASK | 1;
 const PTE_PRESENT: u64 = 1 << 0;
 const PTE_TABLE: u64 = 1 << 1;
 const PTE_AM_MASK: u64 = 0b111 << 2;
@@ -16,10 +18,10 @@ const PTE_USER: u64 = 1 << 5;
 const PTE_ACCESSED: u64 = 1 << 7;
 const PTE_DIRTY: u64 = 1 << 8;
 const PTE_CP_MASK: u64 = 0b11 << 9;
-const PTE_PFN_MASK: u64 = PHYSICAL_MASK & !0xfff;
+const PTE_PFN_MASK: u64 = PHYSICAL_MASK & !0x3fff;
 const PTE_UPPER_RESERVED_MASK: u64 = 0b11_1111 << 58;
-const PTE_LEAF_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (1 << 11);
-const PTE_TABLE_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0xf << 8) | (1 << 6);
+const PTE_LEAF_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0b111 << 11);
+const PTE_TABLE_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0b11_1111 << 8) | (1 << 6);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TranslationAccess {
@@ -92,22 +94,21 @@ pub(crate) fn translate(
         }
         return Ok(direct_result(bus, linear));
     }
-    if !is_canonical(linear, if ptcr & (1 << 7) != 0 { 57 } else { 48 }) {
+    let (canonical_bits, shifts): (u8, &[u8]) = match (ptcr & PTCR_TT_MASK) >> 1 {
+        0b010 => (45, &[34, 23, 14]),
+        0b011 => (56, &[45, 34, 23, 14]),
+        _ => return Err(page_fault(2, "invalid PTCR paging format")),
+    };
+    let root = ptcr & PTCR_ROOT_MASK;
+    if ptcr & !PTCR_DEFINED_MASK != 0 || root & !PHYSICAL_MASK != 0 {
+        return Err(page_fault(2, "invalid PTCR paging format"));
+    }
+    if !is_canonical(linear, canonical_bits) {
         return Err(page_fault(
             3,
             format!("non-canonical address 0x{linear:016x}"),
         ));
     }
-    let root = ptcr & !0xfff;
-    if ptcr & !PTCR_DEFINED_MASK != 0 || root & !PHYSICAL_MASK != 0 {
-        return Err(page_fault(2, "invalid PTCR paging format"));
-    }
-
-    let shifts: &[u8] = if ptcr & (1 << 7) != 0 {
-        &[48, 39, 30, 21, 12]
-    } else {
-        &[39, 30, 21, 12]
-    };
     let mut table = root;
     let mut readable = true;
     let mut writable = true;
@@ -116,8 +117,9 @@ pub(crate) fn translate(
 
     for (index, shift) in shifts.iter().copied().enumerate() {
         let level = (shifts.len() - index) as u8;
+        let index_mask = if level == 1 { 0x1ff } else { 0x7ff };
         let entry_address = table
-            .checked_add(((linear >> shift) & 0x1ff) * 8)
+            .checked_add(((linear >> shift) & index_mask) * 8)
             .filter(|address| address & !PHYSICAL_MASK == 0)
             .ok_or_else(|| page_fault(2, "page-table entry address exceeds PABITS"))?;
         let mut entry = bus.read_u64(entry_address).map_err(TranslationError::Bus)?;
@@ -251,7 +253,13 @@ const fn leaf_permissions(entry: u64) -> (bool, bool, bool) {
 }
 
 const fn leaf_offset_mask(level: u8) -> u64 {
-    (1u64 << (12 + 9 * (level - 1))) - 1
+    match level {
+        1 => (1u64 << 14) - 1,
+        2 => (1u64 << 23) - 1,
+        3 => (1u64 << 34) - 1,
+        4 => (1u64 << 45) - 1,
+        _ => 0,
+    }
 }
 
 fn is_canonical(address: u64, bits: u8) -> bool {
@@ -268,32 +276,32 @@ mod tests {
     const LEAF_RW: u64 = PTE_PRESENT | (0b011 << 2);
 
     fn mapped_ram() -> Ram {
-        let mut ram = Ram::new(0x10_000);
-        ram.write_u64(0x1000, 0x2000 | TABLE).unwrap();
-        ram.write_u64(0x2000, 0x3000 | TABLE).unwrap();
-        ram.write_u64(0x3000, 0x4000 | TABLE).unwrap();
-        ram.write_u64(0x4040, 0x9000 | LEAF_RW).unwrap();
+        let mut ram = Ram::new(0x20_000);
+        ram.write_u64(0x4000, 0x8000 | TABLE).unwrap();
+        ram.write_u64(0x8000, 0xc000 | TABLE).unwrap();
+        ram.write_u64(0xc000, 0x1_0000 | TABLE).unwrap();
+        ram.write_u64(0x1_0010, 0x1_4000 | LEAF_RW).unwrap();
         ram
     }
 
     #[test]
-    fn four_level_write_walk_sets_accessed_and_dirty() {
+    fn la56_four_level_write_walk_sets_accessed_and_dirty() {
         let mut ram = mapped_ram();
 
         let result = translate(
             &mut ram,
             0x8000,
-            0x1001,
+            0x4007,
             TranslationAccess::Write,
             false,
             true,
         )
         .unwrap();
 
-        assert_eq!(result.address, 0x9000);
+        assert_eq!(result.address, 0x1_4000);
         assert_eq!(result.access_class, 0);
         assert_eq!(
-            ram.read_u64(0x4040).unwrap() & (PTE_ACCESSED | PTE_DIRTY),
+            ram.read_u64(0x1_0010).unwrap() & (PTE_ACCESSED | PTE_DIRTY),
             0x180
         );
     }
@@ -304,8 +312,8 @@ mod tests {
 
         let error = translate(
             &mut ram,
-            0x0001_0000_0000_0000,
-            0x1001,
+            0x0000_2000_0000_0000,
+            0x4005,
             TranslationAccess::Read,
             false,
             true,

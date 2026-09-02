@@ -1,5 +1,7 @@
 pub const IMPLEMENTATION_PABITS: u8 = 56;
-const PTCR_DEFINED_MASK: u64 = (((1u64 << IMPLEMENTATION_PABITS) - 1) & !0xfff) | (1 << 7) | 1;
+const PTCR_ROOT_MASK: u64 = ((1u64 << IMPLEMENTATION_PABITS) - 1) & !0x3fff;
+const PTCR_TT_MASK: u64 = 0b111 << 1;
+const PTCR_DEFINED_MASK: u64 = PTCR_ROOT_MASK | PTCR_TT_MASK | 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccessDomain {
@@ -91,6 +93,12 @@ impl SegmentRegisters {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct PageTableControl(u64);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TranslationTableFormat {
+    La45,
+    La56,
+}
+
 impl PageTableControl {
     pub const fn from_raw(raw: u64) -> Self {
         Self(raw)
@@ -104,8 +112,12 @@ impl PageTableControl {
     pub const fn paging_enabled(self) -> bool {
         self.0 & 1 != 0
     }
-    pub const fn five_level(self) -> bool {
-        self.0 & (1 << 7) != 0
+    pub const fn translation_table_format(self) -> Option<TranslationTableFormat> {
+        match (self.0 & PTCR_TT_MASK) >> 1 {
+            0b010 => Some(TranslationTableFormat::La45),
+            0b011 => Some(TranslationTableFormat::La56),
+            _ => None,
+        }
     }
     pub const fn physical_address_bits(self) -> u8 {
         IMPLEMENTATION_PABITS
@@ -113,8 +125,12 @@ impl PageTableControl {
     pub const fn reserved_bits_clear(self) -> bool {
         self.0 & !PTCR_DEFINED_MASK == 0
     }
+    pub const fn valid(self) -> bool {
+        self.reserved_bits_clear()
+            && (!self.paging_enabled() || self.translation_table_format().is_some())
+    }
     pub const fn root_table_addr(self) -> u64 {
-        self.0 & !0xfff
+        self.0 & PTCR_ROOT_MASK
     }
 }
 

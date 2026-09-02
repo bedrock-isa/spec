@@ -1,24 +1,29 @@
 \subsection{Paging Stage}
 
 Paging is enabled by (:ref:base.control_registers.PTCR.PE:) and translates the (:term:base.terms.linear_address:) produced by (:term:base.terms.segment_pre_translation:). Before
-the walk can produce a translation, the (:term:base.terms.linear_address:) must be canonical for the mode selected by
-(:ref:base.control_registers.PTCR.LA57:). A noncanonical address raises (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:). With paging disabled, the memory system uses
-the (:term:base.terms.linear_address:) directly.
+the walk can produce a translation, the (:term:base.terms.linear_address:) must be canonical for the translation-table format selected by
+(:ref:base.control_registers.PTCR.TT:). A noncanonical address raises (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:). With paging disabled, the memory system uses
+the (:term:base.terms.linear_address:) directly and does not interpret (:ref:base.control_registers.PTCR.TT:) or (:ref:base.control_registers.PTCR.ROOT_PAGE:).
 
-Each page-table level uses a nine-bit address (:term:base.terms.field:) to select one of 512 64-bit entries in a 4-KiB table page. For a
-table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical
-table page named by (:ref:base.control_registers.PTCR.ROOT_PAGE:). At each active level, a present selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=1} points to the
-next table page; this form is valid only above L1. A selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=0} terminates the walk. A
-terminating entry is a byte-addressed leaf at any active level. If its level is $L$, its (:ref:base.memory.translation.PTE.PFN:) supplies a naturally
-aligned physical base that is combined with the low $12+9(L-1)$ linear-address bits:
+Every table page is one 16-KiB-aligned physical frame, and every page-table entry is one naturally aligned 64-bit descriptor. L4, L3, and L2 use
+an 11-bit address (:term:base.terms.field:) to select one of 2048 entries. L1 uses a nine-bit address (:term:base.terms.field:) to select one of 512 entries in bytes
+\texttt{0x0000..0x0fff}; the walker does not access bytes \texttt{0x1000..0x3fff} of an L1 table page. For a table-page base address $B$ and
+index $i$, the selected entry is always at $B+8i$. PTEs are a dense array of eight-byte descriptors. The architecture does not define packed
+L1 tables, sub-page table pointers, or table fragments. The trailing L1 bytes are not reserved storage attached to individual PTEs.
+
+The walker starts at the physical table page named by (:ref:base.control_registers.PTCR.ROOT_PAGE:) for the selected format. At each active level,
+a present selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=1} points to the next 16-KiB table page; this form is valid only above L1.
+A selected entry with (:ref:base.memory.translation.PTE.T:)\texttt{=0} terminates the walk as a byte-addressed leaf. Define the number of low
+linear-address bits supplied by a leaf at level $L$ as $o(L1)=14$, $o(L2)=23$, $o(L3)=34$, and $o(L4)=45$. The leaf
+(:ref:base.memory.translation.PTE.PFN:) supplies a naturally aligned physical base, and the final byte address is:
 
 \[
-  \mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 12) +
-  \mathit{linear}[12+9(L-1)-1:0].
+  \mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 14) \mathbin{|}
+  \mathit{linear}[o(L)-1:0].
 \]
 
-The resulting L1 through L5 leaf sizes are 4 KiB, 2 MiB, 1 GiB, 512 GiB, and 256 TiB. Bit 7 is (:ref:base.memory.translation.PTE.A:) in both
-descriptor layouts and does not participate in address formation.
+The resulting L1 through L4 leaf sizes are 16 KiB, 8 MiB, 16 GiB, and 32 TiB. Bit 7 is (:ref:base.memory.translation.PTE.A:) in both descriptor
+layouts and does not participate in address formation.
 
 The walker intersects table-pointer (:ref:base.memory.translation.PTE.R:)/(:ref:base.memory.translation.PTE.W:)/(:ref:base.memory.translation.PTE.X:)/(:ref:base.memory.translation.PTE.U:) (:term:base.terms.field|plural:) while descending. The
 terminating leaf supplies decoded (:ref:base.memory.translation.PTE.AM:) permissions, (:ref:base.memory.translation.PTE.U:), the final (:ref:base.memory.translation.PTE.PFN:),
@@ -28,22 +33,20 @@ priority is not-present first, structural validity second, and effective permiss
 those results before consuming a lower level.
 
 \begin{BedrockListedFormatDiagram}{Linear-Address Paging Fields}
-\BedrockFormatRowRange{LA48 linear[63:0]}{63}{0}{%
-\BedrockFormatField{sign extension}{16}
-\BedrockFormatField{L4}{9}
-\BedrockFormatField{L3}{9}
-\BedrockFormatField{L2}{9}
+\BedrockFormatRowRange{LA45 linear[63:0]}{63}{0}{%
+\BedrockFormatField{sign extension}{19}
+\BedrockFormatField{L3}{11}
+\BedrockFormatField{L2}{11}
 \BedrockFormatField{L1}{9}
-\BedrockFormatField{offset}{12}
+\BedrockFormatField{offset}{14}
 }
-\BedrockFormatRowRange{LA57 linear[63:0]}{63}{0}{%
-\BedrockFormatField{SEXT}{7}
-\BedrockFormatField{L5}{9}
-\BedrockFormatField{L4}{9}
-\BedrockFormatField{L3}{9}
-\BedrockFormatField{L2}{9}
+\BedrockFormatRowRange{LA56 linear[63:0]}{63}{0}{%
+\BedrockFormatField{SEXT}{8}
+\BedrockFormatField{L4}{11}
+\BedrockFormatField{L3}{11}
+\BedrockFormatField{L2}{11}
 \BedrockFormatField{L1}{9}
-\BedrockFormatField{offset}{12}
+\BedrockFormatField{offset}{14}
 }
 \end{BedrockListedFormatDiagram}
 

@@ -11,7 +11,7 @@
 \textbf{Identity Component} & \textbf{Applies To}\\
 \midrule
 \texttt{leaf-aligned linear mapping range} & every entry\\
-(:ref:base.control_registers.PTCR.LA57:) & every entry\\
+(:ref:base.control_registers.PTCR.TT:) & every entry\\
 (:ref:base.control_registers.ASCR.ASID:) & non-global entry while (:ref:base.control_registers.ASCR.AE:) is one\\
 \bottomrule
 \end{tabularx}
@@ -34,7 +34,7 @@
 \midrule
 \endhead
 \texttt{WRCR with changed }(:ref:base.control_registers.PTCR.ROOT_PAGE:) & invalidate all current untagged entries when (:ref:base.control_registers.ASCR.AE:) is zero; when (:ref:base.control_registers.ASCR.AE:) is one software must invalidate the (:ref:base.control_registers.ASCR.ASID:) before rebinding it & preserve only mappings whose complete leaf attributes are identical in every context\\
-\texttt{WRCR with changed }(:ref:base.control_registers.PTCR.LA57:) & invalidate entries using the old translation geometry & invalidate entries using the old translation geometry\\
+\texttt{WRCR with changed }(:ref:base.control_registers.PTCR.TT:) & invalidate entries using the old translation-table format & invalidate entries using the old translation-table format\\
 \texttt{WRCR changing }(:ref:base.control_registers.ASCR.ASID:)\texttt{ while }(:ref:base.control_registers.ASCR.AE:)\texttt{ remains one} & select the new (:ref:base.control_registers.ASCR.ASID:)-tagged entries & preserve\\
 \texttt{WRCR changing }(:ref:base.control_registers.ASCR.AE:) & invalidate the old untagged context or select the new tagged context as applicable & preserve\\
 (:ref:base.instructions.SWPT:) & install PTCR and invalidate the current untagged context & preserve only identical global mappings\\

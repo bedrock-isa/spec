@@ -4,6 +4,8 @@ typedef unsigned int u32;
 typedef int i32;
 typedef unsigned char u8;
 
+#include <bedrockmmuintrin.h>
+
 #define PAGE_PRESENT (1ULL << 0)
 #define PAGE_TABLE (1ULL << 1)
 #define PAGE_AM_RW (3ULL << 2)
@@ -14,12 +16,7 @@ typedef unsigned char u8;
 #define PAGE_TABLE_X (1ULL << 4)
 #define PAGE_USER (1ULL << 5)
 
-#define L4 ((volatile u64 *)0x0000000000008000ULL)
-#define L3 ((volatile u64 *)0x0000000000009000ULL)
-#define L2 ((volatile u64 *)0x000000000000a000ULL)
-#define L1 ((volatile u64 *)0x000000000000b000ULL)
-
-#define HI_BASE 0x00007fff00000000ULL
+#define HI_BASE 0x00000fff00000000ULL
 #define FB ((volatile u8 *)(HI_BASE + 0x0000000000f00000ULL))
 
 #define WIDTH 320
@@ -56,46 +53,44 @@ static const u8 EDGE_COLOR[12] = {
     0x1c, 0x1c, 0xff, 0xdb, 0xb7, 0x93,
 };
 
-static i32 screen_x[8] __attribute__((aligned(4096)));
+static i32 screen_x[8] __attribute__((aligned(16384)));
 static i32 screen_y[8];
 static volatile u32 delay_sink;
+static u64 l3_table[2048] __attribute__((aligned(16384)));
+static u64 l2_table[2048] __attribute__((aligned(16384)));
+static u64 l1_table[2048] __attribute__((aligned(16384)));
 
-static void map4k(u64 va, u64 pa, u64 flags) {
-  u64 l4i = (va >> 39) & 511ULL;
-  u64 l3i = (va >> 30) & 511ULL;
-  u64 l2i = (va >> 21) & 511ULL;
-  u64 l1i = (va >> 12) & 511ULL;
+static void map16k(u64 va, u64 pa, u64 flags) {
+  u64 l3i = (va >> 34) & 2047ULL;
+  u64 l2i = (va >> 23) & 2047ULL;
+  u64 l1i = (va >> 14) & 511ULL;
 
   u64 table = PAGE_PRESENT | PAGE_TABLE | PAGE_TABLE_R | PAGE_TABLE_W |
               PAGE_TABLE_X | PAGE_USER;
-  L4[l4i] = 0x9000ULL | table;
-  L3[l3i] = 0xa000ULL | table;
-  L2[l2i] = 0xb000ULL | table;
-  L1[l1i] = (pa & ~0xfffULL) | flags;
+  l3_table[l3i] = (u64)l2_table | table;
+  l2_table[l2i] = (u64)l1_table | table;
+  l1_table[l1i] = (pa & ~0x3fffULL) | flags;
 }
 
 static void enable_paging(void) {
-  u64 mutable_page = ((u64)screen_x) & ~0xfffULL;
-  for (u32 page = 1; page < 256; page++) {
-    u64 addr = (u64)page * 4096ULL;
-    u64 am = (addr == mutable_page || (page >= 8 && page <= 11) || page >= 240)
+  u64 mutable_page = ((u64)screen_x) & ~0x3fffULL;
+  for (u32 page = 0; page < 64; page++) {
+    u64 addr = (u64)page * 16384ULL;
+    u64 am =
+        (addr == mutable_page || addr == (u64)l3_table ||
+         addr == (u64)l2_table || addr == (u64)l1_table || page >= 60)
                  ? PAGE_AM_RW
                  : PAGE_AM_RX;
-    map4k(addr, addr, PAGE_PRESENT | am);
+    map16k(addr, addr, PAGE_PRESENT | am);
   }
 
-  for (u32 page = 0; page < 16; page++) {
-    map4k(HI_BASE + 0x00f00000ULL + page * 4096ULL,
-          0x00f00000ULL + page * 4096ULL,
+  for (u32 page = 0; page < 4; page++) {
+    map16k(HI_BASE + 0x00f00000ULL + page * 16384ULL,
+          0x00f00000ULL + page * 16384ULL,
           PAGE_PRESENT | PAGE_AM_MMIO_RW);
   }
 
-  __asm__ volatile(
-      "MOV.Q 32769, R0\n"
-      "SWPT R0"
-      :
-      :
-      : "r0", "memory");
+  __bedrock_switch_page_table((u64)l3_table | 5u);
 }
 
 static i32 abs_i32(i32 value) {

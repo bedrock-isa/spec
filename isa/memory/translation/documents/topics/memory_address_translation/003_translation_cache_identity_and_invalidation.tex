@@ -1,9 +1,11 @@
 \subsection{Translation-Cache Identity and Invalidation}
 A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it
 maps. Translation-cache identity excludes (:ref:base.control_registers.PTCR.ROOT_PAGE:).
-While (:ref:base.control_registers.ASCR.AE:) is one, system software binds one (:ref:base.control_registers.ASCR.ASID:) to one PTCR root and translation geometry; it completes the
+While (:ref:base.control_registers.ASCR.AE:) is one, system software binds one (:ref:base.control_registers.ASCR.ASID:) to one PTCR root and translation-table format; it completes the
 required shootdown before reusing that (:ref:base.control_registers.ASCR.ASID:) for a different PTCR image. While (:ref:base.control_registers.ASCR.AE:) is zero, the current untagged
 context is invalidated when PTCR changes.
+
+No translation-cache entry may be interpreted under a different (:ref:base.control_registers.PTCR.TT:) value from the one that produced it.
 
 \input{isa/memory/translation/documents/fragments/translation_cache_contract.tex}
 

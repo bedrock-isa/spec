@@ -8,13 +8,13 @@ PHDRS
 
 SECTIONS
 {
-  . = 0x00080000;
+  . = 0x00200000;
 
   .text : {
     *(.text .text.*)
   } :text
 
-  . = ALIGN(4096);
+  . = ALIGN(16384);
   .rodata : {
     *(.rodata .rodata.*)
   } :data

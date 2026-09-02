@@ -5,7 +5,7 @@ common_fields:
 - {id: T, lsb: 1, bits: 1}
 - {id: U, lsb: 5, bits: 1}
 - {id: A, lsb: 7, bits: 1}
-- {id: PFN, lsb: 12, bits: 44}
+- {id: PFN, lsb: 14, bits: 42}
 - {id: SW, lsb: 56, bits: 2}
 layouts:
   leaf:

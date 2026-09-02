@@ -14,7 +14,7 @@ sign extension performed by the consuming instruction or effective-address encod
 
 PUSHP and POPP interpret their 3-bit operand as a canonical register-pair index, so every encoding
 from 0..7 is valid.
-PTQUERY uses a 3-bit page-table level; assigned levels are 1..5, while encodings 0, 6, and 7
+PTQUERY uses a 3-bit page-table level; assigned levels are 1..4, while encodings 0 and 5..7
 are (:term:base.terms.reserved:).
 SETF interprets its 4-bit bitmap range 0..15 as a complete FLAGS
 image: bit 3 writes (:ref:base.registers.STATE.FLAGS.Z:), bit 2 writes (:ref:base.registers.STATE.FLAGS.N:), bit 1 writes (:ref:base.registers.STATE.FLAGS.C:), and bit 0 writes (:ref:base.registers.STATE.FLAGS.V:). Each one writes the corresponding flag to

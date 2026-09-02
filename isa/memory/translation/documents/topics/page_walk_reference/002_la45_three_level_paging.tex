@@ -1,0 +1,10 @@
+\subsection{LA45 Three-Level Paging}
+
+When (:ref:base.control_registers.PTCR.TT:) is \texttt{010}, bits \texttt{63..45} of the (:term:base.terms.linear_address:) must equal the sign extension of bit
+\texttt{44}. Bits \texttt{44..34}, \texttt{33..23}, and \texttt{22..14} select the L3, L2, and L1 entries respectively. A byte-addressed
+leaf may terminate the walk at any of those levels and uses the level-specific offset defined by the Paging Stage. The L3 table is the root
+table named by (:ref:base.control_registers.PTCR.ROOT_PAGE:).
+
+\input{isa/memory/translation/documents/fragments/la45_page_walk_figure.tex}
+
+\clearpage

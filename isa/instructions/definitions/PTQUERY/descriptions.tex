@@ -1,6 +1,9 @@
 PTQUERY reads the raw descriptor selected by a (:term:base.terms.linear_address:) and requested page-table level, or returns zero when the requested entry cannot be read. (:ref:base.registers.STATE.FLAGS.Z:) reports structural validity under the layout selected by (:ref:base.memory.translation.PTE.T:); (:ref:base.registers.STATE.FLAGS.N:), (:ref:base.registers.STATE.FLAGS.C:), and (:ref:base.registers.STATE.FLAGS.V:) are zero.
 
-The requested level is the low three bits of the level operand. Values outside 1 through 5 raise (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:); level 5 is reported as an (:term:base.terms.ordinary:) unsuccessful query in LA48 mode.
+The requested level is the low three bits of the level operand. Values outside 1 through 4 raise (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:).
+With (:ref:base.control_registers.PTCR.TT:)\texttt{=010}, an L4 query is reported as an (:term:base.terms.ordinary:) unsuccessful query before reading a PTE.
+With an unallocated (:ref:base.control_registers.PTCR.TT:) encoding, no geometry is selected and every query is reported as an (:term:base.terms.ordinary:)
+unsuccessful query before reading a PTE.
 
 \begin{enumerate}
 \item Compute the (:term:base.terms.linear_address:) without reading the source memory and reject a noncanonical address as an unsuccessful query.

@@ -4,7 +4,7 @@
 representable only when it is less than $2^{\text{(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:)}}$. Page-table roots, every present (:ref:base.memory.translation.PTE.PFN:), translated
 results, and paging-disabled (:term:base.terms.physical_address|plural:) are subject to that bound.
 
-(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) does not select page-table geometry or translation-cache identity. (:ref:base.control_registers.PTCR.LA57:) selects the
-walk geometry, while the translation-cache contract separately defines entry identity.
+(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) does not select a translation-table format or translation-cache identity. (:ref:base.control_registers.PTCR.TT:) selects the
+complete translation-table format, while the translation-cache contract separately defines entry identity.
 
 (:cpuid-leaf:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS:)

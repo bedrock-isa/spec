@@ -576,23 +576,19 @@ mod tests {
         machine.processor_reset(0);
         machine
             .board_mut()
-            .write_u64(0x1000, 0x2000 | TABLE)
+            .write_u64(0x4000, 0x8000 | TABLE)
             .unwrap();
         machine
             .board_mut()
-            .write_u64(0x2000, 0x3000 | TABLE)
+            .write_u64(0x8000, 0xc000 | TABLE)
             .unwrap();
         machine
             .board_mut()
-            .write_u64(0x3000, 0x4000 | TABLE)
+            .write_u64(0xc000, 0x1_0000 | LEAF_RX)
             .unwrap();
-        machine
-            .board_mut()
-            .write_u64(0x4000, 0x9000 | LEAF_RX)
-            .unwrap();
-        machine.load_program(0x9000, &[0x01]).unwrap();
+        machine.load_program(0x1_0000, &[0x01]).unwrap();
         let mut state = machine.state().clone();
-        state.ptcr = PageTableControl::from_raw(0x1001);
+        state.ptcr = PageTableControl::from_raw(0x4005);
         machine.set_state(state).unwrap();
 
         assert_eq!(machine.step(), StepResult::Running);
@@ -604,7 +600,7 @@ mod tests {
         let mut machine = Machine::new();
         machine.processor_reset(0);
         let mut state = machine.state().clone();
-        state.ptcr = PageTableControl::from_raw(0x1001);
+        state.ptcr = PageTableControl::from_raw(0x4005);
         machine.set_state(state).unwrap();
 
         let StepResult::Trap(Trap::PageFault { pc, context }) = machine.step() else {

@@ -3,6 +3,8 @@ typedef unsigned long long u64;
 typedef unsigned int u32;
 typedef unsigned char u8;
 
+#include <bedrockmmuintrin.h>
+
 #include "../common/font8x8.h"
 
 #define PAGE_PRESENT (1ULL << 0)
@@ -15,28 +17,25 @@ typedef unsigned char u8;
 #define PAGE_TABLE_X (1ULL << 4)
 #define PAGE_USER (1ULL << 5)
 
-#define L4 ((volatile u64 *)0x0000000000008000ULL)
-#define L3 ((volatile u64 *)0x0000000000009000ULL)
-#define L2 ((volatile u64 *)0x000000000000a000ULL)
-#define L1 ((volatile u64 *)0x000000000000b000ULL)
-
-#define HI_BASE 0x00007fff00000000ULL
+#define HI_BASE 0x00000fff00000000ULL
 #define FB ((volatile u8 *)(HI_BASE + 0x0000000000f00000ULL))
 #define KBD_STATUS (*(volatile u32 *)(HI_BASE + 0x0000000000f20000ULL))
 #define KBD_DATA (*(volatile u32 *)(HI_BASE + 0x0000000000f20004ULL))
 
-static void map4k(u64 va, u64 pa, u64 flags) {
-  u64 l4i = (va >> 39) & 511ULL;
-  u64 l3i = (va >> 30) & 511ULL;
-  u64 l2i = (va >> 21) & 511ULL;
-  u64 l1i = (va >> 12) & 511ULL;
+static u64 l3_table[2048] __attribute__((aligned(16384)));
+static u64 l2_table[2048] __attribute__((aligned(16384)));
+static u64 l1_table[2048] __attribute__((aligned(16384)));
+
+static void map16k(u64 va, u64 pa, u64 flags) {
+  u64 l3i = (va >> 34) & 2047ULL;
+  u64 l2i = (va >> 23) & 2047ULL;
+  u64 l1i = (va >> 14) & 511ULL;
 
   u64 table = PAGE_PRESENT | PAGE_TABLE | PAGE_TABLE_R | PAGE_TABLE_W |
               PAGE_TABLE_X | PAGE_USER;
-  L4[l4i] = 0x9000ULL | table;
-  L3[l3i] = 0xa000ULL | table;
-  L2[l2i] = 0xb000ULL | table;
-  L1[l1i] = (pa & ~0xfffULL) | flags;
+  l3_table[l3i] = (u64)l2_table | table;
+  l2_table[l2i] = (u64)l1_table | table;
+  l1_table[l1i] = (pa & ~0x3fffULL) | flags;
 }
 
 static void draw_char(u32 cx, u32 cy, u8 ch) {
@@ -56,36 +55,22 @@ static void draw_char(u32 cx, u32 cy, u8 ch) {
 }
 
 void _start(void) {
-  map4k(0x0000000000001000ULL, 0x0000000000001000ULL,
+  map16k(0x0000000000000000ULL, 0x0000000000000000ULL,
         PAGE_PRESENT | PAGE_AM_RX);
-  map4k(0x0000000000002000ULL, 0x0000000000002000ULL,
-        PAGE_PRESENT | PAGE_AM_RX);
-  map4k(0x0000000000003000ULL, 0x0000000000003000ULL,
-        PAGE_PRESENT | PAGE_AM_RX);
-  map4k(0x0000000000008000ULL, 0x0000000000008000ULL,
-        PAGE_PRESENT | PAGE_AM_RW);
-  map4k(0x0000000000009000ULL, 0x0000000000009000ULL,
-        PAGE_PRESENT | PAGE_AM_RW);
-  map4k(0x000000000000a000ULL, 0x000000000000a000ULL,
-        PAGE_PRESENT | PAGE_AM_RW);
-  map4k(0x000000000000b000ULL, 0x000000000000b000ULL,
-        PAGE_PRESENT | PAGE_AM_RW);
+  map16k((u64)l3_table, (u64)l3_table, PAGE_PRESENT | PAGE_AM_RW);
+  map16k((u64)l2_table, (u64)l2_table, PAGE_PRESENT | PAGE_AM_RW);
+  map16k((u64)l1_table, (u64)l1_table, PAGE_PRESENT | PAGE_AM_RW);
 
-  for (u32 page = 0; page < 16; page++) {
-    map4k(HI_BASE + 0x00f00000ULL + page * 4096ULL,
-          0x00f00000ULL + page * 4096ULL,
+  for (u32 page = 0; page < 4; page++) {
+    map16k(HI_BASE + 0x00f00000ULL + page * 16384ULL,
+          0x00f00000ULL + page * 16384ULL,
           PAGE_PRESENT | PAGE_AM_MMIO_RW);
   }
 
-  map4k(HI_BASE + 0x00f20000ULL, 0x00f20000ULL,
+  map16k(HI_BASE + 0x00f20000ULL, 0x00f20000ULL,
         PAGE_PRESENT | PAGE_AM_MMIO_RW);
 
-  __asm__ volatile(
-      "MOV.Q 32769, R0\n"
-      "SWPT R0"
-      :
-      :
-      : "r0", "memory");
+  __bedrock_switch_page_table((u64)l3_table | 5u);
 
   u32 x = 0;
   u32 y = 0;

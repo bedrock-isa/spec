@@ -1,5 +1,5 @@
 bits: 64
 fields:
-- {id: ROOT_PAGE, lsb: 12, bits: 44, summary: Physical frame number of the page-table root.}
-- {id: LA57, lsb: 7, bits: 1, summary: Five-level address translation enable.}
+- {id: ROOT_PAGE, lsb: 14, bits: 42, summary: Physical frame number of the page-table root.}
+- {id: TT, lsb: 1, bits: 3, summary: Translation-table format.}
 - {id: PE, lsb: 0, bits: 1, summary: Page-table translation enable.}

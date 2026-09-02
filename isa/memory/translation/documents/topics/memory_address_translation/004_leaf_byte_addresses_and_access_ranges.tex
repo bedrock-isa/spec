@@ -1,7 +1,8 @@
 \subsection{Leaf Byte Addresses and Access Ranges}
-Every leaf at level $L$ forms a byte address from (:ref:base.memory.translation.PTE.PFN:) with $o=12+9(L-1)$:
+Every leaf at level $L$ forms a byte address from (:ref:base.memory.translation.PTE.PFN:), where $o(L1)=14$, $o(L2)=23$,
+$o(L3)=34$, and $o(L4)=45$:
 \[
-\mathit{byte\_address} = (\text{(:ref:base.memory.translation.PTE.PFN:)}\ll12)\mathbin{|}\mathit{linear}[o-1:0].
+\mathit{byte\_address} = (\text{(:ref:base.memory.translation.PTE.PFN:)}\ll14)\mathbin{|}\mathit{linear}[o(L)-1:0].
 \]
 A width-$n$ access covers the half-open byte interval $[a,a+n)$. Bit 7 records (:ref:base.memory.translation.PTE.A:) and may be set by an (:term:base.terms.ordinary:) walk.
 Atomics require natural byte alignment; a misaligned operand raises \texttt{ATOMIC\_ALIGNMENT} before the memory

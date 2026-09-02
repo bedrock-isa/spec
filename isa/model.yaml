@@ -187,10 +187,10 @@ documents:
     source: memory/translation/documents/topics/memory_address_translation/002_segment_pre_translation.tex
   - id: memory.translation.page-walk-reference.paging-stage
     source: memory/translation/documents/topics/page_walk_reference/001_paging_stage.tex
-  - id: memory.translation.page-walk-reference.la48-four-level-paging
-    source: memory/translation/documents/topics/page_walk_reference/002_la48_four_level_paging.tex
-  - id: memory.translation.page-walk-reference.la57-five-level-paging
-    source: memory/translation/documents/topics/page_walk_reference/003_la57_five_level_paging.tex
+  - id: memory.translation.page-walk-reference.la45-three-level-paging
+    source: memory/translation/documents/topics/page_walk_reference/002_la45_three_level_paging.tex
+  - id: memory.translation.page-walk-reference.la56-four-level-paging
+    source: memory/translation/documents/topics/page_walk_reference/003_la56_four_level_paging.tex
   - id: memory.translation.page-table-entry-reference.page-table-entry-format
     source: memory/translation/documents/topics/page_table_entry_reference/001_page_table_entry_format.tex
   - id: memory.translation.memory-address-translation.translation-cache-identity-and-invalidation

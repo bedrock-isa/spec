@@ -788,13 +788,12 @@ mod tests {
         const TABLE: u64 = 0x1f;
         const LEAF_RW: u64 = 0x0d;
         let mut core = SailCore::new().unwrap();
-        let mut ram = Ram::new(0x10_000);
-        ram.write_u64(0x1000, 0x2000 | TABLE).unwrap();
-        ram.write_u64(0x2000, 0x3000 | TABLE).unwrap();
-        ram.write_u64(0x3000, 0x4000 | TABLE).unwrap();
-        ram.write_u64(0x4040, 0x9000 | LEAF_RW).unwrap();
+        let mut ram = Ram::new(0x20_000);
+        ram.write_u64(0x4000, 0x8000 | TABLE).unwrap();
+        ram.write_u64(0x8000, 0xc000 | TABLE).unwrap();
+        ram.write_u64(0xc010, 0x1_0000 | LEAF_RW).unwrap();
         let mut state = core.state().unwrap();
-        state.controls.base_ptcr = 0x1001;
+        state.controls.base_ptcr = 0x4005;
         state.status |= 1 << 4;
         state.supervisor = 1;
         state.sp = 0x8008;
@@ -804,7 +803,7 @@ mod tests {
         core.execute_on_bus(&mut ram, &[0x30]).unwrap();
 
         assert_eq!(core.sp(), Ok(0x8000));
-        assert_eq!(ram.read_u64(0x9000).unwrap(), 0x1122_3344_5566_7788);
+        assert_eq!(ram.read_u64(0x1_0000).unwrap(), 0x1122_3344_5566_7788);
         assert_eq!(core.environment_state().page_walk_counter, 1);
     }
 
@@ -813,10 +812,10 @@ mod tests {
         let mut core = SailCore::new().unwrap();
         let mut ram = Ram::new(0x10_000);
         let mut state = core.state().unwrap();
-        state.controls.base_ptcr = 0x1001;
+        state.controls.base_ptcr = 0x4005;
         state.status |= 1 << 4;
         state.supervisor = 1;
-        state.sp = 0x0001_0000_0000_0008;
+        state.sp = 0x0000_2000_0000_0008;
         state.registers[0] = 1;
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
 

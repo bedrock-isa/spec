@@ -27,7 +27,7 @@ pub use state::{
 pub use step::StepResult;
 pub use translation::{
     AccessDomain, AccessFaultReason, AccessKind, AddressSpaceControl, PageFaultReason,
-    PageTableControl, SegmentRegister, SegmentRegisters, SegmentSelector,
+    PageTableControl, SegmentRegister, SegmentRegisters, SegmentSelector, TranslationTableFormat,
 };
 pub use trap::{
     AccessFaultContext, BusFaultContext, DivideErrorCause, IllegalInstructionCause,
