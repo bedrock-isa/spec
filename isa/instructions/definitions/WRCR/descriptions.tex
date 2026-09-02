@@ -1,1 +1,8 @@
-WRCR validates and atomically writes the selected (:term:base.terms.control_register:) in supervisor mode. The WRCR Selector Rules table defines each writable image, validation condition, and translation or event-state side effect.
+WRCR is supervisor-only and resolves its 16-bit selector in the architectural (:term:base.terms.control_register:) space. An unallocated
+selector, a read-only register, or a read-only indirect view raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:).
+
+For a writable target, WRCR forms the candidate image according to the selected register's definition and validates every target-owned
+image and transition condition before changing (:term:base.terms.architectural_state:). A rejected write leaves the register and every associated
+selector, bank, cache, and transition state unchanged. A successful write commits the candidate image and all target-defined side effects
+atomically. The selected register or its owning subsystem defines writable and ignored fields, image constraints, transition constraints,
+and commit effects.

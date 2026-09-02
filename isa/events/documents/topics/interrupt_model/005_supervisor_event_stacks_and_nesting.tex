@@ -3,3 +3,7 @@
 
 Events in the \texttt{EVENT\_DELIVERY\_FAILURE} family use DSS:DSP. Supervisor-origin and nested events retain the current SS:SP;
 ERET validates and restores the saved STATUS depth and origin chain.
+
+WRCR to SSS, ISS, FSS, or DSS accepts a complete valid segment image. WRCR to SSP, ISP, FSP, or DSP accepts a complete
+64-bit stack top aligned to 64 bytes. A successful write atomically replaces the selected register; event entry and return do not
+modify the configured segment or top.

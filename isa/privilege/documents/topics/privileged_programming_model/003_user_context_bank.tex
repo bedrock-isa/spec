@@ -1,4 +1,11 @@
 \subsection{User Context Bank}
 The user context bank consists of UPC, USP, UCS, UDS, USS, UCTL, and UINFO. UCTL contains saved (:ref:base.control_registers.UCTL.FLAGS:) in bits 15..0, saved (:ref:base.control_registers.UCTL.STATUS:) in bits 31..16, and (:ref:base.control_registers.UCTL.V:) in bit 32. UINFO contains (:ref:base.control_registers.UINFO.EVENT_CODE:); its upper half is zero. A saved user STATUS image has (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.EA:), (:ref:base.registers.STATE.STATUS.EDEPTH:), and (:ref:base.registers.STATE.STATUS.UO:) clear.
 
-Software stages a context by writing UPC, USP, UCS, UDS, USS, and UINFO before writing (:ref:base.control_registers.UCTL.V:)\texttt{=1}. That final write validates the complete bank. The bank belongs to the interrupted user (:term:base.terms.thread:) and must be saved with its supervisor context across preemption or migration.
+While (:ref:base.control_registers.UCTL.V:) is zero, WRCR to UPC, USP, UCS, UDS, USS, or UINFO atomically stages the selected 64-bit value without
+validating the complete bank; UINFO still requires bits 63 through 32 to be zero. Writing (:ref:base.control_registers.UCTL.V:)\texttt{=1}, or writing another
+bank member while the resulting (:ref:base.control_registers.UCTL.V:) remains one, validates the complete candidate bank before atomically replacing the
+selected register. Complete-bank validation includes the event-code-dependent UINFO shape, valid user segment images and pointers, an
+executable UPC, and the required zero saved STATUS fields.
+
+Software stages a context by writing UPC, USP, UCS, UDS, USS, and UINFO before writing (:ref:base.control_registers.UCTL.V:)\texttt{=1}. The bank belongs
+to the interrupted user (:term:base.terms.thread:) and must be saved with its supervisor context across preemption or migration.

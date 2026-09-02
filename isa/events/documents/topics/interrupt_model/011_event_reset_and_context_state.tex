@@ -23,6 +23,8 @@ BOOTPC and BOOTCFG are (:term:base.terms.preserved:) by warm RESET. Cold reset i
 values before applying the same (:term:base.terms.processor_state_image:) to each (:term:base.terms.logical_processor:)
 selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops
 before setting (:ref:base.control_registers.ECR.V:) or entering user mode.
+WRCR atomically replaces the complete 64-bit BOOTPC or opaque BOOTCFG image without transformation. A later warm RESET uses
+BOOTPC as its exact resumed PC and preserves both images.
 
 ECR, entry and stack registers, (:ref:base.registers.STATE.STATUS.EDEPTH:)/(:ref:base.registers.STATE.STATUS.UO:), hidden current DFA, the interrupt file, the debug-trigger array, and
 the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software

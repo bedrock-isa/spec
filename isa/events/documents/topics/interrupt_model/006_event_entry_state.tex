@@ -4,12 +4,19 @@ storage range. It then stores the frame, loads the entry segments and PC, sets (
 (:ref:base.registers.STATE.STATUS.IE:), (:ref:base.registers.STATE.STATUS.TF:), and (:ref:base.registers.STATE.STATUS.RF:) as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged;
 the common entry code preserves whatever its software ABI requires.
 
+WRCR to EPC accepts a complete 64-bit entry address and requires it to be 16-byte aligned, canonical, and executable under
+ECS. WRCR to ECS or EDS accepts a complete valid segment image. A successful write atomically replaces the selected register.
+
 NMI entry additionally sets (:ref:base.registers.STATE.STATUS.NI:). Other event classes preserve (:ref:base.registers.STATE.STATUS.NI:). A further NMI observed while (:ref:base.registers.STATE.STATUS.NI:) is set is
 recorded by setting (:ref:base.control_registers.ECR.NMI_P:). (:ref:base.control_registers.ECR.NMI_P:) is hardware managed, so WRCR ignores the supplied value for that bit.
 When entry of an NMI admitted from (:ref:base.control_registers.ECR.NMI_P:) commits, hardware clears (:ref:base.control_registers.ECR.NMI_P:) as part of the same architectural
 transition. A newly observed NMI may set the latch again. An entry failure does not clear the latch before committing
 the specified delivery-failure result. When ERET successfully restores (:ref:base.registers.STATE.STATUS.NI:) to zero, a pending NMI is delivered before
 the next instruction boundary.
+
+WRCR to ECR takes (:ref:base.control_registers.ECR.MAX_EDEPTH:) and (:ref:base.control_registers.ECR.V:) from the source image and preserves the
+hardware-managed (:ref:base.control_registers.ECR.NMI_P:) value. A transition that changes (:ref:base.control_registers.ECR.V:) from zero to one validates EPC, ECS, EDS,
+and every configured event-stack segment and top before atomically replacing the writable ECR image.
 
 When maskable-interrupt entry commits, hardware clears exactly the delivered identity's pending bit in the same
 architectural transition. Entry validation, target probing, frame-address, or frame-store failure preserves that bit;

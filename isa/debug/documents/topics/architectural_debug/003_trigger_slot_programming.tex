@@ -3,6 +3,8 @@ Each logical processor owns an array of at least four trigger slots. The impleme
 CPUID (:ref:base.cpuid.IMPLEMENTATION.DEBUG_TRIGGERS.PARAMETERS.SLOT_COUNT:). Trigger state is accessed by the supervisor-only
 \texttt{DTRSEL}/\texttt{DTRDATA} selector-data pair. (:register-field-target:base.control_registers.DTRSEL.SLOT:)\texttt{DTRSEL.SLOT} selects a slot and
 (:register-field-target:base.control_registers.DTRSEL.BANK:)\texttt{DTRSEL.BANK} selects the word read or written through \texttt{DTRDATA}.
+WRCR to DTRSEL requires bits 63 through 18 to be zero, a slot below (:ref:base.cpuid.IMPLEMENTATION.DEBUG_TRIGGERS.PARAMETERS.SLOT_COUNT:), and a bank from zero through two;
+a successful write atomically replaces the selector.
 
 \BedrockTableCaption{DTRSEL Bank Selection}
 \begin{BedrockTabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{3.75in}@{}}
@@ -52,4 +54,5 @@ A slot is staged while (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:)\tex
 (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:)\texttt{=1} as the final operation. Activation atomically validates that (:ref:base.debug.triggers.TRIGGER_SLOT.LOW:) is less than (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:), at least one of
 (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_EXECUTE:)/(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_READ:)/(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_WRITE:) is set, at least one of (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_USER:)/(:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.MATCH_SUPERVISOR:) is set, and every reserved bit is zero. To replace an active slot, software first
 writes its current (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG:) image with only (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG.VALID:) cleared. While active, no other (:ref:base.debug.triggers.TRIGGER_SLOT.CONFIG:) change and no (:ref:base.debug.triggers.TRIGGER_SLOT.LOW:) or (:ref:base.debug.triggers.TRIGGER_SLOT.HIGH:) write
-is permitted. A rejected write changes neither the slot nor the selector.
+is permitted. A successful WRCR to DTRDATA atomically replaces the selected staged word or activates the complete staged slot. A rejected
+write changes neither the slot nor the selector.

@@ -5,7 +5,8 @@ stack, and user-return registers are per-logical-processor (:term:base.terms.arc
 
 \input{isa/control_registers/documents/fragments/control_register_selectors.tex}
 
-\input{isa/control_registers/documents/fragments/control_write_rules.tex}
+The selector-allocation table is complete for the architectural (:term:base.terms.control_register|plural:) defined by this manual and is ordered by selector value.
+The selected register or the subsystem that owns it defines the accepted WRCR source image, validation conditions, and successful-commit effects.
 
 \begin{BedrockFormatDiagram}{PTCR Format}
 \BedrockFormatRow{PTCR[63:0]}{%
@@ -49,7 +50,8 @@ all others & (:term:base.terms.reserved:)\\
 The reset PTCR image is zero. When (:ref:base.control_registers.PTCR.PE:) is zero, ordinary memory accesses do not interpret
 (:ref:base.control_registers.PTCR.TT:) or (:ref:base.control_registers.PTCR.ROOT_PAGE:). When (:ref:base.control_registers.PTCR.PE:) is one,
 (:ref:base.control_registers.PTCR.TT:) must be \texttt{010} or \texttt{011} and (:ref:base.control_registers.PTCR.ROOT_PAGE:) must satisfy the implementation
-(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) constraint.
+(:ref:base.cpuid.IMPLEMENTATION.ADDRESS_WIDTHS.PARAMETERS.PABITS:) constraint. A successful WRCR of PTCR commits the complete image and the
+translation-cache transition selected by its changed fields atomically.
 
 \begin{BedrockFormatDiagram}{UINFO Format}
 \BedrockFormatRow{UINFO[63:0]}{%
@@ -91,6 +93,9 @@ The reset PTCR image is zero. When (:ref:base.control_registers.PTCR.PE:) is zer
 (:register-field-target:base.control_registers.ASCR.AE:)\texttt{AE} & \texttt{0} & address-space identifier matching enable\\
 \bottomrule
 \end{BedrockTabular}
+
+A successful WRCR validates the complete ASCR image, then commits it and the translation-cache transition selected by the changed
+(:ref:base.control_registers.ASCR.ASID:) or (:ref:base.control_registers.ASCR.AE:) field atomically.
 
 \begin{BedrockFormatDiagram}{ECR Format}
 \BedrockFormatRow{ECR[63:0]}{%
@@ -154,7 +159,9 @@ implemented nonzero identity. Bits for identity zero or identities above (:ref:b
 Writing \texttt{ICAP}, \texttt{ITOP}, pending bank zero, or an invalid (:ref:base.control_registers.ISEL.WORD:) raises
 (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:). Nonzero reserved bits in \texttt{ISEL}, \texttt{ITHRESH},
 or a writable \texttt{IDATA} bank raise (:ref:base.events.EXCEPTION.RESERVED_CONTROL_BITS:). Validation precedes the
-write, so a fault changes neither the interrupt file nor its selector.
+write, so a fault changes neither the interrupt file nor its selector. A successful WRCR of \texttt{ITHRESH} or \texttt{ISEL}
+atomically replaces the selected threshold or selector. A successful WRCR of \texttt{IDATA} atomically applies the selected bank's
+write-one-to-set, write-one-to-clear, or enable-word replacement operation.
 
 \begin{BedrockFormatDiagram}{UCTL Format}
 \BedrockFormatRow{UCTL[63:0]}{%
@@ -197,9 +204,5 @@ write, so a fault changes neither the interrupt file nor its selector.
 \bottomrule
 \end{BedrockTabular}
 
-EPC is the exact common event-entry address, must be 16-byte aligned, and must be canonical and executable under
-ECS. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or return.
-ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100 through 0x0102 are (:term:base.terms.reserved:).
-A write that establishes (:ref:base.control_registers.UCTL.V:) validates the complete user bank and requires saved (:ref:base.registers.STATE.STATUS.PM:), (:ref:base.registers.STATE.STATUS.EA:), (:ref:base.registers.STATE.STATUS.EDEPTH:), and (:ref:base.registers.STATE.STATUS.UO:) to be
-zero. ERET revalidates the selected return source before committing.
-BOOTPC and BOOTCFG are initialized by the platform during cold reset and (:term:base.terms.preserved:) by RESET.
+WRCR accepts (:ref:base.control_registers.PMC.EN:) with every reserved bit zero and atomically replaces PMC. Clearing the field freezes
+the current performance-counter values without clearing them. Selectors 0x0100 through 0x0102 are (:term:base.terms.reserved:).
