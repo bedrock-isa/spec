@@ -11,6 +11,5 @@ outputs:
   sysreg: include/bedrocksysregintrin.h
   cache: include/bedrockcacheintrin.h
   mmu: include/bedrockmmuintrin.h
-  state: include/bedrockstateintrin.h
   public: include/bedrockintrin.h
   system: include/bedrocksystemintrin.h

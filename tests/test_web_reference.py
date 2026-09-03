@@ -3,9 +3,38 @@ from pathlib import PurePosixPath
 
 from engine.site.model import ROOT_PAGE_KEY, SiteModel
 from engine.site.navigation import NavigationGroup, PageRegistry, PageSpec
+from engine.site.structure import parse_latex_structure
+from engine.site.visual import extract_visuals
 
 
 class WebReferenceTest(unittest.TestCase):
+    def test_visual_extraction_preserves_every_owned_label(self) -> None:
+        source = "\n".join(
+            (
+                r"\begin{document}",
+                r"\BedrockMakeTitlePage{Reference}{Testing}",
+                r"\section{Example}",
+                r"\label{page:example}",
+                r"\begin{center}",
+                r"\begin{tikzpicture}",
+                r"\label{example:first}",
+                r"\label{example:second}",
+                r"\end{tikzpicture}",
+                r"\end{center}",
+                r"\end{document}",
+            )
+        )
+        original = parse_latex_structure(source)
+
+        transformed = parse_latex_structure(
+            extract_visuals("reference", source, original).text
+        )
+
+        self.assertEqual(
+            {label.name for label in transformed.labels},
+            {label.name for label in original.labels},
+        )
+
     def test_navigation_projects_each_owned_page_once(self) -> None:
         registry = PageRegistry()
         registry.add_page(

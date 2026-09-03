@@ -53,6 +53,7 @@ from .type_system import (
     TypeSystem,
 )
 from .validation import SailEntryValidator
+from .workspace import SpecWorkspace
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -1548,41 +1549,6 @@ class TerminologyValidationRule(ValidationRule):
             yield from self.validator.validate(scope.project.terminology)
 
 
-class DocumentSourceValidationRule(ValidationRule):
-    """Render manual sources in memory so preprocessing failures are diagnostics."""
-
-    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
-        if not scope.complete:
-            return
-        project = scope.project
-        artifact_root = project.root.parent / "artifacts"
-        if not artifact_root.is_dir() or not (artifact_root / "schema.yaml").is_file():
-            return
-        from .generation import (
-            ArtifactGenerationContext,
-            ArtifactGeneratorRegistry,
-        )
-        from .workspace import SpecWorkspace
-
-        try:
-            workspace = SpecWorkspace.load(project.root.parent)
-            registry = ArtifactGeneratorRegistry.discover(workspace)
-        except (OSError, RuntimeError, ValueError) as error:
-            yield _error("document.source", artifact_root, str(error))
-            return
-        context = ArtifactGenerationContext.create(workspace, project.root / ".check")
-        for artifact_id in registry.artifact_ids:
-            generator = registry.generator(artifact_id)
-            if not any(
-                output.suffix == ".tex" for output in generator.definition.output_roots
-            ):
-                continue
-            try:
-                registry.generate(artifact_id, workspace, context.output_root)
-            except (OSError, RuntimeError, ValueError) as error:
-                yield _error("document.source", generator.definition.source, str(error))
-
-
 class CheckService:
     """Apply an ordered set of validation rules to one project scope."""
 
@@ -1596,7 +1562,6 @@ class CheckService:
             RegisterValidationRule(),
             ControlRegisterValidationRule(),
             TerminologyValidationRule(),
-            DocumentSourceValidationRule(),
         )
 
     def check(
@@ -1621,3 +1586,65 @@ class CheckService:
             phase["complete"] = scope.complete
             phase["diagnostics"] = len(diagnostics)
             return diagnostics
+
+
+class WorkspaceCheckService:
+    """Validate the complete non-building workspace contract."""
+
+    def __init__(self, project: CheckService | None = None) -> None:
+        self.project = project or CheckService()
+
+    def check(
+        self,
+        workspace: SpecWorkspace,
+        targets: Iterable[str | Path] = (),
+    ) -> DiagnosticBag:
+        requested = tuple(targets)
+        provider = workspace.require_provider("isa")
+        if not isinstance(provider, IsaProject):
+            raise TypeError("workspace isa provider must be an IsaProject")
+
+        diagnostics = self.project.check(provider, requested)
+        if requested:
+            return diagnostics
+
+        diagnostics.extend(self._validate_dependencies(workspace))
+        diagnostics.extend(self._validate_artifacts(workspace))
+        return diagnostics
+
+    @staticmethod
+    def _validate_dependencies(workspace: SpecWorkspace) -> Iterator[Diagnostic]:
+        for provider_name, provider in workspace.providers.items():
+            for dependency in provider.entity_dependencies():
+                try:
+                    provider.entities.resolve(dependency.source)
+                    workspace.resolve(dependency.target)
+                except (KeyError, TypeError, ValueError) as error:
+                    yield _error(
+                        "workspace.dependency",
+                        workspace.root,
+                        f"{provider_name}: {error}",
+                    )
+
+    @staticmethod
+    def _validate_artifacts(workspace: SpecWorkspace) -> Iterator[Diagnostic]:
+        from .generation import ArtifactGeneratorRegistry
+
+        artifact_root = workspace.root / "artifacts"
+        try:
+            registry = ArtifactGeneratorRegistry.discover(workspace)
+        except (KeyError, OSError, RuntimeError, TypeError, ValueError) as error:
+            yield _error("artifact.registry", artifact_root, str(error))
+            return
+
+        output_root = workspace.root / ".check"
+        for artifact_id in registry.artifact_ids:
+            generator = registry.generator(artifact_id)
+            try:
+                registry.validate(artifact_id, workspace, output_root)
+            except (KeyError, OSError, RuntimeError, TypeError, ValueError) as error:
+                yield _error(
+                    "artifact.projection",
+                    generator.definition.source,
+                    str(error),
+                )

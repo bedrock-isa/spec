@@ -6,7 +6,7 @@ encodings:
       r: {role: new_cs, type: base.field_types.Rn}
       e: {role: target, type: base.field_types.EA}
   rn_s_rn_d:
-    pattern: 1000001000ssssdddd
+    pattern: 1000001010ssssdddd
     syntax: PLCALL Rn(s), Rn(d)
     fields:
       s: {role: new_cs, type: base.field_types.Rn}

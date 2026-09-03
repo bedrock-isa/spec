@@ -11,7 +11,7 @@ import sys
 from typing import Sequence
 
 from .encoding_space import CandidateOutsideNamespaceError, EncodingSpaceAnalyzer
-from .check import CheckService
+from .check import WorkspaceCheckService
 from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .document import DocumentBuilder
 from .generation import ArtifactGeneratorRegistry, ArtifactWriter
@@ -178,14 +178,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "artifacts":
             result = _run_artifacts(args, workspace)
         else:
-            result = _run_check(args, project)
+            result = _run_check(args, workspace, project)
         phase["status"] = result
     return result
 
 
-def _run_check(args: argparse.Namespace, project: IsaProject) -> int:
+def _run_check(
+    args: argparse.Namespace,
+    workspace: SpecWorkspace,
+    project: IsaProject,
+) -> int:
     try:
-        diagnostics = CheckService().check(project, args.targets)
+        diagnostics = WorkspaceCheckService().check(workspace, args.targets)
     except (OSError, ValueError) as error:
         log_caught_exception(_LOGGER, "check", error)
         diagnostics = _load_failure(args.isa_root, error)

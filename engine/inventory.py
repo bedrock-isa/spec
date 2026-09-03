@@ -10,6 +10,14 @@ from typing import Self
 from .yaml_document import YamlDocumentLoader
 
 
+def _contains_authored_file(root: Path) -> bool:
+    return any(
+        path.is_file()
+        and not any(part.startswith(".") for part in path.relative_to(root).parts)
+        for path in root.rglob("*")
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class DirectoryInventory:
     """One ordered YAML inventory paired with its member directories."""
@@ -84,7 +92,9 @@ class DirectoryInventory:
                 sorted(
                     path.name
                     for path in root_path.iterdir()
-                    if path.is_dir() and not path.name.startswith(".")
+                    if path.is_dir()
+                    and not path.name.startswith(".")
+                    and _contains_authored_file(path)
                 )
             )
             if root_path.is_dir()

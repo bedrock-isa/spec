@@ -197,6 +197,12 @@ class ArtifactGenerator(ABC):
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         """Render files without mutating the filesystem."""
 
+    def validate(self, context: ArtifactGenerationContext) -> None:
+        """Validate this projector without publishing its generated files."""
+
+        artifacts = self.generate(context)
+        self.definition.validate_generated(artifacts)
+
 
 class ArtifactGeneratorRegistry:
     """Discover definitions and load artifact-owned generator entrypoints."""
@@ -288,6 +294,18 @@ class ArtifactGeneratorRegistry:
             generator.definition.validate_generated(artifacts)
             phase["files"] = len(artifacts.artifacts)
             return artifacts
+
+    def validate(
+        self,
+        artifact_id: str,
+        workspace: SpecWorkspace,
+        output_root: str | Path,
+    ) -> None:
+        with log_phase(
+            _LOGGER, "artifact.validate", artifact=artifact_id
+        ):
+            context = ArtifactGenerationContext.create(workspace, output_root)
+            self.generator(artifact_id).validate(context)
 
     def _validate_dependencies(self) -> None:
         active: list[str] = []

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import subprocess
 import tempfile
 
@@ -17,7 +17,10 @@ from engine.generation import (
     GeneratedArtifact,
     GeneratedArtifactSet,
 )
-from engine.site.build import SiteDocument, render_site_output
+from engine.site.build import SiteDocument, SiteOutputError, render_site_output
+from engine.site.model import DocumentSiteSpec, build_site, scoped_target
+from engine.site.structure import parse_latex_structure
+from engine.site.visual import extract_visuals
 
 
 _DOCUMENTS = (
@@ -116,6 +119,68 @@ class Generator(ArtifactGenerator):
                 if path.is_file()
             )
         return GeneratedArtifactSet(artifacts, artifact_id=self.artifact_id)
+
+    def validate(self, context: ArtifactGenerationContext) -> None:
+        """Validate the public site projection without compiling or publishing it."""
+
+        project = context.require_provider("isa")
+        registry = ArtifactGeneratorRegistry.discover(context.workspace)
+        composition = DocumentComposition.load(
+            registry.generator("isa-reference").definition.source, project
+        )
+        documents = []
+        preserved_targets: set[str] = set()
+        for artifact_id, site_id, title, pdf_name in _DOCUMENTS:
+            generator = registry.generator(artifact_id)
+            document_output = generator.definition.outputs["document"]
+            artifact = registry.generate(
+                artifact_id, context.workspace, context.output_root
+            ).artifact(document_output)
+            if not isinstance(artifact.content, str):
+                raise TypeError(f"{artifact_id}: TeX artifact must be text")
+
+            structure = parse_latex_structure(artifact.content)
+            visualized = extract_visuals(site_id, artifact.content, structure)
+            transformed = parse_latex_structure(visualized.text)
+            original_labels = {label.name for label in structure.labels}
+            transformed_labels = {label.name for label in transformed.labels}
+            missing = sorted(original_labels - transformed_labels)
+            if missing:
+                raise SiteOutputError(
+                    f"{site_id}: visual projection changed public labels; "
+                    f"missing={missing}"
+                )
+            preserved_targets.update(
+                scoped_target(site_id, label) for label in transformed_labels
+            )
+            documents.append(
+                DocumentSiteSpec(
+                    site_id,
+                    title,
+                    PurePosixPath("downloads") / pdf_name,
+                    structure,
+                )
+            )
+
+        site = build_site(tuple(documents), composition)
+        expected_anchors = {
+            name
+            for name, target in site.registry.targets.items()
+            if target.anchor is not None
+        }
+        missing = sorted(expected_anchors - preserved_targets)
+        if missing:
+            raise SiteOutputError(
+                f"source anchor ownership mismatch; missing={missing}"
+            )
+
+        publication = self.definition.outputs["publication"]
+        self.definition.validate_generated(
+            GeneratedArtifactSet(
+                (GeneratedArtifact(publication / "index.html", b""),),
+                artifact_id=self.artifact_id,
+            )
+        )
 
     @staticmethod
     def _compile_pdf(

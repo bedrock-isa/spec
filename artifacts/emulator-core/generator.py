@@ -161,6 +161,38 @@ class Generator(ArtifactGenerator):
             self.artifact_id,
         )
 
+    def validate(self, context: ArtifactGenerationContext) -> None:
+        """Validate the source projection without invoking the Sail compiler."""
+
+        model = self._sail_model_generator(context)
+        model_context = ArtifactGenerationContext.create(
+            context.workspace, context.output_root / "sail-model"
+        )
+        model_artifacts = model.generate(model_context)
+        model.definition.validate_generated(model_artifacts)
+
+        for template in (
+            "model_main.c",
+            "bedrock_core_adapter.c",
+            "bedrock_core_abi.h",
+        ):
+            _template(template)
+
+        outputs = self.definition.outputs
+        projected = GeneratedArtifactSet(
+            tuple(
+                GeneratedArtifact(outputs[name], b"")
+                for name in (
+                    "implementation",
+                    "model-header",
+                    "abi-header",
+                    "generation-stamp",
+                )
+            ),
+            artifact_id=self.artifact_id,
+        )
+        self.definition.validate_generated(projected)
+
     @staticmethod
     def _sail_model_generator(context: ArtifactGenerationContext) -> ArtifactGenerator:
         workspace_root = context.workspace.root
