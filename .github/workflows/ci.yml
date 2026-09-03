@@ -136,15 +136,32 @@ jobs:
       - name: Install emulator and hardware test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libgmp-dev ninja-build verilator
+          sudo apt-get install -y ccache cmake libgmp-dev ninja-build verilator
+
+      - name: Synchronize generated Bedrock LLVM inputs
+        run: python tools/sync_llvm_artifacts.py llvm-project
+
+      - name: Restore Bedrock LLVM compiler cache
+        id: llvm-ccache
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/bedrock-ccache
+          key: bedrock-llvm-ccache-${{ runner.os }}-${{ runner.arch }}-6f3a8ee88b70553e22e6d77c0cad57d23ca9fa77-${{ hashFiles('llvm-project/llvm/lib/Target/Bedrock/BedrockGenISACatalog.td', 'llvm-project/llvm/include/llvm/BinaryFormat/ELFRelocs/Bedrock.def', 'llvm-project/llvm/include/llvm/BinaryFormat/BedrockGenELFABI.inc', 'llvm-project/llvm/include/llvm/TargetParser/BedrockGenCallingConv.td', 'llvm-project/llvm/include/llvm/TargetParser/BedrockGenCABI.inc') }}
+          restore-keys: |
+            bedrock-llvm-ccache-${{ runner.os }}-${{ runner.arch }}-6f3a8ee88b70553e22e6d77c0cad57d23ca9fa77-
 
       - name: Build Bedrock LLVM tools
+        env:
+          CCACHE_DIR: ${{ runner.temp }}/bedrock-ccache
         run: |
-          python tools/sync_llvm_artifacts.py llvm-project
+          ccache --max-size=2G
+          ccache --zero-stats
           cmake -S llvm-project/llvm \
             -B "${RUNNER_TEMP}/bedrock-llvm" \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DLLVM_ENABLE_ASSERTIONS=ON \
             -DLLVM_ENABLE_PROJECTS="clang;lld" \
             -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=Bedrock \
@@ -154,6 +171,14 @@ jobs:
             -DLLVM_TARGETS_TO_BUILD=""
           cmake --build "${RUNNER_TEMP}/bedrock-llvm" \
             --target clang lld llvm-mc llvm-objdump
+          ccache --show-stats
+
+      - name: Save Bedrock LLVM compiler cache
+        if: steps.llvm-ccache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/bedrock-ccache
+          key: ${{ steps.llvm-ccache.outputs.cache-primary-key }}
 
       - name: Run canonical PR test gate
         env:

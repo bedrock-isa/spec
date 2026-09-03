@@ -927,7 +927,9 @@ fn stop_reply(result: &StepResult) -> String {
             | Trap::AcknowledgedBusFailure { .. }
             | Trap::PageFault { .. }
             | Trap::AccessFault { .. } => signal_stop_reply(11),
-            Trap::Decode { .. } | Trap::PrivilegeFault { .. } => signal_stop_reply(5),
+            Trap::Decode { .. }
+            | Trap::PrivilegeFault { .. }
+            | Trap::ControlFlowIntegrityViolation { .. } => signal_stop_reply(5),
         },
     }
 }
