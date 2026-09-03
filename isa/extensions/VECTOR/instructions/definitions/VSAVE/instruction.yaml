@@ -1,0 +1,7 @@
+mnemonic: VSAVE
+name: Save Vector State
+summary: Saves the vector user-state record.
+route: data_movement
+privileged: false
+operands:
+  memory: {role: address, access: address, value_type: integer}

@@ -2,4 +2,4 @@ id: processor_state
 display:
   canonical: processor state
 definition: >-
-  the complete state set and the SAVE/RESTORE facility.
+  the complete architectural state set of a logical processor.

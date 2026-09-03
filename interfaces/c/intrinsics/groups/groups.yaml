@@ -5,5 +5,4 @@ groups:
 - integer
 - memory
 - mmu
-- state
 - sysreg

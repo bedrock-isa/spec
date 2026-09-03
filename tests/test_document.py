@@ -44,6 +44,7 @@ from engine.render import (
     EventReferenceRenderer,
     LatexSemanticTextRenderer,
     LatexSourcePreprocessor,
+    MemoryRecordFragmentRenderer,
     ProjectedInstructionSet,
     ProjectedTermGroup,
     ProjectedTopic,
@@ -677,6 +678,36 @@ class DocumentTest(unittest.TestCase):
                 context,
                 foreign,
                 tuple(self.project.registers.namespace(foreign).groups)[:1],
+            )
+
+    def test_memory_record_projection_is_explicit_and_owner_local(self) -> None:
+        topic, reference = next(
+            (topic, Reference.parse(match.group(1)))
+            for topic in self.project.model.document_topics.values()
+            for match in re.finditer(
+                r"(?m)^\(:memory-record:"
+                r"((?:base|[A-Z][A-Z0-9_]*)\.records\.[A-Z][A-Z0-9_]*):\)$",
+                topic.document.read_text(encoding="utf-8"),
+            )
+        )
+        context = DocumentFragmentContext(
+            self.project, self.public_targets, topic.document
+        )
+        projection = MemoryRecordFragmentRenderer.project(
+            context, _reference_text(reference)
+        )
+
+        self.assertEqual(projection.record.reference, reference)
+        self.assertEqual(projection.record.owner, topic.owner)
+
+        foreign = next(
+            record.reference
+            for record in self.project.memory_records.references.values()
+            if record.owner != topic.owner
+        )
+        with self.assertRaises(ValueError):
+            MemoryRecordFragmentRenderer.project(
+                context, _reference_text(foreign)
             )
 
     def test_fragment_pipeline_rejects_duplicate_placeholder_owners(self) -> None:

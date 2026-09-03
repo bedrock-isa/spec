@@ -37,7 +37,9 @@ instructions:
 - FPOPP
 - FPUSHP
 - FREM
+- FRESTORE
 - FROUND
+- FSAVE
 - FSCALE
 - FSQRT
 - FSUB

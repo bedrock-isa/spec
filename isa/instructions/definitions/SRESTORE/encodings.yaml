@@ -1,0 +1,6 @@
+encodings:
+  rn_r:
+    pattern: 11101101011011rrrr
+    syntax: SRESTORE [Rn(r)]
+    fields:
+      r: {role: memory, type: base.field_types.Rn, access: read}

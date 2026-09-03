@@ -11,4 +11,4 @@ elapsed-time state, not wall-clock or calendar time, and RDTIME is neither a mem
 
 Warm RESET preserves the timebase value and frequency. Cold reset initializes the value to zero and begins a new
 epoch; the architecture does not order values from different cold-reset epochs. The timebase and its deadline timer
-are per-logical-processor runtime resources, not task computational state, and SAVE and RESTORE do not transfer them.
+are per-logical-processor runtime resources, not task computational state, and no state-record instruction transfers them.

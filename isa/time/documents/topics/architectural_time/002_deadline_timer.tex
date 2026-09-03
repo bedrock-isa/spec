@@ -1,7 +1,7 @@
 \subsection{One-Shot Deadline Timer}\label{section:deadline-timer}
 Each (:term:base.terms.logical_processor:) owns one one-shot deadline timer consisting of armed state, an absolute
 timebase deadline, and a 24-bit interrupt identity. TARM and TCANCEL are the only architectural programming
-operations. The timer state has no control-register or SAVE-area projection.
+operations. The timer state has no control-register or state-record projection.
 
 TARM observes the current time and classifies its absolute deadline by signed modular distance:
 

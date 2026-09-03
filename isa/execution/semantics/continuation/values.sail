@@ -157,7 +157,7 @@ function commit_response_destination(previous : Execution_result, value : bits(6
       then 0x000000000000 @ post.value.bits[15 .. 0]
       else if destination.width == 4
       then 0x00000000 @ post.value.bits[31 .. 0] else post.value.bits
-    ; updated.fp_component_modified = true
+    ; updated.fp_state_modified = true
   }
   else if destination.kind == DestinationSP then
     updated.sp = value
@@ -169,7 +169,7 @@ function commit_response_destination(previous : Execution_result, value : bits(6
   }
   else if response.write_flags then updated.flags = response.flags else ();
   updated.fflags = updated.fflags | generated;
-  if generated != 0b00000 then updated.fp_component_modified = true else ();
+  if generated != 0b00000 then updated.fp_state_modified = true else ();
   completed(previous.state, updated, previous.pending.kind, [||])
   }
 }

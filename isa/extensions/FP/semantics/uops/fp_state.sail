@@ -34,7 +34,7 @@ function clause execute_uop(UopFpState(operation), _, values, instruction, befor
                 var updated = speculative;
                 if operation == FpStateWriteFlags then updated.fflags = source[4 .. 0]
                 else updated.fstatus = source & 0x00000000000003FF;
-                updated.fp_component_modified = true;
+                updated.fp_state_modified = true;
                 uop_step_continue(updated, values)
             }
         },

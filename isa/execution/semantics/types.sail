@@ -113,10 +113,6 @@ enum Continuation_phase = {
     PhaseTranslationQuery,
     PhasePteRead,
     PhaseContextSwitch,
-    PhaseStateSave,
-    PhaseStateRestoreHeader,
-    PhaseStateRestoreRange,
-    PhaseStateRestore,
     PhaseRepeatFetch,
     PhaseEventFrameHeader,
     PhaseEventFrame,
@@ -434,8 +430,7 @@ enum Time_uop_operation = { TimeRead, TimeArm, TimeCancel }
 
 enum Tlb_context_uop_operation = {
   TlbInvalidateAsid, TlbInvalidatePage, TlbInvalidateAll, TlbPageTableQuery,
-  TlbStateRestore, TlbStateSave, TlbSwitchPageTable, TlbSwitchPageTableAsid,
-  TlbVirtualToPhysical,
+  TlbSwitchPageTable, TlbSwitchPageTableAsid, TlbVirtualToPhysical,
 }
 
 enum Vector_branch_uop_operation = { VectorBranchAny, VectorBranchAll, VectorBranchNone }

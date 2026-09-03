@@ -1,0 +1,6 @@
+\clearpage
+\section{Owner-Specific State Records}\label{page:owner-specific-state-records}
+
+State-transfer instructions operate on one architecturally owned record at a time. SAVE and RESTORE own the base user record; SSAVE and SRESTORE own the base supervisor record; FP owns its floating-point user record; and VECTOR owns its vector user record. FPTRANSA, VECTORFP, and WAIT define no state-record instruction.
+
+Each instruction has exactly one address form, \texttt{[Rn]}. It captures Rn before executing, uses DS as the default data segment, and accepts no displacement, direct, update, or generic effective-address form. Each instruction accesses only its owning state. Software that composes several owner records chooses their placement and synchronization; the architecture provides no cross-owner atomicity.

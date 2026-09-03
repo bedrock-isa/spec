@@ -18,7 +18,7 @@ value first and then use the result. A base register changes by the EA interpret
 register changes by one element before scaling. Each REP iteration applies and commits these rules independently.
 
 Size-less address-role instructions INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH,
-PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target instructions DJcc, IJcc,
+PREFETCHNT, and PTQUERY have Q interpretation width. Size-less control-target instructions DJcc, IJcc,
 LCALL, and LJMP also have Q interpretation width. Their extended-descriptor index scale is eight and their base predecrement or
 postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule,
 independently of this per-EA update amount.

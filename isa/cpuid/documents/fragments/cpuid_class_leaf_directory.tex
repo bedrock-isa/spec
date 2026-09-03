@@ -16,6 +16,8 @@ ISA, optional extensions, and implementation properties.
 \midrule
 \endhead
 \texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_\allowbreak{}IDENTITY} & \texttt{0..18} & common (:term:base.terms.header:), identity, revisions, vendor name, and processor name\\
+\texttt{0x00000000} & \texttt{0x0001} & \texttt{BASE\_\allowbreak{}INSTRUCTIONS} & \texttt{0..1} & common (:term:base.terms.header:) and optional base-instruction bits\\
+\texttt{0x00000000} & \texttt{0x0002} & \texttt{BASE\_\allowbreak{}STATE\_\allowbreak{}RECORDS} & \texttt{0..1} & common (:term:base.terms.header:) and base user/supervisor record revisions\\
 \addlinespace[3pt]
 \texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_\allowbreak{}DIRECTORY} & \texttt{0..1} & common (:term:base.terms.header:) and optional architectural-group bits\\
 \addlinespace[3pt]
@@ -23,7 +25,6 @@ ISA, optional extensions, and implementation properties.
 \texttt{0x00000002} & \texttt{0x0001} & \texttt{CACHE\_\allowbreak{}TOPOLOGY} & \texttt{0..n} & common (:term:base.terms.header:), maintenance granule, and cache-sharing descriptors\\
 \texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_\allowbreak{}COUNTERS} & \texttt{0..3} & common (:term:base.terms.header:) and standard RDPMC-counter presence\\
 \texttt{0x00000002} & \texttt{0x0003} & \texttt{ADDRESS\_\allowbreak{}WIDTHS} & \texttt{0..1} & common (:term:base.terms.header:) and the implementation physical-address width\\
-\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_\allowbreak{}LAYOUT} & \texttt{0..n} & common (:term:base.terms.header:), SAVE/RESTORE sizes, bitmap, and component descriptors\\
 \texttt{0x00000002} & \texttt{0x0006} & \texttt{DEBUG\_\allowbreak{}TRIGGERS} & \texttt{0..1} & common (:term:base.terms.header:) and implemented debug-trigger slot count\\
 \bottomrule
 \end{BedrockLongTable}

@@ -1,0 +1,7 @@
+\subsection{State-Record Transfer Semantics}
+
+Every SAVE-class instruction is a pure snapshot: it does not change the captured owner state or its clean/modified tracking. The complete destination range is validated before a record is written. Every RESTORE-class instruction validates the complete source range and all record invariants before committing any owner state. An address, access, or validation fault leaves architectural state unchanged.
+
+FP and VECTOR records use owner-local presence bitmaps. A clear slot means initial state, not preserved state, and the corresponding payload bytes are not read. An all-clear bitmap installs the complete initial owner state and makes that owner state clean. Any set bit makes the restored owner state modified, even when the selected payload happens to encode an initial value. SAVE may conservatively set presence bits, but it may clear a bit only for state known to be initial.
+
+State-record instructions do not imply acquire, release, fence, or cross-owner ordering. The normative instruction entries are (:ref:base.instructions.SAVE:), (:ref:base.instructions.RESTORE:), (:ref:base.instructions.SSAVE:), (:ref:base.instructions.SRESTORE:), (:ref:FP.instructions.FSAVE:), (:ref:FP.instructions.FRESTORE:), (:ref:VECTOR.instructions.VSAVE:), and (:ref:VECTOR.instructions.VRESTORE:).

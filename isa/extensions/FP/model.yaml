@@ -32,6 +32,7 @@ sail:
     - semantics/uops/fp_compute.sail
     - semantics/uops/fp_state.sail
     - semantics/uops/lowering.sail
+    - semantics/state_records.sail
 documents:
   topics:
   - id: registers.floating-point-register-model
@@ -50,8 +51,8 @@ documents:
     source: documents/topics/events/001_floating_point_exception_payload.tex
   - id: cpuid.floating-point-discovery
     source: documents/topics/cpuid/001_floating_point_discovery.tex
-  - id: state.floating-point-save-component
-    source: documents/topics/state/001_floating_point_save_component.tex
+  - id: state.floating-point-state-record
+    source: documents/topics/state/001_floating_point_state_record.tex
   - id: introduction.common-floating-point-semantics
     source: documents/topics/introduction/001_common_floating_point_semantics.tex
   - id: introduction.input-nan-rounding-and-result-order

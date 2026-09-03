@@ -1,0 +1,23 @@
+id: USER_STATE
+name: Base User-State Record
+alignment_bytes: 8
+components:
+- id: INTEGER_REGISTERS
+  label: R
+  count: 16
+  element_bytes: 8
+- id: SEGMENT_REGISTERS
+  label: GS
+  count: 6
+  element_bytes: 8
+- id: FLAGS
+  label: FLAGS
+  element_bytes: 8
+  bit_format:
+    bits: 64
+    unassigned: zero
+    fields:
+    - id: FLAGS
+      label: FLAGS
+      lsb: 0
+      bits: 16

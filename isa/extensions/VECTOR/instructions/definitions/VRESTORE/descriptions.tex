@@ -1,0 +1,1 @@
+VRESTORE validates the complete VLEN-dependent source range and the 64-byte header before atomically replacing vector user state. A clear bit installs the corresponding initial value without reading that payload slot. An all-clear bitmap makes vector state clean; any set bit makes it modified.

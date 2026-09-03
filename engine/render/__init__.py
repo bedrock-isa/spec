@@ -14,6 +14,13 @@ from .cpuid_leaf import (
 from .ea_diagram import EaDiagramFragmentRenderer, EaDiagramProjection
 from .event_reference import EventCodeRow, EventReferenceRenderer
 from .implementation_disclosure import ImplementationDisclosureRenderer
+from .memory_record import (
+    MemoryRecordComponentProjection,
+    MemoryRecordFragmentRenderer,
+    MemoryRecordPaddingProjection,
+    MemoryRecordProjection,
+    MemoryRecordRowProjection,
+)
 from .register_model_figure import (
     RegisterFigureProjection,
     RegisterModelFigureRenderer,
@@ -25,7 +32,6 @@ from .structured_field_target import (
     DebugTriggerTargetRenderer,
     EventStructureTargetRenderer,
     InstructionHeaderFieldTargetRenderer,
-    SaveAreaFieldTargetRenderer,
 )
 from .latex_document import (
     DocumentProjection,
@@ -82,6 +88,11 @@ __all__ = [
     "EventReferenceRenderer",
     "EventCodeRow",
     "ImplementationDisclosureRenderer",
+    "MemoryRecordComponentProjection",
+    "MemoryRecordFragmentRenderer",
+    "MemoryRecordPaddingProjection",
+    "MemoryRecordProjection",
+    "MemoryRecordRowProjection",
     "RegisterModelFigureRenderer",
     "RegisterFigureProjection",
     "PageTableEntryFieldTargetRenderer",
@@ -90,7 +101,6 @@ __all__ = [
     "DebugTriggerTargetRenderer",
     "EventStructureTargetRenderer",
     "InstructionHeaderFieldTargetRenderer",
-    "SaveAreaFieldTargetRenderer",
     "InstructionEntryRenderer",
     "InstructionBitSegment",
     "InstructionByteProjection",

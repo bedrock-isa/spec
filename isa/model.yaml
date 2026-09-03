@@ -321,24 +321,20 @@ documents:
     source: cpuid/documents/topics/cpuid_feature_discovery/012_performance_counter_discovery.tex
   - id: cpuid.cpuid-feature-discovery.address-width-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/013_address_width_discovery.tex
-  - id: cpuid.cpuid-feature-discovery.save-area-layout-discovery
-    source: cpuid/documents/topics/cpuid_feature_discovery/014_save_area_layout_discovery.tex
+  - id: cpuid.cpuid-feature-discovery.base-state-record-revisions
+    source: cpuid/documents/topics/cpuid_feature_discovery/014_base_state_record_revisions.tex
   - id: cpuid.cpuid-feature-discovery.timebase-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/015_timebase_discovery.tex
   - id: cpuid.cpuid-feature-discovery.debug-trigger-discovery
     source: cpuid/documents/topics/cpuid_feature_discovery/016_debug_trigger_discovery.tex
-  - id: state.save-restore-area.processor-state-save-and-restore
-    source: state/documents/topics/save_restore_area/001_processor_state_save_and_restore.tex
-  - id: state.save-restore-area.save-area-layout
-    source: state/documents/topics/save_restore_area/002_save_area_layout.tex
-  - id: state.save-restore-area.fixed-architectural-state
-    source: state/documents/topics/save_restore_area/003_fixed_architectural_state.tex
-  - id: state.save-restore-area.extension-components-and-clean-state
-    source: state/documents/topics/save_restore_area/004_extension_components_and_clean_state.tex
-  - id: state.save-restore-area.save-responsibilities
-    source: state/documents/topics/save_restore_area/005_save_responsibilities.tex
-  - id: state.save-restore-area.restore-responsibilities
-    source: state/documents/topics/save_restore_area/006_restore_responsibilities.tex
+  - id: state.save-restore-area.owner-state-records
+    source: state/documents/topics/save_restore_area/001_owner_state_records.tex
+  - id: state.save-restore-area.base-user-state-record
+    source: state/documents/topics/save_restore_area/002_base_user_state_record.tex
+  - id: state.save-restore-area.base-supervisor-state-record
+    source: state/documents/topics/save_restore_area/003_base_supervisor_state_record.tex
+  - id: state.save-restore-area.state-record-transfer-semantics
+    source: state/documents/topics/save_restore_area/004_state_record_transfer_semantics.tex
   - id: manual.part.instruction-set-reference
     source: artifacts/isa-reference/document/topics/004_instruction_set_reference.tex
   - id: instructions.instruction-description-intro.reading-an-instruction-description

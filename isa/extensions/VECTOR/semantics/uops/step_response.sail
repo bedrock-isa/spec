@@ -27,7 +27,7 @@ function vector_memory_source_result(
             Some(destination) => {
                 var updated = after;
                 updated.predicate_registers[unsigned(destination)] = memory;
-                updated.vector_component_modified = true;
+                updated.vector_state_modified = true;
                 Some(updated)
             },
         }
@@ -53,7 +53,7 @@ function vector_memory_source_result(
                                 element_bytes,
                             )
                         };
-                    updated.vector_component_modified = true;
+                    updated.vector_state_modified = true;
                     Some(updated)
                 },
             }
@@ -72,7 +72,7 @@ function vector_memory_source_result(
                             lanes,
                             element_bytes,
                         );
-                        updated.vector_component_modified = true;
+                        updated.vector_state_modified = true;
                         Some(updated)
                     },
                 }
@@ -91,7 +91,7 @@ function vector_memory_source_result(
                                 lanes,
                                 element_bytes,
                             );
-                            updated.vector_component_modified = true;
+                            updated.vector_state_modified = true;
                             Some(updated)
                         },
                     }
@@ -134,7 +134,7 @@ function vector_memory_source_result(
                                         lanes,
                                         element_bytes,
                                     );
-                                    updated.vector_component_modified = true;
+                                    updated.vector_state_modified = true;
                                     Some(updated)
                                 },
                             }
@@ -162,7 +162,7 @@ function vector_memory_source_result(
                                             lanes,
                                             element_bytes,
                                         );
-                                        updated.vector_component_modified = true;
+                                        updated.vector_state_modified = true;
                                         Some(updated)
                                     },
                                     _ => None(),

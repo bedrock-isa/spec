@@ -84,8 +84,6 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
   let operation = instruction.form.operation;
   let ptquery = tlb_operation == TlbPageTableQuery;
   let vtop = tlb_operation == TlbVirtualToPhysical;
-  let save = tlb_operation == TlbStateSave;
-  let restore = tlb_operation == TlbStateRestore;
   let swpt = tlb_operation == TlbSwitchPageTable | tlb_operation == TlbSwitchPageTableAsid;
   let swpta = tlb_operation == TlbSwitchPageTableAsid;
   let evaluated = evaluate_instruction_eas(
@@ -121,45 +119,16 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
              | tlb_operation == TlbInvalidateAll
     then TlbInvalidateRequest
     else if ptquery | vtop then PhysicalPteRead
-    else if save then Write
-    else if restore then Read
     else ContextSwitchRequest;
   let phase = if kind == TlbInvalidateRequest then PhaseTlbOperation
     else if kind == PhysicalPteRead then PhasePteRead
-    else if save then PhaseStateSave
-    else if restore then PhaseStateRestore
     else PhaseContextSwitch;
   let install_fault = if swpt then ptcr_image_fault(value) else None();
   let destination = commit_destination_for(instruction.operands, 8);
-  let save_range = save | restore;
-  let save_size = state.save_area_size;
-  let save_end = add_bits(address.effective_address, bits_from_int(save_size));
   let base_request = request_for_evaluation(
-    kind, 0, address,
-    if save then AccessStore
-    else if restore then AccessLoad
-    else AccessAddressOnly,
-    value, not_bool(restore)
+    kind, 0, address, AccessAddressOnly, value, true
   );
-  let request = { base_request with selector = selector,
-         range_length = if save_range then save_size else address.width,
-         range_end = if save_range then save_end
-                     else address.linear_address,
-         range_wrap = if save_range then
-           save_size > 0 & unsigned(save_end) < unsigned(address.effective_address)
-                         & save_end != 0x0000000000000000
-           else base_request.range_wrap,
-         range_end_at_modulus = if save_range then
-           save_size > 0 & save_end == 0x0000000000000000
-                         & address.effective_address != 0x0000000000000000
-           else base_request.range_end_at_modulus,
-         memory_ranges = if save_range then [|struct {
-           effective_address = address.effective_address,
-           linear_address = address.linear_address,
-           width = save_size,
-           buffer_offset = 0
-         }|] else base_request.memory_ranges,
-         body_length = if restore then save_size else 0 };
+  let request = { base_request with selector = selector };
   if ptquery | vtop then {
     let linear = value;
     let target_level = if ptquery then unsigned(selector[2 .. 0]) else 1;
@@ -206,32 +175,15 @@ function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation
         ),
     }
   }
-  else if save_range & not_bool(save_layout_valid(state)) then
-    faulted(state, operation, InvalidControlState, "invalid CPUID SAVE-area layout")
-  else if save_range & (address.effective_address & 0x0000000000000FFF)
-                  != 0x0000000000000000 then
-    faulted(state, operation, InvalidControlState, "SAVE/RESTORE base is not 4-KiB aligned")
   else match install_fault {
     Some(kind) => faulted(state, operation, kind, "invalid PTCR image"),
     None() => waiting_transaction(TransactionSystem,
       state, advance_pc(evaluated.image, instruction), instruction,
-      if save | restore then CommitMemory else CommitControl,
+      CommitControl,
       destination,
-      if restore then PhaseStateRestoreHeader else phase,
+      phase,
       0, value, selector,
-      if save then { request with
-        payload_bytes = save_image_bytes(state), body_length = 0
-      }
-      else if restore then { request with
-        range_end = add_bits(address.effective_address, 0x0000000000000010),
-        range_length = 16,
-        range_wrap = unsigned(add_bits(address.effective_address, 0x0000000000000010))
-                     < unsigned(address.effective_address),
-        range_end_at_modulus = add_bits(address.effective_address, 0x0000000000000010)
-                               == 0x0000000000000000
-                               & address.effective_address != 0x0000000000000000,
-        body_length = 16, selector = 0x0000000000000000, commit_point = false
-      } else { request with auxiliary = if swpta then 0x0000000000000001 else request.auxiliary }
+      { request with auxiliary = if swpta then 0x0000000000000001 else request.auxiliary }
     ),
   }
 }

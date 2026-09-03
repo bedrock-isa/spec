@@ -1,9 +1,0 @@
-\subsection{Extension Components and Clean State}
-An extension component is architecturally clean when its state is known to equal its component-defined initial
-state. Reset and RESTORE of a clear component bit make that component clean. A committed write that can make a
-component differ from its initial state makes it modified; RESTORE of a non-initial component image also makes it
-modified. An implementation may mark a component clean whenever it establishes that the complete component again
-equals its initial state.
-
-Each extension defines its component ID, bitmap bit, memory image, initial state, and the writes that mark the
-component modified.

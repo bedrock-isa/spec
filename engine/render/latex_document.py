@@ -176,7 +176,6 @@ def _document_public_targets(
         DebugTriggerTargetRenderer,
         EventStructureTargetRenderer,
         InstructionHeaderFieldTargetRenderer,
-        SaveAreaFieldTargetRenderer,
     )
 
     targets.extend(EventReferenceRenderer.public_targets(project, referenced))
@@ -190,7 +189,6 @@ def _document_public_targets(
         DebugTriggerTargetRenderer,
         EventStructureTargetRenderer,
         InstructionHeaderFieldTargetRenderer,
-        SaveAreaFieldTargetRenderer,
     ):
         targets.extend(renderer.public_targets(project, sources))
 

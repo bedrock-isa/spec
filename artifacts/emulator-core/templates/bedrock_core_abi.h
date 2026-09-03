@@ -100,22 +100,8 @@ typedef struct bedrock_core_state {
   uint8_t fptrans_enabled;
   uint8_t vector_enabled;
   int64_t cache_maintenance_granule;
-  int64_t fp_component_alignment;
-  int64_t fp_component_bitmap_bit;
-  int64_t fp_component_id;
-  int64_t fp_component_init_policy;
-  uint8_t fp_component_modified;
-  int64_t fp_component_offset;
-  uint8_t fp_component_present;
-  int64_t fp_component_size;
-  int64_t vector_component_alignment;
-  int64_t vector_component_bitmap_bit;
-  int64_t vector_component_id;
-  int64_t vector_component_init_policy;
-  uint8_t vector_component_modified;
-  int64_t vector_component_offset;
-  uint8_t vector_component_present;
-  int64_t vector_component_size;
+  uint8_t fp_state_modified;
+  uint8_t vector_state_modified;
   int64_t vector_length_bytes;
   uint64_t machine_check_error_code;
   uint64_t machine_check_event_aux;
@@ -134,10 +120,6 @@ typedef struct bedrock_core_state {
   uint64_t repeat_remaining;
   uint8_t repeat_fixed_body[BEDROCK_CORE_MAX_INSTRUCTION_BYTES];
   size_t repeat_fixed_body_length;
-  int64_t save_area_size;
-  int64_t save_bitmap_words;
-  int64_t save_fixed_size;
-  uint64_t save_format;
 } bedrock_core_state;
 
 typedef struct bedrock_core_request {

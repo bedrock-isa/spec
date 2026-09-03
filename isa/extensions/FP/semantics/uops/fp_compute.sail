@@ -23,7 +23,7 @@ function clause execute_uop(UopFpPairMove(), uop, values, instruction, before, s
             var updated = speculative;
             updated.floating_registers[unsigned(get_slice_int(4, uop.destination.index, 0))] = first;
             updated.floating_registers[unsigned(get_slice_int(4, uop.destination2.index, 0))] = second;
-            updated.fp_component_modified = true;
+            updated.fp_state_modified = true;
             uop_step_continue(updated, values)
         },
         _ => uop_step_fault(
@@ -204,7 +204,7 @@ function fp_uop_result_commit(
                         updated.flags =
                             (updated.flags & not_vec(candidate.flags_mask)) |
                                 (candidate.flags_value & candidate.flags_mask);
-                        updated.fp_component_modified = true;
+                        updated.fp_state_modified = true;
                         uop_step_continue(updated, written_values)
                     },
                 }

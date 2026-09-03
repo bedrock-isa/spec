@@ -32,8 +32,8 @@ class CpuidSchemaTest(unittest.TestCase):
 
     def test_leaf_accepts_fixed_and_strided_query_indexes(self) -> None:
         document = {
-            "id": "SAVE_AREA_LAYOUT",
-            "name": "Save Area Layout",
+            "id": "STATE_RECORDS",
+            "name": "State Records",
             "value": 4,
             "queries": [
                 {

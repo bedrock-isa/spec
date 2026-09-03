@@ -21,16 +21,16 @@ function vector_fp_uop_image_commit(
                     var updated = speculative;
                     updated.fflags = updated.fflags | image.generated_causes;
                     if image.generated_causes != fflags_none then {
-                        updated.fp_component_modified = true
+                        updated.fp_state_modified = true
                     };
                     if destination.operand_type == OperandType_Vn then {
                         updated.vector_registers[unsigned(destination.value[4 .. 0])] = image.bytes;
-                        updated.vector_component_modified = true;
+                        updated.vector_state_modified = true;
                         uop_step_continue(updated, values)
                     } else {
                         if destination.operand_type == OperandType_Pn then {
                             updated.predicate_registers[unsigned(destination.value[3 .. 0])] = image.bytes;
-                            updated.vector_component_modified = true;
+                            updated.vector_state_modified = true;
                             uop_step_continue(updated, values)
                         } else {
                             if destination.operand_type == OperandType_VEA then {

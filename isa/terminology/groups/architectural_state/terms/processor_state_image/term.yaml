@@ -5,4 +5,4 @@ display:
 article: a
 definition: >-
   an aggregate representation of multiple architectural-state components, such
-  as a SAVE area or reset-state table.
+  as a reset-state table.

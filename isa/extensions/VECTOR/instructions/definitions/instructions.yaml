@@ -1,4 +1,6 @@
 instructions:
+- VRESTORE
+- VSAVE
 - VDUP
 - VMOV
 - PHEAD

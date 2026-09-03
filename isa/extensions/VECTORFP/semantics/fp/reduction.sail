@@ -147,7 +147,7 @@ function vector_fp_reduction_commit(
                         var updated = after;
                         updated.floating_registers[unsigned(destination.value[3 .. 0])] = reduction.value;
                         updated.fflags = updated.fflags | reduction.generated_causes;
-                        updated.fp_component_modified = true;
+                        updated.fp_state_modified = true;
                         uop_step_continue(updated, values)
                     },
                 }

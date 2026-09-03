@@ -1,0 +1,7 @@
+mnemonic: FSAVE
+name: Save Floating-Point State
+summary: Saves the floating-point user-state record.
+route: data_movement
+privileged: false
+operands:
+  memory: {role: address, access: address, value_type: integer}

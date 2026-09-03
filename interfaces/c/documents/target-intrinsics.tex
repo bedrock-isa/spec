@@ -44,7 +44,7 @@ ABI-visible meaning.
 \subsection{Header Topology and Exposure}
 \texttt{<bedrockintrin.h>} is the public umbrella. It includes the core, memory,
 integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the system
-umbrella for system-register, cache, MMU, and processor-state facilities. Any
+umbrella for system-register, cache, and MMU facilities. Any
 family header may also be included directly.
 
 \BedrockGeneratedHeaderFamilies{}
@@ -149,16 +149,6 @@ mathematically, not modulo $2^{64}$.
 \subsection{MMU Builtins}
 \BedrockField{Header:}{\texttt{<bedrockmmuintrin.h>}}
 \BedrockGeneratedIntrinsicGroup{mmu}
-
-\Needspace{2.0in}
-\subsection{Processor-State Builtins}
-\BedrockField{Header:}{\texttt{<bedrockstateintrin.h>}}
-\BedrockGeneratedIntrinsicGroup{state}
-
-Both operations are unprivileged, but restoration of \texttt{STATUS} remains
-privilege-restricted. The backend must model every restored register and the
-full memory and addressing-context clobber explicitly. It must not treat
-restore as an opaque call or as only a memory effect.
 
 \section{Shared Header Types}\label{page:shared-header-types}
 \BedrockGeneratedInterfaceTypes{}

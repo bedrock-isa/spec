@@ -1,3 +1,0 @@
-intrinsics:
-- restore_processor_state
-- save_processor_state

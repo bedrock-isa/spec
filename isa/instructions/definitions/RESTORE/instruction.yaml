@@ -1,7 +1,7 @@
 mnemonic: RESTORE
-name: Restore Processor State
-summary: Restore processor state from a CPUID-defined save area.
-route: tlb_and_context
+name: Restore Base User State
+summary: Restores the base user-state record.
+route: data_movement
 privileged: false
 operands:
   memory:

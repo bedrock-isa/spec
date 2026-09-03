@@ -2,4 +2,4 @@ collections:
 - id: public
   groups: [core, memory, integer, fpu]
 - id: system
-  groups: [sysreg, cache, mmu, state]
+  groups: [sysreg, cache, mmu]

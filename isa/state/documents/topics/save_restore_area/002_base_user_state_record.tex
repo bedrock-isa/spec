@@ -1,0 +1,5 @@
+\subsection{Base User-State Record}
+
+(:memory-record:base.records.USER_STATE:)
+
+SAVE writes the complete record. RESTORE validates all six segment-register images and the FLAGS image before atomically replacing R0 through R15, GS0 through GS5, and FLAGS. No field is optional and no base supervisor or extension state appears in this record.

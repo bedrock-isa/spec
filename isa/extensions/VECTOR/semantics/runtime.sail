@@ -7,7 +7,7 @@ function vector_register_index(instruction : Decoded_instruction, name : Operand
 function vector_finish(instruction : Decoded_instruction, before : Cpu_state, after : Cpu_state) -> Execution_result = {
     var committed = after;
     committed.pc = next_pc(before, instruction);
-    committed.vector_component_modified = true;
+    committed.vector_state_modified = true;
     completed(before, committed, CommitRegisters, [||])
 }
 

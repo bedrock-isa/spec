@@ -137,6 +137,11 @@ def _field_target_label(reference: Reference[object]) -> str:
     return f"cpuid-field:{slug}"
 
 
+def _reserved_field(bits: int) -> str:
+    label = "R" if bits < 8 else "reserved"
+    return rf"\BedrockFormatReserved{{{label}}}{{{bits}}}"
+
+
 def _query_diagram_label(
     query: ProjectedCpuidQuery,
     fields: tuple[CpuidField, ...], labels: dict[Reference[object], str]
@@ -171,7 +176,7 @@ def _format_fields(
     for field in sorted(fields, key=lambda item: item.lsb, reverse=True):
         gap = cursor - field.msb - 1
         if gap:
-            parts.append(rf"\BedrockFormatReserved{{reserved}}{{{gap}}}")
+            parts.append(_reserved_field(gap))
         target = (
             rf"\phantomsection\label{{{public_targets.label(field.reference)}}}"
             if field.reference in public_targets.labels
@@ -183,7 +188,7 @@ def _format_fields(
         )
         cursor = field.lsb
     if cursor:
-        parts.append(rf"\BedrockFormatReserved{{reserved}}{{{cursor}}}")
+        parts.append(_reserved_field(cursor))
     return tuple(parts)
 
 

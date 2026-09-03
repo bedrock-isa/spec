@@ -1,9 +1,9 @@
 \subsection{Execution and Saved State}
 
-The vector SAVE/RESTORE component contains the complete scalable vector and
-packed predicate images.  A committed \texttt{Vn} or \texttt{Pn} write marks
-that component modified.  Architectural event entry does not otherwise change
-vector state.
+The vector user-state record contains the complete scalable vector and packed
+predicate images selected by its presence bitmap. A committed \texttt{Vn} or
+\texttt{Pn} write marks vector state modified. Architectural event entry does
+not otherwise change vector state.
 
 An implementation may internally coalesce eligible scalar \texttt{REP} or
 (:ref:base.instructions.REPcc:) iterations into vector-sized work.  This permission creates no

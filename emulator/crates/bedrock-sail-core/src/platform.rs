@@ -21,7 +21,7 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
     let leaf = (selector >> 16) as u16;
     let index = selector as u16;
     match (class, leaf, index) {
-        (BASE_CLASS, 0, 0) => header_with_class(2, 0, 18),
+        (BASE_CLASS, 0, 0) => header_with_class(2, 2, 18),
         (BASE_CLASS, 0, 1) => {
             (u64::from(VENDOR_ID) << 48)
                 | (u64::from(ARCHITECTURE_ID) << 32)
@@ -32,16 +32,18 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         }
         (BASE_CLASS, 0, 3..=10) => name_word(VENDOR_NAME, usize::from(index - 3)),
         (BASE_CLASS, 0, 11..=18) => name_word(PROCESSOR_NAME, usize::from(index - 11)),
+        (BASE_CLASS, 2, 0) => 1,
+        (BASE_CLASS, 2, 1) => 0x0101,
         (EXTENSION_CLASS, 0, 0) => header_with_leaf(3, 1),
         (EXTENSION_CLASS, 0, 1) => 0b1111,
         (EXTENSION_CLASS, 1, 0) => 1,
-        (EXTENSION_CLASS, 1, 1) => 1,
+        (EXTENSION_CLASS, 1, 1) => 0x0101,
         (EXTENSION_CLASS, 2, 0) => 0x0044,
         (EXTENSION_CLASS, 2, id) if FPTRANSA_CONTRACT_IDS.contains(&id) => {
             (1_u64 << 63) | (1_u64 << 32) | (0x0100_u64 << 16) | 0x0100
         }
         (EXTENSION_CLASS, 3, 0) => 1,
-        (EXTENSION_CLASS, 3, 1) => 7,
+        (EXTENSION_CLASS, 3, 1) => 0x0107,
         (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(6, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,
@@ -49,13 +51,6 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (IMPLEMENTATION_CLASS, 2, 1..=3) => 1,
         (IMPLEMENTATION_CLASS, 3, 0) => 1,
         (IMPLEMENTATION_CLASS, 3, 1) => 56,
-        (IMPLEMENTATION_CLASS, 4, 0) => 6,
-        (IMPLEMENTATION_CLASS, 4, 1) => 0x03c0,
-        (IMPLEMENTATION_CLASS, 4, 2) => 0x0000_0001_0002_00c0,
-        (IMPLEMENTATION_CLASS, 4, 3) => 0x0000_00c0_0000_0001,
-        (IMPLEMENTATION_CLASS, 4, 4) => 0x0001_0040_0000_00c0,
-        (IMPLEMENTATION_CLASS, 4, 5) => 0x0000_0180_0001_0002,
-        (IMPLEMENTATION_CLASS, 4, 6) => 0x0001_0040_0000_0240,
         (IMPLEMENTATION_CLASS, 5, 0) => 1,
         (IMPLEMENTATION_CLASS, 5, 1) => TIMEBASE_TICKS_PER_SECOND,
         (IMPLEMENTATION_CLASS, 6, 0) => 1,
@@ -93,7 +88,12 @@ mod tests {
 
     #[test]
     fn cpuid_reports_stable_identity_and_sparse_contracts() {
-        assert_eq!(cpuid_query(selector(0, 0, 0)), 0x0000_0002_0000_0012);
+        assert_eq!(cpuid_query(selector(0, 0, 0)), 0x0000_0002_0002_0012);
+        assert_eq!(cpuid_query(selector(0, 2, 0)), 1);
+        assert_eq!(cpuid_query(selector(0, 2, 1)), 0x0101);
+        assert_eq!(cpuid_query(selector(1, 1, 1)), 0x0101);
+        assert_eq!(cpuid_query(selector(1, 3, 1)), 0x0107);
+        assert_eq!(cpuid_query(selector(2, 4, 0)), 0);
         assert_eq!(cpuid_query(selector(1, 2, 0)), 0x44);
         assert_ne!(cpuid_query(selector(1, 2, 0x44)), 0);
         assert_eq!(cpuid_query(selector(1, 2, 0x10)), 0);

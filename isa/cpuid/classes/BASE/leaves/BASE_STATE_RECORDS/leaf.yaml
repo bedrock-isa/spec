@@ -1,0 +1,13 @@
+id: BASE_STATE_RECORDS
+name: Base State Records
+value: 0x0002
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: REVISIONS
+  index: 1
+  fields:
+  - {id: USER_RECORD_REVISION, lsb: 0, bits: 8}
+  - {id: SUPERVISOR_RECORD_REVISION, lsb: 8, bits: 8}

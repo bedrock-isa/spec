@@ -3,7 +3,7 @@ After establishing (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:) ava
 $2^{\text{(:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.VLEN_LOG2_BITS:)}}$ bits and is an implementation-selected power of two from 128 through 2048 bits.
 It determines vector-register width, predicate storage, the number of lanes for a selected element width, and the
 size of each (:term:VECTOR.terms.vector_register:) and (:term:VECTOR.terms.predicate_register:) image.
-\texttt{SAVE\_AREA\_LAYOUT} remains the authority for save-component placement and size. This leaf does not
+(:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.USER_RECORD_REVISION:) reports the 8-bit vector user-state-record revision. Revision 1 identifies the VLEN-dependent record defined by this specification. This leaf does not
 establish availability of (:ref:VECTORFP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTORFP:) or any other extension that consumes vector state.
 
 (:cpuid-leaf:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS:)

@@ -917,7 +917,7 @@ mod tests {
 
         core.execute_on_bus(&mut ram, &[0xc3, 0xb4, 0x00]).unwrap();
 
-        assert_eq!(core.register(0), Ok(0x0000_0002_0000_0012));
+        assert_eq!(core.register(0), Ok(0x0000_0002_0002_0012));
         assert_eq!(core.pc(), Ok(3));
     }
 

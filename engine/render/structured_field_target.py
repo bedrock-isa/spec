@@ -15,7 +15,6 @@ from ..event_structure import (
 )
 from ..instruction_header import InstructionHeaderField
 from ..reference import Reference, UnknownReferenceError
-from ..save_area import SaveAreaField
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
 
 
@@ -119,14 +118,6 @@ class EventStructureTargetRenderer(_ExplicitTargetRenderer):
     )
     label_prefix = "event-structure"
     description = "event-structure"
-
-
-class SaveAreaFieldTargetRenderer(_ExplicitTargetRenderer):
-    target_open = "(:save-area-field-target:"
-    target_re = re.compile(r"\(:save-area-field-target:([A-Za-z0-9_.-]+):\)")
-    entity_types = (SaveAreaField,)
-    label_prefix = "save-area-field"
-    description = "save-area field"
 
 
 class InstructionHeaderFieldTargetRenderer(_ExplicitTargetRenderer):

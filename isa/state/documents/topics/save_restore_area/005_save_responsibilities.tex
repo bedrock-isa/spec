@@ -1,6 +1,0 @@
-\subsection{SAVE Responsibilities}
-SAVE writes (:ref:base.state.save_area.BASE_HEADER.FMT:)\texttt{=0}, sets (:ref:base.state.save_area.BASE_HEADER.GS_VALID:)\texttt{=0x3f}, records the complete (:ref:base.state.save_area.BASE_HEADER.STATUS:) image and current (:ref:base.state.save_area.BASE_HEADER.DFA:), and records GS0 through GS5. SAVE sets bitmap bits only
-for components described by its CPUID \texttt{SAVE\_AREA\_LAYOUT} leaf.
-
-SAVE may omit an architecturally clean extension component by clearing its bitmap bit. SAVE may clear a bitmap bit
-only for a clean component. SAVE does not change clean or modified state.

@@ -1,0 +1,38 @@
+id: USER_STATE
+name: Vector User-State Record
+alignment_bytes: 64
+parameter:
+  id: B
+  description: VLEN in bytes
+  values: [16, 32, 64, 128, 256]
+components:
+- id: PRESENCE
+  label: Presence bitmap
+  element_bytes: 8
+  bit_format:
+    bits: 64
+    unassigned: zero
+    fields:
+    - id: VECTOR_REGISTERS
+      label: V[31:0]
+      lsb: 0
+      bits: 32
+    - id: PREDICATE_REGISTERS
+      label: P[15:0]
+      lsb: 32
+      bits: 16
+- id: RESERVED
+  label: Reserved
+  element_bytes: 56
+  fixed_value: zero
+- id: VECTOR_REGISTERS
+  label: V
+  count: 32
+  element_bytes:
+    parameter: B
+- id: PREDICATE_REGISTERS
+  label: P
+  count: 16
+  element_bytes:
+    parameter: B
+    divisor: 8

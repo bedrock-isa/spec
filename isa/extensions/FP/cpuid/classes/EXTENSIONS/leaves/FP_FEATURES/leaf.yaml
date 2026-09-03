@@ -9,3 +9,4 @@ queries:
   index: 1
   fields:
   - {id: FP16_CONVERT, lsb: 0, bits: 1}
+  - {id: USER_RECORD_REVISION, lsb: 8, bits: 8}

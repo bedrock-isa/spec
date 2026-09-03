@@ -420,22 +420,8 @@ bedrock_core_status bedrock_core_get_state(
   state->fptrans_enabled = core->state.zfptrans_enabled ? 1 : 0;
   state->vector_enabled = core->state.zvector_enabled ? 1 : 0;
   state->cache_maintenance_granule = core->state.zcache_maintenance_granule;
-  state->fp_component_alignment = core->state.zfp_component_alignment;
-  state->fp_component_bitmap_bit = core->state.zfp_component_bitmap_bit;
-  state->fp_component_id = core->state.zfp_component_id;
-  state->fp_component_init_policy = core->state.zfp_component_init_policy;
-  state->fp_component_modified = core->state.zfp_component_modified ? 1 : 0;
-  state->fp_component_offset = mpz_get_si(core->state.zfp_component_offset);
-  state->fp_component_present = core->state.zfp_component_present ? 1 : 0;
-  state->fp_component_size = mpz_get_si(core->state.zfp_component_sizze);
-  state->vector_component_alignment = core->state.zvector_component_alignment;
-  state->vector_component_bitmap_bit = core->state.zvector_component_bitmap_bit;
-  state->vector_component_id = core->state.zvector_component_id;
-  state->vector_component_init_policy = core->state.zvector_component_init_policy;
-  state->vector_component_modified = core->state.zvector_component_modified ? 1 : 0;
-  state->vector_component_offset = mpz_get_si(core->state.zvector_component_offset);
-  state->vector_component_present = core->state.zvector_component_present ? 1 : 0;
-  state->vector_component_size = mpz_get_si(core->state.zvector_component_sizze);
+  state->fp_state_modified = core->state.zfp_state_modified ? 1 : 0;
+  state->vector_state_modified = core->state.zvector_state_modified ? 1 : 0;
   state->vector_length_bytes = mpz_get_si(core->state.zvector_length_bytes);
   state->machine_check_error_code = core->state.zmachine_check_error_code;
   state->machine_check_event_aux = core->state.zmachine_check_event_aux;
@@ -459,10 +445,6 @@ bedrock_core_status bedrock_core_get_state(
           core->state.zrepeat_state.zfixed_body, state->repeat_fixed_body,
           state->repeat_fixed_body_length))
     return BEDROCK_CORE_BAD_STATE;
-  state->save_area_size = mpz_get_si(core->state.zsave_area_sizze);
-  state->save_bitmap_words = core->state.zsave_bitmap_words;
-  state->save_fixed_size = mpz_get_si(core->state.zsave_fixed_sizze);
-  state->save_format = core->state.zsave_format;
   return BEDROCK_CORE_OK;
 }
 
@@ -544,22 +526,8 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zfptrans_enabled = state->fptrans_enabled != 0;
   core->state.zvector_enabled = state->vector_enabled != 0;
   core->state.zcache_maintenance_granule = state->cache_maintenance_granule;
-  core->state.zfp_component_alignment = state->fp_component_alignment;
-  core->state.zfp_component_bitmap_bit = state->fp_component_bitmap_bit;
-  core->state.zfp_component_id = state->fp_component_id;
-  core->state.zfp_component_init_policy = state->fp_component_init_policy;
-  core->state.zfp_component_modified = state->fp_component_modified != 0;
-  mpz_set_si(core->state.zfp_component_offset, state->fp_component_offset);
-  core->state.zfp_component_present = state->fp_component_present != 0;
-  mpz_set_si(core->state.zfp_component_sizze, state->fp_component_size);
-  core->state.zvector_component_alignment = state->vector_component_alignment;
-  core->state.zvector_component_bitmap_bit = state->vector_component_bitmap_bit;
-  core->state.zvector_component_id = state->vector_component_id;
-  core->state.zvector_component_init_policy = state->vector_component_init_policy;
-  core->state.zvector_component_modified = state->vector_component_modified != 0;
-  mpz_set_si(core->state.zvector_component_offset, state->vector_component_offset);
-  core->state.zvector_component_present = state->vector_component_present != 0;
-  mpz_set_si(core->state.zvector_component_sizze, state->vector_component_size);
+  core->state.zfp_state_modified = state->fp_state_modified != 0;
+  core->state.zvector_state_modified = state->vector_state_modified != 0;
   mpz_set_si(core->state.zvector_length_bytes, state->vector_length_bytes);
   core->state.zmachine_check_error_code = state->machine_check_error_code;
   core->state.zmachine_check_event_aux = state->machine_check_event_aux;
@@ -579,10 +547,6 @@ bedrock_core_status bedrock_core_set_state(
   bedrock_core_replace_byte_list(&core->state.zrepeat_state.zfixed_body,
                                  state->repeat_fixed_body,
                                  state->repeat_fixed_body_length);
-  mpz_set_si(core->state.zsave_area_sizze, state->save_area_size);
-  core->state.zsave_bitmap_words = state->save_bitmap_words;
-  mpz_set_si(core->state.zsave_fixed_sizze, state->save_fixed_size);
-  core->state.zsave_format = state->save_format;
   bedrock_core_clear_observation(core);
   return BEDROCK_CORE_OK;
 }

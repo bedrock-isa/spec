@@ -1,0 +1,7 @@
+mnemonic: VRESTORE
+name: Restore Vector State
+summary: Restores the vector user-state record.
+route: data_movement
+privileged: false
+operands:
+  memory: {role: address, access: address, value_type: integer}

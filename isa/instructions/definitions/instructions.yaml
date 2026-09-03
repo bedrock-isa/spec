@@ -132,6 +132,8 @@ instructions:
 - SAR
 - SAVE
 - SBB
+- SRESTORE
+- SSAVE
 - SEGLEA
 - SET
 - SETcc

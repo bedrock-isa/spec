@@ -25,6 +25,7 @@ from .extension import ExtensionMetadata, ExtensionSetCatalog
 from .inventory import DirectoryInventory
 from .instruction import Instruction
 from .instruction_header import InstructionHeaderCatalog
+from .memory_record import MemoryRecordCatalog
 from .model import ModelCatalog
 from .observability import log_phase
 from .page_table_entry import PageTableEntryCatalog
@@ -35,7 +36,6 @@ from .reference import (
     ReferenceIndex,
     UnknownReferenceError,
 )
-from .save_area import SaveAreaCatalog
 from .terminology import TermCatalog
 from .type_system import EffectiveAddressFieldType, TypeNamespace, TypeSystem
 from .vector_diagram import VectorDiagram, VectorDiagramCatalog
@@ -200,7 +200,6 @@ def _build_entities(
     control_registers,
     debug_triggers,
     page_table_entries,
-    save_areas,
     instruction_headers,
     terminology,
     model,
@@ -303,8 +302,6 @@ def _build_entities(
         (debug_triggers.references.fields, qualified_field, code),
         (page_table_entries.references.entries, identifier, code),
         (page_table_entries.references.fields, qualified_field, code),
-        (save_areas.references.headers, identifier, code),
-        (save_areas.references.fields, qualified_field, code),
         (instruction_headers.references.headers, identifier, code),
         (instruction_headers.references.fields, qualified_field, code),
     ):
@@ -627,10 +624,10 @@ class IsaProject:
     event_frames: EventFrameCatalog
     event_payloads: EventPayloadCatalog
     registers: RegisterCatalog
+    memory_records: MemoryRecordCatalog
     control_registers: ControlRegisterCatalog
     debug_triggers: DebugTriggerCatalog
     page_table_entries: PageTableEntryCatalog
-    save_areas: SaveAreaCatalog
     instruction_headers: InstructionHeaderCatalog
     terminology: TermCatalog
     model: ModelCatalog
@@ -923,6 +920,13 @@ class IsaProjectLoader:
             _LOGGER,
             "project.catalog.load",
             level=logging.DEBUG,
+            catalog="memory-records",
+        ):
+            memory_records = MemoryRecordCatalog.load(isa_root, extension_catalog)
+        with log_phase(
+            _LOGGER,
+            "project.catalog.load",
+            level=logging.DEBUG,
             catalog="control-registers",
         ):
             control_registers = ControlRegisterCatalog.load(
@@ -942,13 +946,6 @@ class IsaProjectLoader:
             catalog="debug-triggers",
         ):
             debug_triggers = DebugTriggerCatalog.load(isa_root)
-        with log_phase(
-            _LOGGER,
-            "project.catalog.load",
-            level=logging.DEBUG,
-            catalog="save-areas",
-        ):
-            save_areas = SaveAreaCatalog.load(isa_root)
         with log_phase(
             _LOGGER,
             "project.catalog.load",
@@ -1006,7 +1003,6 @@ class IsaProjectLoader:
                 control_registers,
                 debug_triggers,
                 page_table_entries,
-                save_areas,
                 instruction_headers,
                 terminology,
                 model,
@@ -1021,10 +1017,10 @@ class IsaProjectLoader:
             event_frames,
             event_payloads,
             registers,
+            memory_records,
             control_registers,
             debug_triggers,
             page_table_entries,
-            save_areas,
             instruction_headers,
             terminology,
             model,

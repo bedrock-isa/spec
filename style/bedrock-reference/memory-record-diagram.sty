@@ -1,0 +1,55 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/memory-record-diagram.sty}[2026/09/03 Bedrock memory-record diagrams]
+
+\newcommand{\BedrockMemoryRecordLeft}{1.18}
+\newcommand{\BedrockMemoryRecordRight}{4.18}
+\newcommand{\BedrockMemoryRecordCenter}{2.68}
+\newcommand{\BedrockMemoryRecordOffsetX}{1.02}
+\newcommand{\BedrockMemoryRecordBraceX}{4.30}
+\newcommand{\BedrockMemoryRecordOffset}[1]{%
+  \node[anchor=east,align=right] at
+    (\BedrockMemoryRecordOffsetX,{-\BedrockMemoryRecordCursor}) {#1};}
+\newcommand{\BedrockMemoryRecordSlotBody}[4]{%
+  \BedrockMemoryRecordOffset{#2}%
+  \pgfmathsetmacro{\BedrockMemoryRecordTop}{-\BedrockMemoryRecordCursor}%
+  \pgfmathsetmacro{\BedrockMemoryRecordBottom}{-\BedrockMemoryRecordCursor-#3}%
+  \path[#1]
+    (\BedrockMemoryRecordLeft,\BedrockMemoryRecordTop) rectangle
+    (\BedrockMemoryRecordRight,\BedrockMemoryRecordBottom);%
+  \node[align=center] at
+    (\BedrockMemoryRecordCenter,{(\BedrockMemoryRecordTop+\BedrockMemoryRecordBottom)/2}) {#4};%
+  \pgfmathsetmacro{\BedrockMemoryRecordCursor}{\BedrockMemoryRecordCursor+#3}}
+\newcommand{\BedrockMemoryRecordSlot}[3]{%
+  \BedrockMemoryRecordSlotBody{bedrockLayoutSlot}{#1}{#2}{#3}}
+\newcommand{\BedrockMemoryRecordZeroSlot}[3]{%
+  \BedrockMemoryRecordSlotBody{bedrockLayoutReserved}{#1}{#2}{#3}}
+\newcommand{\BedrockMemoryRecordSeriesBegin}[2]{%
+  \BedrockMemoryRecordOffset{#1}%
+  \pgfmathsetmacro{\BedrockMemoryRecordSeriesTop}{-\BedrockMemoryRecordCursor}%
+  \def\BedrockMemoryRecordSeriesSize{#2}}
+\newcommand{\BedrockMemoryRecordSeriesRow}[2]{%
+  \pgfmathsetmacro{\BedrockMemoryRecordTop}{-\BedrockMemoryRecordCursor}%
+  \pgfmathsetmacro{\BedrockMemoryRecordBottom}{-\BedrockMemoryRecordCursor-#1}%
+  \path[bedrockLayoutSlot]
+    (\BedrockMemoryRecordLeft,\BedrockMemoryRecordTop) rectangle
+    (\BedrockMemoryRecordRight,\BedrockMemoryRecordBottom);%
+  \node[align=center] at
+    (\BedrockMemoryRecordCenter,{(\BedrockMemoryRecordTop+\BedrockMemoryRecordBottom)/2}) {#2};%
+  \pgfmathsetmacro{\BedrockMemoryRecordCursor}{\BedrockMemoryRecordCursor+#1}}
+\newcommand{\BedrockMemoryRecordSeriesEllipsis}[1]{%
+  \BedrockMemoryRecordSeriesRow{#1}{\large$\vdots$}}
+\newcommand{\BedrockMemoryRecordSeriesEnd}{%
+  \draw[decorate,decoration={brace,amplitude=3.5pt},draw=RuleGray,line width=0.35pt]
+    (\BedrockMemoryRecordBraceX,\BedrockMemoryRecordSeriesTop) --
+    node[right=5pt] {\BedrockMemoryRecordSeriesSize}
+    (\BedrockMemoryRecordBraceX,{-\BedrockMemoryRecordCursor});}
+\NewDocumentEnvironment{BedrockMemoryRecordDiagram}{m m +b}{%
+  \begin{BedrockListedTikzDiagram}{#2}{1in}{0.16in}{#1}%
+  \pgfmathsetmacro{\BedrockMemoryRecordCursor}{0}%
+  \node[anchor=south east,text=BedrockMuted]
+    at (\BedrockMemoryRecordOffsetX,0.22) {byte offset};%
+  #3
+  \end{BedrockListedTikzDiagram}%
+}{}
+
+\endinput

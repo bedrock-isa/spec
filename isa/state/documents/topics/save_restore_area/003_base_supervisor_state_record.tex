@@ -1,0 +1,5 @@
+\subsection{Base Supervisor-State Record}
+
+(:memory-record:base.records.SUPERVISOR_STATE:)
+
+SRESTORE requires the reserved bits to be zero and validates the complete event-state relation before changing state. The saved STATUS must select privileged mode. DFA requires an active event; inactive state requires EDEPTH, UO, and DFA to be zero; and UO requires a valid live U bank. SRESTORE atomically replaces STATUS and DFA only after these checks succeed.

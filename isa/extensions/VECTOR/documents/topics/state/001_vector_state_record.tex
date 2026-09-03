@@ -1,0 +1,7 @@
+\subsection{Vector User-State Record}
+
+(:memory-record:VECTOR.records.USER_STATE:)
+
+Its initial state is all zero.
+
+For VRESTORE, a clear presence bit installs the selected slot's initial value and its payload bytes are not read. The complete header and all selected images are validated before any vector state is committed. An all-clear bitmap makes vector state clean; any set bit makes it modified. VSAVE does not change this tracking state and may conservatively set presence bits.

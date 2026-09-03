@@ -22,7 +22,7 @@ function vector_step_finish_lane(
                 lane * element_bytes,
                 true,
             );
-            updated.vector_component_modified = true;
+            updated.vector_state_modified = true;
             match vector_step_first_pending(
                 updated.predicate_registers[unsigned(govern)],
                 updated.predicate_registers[unsigned(completion)],
@@ -76,7 +76,7 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
                 );
                 var updated = speculative;
                 updated.predicate_registers[unsigned(completion)] = normalized;
-                updated.vector_component_modified = true;
+                updated.vector_state_modified = true;
                 match vector_step_first_pending(govern_image, normalized, 0, lanes, element_bytes) {
                     Some(lane) => uop_step_continue(
                         updated,
@@ -182,7 +182,7 @@ function clause execute_uop(UopVectorStepCommit(operation), uop, values, instruc
                                     element_bytes,
                                     vector_lane_unsigned(response.body_bytes, 0, element_bytes),
                                 );
-                                updated.vector_component_modified = true;
+                                updated.vector_state_modified = true;
                                 vector_step_finish_lane(instruction, updated, lane)
                             }
                         },

@@ -1,7 +1,7 @@
 mnemonic: SAVE
-name: Save Processor State
-summary: Saves processor state to a CPUID-defined save area.
-route: tlb_and_context
+name: Save Base User State
+summary: Saves the base user-state record.
+route: data_movement
 privileged: false
 operands:
   memory:

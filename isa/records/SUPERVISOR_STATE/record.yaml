@@ -1,0 +1,20 @@
+id: SUPERVISOR_STATE
+name: Base Supervisor-State Record
+alignment_bytes: 8
+components:
+- id: STATE
+  label: Supervisor state
+  element_bytes: 8
+  bit_format:
+    bits: 64
+    unassigned: zero
+    fields:
+    - id: STATUS
+      label: STATUS
+      lsb: 0
+      bits: 16
+    - id: DFA
+      label: DFA
+      diagram_label: D
+      lsb: 16
+      bits: 1

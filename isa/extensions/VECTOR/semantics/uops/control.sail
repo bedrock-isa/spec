@@ -46,7 +46,7 @@ function clause execute_uop(UopVectorLoopGuard(), _, values, instruction, before
                     0, lanes, element_bytes, offset, offset + active);
                 updated.registers[remaining_index] = get_slice_int(64, remaining - active, 0);
                 updated.registers[offset_index] = 0x0000000000000000;
-                updated.vector_component_modified = true;
+                updated.vector_state_modified = true;
                 uop_step_complete(updated, CommitRegisters)
             }
         },

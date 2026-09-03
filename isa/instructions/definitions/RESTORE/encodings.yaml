@@ -1,14 +1,7 @@
 encodings:
-  ea_e:
-    pattern: 11101001010eeeeeee
-    syntax: RESTORE <ea>(e)
-    fields:
-      e:
-        role: memory
-        type: base.field_types.EA
   rn_r:
-    pattern: 11101101001010rrrr
-    syntax: RESTORE Rn(r)
+    pattern: 11101101011001rrrr
+    syntax: RESTORE [Rn(r)]
     fields:
       r:
         role: memory

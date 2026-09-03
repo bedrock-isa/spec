@@ -148,22 +148,8 @@ pub struct SailCoreState {
     pub fptrans_enabled: u8,
     pub vector_enabled: u8,
     pub cache_maintenance_granule: i64,
-    pub fp_component_alignment: i64,
-    pub fp_component_bitmap_bit: i64,
-    pub fp_component_id: i64,
-    pub fp_component_init_policy: i64,
-    pub fp_component_modified: u8,
-    pub fp_component_offset: i64,
-    pub fp_component_present: u8,
-    pub fp_component_size: i64,
-    pub vector_component_alignment: i64,
-    pub vector_component_bitmap_bit: i64,
-    pub vector_component_id: i64,
-    pub vector_component_init_policy: i64,
-    pub vector_component_modified: u8,
-    pub vector_component_offset: i64,
-    pub vector_component_present: u8,
-    pub vector_component_size: i64,
+    pub fp_state_modified: u8,
+    pub vector_state_modified: u8,
     pub vector_length_bytes: i64,
     pub machine_check_error_code: u64,
     pub machine_check_event_aux: u64,
@@ -182,10 +168,6 @@ pub struct SailCoreState {
     pub repeat_remaining: u64,
     pub repeat_fixed_body: [u8; MAX_INSTRUCTION_BYTES],
     pub repeat_fixed_body_length: usize,
-    pub save_area_size: i64,
-    pub save_bitmap_words: i64,
-    pub save_fixed_size: i64,
-    pub save_format: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -755,6 +737,17 @@ mod tests {
     };
     const VGATHER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x10, 0x02, 0x02, 0x43];
     const VSCATTER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x18, 0x02, 0x02, 0x43];
+    const SAVE_R0: [u8; 3] = [0xc3, 0xb5, 0x80];
+    const RESTORE_R0: [u8; 3] = [0xc3, 0xb5, 0x90];
+    const SSAVE_R0: [u8; 3] = [0xc3, 0xb5, 0xa0];
+    const SRESTORE_R0: [u8; 3] = [0xc3, 0xb5, 0xb0];
+    const FSAVE_R0: [u8; 3] = [0xc3, 0xb5, 0xc0];
+    const FRESTORE_R0: [u8; 3] = [0xc3, 0xb5, 0xd0];
+    const VSAVE_R0: [u8; 3] = [0xc3, 0xb5, 0xe0];
+
+    fn word(bytes: &[u8], offset: usize) -> u64 {
+        u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
+    }
 
     #[test]
     fn executes_generated_nop_and_exposes_register_state() {
@@ -1257,6 +1250,211 @@ mod tests {
         assert_eq!(core.state(), Ok(expected));
         assert_eq!(core.set_state(original.clone()), SailCoreStatus::Ok);
         assert_eq!(core.state(), Ok(original));
+    }
+
+    #[test]
+    fn state_record_saves_emit_their_owner_record() {
+        let mut base = SailCore::new().unwrap();
+        let mut state = base.state().unwrap();
+        state.registers[0] = 0x1000;
+        state.registers[1] = 0x1122_3344_5566_7788;
+        state.flags = 0x0d;
+        state.floating_registers[0] = 0xfeed_face_cafe_beef;
+        assert_eq!(base.set_state(state), SailCoreStatus::Ok);
+        assert_eq!(base.execute(&SAVE_R0), SailCoreStatus::NeedsEnvironment);
+        let request = base.last_request().unwrap();
+        assert_eq!(request.kind, request_kind::WRITE);
+        assert_eq!(request.width, 184);
+        assert_eq!(request.range_length, 184);
+        assert_eq!(request.payload.len(), 184);
+        assert_eq!(word(&request.payload, 0), 0x1000);
+        assert_eq!(word(&request.payload, 8), 0x1122_3344_5566_7788);
+        assert_eq!(word(&request.payload, 176), 0x0d);
+
+        let mut supervisor = SailCore::new().unwrap();
+        let mut state = supervisor.state().unwrap();
+        state.registers[0] = 0x1000;
+        state.status = 0x10;
+        state.supervisor = 1;
+        assert_eq!(supervisor.set_state(state), SailCoreStatus::Ok);
+        assert_eq!(supervisor.execute(&SSAVE_R0), SailCoreStatus::NeedsEnvironment);
+        let request = supervisor.last_request().unwrap();
+        assert_eq!(request.kind, request_kind::WRITE);
+        assert_eq!(request.width, 8);
+        assert_eq!(request.payload, 0x10_u64.to_le_bytes());
+
+        let mut fp = SailCore::new().unwrap();
+        let mut state = fp.state().unwrap();
+        state.registers[0] = 0x1000;
+        state.fp_enabled = 1;
+        state.fp_state_modified = 1;
+        state.floating_registers[0] = 0x8877_6655_4433_2211;
+        state.fflags = 0x1f;
+        state.fstatus = 0x123;
+        assert_eq!(fp.set_state(state), SailCoreStatus::Ok);
+        assert_eq!(fp.execute(&FSAVE_R0), SailCoreStatus::NeedsEnvironment);
+        let request = fp.last_request().unwrap();
+        assert_eq!(request.kind, request_kind::WRITE);
+        assert_eq!(request.width, 192);
+        assert_eq!(word(&request.payload, 0), 0x8877_6655_4433_2211);
+        assert_eq!(word(&request.payload, 128), 0x1f);
+        assert_eq!(word(&request.payload, 136), 0x123);
+        assert_eq!(word(&request.payload, 144), 0x0003_ffff);
+        assert_eq!(fp.state().unwrap().fp_state_modified, 1);
+
+        let mut vector = SailCore::new().unwrap();
+        let mut state = vector.state().unwrap();
+        state.registers[0] = 0x1000;
+        state.vector_state_modified = 1;
+        state.vector_registers[0][0] = 0xa5;
+        state.predicate_registers[0][0] = 0x5a;
+        assert_eq!(vector.set_state(state), SailCoreStatus::Ok);
+        assert_eq!(vector.execute(&VSAVE_R0), SailCoreStatus::NeedsEnvironment);
+        let request = vector.last_request().unwrap();
+        assert_eq!(request.kind, request_kind::WRITE);
+        assert_eq!(request.width, 640);
+        assert_eq!(request.payload.len(), 640);
+        assert_eq!(word(&request.payload, 0), 0x0000_ffff_ffff_ffff);
+        assert_eq!(request.payload[64], 0xa5);
+        assert_eq!(request.payload[576], 0x5a);
+        assert_eq!(vector.state().unwrap().vector_state_modified, 1);
+    }
+
+    #[test]
+    fn base_user_restore_changes_only_base_user_state() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.registers[0] = 0x1000;
+        before.floating_registers[2] = 0xaaaa_bbbb_cccc_dddd;
+        before.vector_registers[3][4] = 0x5a;
+        before.fp_state_modified = 1;
+        before.vector_state_modified = 1;
+        assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
+
+        let mut record = vec![0_u8; 184];
+        for index in 0..16 {
+            record[index * 8..index * 8 + 8]
+                .copy_from_slice(&(0x100_u64 + index as u64).to_le_bytes());
+        }
+        for index in 0..6 {
+            record[128 + index * 8..136 + index * 8]
+                .copy_from_slice(&before.segments[3 + index].to_le_bytes());
+        }
+        record[176..184].copy_from_slice(&0x0b_u64.to_le_bytes());
+
+        assert_eq!(core.execute(&RESTORE_R0), SailCoreStatus::NeedsEnvironment);
+        assert_eq!(core.last_request().unwrap().range_length, 184);
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: response_kind::READ,
+                success: true,
+                body: record,
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Ok
+        );
+        let after = core.state().unwrap();
+        assert_eq!(after.registers[0], 0x100);
+        assert_eq!(after.registers[15], 0x10f);
+        assert_eq!(after.flags, 0x0b);
+        assert_eq!(after.status, before.status);
+        assert_eq!(after.current_dfa, before.current_dfa);
+        assert_eq!(after.floating_registers, before.floating_registers);
+        assert_eq!(after.vector_registers, before.vector_registers);
+        assert_eq!(after.fp_state_modified, 1);
+        assert_eq!(after.vector_state_modified, 1);
+    }
+
+    #[test]
+    fn fp_clear_bitmap_omits_payload_reads_and_installs_initial_state() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.registers[0] = 0x1000;
+        before.fp_enabled = 1;
+        before.fp_state_modified = 1;
+        before.floating_registers[5] = 0xfeed_face_cafe_beef;
+        before.fflags = 0x1f;
+        before.fstatus = 0x123;
+        before.vector_registers[2][3] = 0xa5;
+        assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
+
+        assert_eq!(core.execute(&FRESTORE_R0), SailCoreStatus::NeedsEnvironment);
+        let bitmap_request = core.last_request().unwrap();
+        assert_eq!(bitmap_request.range_length, 192);
+        assert_eq!(bitmap_request.memory_ranges.len(), 1);
+        assert_eq!(bitmap_request.memory_ranges[0].effective_address, 0x1090);
+        assert_eq!(bitmap_request.memory_ranges[0].buffer_offset, 0);
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: response_kind::READ,
+                success: true,
+                body: vec![0; 8],
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::NeedsEnvironment
+        );
+        let body_request = core.last_request().unwrap();
+        assert_eq!(body_request.range_length, 192);
+        assert_eq!(body_request.body_length, 192);
+        assert_eq!(body_request.memory_ranges.len(), 2);
+        assert!(body_request.memory_ranges.iter().all(|range|
+            range.effective_address >= 0x1090));
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: response_kind::READ,
+                success: true,
+                body: vec![0; 192],
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Ok
+        );
+        let after = core.state().unwrap();
+        assert!(after.floating_registers.iter().all(|value| *value == 0));
+        assert_eq!(after.fflags, 0);
+        assert_eq!(after.fstatus, 0);
+        assert_eq!(after.fp_state_modified, 0);
+        assert_eq!(after.vector_registers, before.vector_registers);
+    }
+
+    #[test]
+    fn supervisor_state_record_forms_are_rejected_in_user_mode() {
+        for instruction in [SSAVE_R0, SRESTORE_R0] {
+            let mut core = SailCore::new().unwrap();
+            let before = core.state().unwrap();
+            assert_eq!(core.execute(&instruction), SailCoreStatus::Fault);
+            assert_eq!(core.state(), Ok(before));
+        }
+    }
+
+    #[test]
+    fn invalid_base_user_record_leaves_state_unchanged() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.registers[0] = 0x1000;
+        before.registers[1] = 0x1234;
+        assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
+        let mut record = vec![0_u8; 184];
+        record[128..136].copy_from_slice(&u64::MAX.to_le_bytes());
+
+        assert_eq!(core.execute(&RESTORE_R0), SailCoreStatus::NeedsEnvironment);
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: response_kind::READ,
+                success: true,
+                body: record,
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Fault
+        );
+        assert_eq!(core.state(), Ok(before));
     }
 
     #[test]

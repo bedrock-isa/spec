@@ -57,6 +57,7 @@ class DocumentFragmentPipeline:
         from .ea_diagram import EaDiagramFragmentRenderer
         from .event_reference import EventReferenceRenderer
         from .implementation_disclosure import ImplementationDisclosureRenderer
+        from .memory_record import MemoryRecordFragmentRenderer
         from .page_table_entry_field_target import PageTableEntryFieldTargetRenderer
         from .register_field_target import RegisterFieldTargetRenderer
         from .register_model_figure import RegisterModelFigureRenderer
@@ -65,7 +66,6 @@ class DocumentFragmentPipeline:
             DebugTriggerTargetRenderer,
             EventStructureTargetRenderer,
             InstructionHeaderFieldTargetRenderer,
-            SaveAreaFieldTargetRenderer,
         )
 
         return cls(
@@ -75,6 +75,7 @@ class DocumentFragmentPipeline:
                 EaDiagramFragmentRenderer(),
                 EventReferenceRenderer(),
                 ImplementationDisclosureRenderer(),
+                MemoryRecordFragmentRenderer(),
                 PageTableEntryFieldTargetRenderer(),
                 RegisterFieldTargetRenderer(),
                 RegisterModelFigureRenderer(),
@@ -82,7 +83,6 @@ class DocumentFragmentPipeline:
                 DebugTriggerTargetRenderer(),
                 EventStructureTargetRenderer(),
                 InstructionHeaderFieldTargetRenderer(),
-                SaveAreaFieldTargetRenderer(),
             )
         )
 

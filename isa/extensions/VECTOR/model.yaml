@@ -24,14 +24,15 @@ sail:
     - semantics/uops/register_predicate_special.sail
     - semantics/uops/register_transfer.sail
     - semantics/uops/register_dispatch.sail
+    - semantics/state_records.sail
 documents:
   topics:
   - id: addressing.vector-vea-lane-addressing
     source: documents/topics/addressing/001_vector_vea_lane_addressing.tex
   - id: cpuid.vector-parameter-discovery
     source: documents/topics/cpuid/001_vector_parameter_discovery.tex
-  - id: state.vector-save-component
-    source: documents/topics/state/001_vector_save_component.tex
+  - id: state.vector-state-record
+    source: documents/topics/state/001_vector_state_record.tex
   - id: registers.vector-register-model
     source: documents/topics/registers/001_vector_register_model.tex
   - id: introduction.element-types-and-assembly-spelling
