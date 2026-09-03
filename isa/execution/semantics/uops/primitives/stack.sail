@@ -58,6 +58,57 @@ function uop_stack_request_make(
 
 union clause Uop_kind = UopStackRange : bool
 
+union clause Uop_kind = UopStackAdjust : bool
+
+function uop_stack_adjust_value(current : bits(64), push : bool,
+                                width : int) -> option(bits(64)) =
+    if push then
+        if current != 0x0000000000000000 & unsigned(current) < width then None()
+        else Some(sub_bits(current, bits_from_int(width)))
+    else if unsigned(current) > width_modulus(8) - width then None()
+    else Some(add_bits(current, bits_from_int(width)))
+
+function uop_stack_adjust_error_code(push : bool, width : int) -> bits(64) = {
+    let access = if push then 2 else 1;
+    let size = if width == 1 then 1
+               else if width == 2 then 2
+               else if width == 4 then 3
+               else if width == 8 then 4
+               else 0;
+      0x0000000000000004
+    | sail_shiftleft(bits_from_int(access), 8)
+    | sail_shiftleft(bits_from_int(size), 27)
+}
+
+function clause execute_uop(UopStackAdjust(push), uop, values, instruction,
+                            before, speculative) =
+    match uop_location_read(uop.source0, speculative, values) {
+        Some(current) => match uop_stack_adjust_value(
+            current, push, uop.width
+        ) {
+            None() => uop_step_fault(faulted_with_error_code(
+                before, instruction.form.operation, BoundsFault,
+                "stack pointer adjustment is outside the 64-bit address space",
+                uop_stack_adjust_error_code(push, uop.width)
+            )),
+            Some(next_value) => match uop_location_write(
+                uop.destination, next_value, 64,
+                instruction.form.operation, speculative, values
+            ) {
+                Some((updated, next_values)) =>
+                    uop_step_continue(updated, next_values),
+                None() => uop_step_fault(faulted(
+                    before, instruction.form.operation, InvalidControlState,
+                    "stack pointer adjustment destination is unavailable"
+                )),
+            },
+        },
+        None() => uop_step_fault(faulted(
+            before, instruction.form.operation, InvalidControlState,
+            "stack pointer adjustment source is unavailable"
+        )),
+    }
+
 function clause execute_uop(UopStackRange(push), uop, values, instruction, before, speculative) =
     match uop_location_read(uop.source0, speculative, values) {
         Some(start) => {

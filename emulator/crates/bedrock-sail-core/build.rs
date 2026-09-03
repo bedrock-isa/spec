@@ -166,6 +166,84 @@ fn generate_operation_constants(header: &Path, out_dir: &Path) {
         .expect("failed to write generated Semantic_operation constants");
 }
 
+fn generate_fault_constants(header: &Path, out_dir: &Path) {
+    let source = fs::read_to_string(header)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", header.display()));
+    let marker = "enum zFault_kind {";
+    let start = source
+        .find(marker)
+        .unwrap_or_else(|| panic!("{} has no Fault_kind enum", header.display()))
+        + marker.len();
+    let end = source[start..]
+        .find("};")
+        .map(|offset| start + offset)
+        .unwrap_or_else(|| panic!("{} has an unterminated Fault_kind enum", header.display()));
+    let mut rust = String::from("// Generated from Sail's Fault_kind enum.\n");
+    for (ordinal, raw) in source[start..end].split(',').enumerate() {
+        let name = raw
+            .trim()
+            .strip_prefix('z')
+            .unwrap_or_else(|| panic!("unexpected Fault_kind enumerator {raw:?}"));
+        rust.push_str(&format!(
+            "pub const {}: i32 = {ordinal};\n",
+            rust_constant_name(name)
+        ));
+    }
+    fs::write(out_dir.join("fault_kinds.rs"), rust)
+        .expect("failed to write generated Fault_kind constants");
+}
+
+const INSTRUCTION_TEST_RECORD_SCRIPT: &str = r#"
+import sys
+from pathlib import Path
+
+from engine.composition import IsaConfiguration, SailComposer
+from engine.render import SailCatalogRenderer
+from engine.workspace import SpecWorkspace
+from engine.yaml_document import YamlDocumentLoader
+
+root = Path(sys.argv[1]).resolve()
+workspace = SpecWorkspace.load(root)
+project = workspace.require_provider("isa")
+artifact = YamlDocumentLoader().mapping(root / "artifacts/sail-model/artifact.yaml")
+configuration = IsaConfiguration.resolve(project, tuple(artifact["extensions"]))
+program = SailComposer().compose(project, configuration)
+forms = {item.key: item.representative_record
+         for item in SailCatalogRenderer().project(program).forms}
+selected = (
+    ("RET", "extrashort.ret.plain"),
+    ("CALLCC_R0_FALSE", "long.callcc.rn_r"),
+    ("CLRLINK", "short.clrlink.plain"),
+    ("FCALL_R0", "medium.fcall.rn_r"),
+    ("FPCALL_R0", "medium.fpcall.rn_r"),
+    ("FPCALL_DISP16_ZERO", "medium.fpcall.imm16s"),
+    ("PCALL_DISP16_ZERO", "medium.pcall.imm16s"),
+    ("PLCALL_R0_R0", "medium.plcall.rn_s_rn_d"),
+    ("PRET", "short.pret.plain"),
+    ("PLRET", "short.plret.plain"),
+    ("CFILAND", "extrashort.cfiland.plain"),
+    ("CFISSAVE_R0", "short.cfissave.rn_r"),
+    ("CFISRESTORE_R0", "short.cfisrestore.rn_r"),
+)
+print("// Generated from the configured ISA instruction owners.")
+for name, key in selected:
+    record = forms[key]
+    values = ", ".join(f"0x{byte:02x}" for byte in record)
+    print(f"pub const {name}: [u8; {len(record)}] = [{values}];")
+"#;
+
+fn generate_instruction_test_records(repository_root: &Path, out_dir: &Path, python: &OsString) {
+    let mut command = Command::new(python);
+    command
+        .current_dir(repository_root)
+        .arg("-c")
+        .arg(INSTRUCTION_TEST_RECORD_SCRIPT)
+        .arg(repository_root);
+    let rust = command_output(command, "instruction test record projection");
+    fs::write(out_dir.join("instruction_test_records.rs"), rust)
+        .expect("failed to write generated instruction test records");
+}
+
 fn rust_constant_name(name: &str) -> String {
     let mut result = String::new();
     let characters = name.chars().collect::<Vec<_>>();
@@ -267,6 +345,8 @@ fn main() {
         .env("PYTHONDONTWRITEBYTECODE", "1");
     command_output(generate, "emulator-core artifact generator");
 
+    generate_instruction_test_records(&repository_root, &out_dir, &python);
+
     let core_dir = generated_root.join("emulator/core");
     let core_c = core_dir.join("bedrock_core.c");
     if !core_c.is_file() {
@@ -275,7 +355,9 @@ fn main() {
             core_c.display()
         );
     }
-    generate_operation_constants(&core_dir.join("bedrock_core.h"), &out_dir);
+    let core_header = core_dir.join("bedrock_core.h");
+    generate_operation_constants(&core_header, &out_dir);
+    generate_fault_constants(&core_header, &out_dir);
     generate_protocol_constants(
         &repository_root.join("isa/execution/semantics/types.sail"),
         &out_dir,

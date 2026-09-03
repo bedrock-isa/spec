@@ -12,6 +12,10 @@ pub mod protocol {
     include!(concat!(env!("OUT_DIR"), "/protocol_constants.rs"));
 }
 
+pub mod fault_kind {
+    include!(concat!(env!("OUT_DIR"), "/fault_kinds.rs"));
+}
+
 pub const MAX_INSTRUCTION_BYTES: usize = 18;
 pub const REGISTER_COUNT: usize = 16;
 pub const FLOATING_REGISTER_COUNT: usize = 16;
@@ -749,9 +753,12 @@ mod ffi {
 #[cfg(test)]
 mod tests {
     use super::{
-        SailCore, SailCoreResponse, SailCoreStatus,
+        SailBusExecutionError, SailCore, SailCoreResponse, SailCoreStatus,
         protocol::{request_kind, response_kind},
     };
+    use bedrock_bus::{Bus, BusResult, Ram};
+
+    include!(concat!(env!("OUT_DIR"), "/instruction_test_records.rs"));
     const VGATHER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x10, 0x02, 0x02, 0x43];
     const VSCATTER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x18, 0x02, 0x02, 0x43];
     const SAVE_R0: [u8; 3] = [0xc3, 0xb5, 0x80];
@@ -761,6 +768,26 @@ mod tests {
     const FSAVE_R0: [u8; 3] = [0xc3, 0xb5, 0xc0];
     const FRESTORE_R0: [u8; 3] = [0xc3, 0xb5, 0xd0];
     const VSAVE_R0: [u8; 3] = [0xc3, 0xb5, 0xe0];
+
+    struct NoMemoryBus;
+
+    impl Bus for NoMemoryBus {
+        fn begin_transaction(&mut self) -> BusResult<()> {
+            Ok(())
+        }
+
+        fn commit_transaction(&mut self) {}
+
+        fn rollback_transaction(&mut self) {}
+
+        fn read_u8(&mut self, addr: u64) -> BusResult<u8> {
+            panic!("resident control transfer read memory at {addr:#x}")
+        }
+
+        fn write_u8(&mut self, addr: u64, _value: u8) -> BusResult<()> {
+            panic!("resident control transfer wrote memory at {addr:#x}")
+        }
+    }
 
     fn word(bytes: &[u8], offset: usize) -> u64 {
         u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
@@ -777,6 +804,429 @@ mod tests {
         assert_eq!(core.register(7), Ok(0x55aa_55aa_55aa_55aa));
         assert_eq!(core.execute(&[0x01]), SailCoreStatus::Ok);
         assert_eq!(core.pc(), Ok(1));
+    }
+
+    #[test]
+    fn resident_near_call_pair_preserves_the_ordinary_footprint_without_memory() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.registers[0] = 0x200;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &FCALL_R0).unwrap();
+        let linked = core.state().unwrap();
+        assert_eq!(linked.pc, 0x200);
+        assert_eq!(linked.sp, 0x0ff8);
+        assert_eq!(linked.lpc, 0x103);
+        assert_eq!(linked.lpa, 0x8000_0000_0000_0000);
+
+        core.execute_on_bus(&mut bus, &RET).unwrap();
+        let returned = core.state().unwrap();
+        assert_eq!(returned.pc, 0x103);
+        assert_eq!(returned.sp, 0x1000);
+        assert_eq!(returned.lpc, 0);
+        assert_eq!(returned.lpa, 0);
+    }
+
+    #[test]
+    fn resident_stack_footprint_may_end_at_the_address_space_modulus() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0;
+        state.registers[0] = 0x200;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &FCALL_R0).unwrap();
+        assert_eq!(core.sp(), Ok(u64::MAX - 7));
+        core.execute_on_bus(&mut bus, &RET).unwrap();
+        assert_eq!(core.sp(), Ok(0));
+    }
+
+    #[test]
+    fn resident_stack_adjustments_reject_ranges_crossing_the_address_space_modulus() {
+        let mut call = SailCore::new().unwrap();
+        let mut before_call = call.state().unwrap();
+        before_call.pc = 0x100;
+        before_call.sp = 7;
+        before_call.registers[0] = 0x200;
+        assert_eq!(call.set_state(before_call.clone()), SailCoreStatus::Ok);
+        let mut call_bus = NoMemoryBus;
+
+        let call_fault = match call.execute_on_bus(&mut call_bus, &FCALL_R0) {
+            Err(SailBusExecutionError::Fault { fault, .. }) => fault,
+            other => panic!("unexpected FCALL result: {other:?}"),
+        };
+        assert_eq!(call_fault.kind, crate::fault_kind::BOUNDS_FAULT);
+        assert_eq!(call_fault.error_code & 0xff, 4);
+        assert_eq!(call.state(), Ok(before_call));
+
+        let mut ret = SailCore::new().unwrap();
+        let mut before_ret = ret.state().unwrap();
+        before_ret.pc = 0x100;
+        before_ret.sp = u64::MAX - 6;
+        before_ret.lpc = 0x200;
+        before_ret.lpa = 0x8000_0000_0000_0000;
+        assert_eq!(ret.set_state(before_ret.clone()), SailCoreStatus::Ok);
+        let mut ret_bus = NoMemoryBus;
+
+        let ret_fault = match ret.execute_on_bus(&mut ret_bus, &RET) {
+            Err(SailBusExecutionError::Fault { fault, .. }) => fault,
+            other => panic!("unexpected RET result: {other:?}"),
+        };
+        assert_eq!(ret_fault.kind, crate::fault_kind::BOUNDS_FAULT);
+        assert_eq!(ret_fault.error_code & 0xff, 4);
+        assert_eq!(ret.state(), Ok(before_ret));
+    }
+
+    #[test]
+    fn false_conditional_call_ignores_a_live_resident_link() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.pc = 0x100;
+        before.sp = 0x1000;
+        before.registers[0] = 0x200;
+        before.lpc = 0x300;
+        before.lpa = 0x8000_0000_0000_0000;
+        let mut expected = before.clone();
+        expected.pc += CALLCC_R0_FALSE.len() as u64;
+        assert_eq!(core.set_state(before), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &CALLCC_R0_FALSE).unwrap();
+        assert_eq!(core.state(), Ok(expected));
+    }
+
+    #[test]
+    fn clear_link_changes_only_resident_state() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.pc = 0x100;
+        before.sp = 0x1000;
+        before.registers[3] = 0x1122_3344_5566_7788;
+        before.lpc = 0x200;
+        before.lpa = 0x8000_0000_0000_0042;
+        before.lkl = 0x0123_4567_89ab_cdef;
+        before.lkh = 0xfedc_ba98_7654_3210;
+        let mut expected = before.clone();
+        expected.pc += CLRLINK.len() as u64;
+        expected.lpc = 0;
+        expected.lpa = 0;
+        assert_eq!(core.set_state(before), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &CLRLINK).unwrap();
+        assert_eq!(core.state(), Ok(expected));
+    }
+
+    #[test]
+    fn live_resident_link_rejects_a_taken_call_before_target_access() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.registers[0] = 0x200;
+        before.lpc = 0x300;
+        before.lpa = 0x8000_0000_0000_0000;
+        assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
+
+        assert_eq!(core.execute(&FCALL_R0), SailCoreStatus::Fault);
+        assert_eq!(core.state(), Ok(before));
+    }
+
+    #[test]
+    fn protected_call_rejects_an_unconfigured_key_before_target_access() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.registers[0] = 0x200;
+        assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
+
+        assert_eq!(core.execute(&FPCALL_R0), SailCoreStatus::Fault);
+        assert_eq!(core.state(), Ok(before));
+    }
+
+    #[test]
+    fn protected_resident_continuation_authenticates_at_its_reserved_slot() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &FPCALL_DISP16_ZERO).unwrap();
+        let linked = core.state().unwrap();
+        assert_eq!(linked.pc, 0x105);
+        assert_eq!(linked.sp, 0x0ff0);
+        assert_eq!(linked.lpc, 0x105);
+        assert_eq!(linked.lpa >> 63, 1);
+        assert_ne!(linked.lpa & 0x7fff_ffff_ffff_ffff, 0);
+
+        core.execute_on_bus(&mut bus, &PRET).unwrap();
+        let returned = core.state().unwrap();
+        assert_eq!(returned.pc, 0x105);
+        assert_eq!(returned.sp, 0x1000);
+        assert_eq!(returned.lpc, 0);
+        assert_eq!(returned.lpa, 0);
+    }
+
+    #[test]
+    fn relocated_protected_resident_continuation_fails_without_state_change() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &FPCALL_DISP16_ZERO).unwrap();
+        let mut relocated = core.state().unwrap();
+        relocated.sp -= 16;
+        assert_eq!(core.set_state(relocated.clone()), SailCoreStatus::Ok);
+
+        let error = core.execute_on_bus(&mut bus, &PRET).unwrap_err();
+        match error {
+            SailBusExecutionError::Fault { fault, .. } => assert_eq!(fault.error_code, 2),
+            other => panic!("unexpected PRET failure: {other}"),
+        }
+        assert_eq!(core.state(), Ok(relocated));
+    }
+
+    #[test]
+    fn changed_key_invalidates_a_protected_resident_continuation() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &FPCALL_DISP16_ZERO).unwrap();
+        let mut rekeyed = core.state().unwrap();
+        rekeyed.lkl = 2;
+        assert_eq!(core.set_state(rekeyed.clone()), SailCoreStatus::Ok);
+
+        let error = core.execute_on_bus(&mut bus, &PRET).unwrap_err();
+        match error {
+            SailBusExecutionError::Fault { fault, .. } => assert_eq!(fault.error_code, 2),
+            other => panic!("unexpected PRET failure: {other}"),
+        }
+        assert_eq!(core.state(), Ok(rekeyed));
+    }
+
+    #[test]
+    fn modified_protected_stack_record_fails_without_state_change() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut ram = Ram::new(0x2000);
+
+        core.execute_on_bus(&mut ram, &PCALL_DISP16_ZERO).unwrap();
+        assert_eq!(core.sp(), Ok(0x0ff0));
+        assert_eq!(Bus::read_u64(&mut ram, 0x0ff0).unwrap(), 0x105);
+        let tag = Bus::read_u64(&mut ram, 0x0ff8).unwrap();
+        let modified = if tag ^ 1 == 0 { 2 } else { tag ^ 1 };
+        Bus::write_u64(&mut ram, 0x0ff8, modified).unwrap();
+        let before_return = core.state().unwrap();
+
+        let error = core.execute_on_bus(&mut ram, &PRET).unwrap_err();
+        match error {
+            SailBusExecutionError::Fault { fault, .. } => {
+                assert_eq!(fault.error_code, 2);
+            }
+            other => panic!("unexpected PRET failure: {other}"),
+        }
+        assert_eq!(core.state(), Ok(before_return));
+    }
+
+    #[test]
+    fn unprotected_return_from_materialized_protected_call_leaves_the_tag_word() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut ram = Ram::new(0x2000);
+
+        core.execute_on_bus(&mut ram, &PCALL_DISP16_ZERO).unwrap();
+        let tag = Bus::read_u64(&mut ram, 0x0ff8).unwrap();
+        core.execute_on_bus(&mut ram, &RET).unwrap();
+
+        assert_eq!(core.pc(), Ok(0x105));
+        assert_eq!(core.sp(), Ok(0x0ff8));
+        assert_eq!(Bus::read_u64(&mut ram, 0x0ff8).unwrap(), tag);
+    }
+
+    #[test]
+    fn unprotected_return_from_resident_protected_call_restores_its_reserved_footprint() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut bus = NoMemoryBus;
+
+        core.execute_on_bus(&mut bus, &FPCALL_DISP16_ZERO).unwrap();
+        core.execute_on_bus(&mut bus, &RET).unwrap();
+
+        assert_eq!(core.pc(), Ok(0x105));
+        assert_eq!(core.sp(), Ok(0x1000));
+        assert_eq!(core.state().unwrap().lpa, 0);
+    }
+
+    #[test]
+    fn configured_indirect_call_requires_cfi_landing() {
+        let configured_state = |core: &SailCore| {
+            let mut state = core.state().unwrap();
+            state.pc = 0x100;
+            state.sp = 0x1000;
+            state.registers[0] = 0x200;
+            state.lkl = 1;
+            state
+        };
+
+        let mut accepted = SailCore::new().unwrap();
+        let accepted_state = configured_state(&accepted);
+        assert_eq!(accepted.set_state(accepted_state), SailCoreStatus::Ok);
+        let mut accepted_ram = Ram::new(0x1000);
+        accepted_ram.load(0x200, &CFILAND).unwrap();
+        accepted
+            .execute_on_bus(&mut accepted_ram, &FPCALL_R0)
+            .unwrap();
+        assert_eq!(accepted.pc(), Ok(0x200));
+
+        let mut rejected = SailCore::new().unwrap();
+        let before = configured_state(&rejected);
+        assert_eq!(rejected.set_state(before.clone()), SailCoreStatus::Ok);
+        let mut rejected_ram = Ram::new(0x1000);
+        let error = rejected
+            .execute_on_bus(&mut rejected_ram, &FPCALL_R0)
+            .unwrap_err();
+        match error {
+            SailBusExecutionError::Fault { fault, .. } => {
+                assert_eq!(fault.error_code, 1);
+            }
+            other => panic!("unexpected FPCALL failure: {other}"),
+        }
+        assert_eq!(rejected.state(), Ok(before));
+    }
+
+    #[test]
+    fn protected_long_record_round_trips_the_complete_continuation() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.segments[0] = 1;
+        state.registers[0] = 0x200;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut ram = Ram::new(0x2000);
+        ram.load(0x200, &CFILAND).unwrap();
+
+        core.execute_on_bus(&mut ram, &PLCALL_R0_R0).unwrap();
+        assert_eq!(core.pc(), Ok(0x200));
+        assert_eq!(core.sp(), Ok(0x0fe8));
+        assert_eq!(Bus::read_u64(&mut ram, 0x0fe8).unwrap(), 0x103);
+        assert_eq!(Bus::read_u64(&mut ram, 0x0ff0).unwrap(), 1);
+        assert_ne!(Bus::read_u64(&mut ram, 0x0ff8).unwrap(), 0);
+
+        core.execute_on_bus(&mut ram, &PLRET).unwrap();
+        assert_eq!(core.pc(), Ok(0x103));
+        assert_eq!(core.sp(), Ok(0x1000));
+        assert_eq!(core.state().unwrap().segments[0], 1);
+    }
+
+    #[test]
+    fn modified_protected_long_cs_fails_without_state_change() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.pc = 0x100;
+        state.sp = 0x1000;
+        state.segments[0] = 1;
+        state.registers[0] = 0x200;
+        state.lkl = 1;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut ram = Ram::new(0x2000);
+        ram.load(0x200, &CFILAND).unwrap();
+
+        core.execute_on_bus(&mut ram, &PLCALL_R0_R0).unwrap();
+        Bus::write_u64(&mut ram, 0x0ff0, 2).unwrap();
+        let before_return = core.state().unwrap();
+
+        let error = core.execute_on_bus(&mut ram, &PLRET).unwrap_err();
+        match error {
+            SailBusExecutionError::Fault { fault, .. } => assert_eq!(fault.error_code, 2),
+            other => panic!("unexpected PLRET failure: {other}"),
+        }
+        assert_eq!(core.state(), Ok(before_return));
+    }
+
+    #[test]
+    fn cfi_supervisor_record_round_trips_only_the_key() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.supervisor = 1;
+        state.status = 0x10;
+        state.registers[0] = 0x100;
+        state.lpc = 0x1122_3344_5566_7788;
+        state.lpa = 0x8000_0000_0000_0042;
+        state.lkl = 0x0123_4567_89ab_cdef;
+        state.lkh = 0xfedc_ba98_7654_3210;
+        let mut expected_after_save = state.clone();
+        expected_after_save.pc += CFISSAVE_R0.len() as u64;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+        let mut ram = Ram::new(0x1000);
+
+        core.execute_on_bus(&mut ram, &CFISSAVE_R0).unwrap();
+        assert_eq!(core.state(), Ok(expected_after_save));
+        assert_eq!(
+            Bus::read_u64(&mut ram, 0x100).unwrap(),
+            0x0123_4567_89ab_cdef
+        );
+        assert_eq!(
+            Bus::read_u64(&mut ram, 0x108).unwrap(),
+            0xfedc_ba98_7654_3210
+        );
+
+        let mut changed = core.state().unwrap();
+        changed.lkl = 7;
+        changed.lkh = 9;
+        assert_eq!(core.set_state(changed), SailCoreStatus::Ok);
+        core.execute_on_bus(&mut ram, &CFISRESTORE_R0).unwrap();
+        let restored = core.state().unwrap();
+        assert_eq!(restored.lkl, 0x0123_4567_89ab_cdef);
+        assert_eq!(restored.lkh, 0xfedc_ba98_7654_3210);
+        assert_eq!(restored.lpc, 0x1122_3344_5566_7788);
+        assert_eq!(restored.lpa, 0x8000_0000_0000_0042);
+    }
+
+    #[test]
+    fn warm_reset_clears_resident_link_and_cfi_key_state() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.lpc = 1;
+        state.lpa = 0x8000_0000_0000_0002;
+        state.lkl = 3;
+        state.lkh = 4;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        assert_eq!(core.reset(), SailCoreStatus::Ok);
+        let reset = core.state().unwrap();
+        assert_eq!(reset.lpc, 0);
+        assert_eq!(reset.lpa, 0);
+        assert_eq!(reset.lkl, 0);
+        assert_eq!(reset.lkh, 0);
     }
 
     #[test]
@@ -1475,10 +1925,15 @@ mod tests {
 
     #[test]
     fn supervisor_state_record_forms_are_rejected_in_user_mode() {
-        for instruction in [SSAVE_R0, SRESTORE_R0] {
+        for instruction in [
+            &SSAVE_R0[..],
+            &SRESTORE_R0[..],
+            &CFISSAVE_R0[..],
+            &CFISRESTORE_R0[..],
+        ] {
             let mut core = SailCore::new().unwrap();
             let before = core.state().unwrap();
-            assert_eq!(core.execute(&instruction), SailCoreStatus::Fault);
+            assert_eq!(core.execute(instruction), SailCoreStatus::Fault);
             assert_eq!(core.state(), Ok(before));
         }
     }

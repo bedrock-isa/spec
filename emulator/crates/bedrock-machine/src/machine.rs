@@ -10,7 +10,7 @@ use crate::{
 use bedrock_bus::BusResult;
 use bedrock_sail_core::{
     SailBusExecutionError, SailCore, SailCoreCreateError, SailCoreRequest, SailCoreState,
-    SailCoreStatus,
+    SailCoreStatus, fault_kind,
 };
 
 pub const DEFAULT_STACK_POINTER: u64 = RAM_BASE + RAM_SIZE;
@@ -363,6 +363,7 @@ fn fault_trap(
             pc,
             cause: DivideErrorCause::SignedOverflow,
         }),
+        fault_kind::BOUNDS_FAULT => stack_adjust_bounds_trap(pc, error_code, state),
         13 => request.map_or_else(
             || illegal_trap(pc, IllegalInstructionCause::ExplicitIllegal),
             |request| page_fault_trap(pc, error_code, request, state),
@@ -392,6 +393,36 @@ fn fault_trap(
         },
         _ => illegal_trap(pc, IllegalInstructionCause::ExplicitIllegal),
     }
+}
+
+fn stack_adjust_bounds_trap(pc: u64, error_code: u64, state: &CpuState) -> StepResult {
+    let access_kind = if (error_code >> 8) & 0x3 == 2 {
+        AccessKind::Write
+    } else {
+        AccessKind::Read
+    };
+    let access_size = match (error_code >> 27) & 0x7 {
+        1 => Some(1),
+        2 => Some(2),
+        3 => Some(4),
+        4 => Some(8),
+        _ => None,
+    };
+    StepResult::Trap(Trap::PageFault {
+        pc,
+        context: PageFaultContext {
+            effective_address: state.sp,
+            linear_address: None,
+            reason: PageFaultReason::SegmentBounds,
+            access_kind,
+            access_domain: AccessDomain::Current,
+            segment: Some(SegmentSelector::Ss),
+            asid: state.ascr.asid(),
+            access_size,
+            operand: None,
+            atomic: false,
+        },
+    })
 }
 
 fn page_fault_trap(
@@ -508,9 +539,13 @@ const SEGMENT_SELECTORS: [SegmentSelector; 9] = [
 
 #[cfg(test)]
 mod tests {
-    use super::Machine;
-    use crate::{PageFaultReason, PageTableControl, Status, StepResult, Trap};
+    use super::{Machine, fault_trap};
+    use crate::{
+        AccessDomain, AccessKind, CpuState, PageFaultReason, PageTableControl, SegmentSelector,
+        Status, StepResult, Trap,
+    };
     use bedrock_bus::Bus;
+    use bedrock_sail_core::fault_kind;
 
     #[test]
     fn processor_reset_preserves_board_state() {
@@ -625,5 +660,26 @@ mod tests {
         assert_eq!(context.reason, PageFaultReason::NotPresent);
         assert_eq!(context.effective_address, 0);
         assert_eq!(context.linear_address, Some(0));
+    }
+
+    #[test]
+    fn stack_adjustment_bounds_fault_retains_stack_context() {
+        let mut state = CpuState::default();
+        state.sp = 7;
+        let error_code = 4 | (2 << 8) | (4 << 27);
+
+        let StepResult::Trap(Trap::PageFault { pc, context }) =
+            fault_trap(0x100, fault_kind::BOUNDS_FAULT, error_code, None, &state)
+        else {
+            panic!("expected stack bounds page fault");
+        };
+        assert_eq!(pc, 0x100);
+        assert_eq!(context.effective_address, 7);
+        assert_eq!(context.linear_address, None);
+        assert_eq!(context.reason, PageFaultReason::SegmentBounds);
+        assert_eq!(context.access_kind, AccessKind::Write);
+        assert_eq!(context.access_domain, AccessDomain::Current);
+        assert_eq!(context.segment, Some(SegmentSelector::Ss));
+        assert_eq!(context.access_size, Some(8));
     }
 }
