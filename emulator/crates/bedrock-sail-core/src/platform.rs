@@ -11,6 +11,30 @@ const VENDOR_NAME: &[u8] = b"Bedrock";
 const PROCESSOR_NAME: &[u8] = b"Bedrock Emulator";
 pub(crate) const TIMEBASE_TICKS_PER_SECOND: u64 = 1_000_000_000;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct FeatureConfiguration {
+    pub fp: bool,
+    pub fp16_convert: bool,
+    pub fptransa: bool,
+    pub vector: bool,
+}
+
+pub(crate) const FEATURES: FeatureConfiguration = FeatureConfiguration {
+    fp: true,
+    fp16_convert: true,
+    fptransa: true,
+    vector: true,
+};
+
+impl FeatureConfiguration {
+    const fn extension_directory(self) -> u64 {
+        (self.fp as u64)
+            | ((self.fptransa as u64) << 1)
+            | ((self.vector as u64) << 2)
+            | (((self.fp && self.vector) as u64) << 3)
+    }
+}
+
 const FPTRANSA_CONTRACT_IDS: &[u16] = &[
     0x0001, 0x0002, 0x0003, 0x0004, 0x0011, 0x0012, 0x0013, 0x0021, 0x0022, 0x0023, 0x0024, 0x0031,
     0x0032, 0x0033, 0x0034, 0x0041, 0x0042, 0x0043, 0x0044,
@@ -35,15 +59,15 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (BASE_CLASS, 2, 0) => 1,
         (BASE_CLASS, 2, 1) => 0x0101,
         (EXTENSION_CLASS, 0, 0) => header_with_leaf(3, 1),
-        (EXTENSION_CLASS, 0, 1) => 0b1111,
-        (EXTENSION_CLASS, 1, 0) => 1,
-        (EXTENSION_CLASS, 1, 1) => 0x0101,
-        (EXTENSION_CLASS, 2, 0) => 0x0044,
-        (EXTENSION_CLASS, 2, id) if FPTRANSA_CONTRACT_IDS.contains(&id) => {
+        (EXTENSION_CLASS, 0, 1) => FEATURES.extension_directory(),
+        (EXTENSION_CLASS, 1, 0) if FEATURES.fp => 1,
+        (EXTENSION_CLASS, 1, 1) if FEATURES.fp => (1_u64 << 8) | u64::from(FEATURES.fp16_convert),
+        (EXTENSION_CLASS, 2, 0) if FEATURES.fptransa => 0x0044,
+        (EXTENSION_CLASS, 2, id) if FEATURES.fptransa && FPTRANSA_CONTRACT_IDS.contains(&id) => {
             (1_u64 << 63) | (1_u64 << 32) | (0x0100_u64 << 16) | 0x0100
         }
-        (EXTENSION_CLASS, 3, 0) => 1,
-        (EXTENSION_CLASS, 3, 1) => 0x0107,
+        (EXTENSION_CLASS, 3, 0) if FEATURES.vector => 1,
+        (EXTENSION_CLASS, 3, 1) if FEATURES.vector => 0x0107,
         (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(6, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,

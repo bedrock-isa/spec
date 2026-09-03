@@ -1,6 +1,8 @@
 \subsection{Base State-Record Revisions}
 
-The BASE\_STATE\_RECORDS leaf reports independent 8-bit format revisions for the base user and base supervisor records. Revision 1 identifies the fixed layouts defined by this specification. A revision value of zero means the corresponding record format is unavailable.
+The BASE\_STATE\_RECORDS leaf reports independent 8-bit format revisions for the base user and base supervisor records. This specification provides revision 1 for both records, so both fields return 1. Revision 1 identifies the fixed layouts defined by this specification.
+
+State-record revision values are opaque identifiers: software must not infer ordering or compatibility from their numeric values. Software must reject an unrecognized revision before using the corresponding record format.
 
 Record sizes and alignments are architectural properties of the reported revision and are not repeated in CPUID.
 

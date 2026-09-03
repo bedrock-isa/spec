@@ -33,7 +33,7 @@ function restored_event_state_valid(state : Cpu_state, saved_status : bits(64),
   if saved_status[15 .. 11] != 0b00000 | (saved_dfa & not_bool(active)) then false
   else if privileged & active then
     depth > 0 & (not_bool(user_origin)
-      | control_register_value(state, ControlRegister_BASE_UCTL)[32] == bitone)
+      | user_return_bank_image_valid(state))
   else if privileged then depth == 0 & not_bool(user_origin) & not_bool(saved_dfa)
   else not_bool(active) & depth == 0 & not_bool(user_origin) & not_bool(saved_dfa)
 }

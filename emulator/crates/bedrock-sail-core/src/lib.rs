@@ -433,6 +433,13 @@ pub struct SailCore {
     environment: SailCoreEnvironmentState,
 }
 
+fn apply_platform_features(state: &mut SailCoreState) {
+    state.fp_enabled = platform::FEATURES.fp.into();
+    state.fp16_convert_enabled = platform::FEATURES.fp16_convert.into();
+    state.fptrans_enabled = platform::FEATURES.fptransa.into();
+    state.vector_enabled = platform::FEATURES.vector.into();
+}
+
 // The core pointer is exclusively owned by `SailCore`. Moving that ownership
 // to an execution thread is safe; all access still requires `&self`/`&mut self`
 // and the generated Sail runtime is serialized by `SAIL_RUNTIME`.
@@ -446,21 +453,30 @@ impl fmt::Debug for SailCore {
 
 impl SailCore {
     pub fn new() -> Result<Self, SailCoreCreateError> {
-        let _runtime = runtime_lock();
-        let state_size = unsafe { ffi::bedrock_core_state_size() };
-        assert_eq!(
-            state_size,
-            std::mem::size_of::<SailCoreState>(),
-            "emulator-core state ABI layout mismatch"
-        );
-        let raw = unsafe { ffi::bedrock_core_create() };
-        if raw.is_null() {
-            return Err(SailCoreCreateError::Status(SailCoreStatus::OutOfMemory));
-        }
-        Ok(Self {
+        let raw = {
+            let _runtime = runtime_lock();
+            let state_size = unsafe { ffi::bedrock_core_state_size() };
+            assert_eq!(
+                state_size,
+                std::mem::size_of::<SailCoreState>(),
+                "emulator-core state ABI layout mismatch"
+            );
+            let raw = unsafe { ffi::bedrock_core_create() };
+            if raw.is_null() {
+                return Err(SailCoreCreateError::Status(SailCoreStatus::OutOfMemory));
+            }
+            raw
+        };
+        let mut core = Self {
             raw,
             environment: SailCoreEnvironmentState::default(),
-        })
+        };
+        let mut state = core.state().map_err(SailCoreCreateError::Status)?;
+        apply_platform_features(&mut state);
+        match core.set_state(state) {
+            SailCoreStatus::Ok => Ok(core),
+            status => Err(SailCoreCreateError::Status(status)),
+        }
     }
 
     pub fn try_clone(&self) -> Result<Self, SailCoreCreateError> {
@@ -1253,6 +1269,19 @@ mod tests {
     }
 
     #[test]
+    fn advertised_fp_state_record_is_available_on_a_new_core() {
+        let directory = super::platform::cpuid_query(0x0000_0001_0000_0001);
+        let fp_features = super::platform::cpuid_query(0x0000_0001_0001_0001);
+        assert_ne!(directory & 1, 0);
+        assert_eq!((fp_features >> 8) & 0xff, 1);
+
+        let mut core = SailCore::new().unwrap();
+        assert_eq!(core.state().unwrap().fp_enabled, 1);
+        assert_eq!(core.set_register(0, 0x1000), SailCoreStatus::Ok);
+        assert_eq!(core.execute(&FSAVE_R0), SailCoreStatus::NeedsEnvironment);
+    }
+
+    #[test]
     fn state_record_saves_emit_their_owner_record() {
         let mut base = SailCore::new().unwrap();
         let mut state = base.state().unwrap();
@@ -1286,7 +1315,6 @@ mod tests {
         let mut fp = SailCore::new().unwrap();
         let mut state = fp.state().unwrap();
         state.registers[0] = 0x1000;
-        state.fp_enabled = 1;
         state.fp_state_modified = 1;
         state.floating_registers[0] = 0x8877_6655_4433_2211;
         state.fflags = 0x1f;
@@ -1372,7 +1400,6 @@ mod tests {
         let mut core = SailCore::new().unwrap();
         let mut before = core.state().unwrap();
         before.registers[0] = 0x1000;
-        before.fp_enabled = 1;
         before.fp_state_modified = 1;
         before.floating_registers[5] = 0xfeed_face_cafe_beef;
         before.fflags = 0x1f;
@@ -1433,6 +1460,33 @@ mod tests {
     }
 
     #[test]
+    fn supervisor_restore_rejects_an_invalid_live_user_return_bank() {
+        let mut core = SailCore::new().unwrap();
+        let mut before = core.state().unwrap();
+        before.registers[0] = 0x1000;
+        before.status = 0x10;
+        before.supervisor = 1;
+        before.controls.base_uctl = 1 << 32;
+        before.controls.base_ucs = 0x35;
+        assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
+        let saved_status = 0x451_u64;
+
+        assert_eq!(core.execute(&SRESTORE_R0), SailCoreStatus::NeedsEnvironment);
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: response_kind::READ,
+                success: true,
+                body: saved_status.to_le_bytes().to_vec(),
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Fault
+        );
+        assert_eq!(core.state(), Ok(before));
+    }
+
+    #[test]
     fn invalid_base_user_record_leaves_state_unchanged() {
         let mut core = SailCore::new().unwrap();
         let mut before = core.state().unwrap();
@@ -1471,7 +1525,6 @@ mod tests {
     fn scalar_and_vector_fp_execute_without_numeric_requests() {
         let mut scalar = SailCore::new().unwrap();
         let mut scalar_state = scalar.state().unwrap();
-        scalar_state.fp_enabled = 1;
         scalar_state.floating_registers[0] = u64::from(1.0_f32.to_bits());
         scalar_state.floating_registers[1] = u64::from(2.0_f32.to_bits());
         assert_eq!(scalar.set_state(scalar_state), SailCoreStatus::Ok);
@@ -1483,7 +1536,6 @@ mod tests {
 
         let mut vector = SailCore::new().unwrap();
         let mut vector_state = vector.state().unwrap();
-        vector_state.fp_enabled = 1;
         vector_state.predicate_registers[0] = [0xff, 0xff];
         for lane in 0..4 {
             vector_state.vector_registers[0][lane * 4..lane * 4 + 4]

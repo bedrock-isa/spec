@@ -2,6 +2,7 @@ use bedrock_bus::{Bus, BusError, PhysicalMemoryClass};
 
 pub(crate) const FAULT_TRANSLATION: i32 = 13;
 pub(crate) const FAULT_ACCESS: i32 = 14;
+pub(crate) const MIN_PAGE_BYTES: u64 = 1 << 14;
 
 const IMPLEMENTATION_PABITS: u32 = 56;
 const PHYSICAL_MASK: u64 = (1u64 << IMPLEMENTATION_PABITS) - 1;
@@ -258,7 +259,7 @@ const fn leaf_permissions(entry: u64) -> (bool, bool, bool) {
 
 const fn leaf_offset_mask(level: u8) -> u64 {
     match level {
-        1 => (1u64 << 14) - 1,
+        1 => MIN_PAGE_BYTES - 1,
         2 => (1u64 << 23) - 1,
         3 => (1u64 << 34) - 1,
         4 => (1u64 << 45) - 1,
