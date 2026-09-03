@@ -11,25 +11,25 @@
       
       
       
-        <link rel="prev" href="../cpuid-feature-discovery/">
+        <link rel="prev" href="../extract/">
       
       
-        <link rel="next" href="../instruction-set-reference/">
+        <link rel="next" href="../extsl/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Processor-State Save and Restore - Bedrock Architecture</title>
+        <title>FCALL - Bedrock Architecture</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -48,9 +48,9 @@
       
     
     
-      <link rel="stylesheet" href="../../stylesheets/visuals.css">
+      <link rel="stylesheet" href="../../../stylesheets/visuals.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#processor-state-save-and-restore" class="md-skip">
+        <a href="#fcall" class="md-skip">
           Skip to content
         </a>
       
@@ -84,7 +84,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Bedrock Architecture" class="md-header__button md-logo" aria-label="Bedrock Architecture" data-md-component="logo">
+    <a href="../../.." title="Bedrock Architecture" class="md-header__button md-logo" aria-label="Bedrock Architecture" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Processor-State Save and Restore
+              FCALL
             
           </span>
         </div>
@@ -182,7 +182,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Bedrock Architecture" class="md-nav__button md-logo" aria-label="Bedrock Architecture" data-md-component="logo">
+    <a href="../../.." title="Bedrock Architecture" class="md-nav__button md-logo" aria-label="Bedrock Architecture" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -200,7 +200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -315,7 +315,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../" class="md-nav__link ">
               
   
   
@@ -387,7 +387,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../architectural-foundations/" class="md-nav__link ">
+            <a href="../../architectural-foundations/" class="md-nav__link ">
               
   
   
@@ -431,7 +431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../../overview/" class="md-nav__link">
         
   
   
@@ -459,7 +459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../terminology/" class="md-nav__link">
+      <a href="../../terminology/" class="md-nav__link">
         
   
   
@@ -487,7 +487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../programming-model/" class="md-nav__link">
+      <a href="../../programming-model/" class="md-nav__link">
         
   
   
@@ -515,7 +515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data-formats/" class="md-nav__link">
+      <a href="../../data-formats/" class="md-nav__link">
         
   
   
@@ -585,7 +585,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../encoding-addressing-and-execution/" class="md-nav__link ">
+            <a href="../../encoding-addressing-and-execution/" class="md-nav__link ">
               
   
   
@@ -629,7 +629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instruction-encoding/" class="md-nav__link">
+      <a href="../../instruction-encoding/" class="md-nav__link">
         
   
   
@@ -657,7 +657,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../effective-addressing-modes/" class="md-nav__link">
+      <a href="../../effective-addressing-modes/" class="md-nav__link">
         
   
   
@@ -685,7 +685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../memory-address-translation/" class="md-nav__link">
+      <a href="../../memory-address-translation/" class="md-nav__link">
         
   
   
@@ -713,7 +713,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instruction-execution-model/" class="md-nav__link">
+      <a href="../../instruction-execution-model/" class="md-nav__link">
         
   
   
@@ -741,7 +741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../flags-and-condition-codes/" class="md-nav__link">
+      <a href="../../flags-and-condition-codes/" class="md-nav__link">
         
   
   
@@ -769,7 +769,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../memory-model/" class="md-nav__link">
+      <a href="../../memory-model/" class="md-nav__link">
         
   
   
@@ -797,7 +797,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../repeated-scalar-execution/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
@@ -805,6 +805,258 @@
     
   
     Repeated Scalar Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../system-programming/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Programming
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_4" id="__nav_2_1_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    System Programming
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privileged-execution-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privileged Execution Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architectural-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architectural-event-processing-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Event Processing Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architectural-debug/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Debug Triggers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cpuid-feature-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUID Feature Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../owner-specific-state-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Owner-Specific State Records
   
 
     
@@ -845,6 +1097,80 @@
       
         
       
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../instruction-set-reference/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instruction Set Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_5" id="__nav_2_1_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Instruction Set Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
         
       
         
@@ -863,18 +1189,18 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../system-programming/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
   <span class="md-ellipsis">
     
   
-    System Programming
+    Instructions
   
 
     
@@ -885,18 +1211,18 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_1_4" id="__nav_2_1_4_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_1_5_2" id="__nav_2_1_5_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2_1_4">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_2_1_5_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_1_5_2">
             <span class="md-nav__icon md-icon"></span>
             
   
-    System Programming
+    Instructions
   
 
           </label>
@@ -911,14 +1237,440 @@
   
   
     <li class="md-nav__item">
-      <a href="../privileged-execution-model/" class="md-nav__link">
+      <a href="../reading-an-instruction-description/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Privileged Execution Model
+    Reading an Instruction Description
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../groups/base/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    General Instructions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_5_2_3" id="__nav_2_1_5_2_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_1_5_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    General Instructions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ABS
   
 
     
@@ -939,14 +1691,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architectural-time/" class="md-nav__link">
+      <a href="../adc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Architectural Time
+    ADC
   
 
     
@@ -967,14 +1719,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architectural-event-processing-model/" class="md-nav__link">
+      <a href="../add/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Architectural Event Processing Model
+    ADD
   
 
     
@@ -995,14 +1747,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architectural-debug/" class="md-nav__link">
+      <a href="../afence/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Architectural Debug Triggers
+    AFENCE
   
 
     
@@ -1023,14 +1775,1218 @@
   
   
     <li class="md-nav__item">
-      <a href="../cpuid-feature-discovery/" class="md-nav__link">
+      <a href="../and/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    CPUID Feature Discovery
+    AND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BCHG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bfexts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BFEXTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bfextu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BFEXTU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bfins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BFINS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bclr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BCLR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BIC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bkpt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BKPT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bndsii/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSII
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bndsix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSIX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bndsxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSXI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bndsxx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSXX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bnduii/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUII
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bnduix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUIX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bnduxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUXI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bnduxx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUXX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BSET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../btest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BTEST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../call/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../callcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CALLcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clmul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLMUL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clmulh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLMULH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clrlink/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLRLINK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLZ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cmp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cmpjcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMPJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cmpxchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMPXCHG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cmpxchgp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMPXCHGP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cpuid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUID
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crc32/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRC32
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crc32c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRC32C
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ctz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CTZ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DEC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DECF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../divmods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVMODS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../divmodu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVMODU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../divs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../divu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../djcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ERET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTRACT
   
 
     
@@ -1067,7 +3023,7 @@
   <span class="md-ellipsis">
     
   
-    Processor-State Save and Restore
+    FCALL
   
 
     
@@ -1085,7 +3041,7 @@
   <span class="md-ellipsis">
     
   
-    Processor-State Save and Restore
+    FCALL
   
 
     
@@ -1111,10 +3067,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#save-area-layout" class="md-nav__link">
+  <a href="#operation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Save-Area Layout
+        Operation
       
     </span>
   </a>
@@ -1122,10 +3078,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fixed-architectural-state" class="md-nav__link">
+  <a href="#assembler-syntax" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fixed Architectural State
+        Assembler Syntax
       
     </span>
   </a>
@@ -1133,10 +3089,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#extension-components-and-clean-state" class="md-nav__link">
+  <a href="#privilege" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Extension Components and Clean State
+        Privilege
       
     </span>
   </a>
@@ -1144,43 +3100,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#floating-point-save-component" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Floating-Point SAVE Component
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#vector-save-component" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Vector SAVE Component
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#save-responsibilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SAVE Responsibilities
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#restore-responsibilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        RESTORE Responsibilities
+        Encodings
       
     </span>
   </a>
@@ -1196,162 +3119,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../instruction-set-reference/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Instruction Set Reference
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_2_1_5" id="__nav_2_1_5_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_1_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Instruction Set Reference
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../instructions/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Instructions
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_2_1_5_2" id="__nav_2_1_5_2_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_2_1_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_1_5_2">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Instructions
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
               
                 
   
@@ -1359,1739 +3126,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/reading-an-instruction-description/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Reading an Instruction Description
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5_2_3" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/base/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    General Instructions
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_2_1_5_2_3" id="__nav_2_1_5_2_3_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_2_1_5_2_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_1_5_2_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    General Instructions
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/abs/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ABS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/adc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/add/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADD
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/afence/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AFENCE
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/and/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AND
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bchg/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BCHG
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bfexts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BFEXTS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bfextu/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BFEXTU
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bfins/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BFINS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bclr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BCLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bic/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BIC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bkpt/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BKPT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bndsii/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDSII
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bndsix/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDSIX
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bndsxi/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDSXI
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bndsxx/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDSXX
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bnduii/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDUII
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bnduix/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDUIX
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bnduxi/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDUXI
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bnduxx/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BNDUXX
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/bset/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BSET
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/btest/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BTEST
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/call/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CALL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/callcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CALLcc
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clmul/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLMUL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clmulh/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLMULH
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cls/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clz/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLZ
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cmp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cmpjcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CMPJcc
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cmpxchg/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CMPXCHG
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cmpxchgp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CMPXCHGP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cpuid/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CPUID
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/crc32/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CRC32
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/crc32c/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CRC32C
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/cts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CTS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/ctz/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CTZ
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/dec/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DEC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/decf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DECF
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/divmods/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DIVMODS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/divmodu/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DIVMODU
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/divs/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DIVS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/divu/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DIVU
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/djcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DJcc
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/eret/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ERET
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/extract/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    EXTRACT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/extsl/" class="md-nav__link">
+      <a href="../extsl/" class="md-nav__link">
         
   
   
@@ -3119,7 +3154,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/extsq/" class="md-nav__link">
+      <a href="../extsq/" class="md-nav__link">
         
   
   
@@ -3147,7 +3182,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/extsw/" class="md-nav__link">
+      <a href="../extsw/" class="md-nav__link">
         
   
   
@@ -3175,7 +3210,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/extzl/" class="md-nav__link">
+      <a href="../extzl/" class="md-nav__link">
         
   
   
@@ -3203,7 +3238,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/extzq/" class="md-nav__link">
+      <a href="../extzq/" class="md-nav__link">
         
   
   
@@ -3231,7 +3266,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/extzw/" class="md-nav__link">
+      <a href="../extzw/" class="md-nav__link">
         
   
   
@@ -3259,7 +3294,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchadd/" class="md-nav__link">
+      <a href="../fetchadd/" class="md-nav__link">
         
   
   
@@ -3287,7 +3322,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchand/" class="md-nav__link">
+      <a href="../fetchand/" class="md-nav__link">
         
   
   
@@ -3315,7 +3350,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchandn/" class="md-nav__link">
+      <a href="../fetchandn/" class="md-nav__link">
         
   
   
@@ -3343,7 +3378,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchmaxs/" class="md-nav__link">
+      <a href="../fetchmaxs/" class="md-nav__link">
         
   
   
@@ -3371,7 +3406,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchmaxu/" class="md-nav__link">
+      <a href="../fetchmaxu/" class="md-nav__link">
         
   
   
@@ -3399,7 +3434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchmins/" class="md-nav__link">
+      <a href="../fetchmins/" class="md-nav__link">
         
   
   
@@ -3427,7 +3462,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchminu/" class="md-nav__link">
+      <a href="../fetchminu/" class="md-nav__link">
         
   
   
@@ -3455,7 +3490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchor/" class="md-nav__link">
+      <a href="../fetchor/" class="md-nav__link">
         
   
   
@@ -3483,7 +3518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchsub/" class="md-nav__link">
+      <a href="../fetchsub/" class="md-nav__link">
         
   
   
@@ -3511,7 +3546,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchxchg/" class="md-nav__link">
+      <a href="../fetchxchg/" class="md-nav__link">
         
   
   
@@ -3539,7 +3574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetchxor/" class="md-nav__link">
+      <a href="../fetchxor/" class="md-nav__link">
         
   
   
@@ -3567,7 +3602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/flshdcache/" class="md-nav__link">
+      <a href="../flshdcache/" class="md-nav__link">
         
   
   
@@ -3595,7 +3630,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/halt/" class="md-nav__link">
+      <a href="../halt/" class="md-nav__link">
         
   
   
@@ -3623,7 +3658,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ijcc/" class="md-nav__link">
+      <a href="../ijcc/" class="md-nav__link">
         
   
   
@@ -3651,7 +3686,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/illegal/" class="md-nav__link">
+      <a href="../illegal/" class="md-nav__link">
         
   
   
@@ -3679,7 +3714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/inc/" class="md-nav__link">
+      <a href="../inc/" class="md-nav__link">
         
   
   
@@ -3707,7 +3742,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/incf/" class="md-nav__link">
+      <a href="../incf/" class="md-nav__link">
         
   
   
@@ -3735,7 +3770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/invasid/" class="md-nav__link">
+      <a href="../invasid/" class="md-nav__link">
         
   
   
@@ -3763,7 +3798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/invdcache/" class="md-nav__link">
+      <a href="../invdcache/" class="md-nav__link">
         
   
   
@@ -3791,7 +3826,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/invicache/" class="md-nav__link">
+      <a href="../invicache/" class="md-nav__link">
         
   
   
@@ -3819,7 +3854,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/invpage/" class="md-nav__link">
+      <a href="../invpage/" class="md-nav__link">
         
   
   
@@ -3847,7 +3882,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/invtlb/" class="md-nav__link">
+      <a href="../invtlb/" class="md-nav__link">
         
   
   
@@ -3875,7 +3910,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/jcc/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
@@ -3903,7 +3938,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/jmp/" class="md-nav__link">
+      <a href="../jmp/" class="md-nav__link">
         
   
   
@@ -3931,7 +3966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/lcall/" class="md-nav__link">
+      <a href="../lcall/" class="md-nav__link">
         
   
   
@@ -3959,7 +3994,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ldp/" class="md-nav__link">
+      <a href="../ldp/" class="md-nav__link">
         
   
   
@@ -3987,7 +4022,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/lea/" class="md-nav__link">
+      <a href="../lea/" class="md-nav__link">
         
   
   
@@ -4015,7 +4050,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ljmp/" class="md-nav__link">
+      <a href="../ljmp/" class="md-nav__link">
         
   
   
@@ -4043,7 +4078,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/lret/" class="md-nav__link">
+      <a href="../lret/" class="md-nav__link">
         
   
   
@@ -4071,7 +4106,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/madd/" class="md-nav__link">
+      <a href="../madd/" class="md-nav__link">
         
   
   
@@ -4099,7 +4134,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/maxs/" class="md-nav__link">
+      <a href="../maxs/" class="md-nav__link">
         
   
   
@@ -4127,7 +4162,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/maxu/" class="md-nav__link">
+      <a href="../maxu/" class="md-nav__link">
         
   
   
@@ -4155,7 +4190,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mins/" class="md-nav__link">
+      <a href="../mins/" class="md-nav__link">
         
   
   
@@ -4183,7 +4218,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/minu/" class="md-nav__link">
+      <a href="../minu/" class="md-nav__link">
         
   
   
@@ -4211,7 +4246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mods/" class="md-nav__link">
+      <a href="../mods/" class="md-nav__link">
         
   
   
@@ -4239,7 +4274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/modu/" class="md-nav__link">
+      <a href="../modu/" class="md-nav__link">
         
   
   
@@ -4267,7 +4302,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mov/" class="md-nav__link">
+      <a href="../mov/" class="md-nav__link">
         
   
   
@@ -4295,7 +4330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movacq/" class="md-nav__link">
+      <a href="../movacq/" class="md-nav__link">
         
   
   
@@ -4323,7 +4358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movcc/" class="md-nav__link">
+      <a href="../movcc/" class="md-nav__link">
         
   
   
@@ -4351,7 +4386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movcu/" class="md-nav__link">
+      <a href="../movcu/" class="md-nav__link">
         
   
   
@@ -4379,7 +4414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movnt/" class="md-nav__link">
+      <a href="../movnt/" class="md-nav__link">
         
   
   
@@ -4407,7 +4442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movrel/" class="md-nav__link">
+      <a href="../movrel/" class="md-nav__link">
         
   
   
@@ -4435,7 +4470,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movuc/" class="md-nav__link">
+      <a href="../movuc/" class="md-nav__link">
         
   
   
@@ -4463,7 +4498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/movuu/" class="md-nav__link">
+      <a href="../movuu/" class="md-nav__link">
         
   
   
@@ -4491,7 +4526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/msub/" class="md-nav__link">
+      <a href="../msub/" class="md-nav__link">
         
   
   
@@ -4519,7 +4554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mul/" class="md-nav__link">
+      <a href="../mul/" class="md-nav__link">
         
   
   
@@ -4547,7 +4582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mulhs/" class="md-nav__link">
+      <a href="../mulhs/" class="md-nav__link">
         
   
   
@@ -4575,7 +4610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mulhsu/" class="md-nav__link">
+      <a href="../mulhsu/" class="md-nav__link">
         
   
   
@@ -4603,7 +4638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/mulhu/" class="md-nav__link">
+      <a href="../mulhu/" class="md-nav__link">
         
   
   
@@ -4631,7 +4666,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/neg/" class="md-nav__link">
+      <a href="../neg/" class="md-nav__link">
         
   
   
@@ -4659,7 +4694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/nop/" class="md-nav__link">
+      <a href="../nop/" class="md-nav__link">
         
   
   
@@ -4687,7 +4722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/not/" class="md-nav__link">
+      <a href="../not/" class="md-nav__link">
         
   
   
@@ -4715,7 +4750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/or/" class="md-nav__link">
+      <a href="../or/" class="md-nav__link">
         
   
   
@@ -4743,7 +4778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/parity/" class="md-nav__link">
+      <a href="../parity/" class="md-nav__link">
         
   
   
@@ -4771,7 +4806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pop/" class="md-nav__link">
+      <a href="../pop/" class="md-nav__link">
         
   
   
@@ -4799,7 +4834,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/popcnt/" class="md-nav__link">
+      <a href="../popcnt/" class="md-nav__link">
         
   
   
@@ -4827,7 +4862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/popp/" class="md-nav__link">
+      <a href="../popp/" class="md-nav__link">
         
   
   
@@ -4855,7 +4890,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/prefetch/" class="md-nav__link">
+      <a href="../prefetch/" class="md-nav__link">
         
   
   
@@ -4883,7 +4918,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/prefetchnt/" class="md-nav__link">
+      <a href="../prefetchnt/" class="md-nav__link">
         
   
   
@@ -4911,7 +4946,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ptquery/" class="md-nav__link">
+      <a href="../ptquery/" class="md-nav__link">
         
   
   
@@ -4939,7 +4974,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/push/" class="md-nav__link">
+      <a href="../push/" class="md-nav__link">
         
   
   
@@ -4967,7 +5002,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pushp/" class="md-nav__link">
+      <a href="../pushp/" class="md-nav__link">
         
   
   
@@ -4995,7 +5030,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdcr/" class="md-nav__link">
+      <a href="../rdcr/" class="md-nav__link">
         
   
   
@@ -5023,7 +5058,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdflags/" class="md-nav__link">
+      <a href="../rdflags/" class="md-nav__link">
         
   
   
@@ -5051,7 +5086,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdpmc/" class="md-nav__link">
+      <a href="../rdpmc/" class="md-nav__link">
         
   
   
@@ -5079,7 +5114,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdtime/" class="md-nav__link">
+      <a href="../rdtime/" class="md-nav__link">
         
   
   
@@ -5107,7 +5142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdseg/" class="md-nav__link">
+      <a href="../rdseg/" class="md-nav__link">
         
   
   
@@ -5135,7 +5170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdstatus/" class="md-nav__link">
+      <a href="../rdstatus/" class="md-nav__link">
         
   
   
@@ -5163,7 +5198,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repcc/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
@@ -5191,7 +5226,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/reset/" class="md-nav__link">
+      <a href="../reset/" class="md-nav__link">
         
   
   
@@ -5219,7 +5254,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/restore/" class="md-nav__link">
+      <a href="../restore/" class="md-nav__link">
         
   
   
@@ -5247,7 +5282,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ret/" class="md-nav__link">
+      <a href="../ret/" class="md-nav__link">
         
   
   
@@ -5275,7 +5310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/revbit/" class="md-nav__link">
+      <a href="../revbit/" class="md-nav__link">
         
   
   
@@ -5303,7 +5338,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/revbyte/" class="md-nav__link">
+      <a href="../revbyte/" class="md-nav__link">
         
   
   
@@ -5331,7 +5366,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rfence/" class="md-nav__link">
+      <a href="../rfence/" class="md-nav__link">
         
   
   
@@ -5359,7 +5394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rol/" class="md-nav__link">
+      <a href="../rol/" class="md-nav__link">
         
   
   
@@ -5387,7 +5422,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ror/" class="md-nav__link">
+      <a href="../ror/" class="md-nav__link">
         
   
   
@@ -5415,7 +5450,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/sar/" class="md-nav__link">
+      <a href="../sar/" class="md-nav__link">
         
   
   
@@ -5443,7 +5478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/save/" class="md-nav__link">
+      <a href="../save/" class="md-nav__link">
         
   
   
@@ -5471,7 +5506,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/sbb/" class="md-nav__link">
+      <a href="../sbb/" class="md-nav__link">
         
   
   
@@ -5499,7 +5534,63 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/seglea/" class="md-nav__link">
+      <a href="../srestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SRESTORE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ssave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSAVE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../seglea/" class="md-nav__link">
         
   
   
@@ -5527,7 +5618,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/set/" class="md-nav__link">
+      <a href="../set/" class="md-nav__link">
         
   
   
@@ -5555,7 +5646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/setcc/" class="md-nav__link">
+      <a href="../setcc/" class="md-nav__link">
         
   
   
@@ -5583,7 +5674,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/setf/" class="md-nav__link">
+      <a href="../setf/" class="md-nav__link">
         
   
   
@@ -5611,7 +5702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/specfence/" class="md-nav__link">
+      <a href="../specfence/" class="md-nav__link">
         
   
   
@@ -5639,7 +5730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/shl/" class="md-nav__link">
+      <a href="../shl/" class="md-nav__link">
         
   
   
@@ -5667,7 +5758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/shr/" class="md-nav__link">
+      <a href="../shr/" class="md-nav__link">
         
   
   
@@ -5695,7 +5786,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/sub/" class="md-nav__link">
+      <a href="../sub/" class="md-nav__link">
         
   
   
@@ -5723,7 +5814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/stp/" class="md-nav__link">
+      <a href="../stp/" class="md-nav__link">
         
   
   
@@ -5751,7 +5842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/swpt/" class="md-nav__link">
+      <a href="../swpt/" class="md-nav__link">
         
   
   
@@ -5779,7 +5870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/swpta/" class="md-nav__link">
+      <a href="../swpta/" class="md-nav__link">
         
   
   
@@ -5807,7 +5898,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/synccache/" class="md-nav__link">
+      <a href="../synccache/" class="md-nav__link">
         
   
   
@@ -5835,7 +5926,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/syscall/" class="md-nav__link">
+      <a href="../syscall/" class="md-nav__link">
         
   
   
@@ -5863,7 +5954,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/tarm/" class="md-nav__link">
+      <a href="../tarm/" class="md-nav__link">
         
   
   
@@ -5891,7 +5982,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/tcancel/" class="md-nav__link">
+      <a href="../tcancel/" class="md-nav__link">
         
   
   
@@ -5919,7 +6010,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/test/" class="md-nav__link">
+      <a href="../test/" class="md-nav__link">
         
   
   
@@ -5947,7 +6038,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/testjcc/" class="md-nav__link">
+      <a href="../testjcc/" class="md-nav__link">
         
   
   
@@ -5975,7 +6066,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/trace/" class="md-nav__link">
+      <a href="../trace/" class="md-nav__link">
         
   
   
@@ -6003,7 +6094,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtop/" class="md-nav__link">
+      <a href="../vtop/" class="md-nav__link">
         
   
   
@@ -6031,7 +6122,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/relax/" class="md-nav__link">
+      <a href="../relax/" class="md-nav__link">
         
   
   
@@ -6059,7 +6150,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wfence/" class="md-nav__link">
+      <a href="../wfence/" class="md-nav__link">
         
   
   
@@ -6087,7 +6178,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrbkdcache/" class="md-nav__link">
+      <a href="../wrbkdcache/" class="md-nav__link">
         
   
   
@@ -6115,7 +6206,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrcr/" class="md-nav__link">
+      <a href="../wrcr/" class="md-nav__link">
         
   
   
@@ -6143,7 +6234,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrflags/" class="md-nav__link">
+      <a href="../wrflags/" class="md-nav__link">
         
   
   
@@ -6171,7 +6262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrseg/" class="md-nav__link">
+      <a href="../wrseg/" class="md-nav__link">
         
   
   
@@ -6199,7 +6290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrstatus/" class="md-nav__link">
+      <a href="../wrstatus/" class="md-nav__link">
         
   
   
@@ -6227,7 +6318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/xchg/" class="md-nav__link">
+      <a href="../xchg/" class="md-nav__link">
         
   
   
@@ -6255,7 +6346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/xor/" class="md-nav__link">
+      <a href="../xor/" class="md-nav__link">
         
   
   
@@ -6283,7 +6374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/yield/" class="md-nav__link">
+      <a href="../yield/" class="md-nav__link">
         
   
   
@@ -6343,7 +6434,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/wait/" class="md-nav__link ">
+            <a href="../groups/wait/" class="md-nav__link ">
               
   
   
@@ -6387,7 +6478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wait/" class="md-nav__link">
+      <a href="../wait/" class="md-nav__link">
         
   
   
@@ -6415,7 +6506,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wake/" class="md-nav__link">
+      <a href="../wake/" class="md-nav__link">
         
   
   
@@ -6459,6 +6550,20 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -6473,7 +6578,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/cfi/" class="md-nav__link ">
+            <a href="../groups/cfi/" class="md-nav__link ">
               
   
   
@@ -6517,7 +6622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/cfiland/" class="md-nav__link">
+      <a href="../cfiland/" class="md-nav__link">
         
   
   
@@ -6525,6 +6630,202 @@
     
   
     CFILAND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cfisrestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CFISRESTORE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cfissave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CFISSAVE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpcall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPCALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pcall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PCALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plcall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PLCALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PLRET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PRET
   
 
     
@@ -6557,6 +6858,10 @@
       
         
           
+        
+      
+        
+      
         
       
         
@@ -6671,7 +6976,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/fp/" class="md-nav__link ">
+            <a href="../groups/fp/" class="md-nav__link ">
               
   
   
@@ -6715,7 +7020,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fabs/" class="md-nav__link">
+      <a href="../fabs/" class="md-nav__link">
         
   
   
@@ -6743,7 +7048,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fadd/" class="md-nav__link">
+      <a href="../fadd/" class="md-nav__link">
         
   
   
@@ -6771,7 +7076,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fbndii/" class="md-nav__link">
+      <a href="../fbndii/" class="md-nav__link">
         
   
   
@@ -6799,7 +7104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fbndix/" class="md-nav__link">
+      <a href="../fbndix/" class="md-nav__link">
         
   
   
@@ -6827,7 +7132,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fbndxi/" class="md-nav__link">
+      <a href="../fbndxi/" class="md-nav__link">
         
   
   
@@ -6855,7 +7160,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fbndxx/" class="md-nav__link">
+      <a href="../fbndxx/" class="md-nav__link">
         
   
   
@@ -6883,7 +7188,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fceil/" class="md-nav__link">
+      <a href="../fceil/" class="md-nav__link">
         
   
   
@@ -6911,7 +7216,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fclass/" class="md-nav__link">
+      <a href="../fclass/" class="md-nav__link">
         
   
   
@@ -6939,7 +7244,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fclr/" class="md-nav__link">
+      <a href="../fclr/" class="md-nav__link">
         
   
   
@@ -6967,7 +7272,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcmp/" class="md-nav__link">
+      <a href="../fcmp/" class="md-nav__link">
         
   
   
@@ -6995,7 +7300,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcopysign/" class="md-nav__link">
+      <a href="../fcopysign/" class="md-nav__link">
         
   
   
@@ -7023,7 +7328,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvtd/" class="md-nav__link">
+      <a href="../fcvtd/" class="md-nav__link">
         
   
   
@@ -7051,7 +7356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvth/" class="md-nav__link">
+      <a href="../fcvth/" class="md-nav__link">
         
   
   
@@ -7079,7 +7384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvts/" class="md-nav__link">
+      <a href="../fcvts/" class="md-nav__link">
         
   
   
@@ -7107,7 +7412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvtud/" class="md-nav__link">
+      <a href="../fcvtud/" class="md-nav__link">
         
   
   
@@ -7135,7 +7440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvtuh/" class="md-nav__link">
+      <a href="../fcvtuh/" class="md-nav__link">
         
   
   
@@ -7163,7 +7468,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcvtus/" class="md-nav__link">
+      <a href="../fcvtus/" class="md-nav__link">
         
   
   
@@ -7191,7 +7496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fdiv/" class="md-nav__link">
+      <a href="../fdiv/" class="md-nav__link">
         
   
   
@@ -7219,7 +7524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ffloor/" class="md-nav__link">
+      <a href="../ffloor/" class="md-nav__link">
         
   
   
@@ -7247,7 +7552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fgetexp/" class="md-nav__link">
+      <a href="../fgetexp/" class="md-nav__link">
         
   
   
@@ -7275,7 +7580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fgetman/" class="md-nav__link">
+      <a href="../fgetman/" class="md-nav__link">
         
   
   
@@ -7303,7 +7608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fint/" class="md-nav__link">
+      <a href="../fint/" class="md-nav__link">
         
   
   
@@ -7331,7 +7636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fintrz/" class="md-nav__link">
+      <a href="../fintrz/" class="md-nav__link">
         
   
   
@@ -7359,7 +7664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmadd/" class="md-nav__link">
+      <a href="../fmadd/" class="md-nav__link">
         
   
   
@@ -7387,7 +7692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmax/" class="md-nav__link">
+      <a href="../fmax/" class="md-nav__link">
         
   
   
@@ -7415,7 +7720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmin/" class="md-nav__link">
+      <a href="../fmin/" class="md-nav__link">
         
   
   
@@ -7443,7 +7748,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmod/" class="md-nav__link">
+      <a href="../fmod/" class="md-nav__link">
         
   
   
@@ -7471,7 +7776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmov/" class="md-nav__link">
+      <a href="../fmov/" class="md-nav__link">
         
   
   
@@ -7499,7 +7804,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmovcc/" class="md-nav__link">
+      <a href="../fmovcc/" class="md-nav__link">
         
   
   
@@ -7527,7 +7832,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmovcr/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
@@ -7555,7 +7860,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmsub/" class="md-nav__link">
+      <a href="../fmsub/" class="md-nav__link">
         
   
   
@@ -7583,7 +7888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmul/" class="md-nav__link">
+      <a href="../fmul/" class="md-nav__link">
         
   
   
@@ -7611,7 +7916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fneg/" class="md-nav__link">
+      <a href="../fneg/" class="md-nav__link">
         
   
   
@@ -7639,7 +7944,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fnmadd/" class="md-nav__link">
+      <a href="../fnmadd/" class="md-nav__link">
         
   
   
@@ -7667,7 +7972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fnmsub/" class="md-nav__link">
+      <a href="../fnmsub/" class="md-nav__link">
         
   
   
@@ -7695,7 +8000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fpopp/" class="md-nav__link">
+      <a href="../fpopp/" class="md-nav__link">
         
   
   
@@ -7723,7 +8028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fpushp/" class="md-nav__link">
+      <a href="../fpushp/" class="md-nav__link">
         
   
   
@@ -7751,7 +8056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/frem/" class="md-nav__link">
+      <a href="../frem/" class="md-nav__link">
         
   
   
@@ -7779,7 +8084,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fround/" class="md-nav__link">
+      <a href="../frestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESTORE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fround/" class="md-nav__link">
         
   
   
@@ -7807,7 +8140,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fscale/" class="md-nav__link">
+      <a href="../fsave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSAVE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fscale/" class="md-nav__link">
         
   
   
@@ -7835,7 +8196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fsqrt/" class="md-nav__link">
+      <a href="../fsqrt/" class="md-nav__link">
         
   
   
@@ -7863,7 +8224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fsub/" class="md-nav__link">
+      <a href="../fsub/" class="md-nav__link">
         
   
   
@@ -7891,7 +8252,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ftest/" class="md-nav__link">
+      <a href="../ftest/" class="md-nav__link">
         
   
   
@@ -7919,7 +8280,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ftrunc/" class="md-nav__link">
+      <a href="../ftrunc/" class="md-nav__link">
         
   
   
@@ -7947,7 +8308,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fxchg/" class="md-nav__link">
+      <a href="../fxchg/" class="md-nav__link">
         
   
   
@@ -7975,7 +8336,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdfflags/" class="md-nav__link">
+      <a href="../rdfflags/" class="md-nav__link">
         
   
   
@@ -8003,7 +8364,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdfstatus/" class="md-nav__link">
+      <a href="../rdfstatus/" class="md-nav__link">
         
   
   
@@ -8031,7 +8392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrfflags/" class="md-nav__link">
+      <a href="../wrfflags/" class="md-nav__link">
         
   
   
@@ -8059,7 +8420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/wrfstatus/" class="md-nav__link">
+      <a href="../wrfstatus/" class="md-nav__link">
         
   
   
@@ -8153,7 +8514,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/fptransa/" class="md-nav__link ">
+            <a href="../groups/fptransa/" class="md-nav__link ">
               
   
   
@@ -8197,7 +8558,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/facosa/" class="md-nav__link">
+      <a href="../facosa/" class="md-nav__link">
         
   
   
@@ -8225,7 +8586,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fasina/" class="md-nav__link">
+      <a href="../fasina/" class="md-nav__link">
         
   
   
@@ -8253,7 +8614,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fatana/" class="md-nav__link">
+      <a href="../fatana/" class="md-nav__link">
         
   
   
@@ -8281,7 +8642,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fatanha/" class="md-nav__link">
+      <a href="../fatanha/" class="md-nav__link">
         
   
   
@@ -8309,7 +8670,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcosa/" class="md-nav__link">
+      <a href="../fcosa/" class="md-nav__link">
         
   
   
@@ -8337,7 +8698,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fcosha/" class="md-nav__link">
+      <a href="../fcosha/" class="md-nav__link">
         
   
   
@@ -8365,7 +8726,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetoxa/" class="md-nav__link">
+      <a href="../fetoxa/" class="md-nav__link">
         
   
   
@@ -8393,7 +8754,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fetoxm1a/" class="md-nav__link">
+      <a href="../fetoxm1a/" class="md-nav__link">
         
   
   
@@ -8421,7 +8782,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/flog10a/" class="md-nav__link">
+      <a href="../flog10a/" class="md-nav__link">
         
   
   
@@ -8449,7 +8810,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/flog2a/" class="md-nav__link">
+      <a href="../flog2a/" class="md-nav__link">
         
   
   
@@ -8477,7 +8838,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/flogna/" class="md-nav__link">
+      <a href="../flogna/" class="md-nav__link">
         
   
   
@@ -8505,7 +8866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/flognp1a/" class="md-nav__link">
+      <a href="../flognp1a/" class="md-nav__link">
         
   
   
@@ -8533,7 +8894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fsina/" class="md-nav__link">
+      <a href="../fsina/" class="md-nav__link">
         
   
   
@@ -8561,7 +8922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fsincosa/" class="md-nav__link">
+      <a href="../fsincosa/" class="md-nav__link">
         
   
   
@@ -8589,7 +8950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fsinha/" class="md-nav__link">
+      <a href="../fsinha/" class="md-nav__link">
         
   
   
@@ -8617,7 +8978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ftana/" class="md-nav__link">
+      <a href="../ftana/" class="md-nav__link">
         
   
   
@@ -8645,7 +9006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ftanha/" class="md-nav__link">
+      <a href="../ftanha/" class="md-nav__link">
         
   
   
@@ -8673,7 +9034,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ftentoxa/" class="md-nav__link">
+      <a href="../ftentoxa/" class="md-nav__link">
         
   
   
@@ -8701,7 +9062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ftwotoxa/" class="md-nav__link">
+      <a href="../ftwotoxa/" class="md-nav__link">
         
   
   
@@ -8941,6 +9302,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -8955,7 +9320,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/vector/" class="md-nav__link ">
+            <a href="../groups/vector/" class="md-nav__link ">
               
   
   
@@ -8999,7 +9364,63 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vdup/" class="md-nav__link">
+      <a href="../vrestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VRESTORE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vsave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSAVE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vdup/" class="md-nav__link">
         
   
   
@@ -9027,7 +9448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmov/" class="md-nav__link">
+      <a href="../vmov/" class="md-nav__link">
         
   
   
@@ -9055,7 +9476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/phead/" class="md-nav__link">
+      <a href="../phead/" class="md-nav__link">
         
   
   
@@ -9083,7 +9504,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ptail/" class="md-nav__link">
+      <a href="../ptail/" class="md-nav__link">
         
   
   
@@ -9111,7 +9532,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pfirst/" class="md-nav__link">
+      <a href="../pfirst/" class="md-nav__link">
         
   
   
@@ -9139,7 +9560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/plast/" class="md-nav__link">
+      <a href="../plast/" class="md-nav__link">
         
   
   
@@ -9167,7 +9588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pcount/" class="md-nav__link">
+      <a href="../pcount/" class="md-nav__link">
         
   
   
@@ -9195,7 +9616,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pand/" class="md-nav__link">
+      <a href="../pand/" class="md-nav__link">
         
   
   
@@ -9223,7 +9644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/por/" class="md-nav__link">
+      <a href="../por/" class="md-nav__link">
         
   
   
@@ -9251,7 +9672,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pxor/" class="md-nav__link">
+      <a href="../pxor/" class="md-nav__link">
         
   
   
@@ -9279,7 +9700,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/punpklo/" class="md-nav__link">
+      <a href="../punpklo/" class="md-nav__link">
         
   
   
@@ -9307,7 +9728,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/punpkhi/" class="md-nav__link">
+      <a href="../punpkhi/" class="md-nav__link">
         
   
   
@@ -9335,7 +9756,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ppacklo/" class="md-nav__link">
+      <a href="../ppacklo/" class="md-nav__link">
         
   
   
@@ -9363,7 +9784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ppackhi/" class="md-nav__link">
+      <a href="../ppackhi/" class="md-nav__link">
         
   
   
@@ -9391,7 +9812,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vclr/" class="md-nav__link">
+      <a href="../vclr/" class="md-nav__link">
         
   
   
@@ -9419,7 +9840,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vindex/" class="md-nav__link">
+      <a href="../vindex/" class="md-nav__link">
         
   
   
@@ -9447,7 +9868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vlcnt/" class="md-nav__link">
+      <a href="../vlcnt/" class="md-nav__link">
         
   
   
@@ -9475,7 +9896,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vlcadd/" class="md-nav__link">
+      <a href="../vlcadd/" class="md-nav__link">
         
   
   
@@ -9503,7 +9924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vgather/" class="md-nav__link">
+      <a href="../vgather/" class="md-nav__link">
         
   
   
@@ -9531,7 +9952,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vscatter/" class="md-nav__link">
+      <a href="../vscatter/" class="md-nav__link">
         
   
   
@@ -9559,7 +9980,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ptrue/" class="md-nav__link">
+      <a href="../ptrue/" class="md-nav__link">
         
   
   
@@ -9587,7 +10008,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pfalse/" class="md-nav__link">
+      <a href="../pfalse/" class="md-nav__link">
         
   
   
@@ -9615,7 +10036,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pnot/" class="md-nav__link">
+      <a href="../pnot/" class="md-nav__link">
         
   
   
@@ -9643,7 +10064,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/bpany/" class="md-nav__link">
+      <a href="../bpany/" class="md-nav__link">
         
   
   
@@ -9671,7 +10092,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/bpnone/" class="md-nav__link">
+      <a href="../bpnone/" class="md-nav__link">
         
   
   
@@ -9699,7 +10120,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/bpall/" class="md-nav__link">
+      <a href="../bpall/" class="md-nav__link">
         
   
   
@@ -9727,7 +10148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vneg/" class="md-nav__link">
+      <a href="../vneg/" class="md-nav__link">
         
   
   
@@ -9755,7 +10176,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vabs/" class="md-nav__link">
+      <a href="../vabs/" class="md-nav__link">
         
   
   
@@ -9783,7 +10204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vnot/" class="md-nav__link">
+      <a href="../vnot/" class="md-nav__link">
         
   
   
@@ -9811,7 +10232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vclz/" class="md-nav__link">
+      <a href="../vclz/" class="md-nav__link">
         
   
   
@@ -9839,7 +10260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vctz/" class="md-nav__link">
+      <a href="../vctz/" class="md-nav__link">
         
   
   
@@ -9867,7 +10288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vcls/" class="md-nav__link">
+      <a href="../vcls/" class="md-nav__link">
         
   
   
@@ -9895,7 +10316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vcts/" class="md-nav__link">
+      <a href="../vcts/" class="md-nav__link">
         
   
   
@@ -9923,7 +10344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vpopcnt/" class="md-nav__link">
+      <a href="../vpopcnt/" class="md-nav__link">
         
   
   
@@ -9951,7 +10372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vrevbyte/" class="md-nav__link">
+      <a href="../vrevbyte/" class="md-nav__link">
         
   
   
@@ -9979,7 +10400,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pperm/" class="md-nav__link">
+      <a href="../pperm/" class="md-nav__link">
         
   
   
@@ -10007,7 +10428,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pslideup/" class="md-nav__link">
+      <a href="../pslideup/" class="md-nav__link">
         
   
   
@@ -10035,7 +10456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pslidedn/" class="md-nav__link">
+      <a href="../pslidedn/" class="md-nav__link">
         
   
   
@@ -10063,7 +10484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vcmpcc/" class="md-nav__link">
+      <a href="../vcmpcc/" class="md-nav__link">
         
   
   
@@ -10091,7 +10512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtestz/" class="md-nav__link">
+      <a href="../vtestz/" class="md-nav__link">
         
   
   
@@ -10119,7 +10540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtestnz/" class="md-nav__link">
+      <a href="../vtestnz/" class="md-nav__link">
         
   
   
@@ -10147,7 +10568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vadd/" class="md-nav__link">
+      <a href="../vadd/" class="md-nav__link">
         
   
   
@@ -10175,7 +10596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vsub/" class="md-nav__link">
+      <a href="../vsub/" class="md-nav__link">
         
   
   
@@ -10203,7 +10624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmul/" class="md-nav__link">
+      <a href="../vmul/" class="md-nav__link">
         
   
   
@@ -10231,7 +10652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vand/" class="md-nav__link">
+      <a href="../vand/" class="md-nav__link">
         
   
   
@@ -10259,7 +10680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vor/" class="md-nav__link">
+      <a href="../vor/" class="md-nav__link">
         
   
   
@@ -10287,7 +10708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vxor/" class="md-nav__link">
+      <a href="../vxor/" class="md-nav__link">
         
   
   
@@ -10315,7 +10736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmins/" class="md-nav__link">
+      <a href="../vmins/" class="md-nav__link">
         
   
   
@@ -10343,7 +10764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vminu/" class="md-nav__link">
+      <a href="../vminu/" class="md-nav__link">
         
   
   
@@ -10371,7 +10792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmaxs/" class="md-nav__link">
+      <a href="../vmaxs/" class="md-nav__link">
         
   
   
@@ -10399,7 +10820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmaxu/" class="md-nav__link">
+      <a href="../vmaxu/" class="md-nav__link">
         
   
   
@@ -10427,7 +10848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmulhs/" class="md-nav__link">
+      <a href="../vmulhs/" class="md-nav__link">
         
   
   
@@ -10455,7 +10876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmulhu/" class="md-nav__link">
+      <a href="../vmulhu/" class="md-nav__link">
         
   
   
@@ -10483,7 +10904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmulhsu/" class="md-nav__link">
+      <a href="../vmulhsu/" class="md-nav__link">
         
   
   
@@ -10511,7 +10932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vshl/" class="md-nav__link">
+      <a href="../vshl/" class="md-nav__link">
         
   
   
@@ -10539,7 +10960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vshr/" class="md-nav__link">
+      <a href="../vshr/" class="md-nav__link">
         
   
   
@@ -10567,7 +10988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vsar/" class="md-nav__link">
+      <a href="../vsar/" class="md-nav__link">
         
   
   
@@ -10595,7 +11016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vrol/" class="md-nav__link">
+      <a href="../vrol/" class="md-nav__link">
         
   
   
@@ -10623,7 +11044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vror/" class="md-nav__link">
+      <a href="../vror/" class="md-nav__link">
         
   
   
@@ -10651,7 +11072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextzw/" class="md-nav__link">
+      <a href="../vextzw/" class="md-nav__link">
         
   
   
@@ -10679,7 +11100,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextsw/" class="md-nav__link">
+      <a href="../vextsw/" class="md-nav__link">
         
   
   
@@ -10707,7 +11128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextzl/" class="md-nav__link">
+      <a href="../vextzl/" class="md-nav__link">
         
   
   
@@ -10735,7 +11156,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextsl/" class="md-nav__link">
+      <a href="../vextsl/" class="md-nav__link">
         
   
   
@@ -10763,7 +11184,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextzq/" class="md-nav__link">
+      <a href="../vextzq/" class="md-nav__link">
         
   
   
@@ -10791,7 +11212,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextsq/" class="md-nav__link">
+      <a href="../vextsq/" class="md-nav__link">
         
   
   
@@ -10819,7 +11240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtruncb/" class="md-nav__link">
+      <a href="../vtruncb/" class="md-nav__link">
         
   
   
@@ -10847,7 +11268,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtruncw/" class="md-nav__link">
+      <a href="../vtruncw/" class="md-nav__link">
         
   
   
@@ -10875,7 +11296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtruncl/" class="md-nav__link">
+      <a href="../vtruncl/" class="md-nav__link">
         
   
   
@@ -10903,7 +11324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vperm/" class="md-nav__link">
+      <a href="../vperm/" class="md-nav__link">
         
   
   
@@ -10931,7 +11352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vziplo/" class="md-nav__link">
+      <a href="../vziplo/" class="md-nav__link">
         
   
   
@@ -10959,7 +11380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vziphi/" class="md-nav__link">
+      <a href="../vziphi/" class="md-nav__link">
         
   
   
@@ -10987,7 +11408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vuziplo/" class="md-nav__link">
+      <a href="../vuziplo/" class="md-nav__link">
         
   
   
@@ -11015,7 +11436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vuziphi/" class="md-nav__link">
+      <a href="../vuziphi/" class="md-nav__link">
         
   
   
@@ -11043,7 +11464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtrnlo/" class="md-nav__link">
+      <a href="../vtrnlo/" class="md-nav__link">
         
   
   
@@ -11071,7 +11492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vtrnhi/" class="md-nav__link">
+      <a href="../vtrnhi/" class="md-nav__link">
         
   
   
@@ -11099,7 +11520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vslice/" class="md-nav__link">
+      <a href="../vslice/" class="md-nav__link">
         
   
   
@@ -11127,7 +11548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vslideup/" class="md-nav__link">
+      <a href="../vslideup/" class="md-nav__link">
         
   
   
@@ -11155,7 +11576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vslidedn/" class="md-nav__link">
+      <a href="../vslidedn/" class="md-nav__link">
         
   
   
@@ -11183,7 +11604,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vextract/" class="md-nav__link">
+      <a href="../vextract/" class="md-nav__link">
         
   
   
@@ -11211,7 +11632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vinsert/" class="md-nav__link">
+      <a href="../vinsert/" class="md-nav__link">
         
   
   
@@ -11239,7 +11660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredadd/" class="md-nav__link">
+      <a href="../vredadd/" class="md-nav__link">
         
   
   
@@ -11267,7 +11688,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredmins/" class="md-nav__link">
+      <a href="../vredmins/" class="md-nav__link">
         
   
   
@@ -11295,7 +11716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredminu/" class="md-nav__link">
+      <a href="../vredminu/" class="md-nav__link">
         
   
   
@@ -11323,7 +11744,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredmaxs/" class="md-nav__link">
+      <a href="../vredmaxs/" class="md-nav__link">
         
   
   
@@ -11351,7 +11772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredmaxu/" class="md-nav__link">
+      <a href="../vredmaxu/" class="md-nav__link">
         
   
   
@@ -11379,7 +11800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredand/" class="md-nav__link">
+      <a href="../vredand/" class="md-nav__link">
         
   
   
@@ -11407,7 +11828,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredor/" class="md-nav__link">
+      <a href="../vredor/" class="md-nav__link">
         
   
   
@@ -11435,7 +11856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vredxor/" class="md-nav__link">
+      <a href="../vredxor/" class="md-nav__link">
         
   
   
@@ -11463,7 +11884,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/psel/" class="md-nav__link">
+      <a href="../psel/" class="md-nav__link">
         
   
   
@@ -11491,7 +11912,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pziplo/" class="md-nav__link">
+      <a href="../pziplo/" class="md-nav__link">
         
   
   
@@ -11519,7 +11940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pziphi/" class="md-nav__link">
+      <a href="../pziphi/" class="md-nav__link">
         
   
   
@@ -11547,7 +11968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/puziplo/" class="md-nav__link">
+      <a href="../puziplo/" class="md-nav__link">
         
   
   
@@ -11575,7 +11996,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/puziphi/" class="md-nav__link">
+      <a href="../puziphi/" class="md-nav__link">
         
   
   
@@ -11603,7 +12024,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ptrnlo/" class="md-nav__link">
+      <a href="../ptrnlo/" class="md-nav__link">
         
   
   
@@ -11631,7 +12052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ptrnhi/" class="md-nav__link">
+      <a href="../ptrnhi/" class="md-nav__link">
         
   
   
@@ -11659,7 +12080,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pslice/" class="md-nav__link">
+      <a href="../pslice/" class="md-nav__link">
         
   
   
@@ -11687,7 +12108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vmovz/" class="md-nav__link">
+      <a href="../vmovz/" class="md-nav__link">
         
   
   
@@ -11715,7 +12136,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ploop/" class="md-nav__link">
+      <a href="../ploop/" class="md-nav__link">
         
   
   
@@ -11743,7 +12164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/pmov/" class="md-nav__link">
+      <a href="../pmov/" class="md-nav__link">
         
   
   
@@ -11871,7 +12292,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../instructions/groups/vectorfp/" class="md-nav__link ">
+            <a href="../groups/vectorfp/" class="md-nav__link ">
               
   
   
@@ -11915,7 +12336,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfdup/" class="md-nav__link">
+      <a href="../vfdup/" class="md-nav__link">
         
   
   
@@ -11943,7 +12364,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfneg/" class="md-nav__link">
+      <a href="../vfneg/" class="md-nav__link">
         
   
   
@@ -11971,7 +12392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfabs/" class="md-nav__link">
+      <a href="../vfabs/" class="md-nav__link">
         
   
   
@@ -11999,7 +12420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfsqrt/" class="md-nav__link">
+      <a href="../vfsqrt/" class="md-nav__link">
         
   
   
@@ -12027,7 +12448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfround/" class="md-nav__link">
+      <a href="../vfround/" class="md-nav__link">
         
   
   
@@ -12055,7 +12476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vftrunc/" class="md-nav__link">
+      <a href="../vftrunc/" class="md-nav__link">
         
   
   
@@ -12083,7 +12504,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vffloor/" class="md-nav__link">
+      <a href="../vffloor/" class="md-nav__link">
         
   
   
@@ -12111,7 +12532,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfceil/" class="md-nav__link">
+      <a href="../vfceil/" class="md-nav__link">
         
   
   
@@ -12139,7 +12560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfclass/" class="md-nav__link">
+      <a href="../vfclass/" class="md-nav__link">
         
   
   
@@ -12167,7 +12588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcmpcc/" class="md-nav__link">
+      <a href="../vfcmpcc/" class="md-nav__link">
         
   
   
@@ -12195,7 +12616,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfadd/" class="md-nav__link">
+      <a href="../vfadd/" class="md-nav__link">
         
   
   
@@ -12223,7 +12644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfsub/" class="md-nav__link">
+      <a href="../vfsub/" class="md-nav__link">
         
   
   
@@ -12251,7 +12672,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfmul/" class="md-nav__link">
+      <a href="../vfmul/" class="md-nav__link">
         
   
   
@@ -12279,7 +12700,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfmin/" class="md-nav__link">
+      <a href="../vfmin/" class="md-nav__link">
         
   
   
@@ -12307,7 +12728,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfmax/" class="md-nav__link">
+      <a href="../vfmax/" class="md-nav__link">
         
   
   
@@ -12335,7 +12756,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfdiv/" class="md-nav__link">
+      <a href="../vfdiv/" class="md-nav__link">
         
   
   
@@ -12363,7 +12784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcopysign/" class="md-nav__link">
+      <a href="../vfcopysign/" class="md-nav__link">
         
   
   
@@ -12391,7 +12812,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvts/" class="md-nav__link">
+      <a href="../vfcvts/" class="md-nav__link">
         
   
   
@@ -12419,7 +12840,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtd/" class="md-nav__link">
+      <a href="../vfcvtd/" class="md-nav__link">
         
   
   
@@ -12447,7 +12868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtus/" class="md-nav__link">
+      <a href="../vfcvtus/" class="md-nav__link">
         
   
   
@@ -12475,7 +12896,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtud/" class="md-nav__link">
+      <a href="../vfcvtud/" class="md-nav__link">
         
   
   
@@ -12503,7 +12924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtl/" class="md-nav__link">
+      <a href="../vfcvtl/" class="md-nav__link">
         
   
   
@@ -12531,7 +12952,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtul/" class="md-nav__link">
+      <a href="../vfcvtul/" class="md-nav__link">
         
   
   
@@ -12559,7 +12980,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtq/" class="md-nav__link">
+      <a href="../vfcvtq/" class="md-nav__link">
         
   
   
@@ -12587,7 +13008,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtuq/" class="md-nav__link">
+      <a href="../vfcvtuq/" class="md-nav__link">
         
   
   
@@ -12615,7 +13036,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvth/" class="md-nav__link">
+      <a href="../vfcvth/" class="md-nav__link">
         
   
   
@@ -12643,7 +13064,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfcvtuh/" class="md-nav__link">
+      <a href="../vfcvtuh/" class="md-nav__link">
         
   
   
@@ -12671,7 +13092,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfmadd/" class="md-nav__link">
+      <a href="../vfmadd/" class="md-nav__link">
         
   
   
@@ -12699,7 +13120,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfmsub/" class="md-nav__link">
+      <a href="../vfmsub/" class="md-nav__link">
         
   
   
@@ -12727,7 +13148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfnmadd/" class="md-nav__link">
+      <a href="../vfnmadd/" class="md-nav__link">
         
   
   
@@ -12755,7 +13176,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfnmsub/" class="md-nav__link">
+      <a href="../vfnmsub/" class="md-nav__link">
         
   
   
@@ -12783,7 +13204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfextract/" class="md-nav__link">
+      <a href="../vfextract/" class="md-nav__link">
         
   
   
@@ -12811,7 +13232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfinsert/" class="md-nav__link">
+      <a href="../vfinsert/" class="md-nav__link">
         
   
   
@@ -12839,7 +13260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfredadd/" class="md-nav__link">
+      <a href="../vfredadd/" class="md-nav__link">
         
   
   
@@ -12867,7 +13288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfredmin/" class="md-nav__link">
+      <a href="../vfredmin/" class="md-nav__link">
         
   
   
@@ -12895,7 +13316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/vfredmax/" class="md-nav__link">
+      <a href="../vfredmax/" class="md-nav__link">
         
   
   
@@ -12939,7 +13360,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
@@ -13088,7 +13509,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../elf-abi/" class="md-nav__link ">
+            <a href="../../../elf-abi/" class="md-nav__link ">
               
   
   
@@ -13132,7 +13553,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/scope/" class="md-nav__link">
+      <a href="../../../elf-abi/scope/" class="md-nav__link">
         
   
   
@@ -13160,7 +13581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/terminology/" class="md-nav__link">
+      <a href="../../../elf-abi/terminology/" class="md-nav__link">
         
   
   
@@ -13188,7 +13609,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/elf-object-format/" class="md-nav__link">
+      <a href="../../../elf-abi/elf-object-format/" class="md-nav__link">
         
   
   
@@ -13216,7 +13637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/program-loading/" class="md-nav__link">
+      <a href="../../../elf-abi/program-loading/" class="md-nav__link">
         
   
   
@@ -13244,7 +13665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/sections-and-symbols/" class="md-nav__link">
+      <a href="../../../elf-abi/sections-and-symbols/" class="md-nav__link">
         
   
   
@@ -13272,7 +13693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/relocation-set/" class="md-nav__link">
+      <a href="../../../elf-abi/relocation-set/" class="md-nav__link">
         
   
   
@@ -13300,7 +13721,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/dynamic-linking/" class="md-nav__link">
+      <a href="../../../elf-abi/dynamic-linking/" class="md-nav__link">
         
   
   
@@ -13328,7 +13749,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/thread-local-storage/" class="md-nav__link">
+      <a href="../../../elf-abi/thread-local-storage/" class="md-nav__link">
         
   
   
@@ -13356,7 +13777,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/code-models/" class="md-nav__link">
+      <a href="../../../elf-abi/code-models/" class="md-nav__link">
         
   
   
@@ -13384,7 +13805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/debugging-and-unwind/" class="md-nav__link">
+      <a href="../../../elf-abi/debugging-and-unwind/" class="md-nav__link">
         
   
   
@@ -13412,7 +13833,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../elf-abi/assembler-contract/" class="md-nav__link">
+      <a href="../../../elf-abi/assembler-contract/" class="md-nav__link">
         
   
   
@@ -13547,7 +13968,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../c-abi/" class="md-nav__link ">
+            <a href="../../../c-abi/" class="md-nav__link ">
               
   
   
@@ -13591,7 +14012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/scope/" class="md-nav__link">
+      <a href="../../../c-abi/scope/" class="md-nav__link">
         
   
   
@@ -13619,7 +14040,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/terminology/" class="md-nav__link">
+      <a href="../../../c-abi/terminology/" class="md-nav__link">
         
   
   
@@ -13647,7 +14068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/data-model/" class="md-nav__link">
+      <a href="../../../c-abi/data-model/" class="md-nav__link">
         
   
   
@@ -13675,7 +14096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/register-convention/" class="md-nav__link">
+      <a href="../../../c-abi/register-convention/" class="md-nav__link">
         
   
   
@@ -13703,7 +14124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/calling-convention/" class="md-nav__link">
+      <a href="../../../c-abi/calling-convention/" class="md-nav__link">
         
   
   
@@ -13731,7 +14152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/freestanding-c-binding/" class="md-nav__link">
+      <a href="../../../c-abi/freestanding-c-binding/" class="md-nav__link">
         
   
   
@@ -13759,7 +14180,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/c-memory-model/" class="md-nav__link">
+      <a href="../../../c-abi/c-memory-model/" class="md-nav__link">
         
   
   
@@ -13787,7 +14208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-abi/calling-convention-examples/" class="md-nav__link">
+      <a href="../../../c-abi/calling-convention-examples/" class="md-nav__link">
         
   
   
@@ -13916,7 +14337,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../target-intrinsics/" class="md-nav__link ">
+            <a href="../../../target-intrinsics/" class="md-nav__link ">
               
   
   
@@ -13960,7 +14381,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../target-intrinsics/scope-and-status/" class="md-nav__link">
+      <a href="../../../target-intrinsics/scope-and-status/" class="md-nav__link">
         
   
   
@@ -13988,7 +14409,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../target-intrinsics/compiler-interface-model/" class="md-nav__link">
+      <a href="../../../target-intrinsics/compiler-interface-model/" class="md-nav__link">
         
   
   
@@ -14016,7 +14437,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../target-intrinsics/public-target-interface/" class="md-nav__link">
+      <a href="../../../target-intrinsics/public-target-interface/" class="md-nav__link">
         
   
   
@@ -14044,7 +14465,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../target-intrinsics/system-target-interface/" class="md-nav__link">
+      <a href="../../../target-intrinsics/system-target-interface/" class="md-nav__link">
         
   
   
@@ -14072,7 +14493,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../target-intrinsics/shared-header-types/" class="md-nav__link">
+      <a href="../../../target-intrinsics/shared-header-types/" class="md-nav__link">
         
   
   
@@ -14135,10 +14556,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#save-area-layout" class="md-nav__link">
+  <a href="#operation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Save-Area Layout
+        Operation
       
     </span>
   </a>
@@ -14146,10 +14567,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fixed-architectural-state" class="md-nav__link">
+  <a href="#assembler-syntax" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fixed Architectural State
+        Assembler Syntax
       
     </span>
   </a>
@@ -14157,10 +14578,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#extension-components-and-clean-state" class="md-nav__link">
+  <a href="#privilege" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Extension Components and Clean State
+        Privilege
       
     </span>
   </a>
@@ -14168,43 +14589,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#floating-point-save-component" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Floating-Point SAVE Component
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#vector-save-component" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Vector SAVE Component
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#save-responsibilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SAVE Responsibilities
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#restore-responsibilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        RESTORE Responsibilities
+        Encodings
       
     </span>
   </a>
@@ -14228,87 +14616,32 @@
 
 
 
-<h1 id="processor-state-save-and-restore">Processor-State Save and Restore</h1>
-<p>SAVE and RESTORE use a CPUID-defined memory image whose base is 4 KiB aligned.</p>
-<h2 id="save-area-layout">Save-Area Layout</h2>
-<p>Software obtains every extension component's offset and maximum size from CPUID <code>SAVE_AREA_LAYOUT</code>. Each component starts on a 64-byte boundary.</p>
-<p><a href="#save-area-field-base-state-save-area-base-header-status" id="save-area-field-base-state-save-area-base-header-status"></a> <a href="#save-area-field-base-state-save-area-base-header-flags" id="save-area-field-base-state-save-area-base-header-flags"></a> <a href="#save-area-field-base-state-save-area-base-header-fmt" id="save-area-field-base-state-save-area-base-header-fmt"></a></p>
-<p><img alt="SAVE/RESTORE Base Header" src="../../assets/visuals/isa/processor-state-save-and-restore-01.svg" /></p>
-<p><strong>SAVE/RESTORE Base Header</strong></p>
-<p>The labels <code>5</code> through <code>0</code> are the six <a href="#save-area-field-base-state-save-area-base-header-gs-valid" id="save-area-field-base-state-save-area-base-header-gs-valid"></a><code>GS_VALID</code> bits. SAVE writes <a href="#save-area-field-base-state-save-area-base-header-gs-valid"><code>BASE_HEADER.GS_VALID</code></a><code>=0x3f</code> and <a href="#save-area-field-base-state-save-area-base-header-fmt"><code>BASE_HEADER.FMT</code></a><code>=0</code>. The label <code>D</code> denotes <a href="#save-area-field-base-state-save-area-base-header-dfa" id="save-area-field-base-state-save-area-base-header-dfa"></a><code>DFA</code>, which records the hidden current double-fault-active bit.</p>
-<p><img alt="SAVE/RESTORE Fixed Base Block" src="../../assets/visuals/isa/processor-state-save-and-restore-02.svg" /></p>
-<p><strong>SAVE/RESTORE Fixed Base Block</strong></p>
-<h2 id="fixed-architectural-state">Fixed Architectural State</h2>
-<p>The fixed block contains the base <a href="../terminology/#term-header">header</a>, state-block bitmap, R0 through R15, and GS0 through GS5 images.</p>
-<p>The <a href="../terminology/#term-header">header</a> carries <a href="#save-area-field-base-state-save-area-base-header-flags"><code>BASE_HEADER.FLAGS</code></a>, <a href="#save-area-field-base-state-save-area-base-header-status"><code>BASE_HEADER.STATUS</code></a>, the hidden <a href="#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a> bit, <a href="#save-area-field-base-state-save-area-base-header-fmt"><code>BASE_HEADER.FMT</code></a>, and <a href="#save-area-field-base-state-save-area-base-header-gs-valid"><code>BASE_HEADER.GS_VALID</code></a>. <a href="#save-area-field-base-state-save-area-base-header-gs-valid"><code>BASE_HEADER.GS_VALID</code></a> selects which GS images are meaningful.</p>
-<p>Per-processor debug-trigger slots and their selector are not part of the fixed block or any SAVE/RESTORE extension component. <a href="../programming-model/#register-field-base-registers-state-status-tf"><code>STATUS.TF</code></a> and <a href="../programming-model/#register-field-base-registers-state-status-rf"><code>STATUS.RF</code></a> remain part of the saved <a href="#save-area-field-base-state-save-area-base-header-status"><code>BASE_HEADER.STATUS</code></a> execution context.</p>
-<h2 id="extension-components-and-clean-state">Extension Components and Clean State</h2>
-<p>An extension component is architecturally clean when its state is known to equal its component-defined initial state. Reset and RESTORE of a clear component bit make that component clean. A committed write that can make a component differ from its initial state makes it modified; RESTORE of a non-initial component image also makes it modified. An implementation may mark a component clean whenever it establishes that the complete component again equals its initial state.</p>
-<p>Each extension defines its component ID, bitmap bit, memory image, initial state, and the writes that mark the component modified.</p>
-<h2 id="floating-point-save-component">Floating-Point SAVE Component</h2>
-<p>When FP is present, component ID 1 uses bitmap bit 0, offset <code>0x00c0</code>, size <code>0x00c0</code>, and alignment 64. Its initial and reset state is positive zero in F0 through F15 and zero in FFLAGS and FSTATUS. A committed write that changes any of this state marks the component modified.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Component Offset</strong></th>
-<th style="text-align: left;"><strong>State</strong></th>
-<th style="text-align: left;"><strong>Contents</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>0x000..0x07f</code></td>
-<td style="text-align: left;">F0–F15</td>
-<td style="text-align: left;">ascending register order</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x080..0x087</code></td>
-<td style="text-align: left;"><code>FFLAGS</code></td>
-<td style="text-align: left;">FFLAGS in bits 15..0; remaining bits zero</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>0x088..0x08f</code></td>
-<td style="text-align: left;"><code>FSTATUS</code></td>
-<td style="text-align: left;">FSTATUS in bits 15..0; remaining bits zero</td>
-</tr>
-</tbody>
-</table>
-<h2 id="vector-save-component">Vector SAVE Component</h2>
-<p>When VECTOR is present, component ID 2 uses bitmap bit 1 and contains the complete V0 through V31 and packed P0 through P15 images. Let <span class="arithmatex">\(B\)</span> be VLEN in bytes. The reported component size is <span class="arithmatex">\(64\lceil 34B/64\rceil\)</span>, and its initial and reset state is all zero. A committed Vn or Pn write marks the component modified.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"><strong>Component Offset</strong></th>
-<th style="text-align: left;"><strong>State</strong></th>
-<th style="text-align: left;"><strong>Contents</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>n * B</code></td>
-<td style="text-align: left;"><code>Vn</code></td>
-<td style="text-align: left;">V0 through V31; each register occupies B bytes</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>32 * B + n * B/8</code></td>
-<td style="text-align: left;"><code>Pn</code></td>
-<td style="text-align: left;">P0 through P15; each packed predicate image occupies B/8 bytes</td>
-</tr>
-<tr>
-<td style="text-align: left;"><span class="arithmatex">\(34B \mathbin{..} 64\lceil 34B/64\rceil - 1\)</span></td>
-<td style="text-align: left;"><a href="../terminology/#term-padding">padding</a></td>
-<td style="text-align: left;">zero on SAVE and <a href="../terminology/#term-ignored">ignored</a> on RESTORE</td>
-</tr>
-</tbody>
-</table>
-<h2 id="save-responsibilities">SAVE Responsibilities</h2>
-<p>SAVE writes <a href="#save-area-field-base-state-save-area-base-header-fmt"><code>BASE_HEADER.FMT</code></a><code>=0</code>, sets <a href="#save-area-field-base-state-save-area-base-header-gs-valid"><code>BASE_HEADER.GS_VALID</code></a><code>=0x3f</code>, records the complete <a href="#save-area-field-base-state-save-area-base-header-status"><code>BASE_HEADER.STATUS</code></a> image and current <a href="#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a>, and records GS0 through GS5. SAVE sets bitmap bits only for components described by its CPUID <code>SAVE_AREA_LAYOUT</code> leaf.</p>
-<p>SAVE may omit an architecturally clean extension component by clearing its bitmap bit. SAVE may clear a bitmap bit only for a clean component. SAVE does not change clean or modified state.</p>
-<h2 id="restore-responsibilities">RESTORE Responsibilities</h2>
-<p>RESTORE replaces each GSn whose corresponding <a href="#save-area-field-base-state-save-area-base-header-gs-valid"><code>BASE_HEADER.GS_VALID</code></a> bit is set and preserves each GSn whose bit is clear. It validates every selected segment image before changing <a href="../terminology/#term-architectural-state">architectural state</a>.</p>
-<p>RESTORE uses the state-block bitmap as authoritative when reconstructing extension state. It accepts only the defined format and only bitmap bits that name CPUID-described components for that format. RESTORE raises <a href="../architectural-event-processing-model/#event-invalid-control-image"><code>INVALID_CONTROL_IMAGE</code></a> before changing <a href="../terminology/#term-architectural-state">architectural state</a> when the format is unrecognized or a set bitmap bit does not name a CPUID-described component for that format. RESTORE of a clear, described component bit installs that component's initial state.</p>
-<p>User-mode RESTORE ignores saved supervisor-only <a href="#save-area-field-base-state-save-area-base-header-status"><code>BASE_HEADER.STATUS</code></a> and <a href="#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a> state. Supervisor RESTORE is an architectural context transition: it restores <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a>, <a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a>, and current <a href="#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a> together with <a href="#save-area-field-base-state-save-area-base-header-status"><code>BASE_HEADER.STATUS</code></a> after validating the complete event-state invariants. It requires saved <a href="../programming-model/#register-field-base-registers-state-status-pm"><code>STATUS.PM</code></a><code>=1</code>; <a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a> requires a valid live U bank, <a href="#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a> requires an active event, and inactive state requires <a href="../programming-model/#register-field-base-registers-state-status-edepth"><code>STATUS.EDEPTH</code></a><code>=0</code>, <a href="../programming-model/#register-field-base-registers-state-status-uo"><code>STATUS.UO</code></a><code>=0</code>, and <a href="#save-area-field-base-state-save-area-base-header-dfa"><code>BASE_HEADER.DFA</code></a><code>=0</code>. Ordinary WRSTATUS remains unable to change these <a href="../terminology/#term-field">fields</a>.</p>
-<p>The normative instruction entries are <a href="../instructions/save/"><code>SAVE</code></a> and <a href="../instructions/restore/"><code>RESTORE</code></a>.</p>
+<h1 id="fcall">FCALL</h1>
+<h2 id="operation">Operation</h2>
+<p>Installs a resident continuation and transfers without return-record memory traffic.</p>
+<h2 id="assembler-syntax">Assembler Syntax</h2>
+<p><code>FCALL &lt;imm16s&gt;</code></p>
+<p><code>FCALL &lt;imm32s&gt;</code></p>
+<p><code>FCALL &lt;ea&gt;(e)</code></p>
+<p><code>FCALL Rn(r)</code></p>
+<h2 id="privilege">Privilege</h2>
+<p>Unprivileged</p>
+<p>FCALL reserves the ordinary eight-byte near-call stack footprint without accessing a return-record memory location. After validating the target, it commits SP minus eight, installs the following instruction address in LPC with LPA.A one and LPA.PA zero, and transfers within the current CS. A live resident continuation raises <a href="../../architectural-event-processing-model/#event-invalid-control-transition"><code>INVALID_CONTROL_TRANSITION</code></a> before target or stack access.</p>
+<p>2.75in</p>
+<h2 id="encodings">Encodings</h2>
+<p><strong><code>FCALL &lt;imm16s&gt;</code></strong></p>
+<p><img alt="Format: Instruction format for FCALL &lt;imm16s&gt;" src="../../../assets/visuals/isa/fcall-01.svg" /></p>
+<p><strong>Format: Instruction format for FCALL &lt;imm16s&gt;</strong></p>
+<p>2.75in <strong><code>FCALL &lt;imm32s&gt;</code></strong></p>
+<p><img alt="Format: Instruction format for FCALL &lt;imm32s&gt;" src="../../../assets/visuals/isa/fcall-02.svg" /></p>
+<p><strong>Format: Instruction format for FCALL &lt;imm32s&gt;</strong></p>
+<p>2.75in <strong><code>FCALL &lt;ea&gt;(e)</code></strong></p>
+<p><img alt="Format: Instruction format for FCALL &lt;ea&gt;(e)" src="../../../assets/visuals/isa/fcall-03.svg" /></p>
+<p><strong>Format: Instruction format for FCALL &lt;ea&gt;(e)</strong></p>
+<p><code>target</code> — <code>excluded</code>: <code>immediate</code> [<code>canonical_form_reclaim</code>]</p>
+<p>2.75in <strong><code>FCALL Rn(r)</code></strong></p>
+<p><img alt="Format: Instruction format for FCALL Rn(r)" src="../../../assets/visuals/isa/fcall-04.svg" /></p>
+<p><strong>Format: Instruction format for FCALL Rn(r)</strong></p>
 
 
 
@@ -14364,12 +14697,12 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.indexes", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.indexes", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
-        <script src="../../javascripts/mathjax.js"></script>
+        <script src="../../../javascripts/mathjax.js"></script>
       
         <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
