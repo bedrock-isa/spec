@@ -5,3 +5,7 @@ queries:
   index: 0
   fields:
   - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: STATE_RECORDS
+  index: 1
+  fields:
+  - {id: SUPERVISOR_RECORD_REVISION, lsb: 0, bits: 8}

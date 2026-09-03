@@ -10,8 +10,14 @@ function lower_CALLcc_uops(instruction : Decoded_instruction) -> option(list(Uop
       let return_value = uop_location_make_temporary(lowered.next_temporary + 1);
       let relative = target.operand_type == OperandType_imm8s | target.operand_type == OperandType_imm16s
                    | target.operand_type == OperandType_imm32s;
-      Some(uop_program_append([|uop_make(UopPredicateGuard(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(),
-                                  Operand_target, 0, CommitControl)|], uop_program_append(lowered.program, [|
+      Some(uop_program_append([|
+        uop_make(UopPredicateGuard(), uop_location_make_none(),
+          uop_location_make_none(), uop_location_make_none(), Operand_target,
+          0, CommitControl),
+        uop_make(UopLinkInactiveGuard(), uop_location_make_none(),
+          uop_location_make_none(), uop_location_make_none(), Operand_target,
+          0, CommitControl)
+      |], uop_program_append(lowered.program, [|
         uop_make(UopControlTarget(relative), lowered.value, uop_location_make_none(), target_value, Operand_target,
                  operation_width(instruction), CommitControl),
         uop_make(UopControlProbe(), target_value, uop_location_make_segment(0), uop_location_make_none(), Operand_target, 8, CommitControl),

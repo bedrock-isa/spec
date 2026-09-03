@@ -39,8 +39,9 @@ body:
 - topic: VECTOR.registers.vector-register-model
 - topic: base.registers.register-model.segment-registers
 - topic: base.registers.register-model.segment-register-operand-class
+- topic: base.state.resident-link-state
+- topic: CFI.state.control-flow-integrity-key-state
 - topic: base.control_registers.control-registers
-- topic: CFI.control_registers.control-flow-integrity-controls
 - topic: base.encoding.data.data-formats.data-formats
 - topic: base.encoding.data.data-formats.integer-data-sizes
 - topic: base.encoding.data.data-formats.little-endian-memory-organization
@@ -146,6 +147,7 @@ body:
 - topic: base.state.save-restore-area.base-supervisor-state-record
 - topic: FP.state.floating-point-state-record
 - topic: VECTOR.state.vector-state-record
+- topic: CFI.state.control-flow-integrity-state-record
 - topic: base.state.save-restore-area.state-record-transfer-semantics
 - topic: base.manual.part.instruction-set-reference
 - topic: base.instructions.instruction-description-intro.reading-an-instruction-description

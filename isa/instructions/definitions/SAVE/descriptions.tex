@@ -1,3 +1,3 @@
-SAVE writes one base user-state record at the address captured from Rn before the instruction executes. The address must be 8-byte aligned. The record contains R0 through R15, GS0 through GS5, and the 16-bit FLAGS image; it contains no supervisor or extension state.
+SAVE writes one base user-state record at the address captured from Rn before the instruction executes. The address must be 8-byte aligned. The 200-byte record contains R0 through R15, GS0 through GS5, the FLAGS image, LPC, and the complete opaque LPA image; it contains no supervisor or extension-owned key state.
 
 The complete record range is validated before any byte is written. SAVE is a pure snapshot and does not change architectural state. Any address or access fault leaves architectural state and the destination record unchanged.

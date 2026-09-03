@@ -1,0 +1,6 @@
+\subsection{Resident-Link State}\label{section:resident-link-state}
+LPC and LPA are 64-bit members of the L architectural-state family. They are not control registers, have no RDCR or WRCR selectors, and are not general-purpose instruction operands. LPC holds a resident continuation PC. LPA bit 63 is the active bit A and bits 62 through 0 are an opaque pointer-authentication field PA.
+
+When A is zero, no resident continuation is active. When A is one and PA is zero, LPC holds an unauthenticated FCALL continuation. When A is one and PA is nonzero, LPC:PA holds an authenticated FPCALL continuation. Base instructions interpret A and preserve the complete LPA image through SAVE and RESTORE; the CFI extension owns the meaning of PA.
+
+Every taken call and every long return requires A to be zero before target or stack access. A false CALLcc does not perform this check. CLRLINK atomically clears LPC and LPA in either privilege mode without accessing memory or changing the CFI key. Event entry and ERET preserve all L state; software saves, clears, and restores resident-link state explicitly when an event handler must call.

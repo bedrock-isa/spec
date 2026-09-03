@@ -1,0 +1,4 @@
+\subsection{Control-Flow Integrity Key State}\label{section:cfi-key-state}
+LKL and LKH are supervisor-only members of the L architectural-state family and form one 128-bit per-context pointer-authentication key. They are not control registers and have no RDCR, WRCR, or individual read/write instruction. The all-zero combined value is unconfigured; any nonzero value enables CFI indirect-landing checks and permits protected call and return instructions.
+
+Supervisor software transfers both halves atomically with CFISSAVE and CFISRESTORE. Changing the combined key invalidates all protected continuations made with the previous key. CLRLINK does not change the key.

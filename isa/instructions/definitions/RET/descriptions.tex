@@ -1,4 +1,6 @@
-Reads one 64-bit return address from SS:SP, advances SP by eight bytes, validates the target, and transfers control to it.
+When LPA.A is one, RET validates LPC as a near return target without authenticating LPA.PA. It restores eight bytes of stack footprint when PA is zero and 16 bytes when PA is nonzero, clears LPC and LPA, and transfers within the current CS. No return-record memory location is accessed on this path.
+
+When LPA.A is zero, RET reads one 64-bit return address from SS:SP, advances SP by eight bytes, validates the target, and transfers control to it.
 
 \begin{enumerate}
 \item Read the 8-byte return address through the old SS:SP context without changing SP.
@@ -6,4 +8,4 @@ Reads one 64-bit return address from SS:SP, advances SP by eight bytes, validate
 \item Commit advanced SP and the new PC as one successful control-transfer operation.
 \end{enumerate}
 
-A stack-read or target-validation fault leaves SP and PC unchanged.
+A stack-read or target-validation fault leaves SP, PC, LPC, and LPA unchanged.

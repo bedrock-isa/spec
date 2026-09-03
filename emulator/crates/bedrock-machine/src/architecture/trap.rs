@@ -72,6 +72,13 @@ pub enum VectorRangeErrorCause {
     LaneIndex = 1,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum ControlFlowIntegrityCause {
+    IndirectLanding = 1,
+    ReturnAuthentication = 2,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum Trap {
     #[error("decode fault at 0x{pc:016x}: {error}")]
@@ -98,6 +105,11 @@ pub enum Trap {
     InvalidControlState { pc: u64, cause: InvalidControlCause },
     #[error("floating-point fault at 0x{pc:016x}: causes {causes:?}")]
     FloatingPointFault { pc: u64, causes: crate::FpCauses },
+    #[error("control-flow integrity violation at 0x{pc:016x}: cause {cause:?}")]
+    ControlFlowIntegrityViolation {
+        pc: u64,
+        cause: ControlFlowIntegrityCause,
+    },
     #[error("page fault at 0x{address:016x} while executing 0x{pc:016x}: {reason:?}", address = context.linear_address.unwrap_or(context.effective_address), reason = context.reason)]
     PageFault { pc: u64, context: PageFaultContext },
     #[error("access fault at 0x{address:016x} while executing 0x{pc:016x}: {reason:?}", address = context.linear_address.unwrap_or(context.effective_address), reason = context.reason)]

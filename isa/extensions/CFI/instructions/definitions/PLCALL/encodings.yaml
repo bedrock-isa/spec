@@ -1,0 +1,13 @@
+encodings:
+  rn_r_ea_e:
+    pattern: 111100100000010rrrreeeeeee
+    syntax: PLCALL Rn(r), <ea>(e)
+    fields:
+      r: {role: new_cs, type: base.field_types.Rn}
+      e: {role: target, type: base.field_types.EA}
+  rn_s_rn_d:
+    pattern: 1000001000ssssdddd
+    syntax: PLCALL Rn(s), Rn(d)
+    fields:
+      s: {role: new_cs, type: base.field_types.Rn}
+      d: {role: target, type: base.field_types.Rn}

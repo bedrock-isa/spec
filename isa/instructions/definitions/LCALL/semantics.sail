@@ -9,7 +9,10 @@ function lower_LCALL_uops(instruction : Decoded_instruction) -> option(list(Uop)
       let target_value = uop_location_make_temporary(lowered.next_temporary);
       let return_value = uop_location_make_temporary(lowered.next_temporary + 1);
       let cs = uop_operand_location(new_cs);
-      Some(uop_program_append(lowered.program, [|
+      Some(uop_program_append([|uop_make(
+        UopLinkInactiveGuard(), uop_location_make_none(),
+        uop_location_make_none(), uop_location_make_none(), Operand_target,
+        0, CommitControl)|], uop_program_append(lowered.program, [|
         uop_make(UopControlTarget(false), lowered.value, uop_location_make_none(), target_value, Operand_target,
                  operation_width(instruction), CommitControl),
         uop_make(UopControlProbe(), target_value, cs, uop_location_make_none(), Operand_target, 8, CommitControl),
@@ -18,7 +21,7 @@ function lower_LCALL_uops(instruction : Decoded_instruction) -> option(list(Uop)
         uop_make(UopStackRange(true), uop_location_make_sp(), uop_location_make_none(), uop_location_make_none(), Operand_target, 16, CommitMemory),
         uop_make(UopStackStorePair(), return_value, uop_location_make_segment(0), uop_location_make_sp(), Operand_target, 16, CommitMemory),
         uop_make(UopControlCommit(ControlFarCall), target_value, cs, uop_location_make_none(), Operand_target, 8, CommitControl)
-      |]))
+      |])))
     }, _ => None(),
   }
 

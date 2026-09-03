@@ -1,0 +1,6 @@
+encodings:
+  rn_r:
+    pattern: 0111000001rrrr
+    syntax: CFISSAVE [Rn(r)]
+    fields:
+      r: {role: memory, type: base.field_types.Rn, access: read}

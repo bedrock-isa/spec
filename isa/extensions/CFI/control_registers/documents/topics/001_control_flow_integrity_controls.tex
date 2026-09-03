@@ -1,9 +1,0 @@
-\subsection{Control-Flow Integrity Controls}\label{section:cfi-control-registers}
-(:register-field-target:CFI.control_registers.CFICTL.L:)\texttt{CFICTL.L} enables indirect-landing enforcement and
-(:register-field-target:CFI.control_registers.CFICTL.S:)\texttt{CFICTL.S} enables shadow-return enforcement; every other bit is
-reserved and must be zero. CFISS must be a valid, enabled segment image used only by implicit shadow-stack accesses, and
-CFISP must be 16-byte aligned. A shadow frame stores the continuation PC at offset 0 and its code-segment image at offset 8.
-
-RDCR and WRCR use selectors \texttt{0x1200}, \texttt{0x1201}, and \texttt{0x1202} for CFICTL, CFISS, and CFISP.
-WRCR to CFICTL accepts only L and S. Enabling S, or writing CFISS or CFISP while S remains set, requires the complete candidate
-shadow-stack state to admit a 16-byte push. A successful write atomically replaces the selected register.

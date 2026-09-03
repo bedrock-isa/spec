@@ -1,2 +1,9 @@
 instructions:
 - CFILAND
+- CFISRESTORE
+- CFISSAVE
+- FPCALL
+- PCALL
+- PLCALL
+- PLRET
+- PRET

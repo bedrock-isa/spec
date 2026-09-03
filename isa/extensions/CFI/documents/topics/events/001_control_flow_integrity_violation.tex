@@ -1,4 +1,2 @@
 \subsection{Control-Flow Integrity Violation}\label{section:cfi-violation}
-The (:ref:CFI.events.EXCEPTION.CONTROL_FLOW_INTEGRITY_VIOLATION:) event uses an error frame. ERROR\_CODE values 1,
-2, 3, and 4 identify a missing landing marker, a shadow PC mismatch, a shadow code-segment mismatch, and invalid
-configured CFI state respectively. A failed check commits neither the control transfer nor CFISP.
+The (:ref:CFI.events.EXCEPTION.CONTROL_FLOW_INTEGRITY_VIOLATION:) event uses an error frame. ERROR\_CODE value 1 identifies an indirect-landing failure and value 2 identifies return-authentication failure. The payload does not expose a candidate continuation, supplied or expected PA, or key-derived value. A failed check commits no stack, resident-state, or control-transfer change.

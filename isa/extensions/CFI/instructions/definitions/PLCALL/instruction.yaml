@@ -1,0 +1,8 @@
+mnemonic: PLCALL
+name: Protected Long Call
+summary: Materializes an authenticated long-return record and transfers to a new CS:PC.
+route: control_flow
+privileged: false
+operands:
+  new_cs: {role: source, access: read, value_type: integer}
+  target: {role: control_target, access: read, value_type: integer}

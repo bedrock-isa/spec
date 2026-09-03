@@ -383,9 +383,6 @@ bedrock_core_status bedrock_core_get_state(
   state->controls.base_bootpc = core->state.zcontrols.zbase_bootpc;
   state->controls.base_bootcfg = core->state.zcontrols.zbase_bootcfg;
   state->controls.base_pmc = core->state.zcontrols.zbase_pmc;
-  state->controls.cfi_cfictl = core->state.zcontrols.zcfi_cfictl;
-  state->controls.cfi_cfiss = core->state.zcontrols.zcfi_cfiss;
-  state->controls.cfi_cfisp = core->state.zcontrols.zcfi_cfisp;
   state->interrupt_max_id = core->state.zcontrols.zinterrupt_file.zmax_id;
   state->interrupt_threshold = core->state.zcontrols.zinterrupt_file.zthreshold;
   state->interrupt_selector = core->state.zcontrols.zinterrupt_file.zselector;
@@ -407,6 +404,10 @@ bedrock_core_status bedrock_core_get_state(
       return BEDROCK_CORE_BAD_STATE;
   state->sp = core->state.zsp;
   state->pc = core->state.zpc;
+  state->lpc = core->state.zlpc;
+  state->lpa = core->state.zlpa;
+  state->lkl = core->state.zlkl;
+  state->lkh = core->state.zlkh;
   state->flags = core->state.zflags;
   state->status = core->state.zstatus;
   state->fstatus = core->state.zfstatus;
@@ -494,9 +495,6 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zcontrols.zbase_bootpc = state->controls.base_bootpc;
   core->state.zcontrols.zbase_bootcfg = state->controls.base_bootcfg;
   core->state.zcontrols.zbase_pmc = state->controls.base_pmc;
-  core->state.zcontrols.zcfi_cfictl = state->controls.cfi_cfictl;
-  core->state.zcontrols.zcfi_cfiss = state->controls.cfi_cfiss;
-  core->state.zcontrols.zcfi_cfisp = state->controls.cfi_cfisp;
   core->state.zcontrols.zinterrupt_file.zthreshold = state->interrupt_threshold;
   core->state.zcontrols.zinterrupt_file.zselector = state->interrupt_selector;
   core->state.ztime.zvalue = state->time_value;
@@ -513,6 +511,10 @@ bedrock_core_status bedrock_core_set_state(
                                    BEDROCK_CORE_PREDICATE_LENGTH_BYTES);
   core->state.zsp = state->sp;
   core->state.zpc = state->pc;
+  core->state.zlpc = state->lpc;
+  core->state.zlpa = state->lpa;
+  core->state.zlkl = state->lkl;
+  core->state.zlkh = state->lkh;
   core->state.zflags = state->flags;
   core->state.zstatus = state->status;
   core->state.zfstatus = state->fstatus;

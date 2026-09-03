@@ -1,3 +1,1 @@
-CFILAND marks its own address as a valid destination for an indirect control transfer while indirect-landing
-enforcement is enabled. Direct transfers and sequential execution do not require a landing marker. Executing
-CFILAND itself has no architectural effect other than ordinary instruction completion.
+CFILAND marks its own address as a valid destination for an indirect control transfer while LKH:LKL is nonzero. Direct transfers, sequential execution, and indirect transfers in an unconfigured CFI context do not require a landing marker. Executing CFILAND itself has no architectural effect other than ordinary instruction completion.

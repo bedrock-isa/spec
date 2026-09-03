@@ -30,8 +30,8 @@ pub use translation::{
     PageTableControl, SegmentRegister, SegmentRegisters, SegmentSelector, TranslationTableFormat,
 };
 pub use trap::{
-    AccessFaultContext, BusFaultContext, DivideErrorCause, IllegalInstructionCause,
-    PageFaultContext, Trap, VectorRangeErrorCause,
+    AccessFaultContext, BusFaultContext, ControlFlowIntegrityCause, DivideErrorCause,
+    IllegalInstructionCause, PageFaultContext, Trap, VectorRangeErrorCause,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

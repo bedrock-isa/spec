@@ -1,0 +1,6 @@
+mnemonic: PLRET
+name: Protected Long Return
+summary: Authenticates a long-return record and restores CS:PC.
+route: control_flow
+privileged: false
+operands: {}

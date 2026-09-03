@@ -1,0 +1,7 @@
+disclosures:
+- id: POINTER_AUTHENTICATION_CONSTRUCTION
+  item: CFI pointer-authentication construction
+  defining_rules:
+  - Control-Flow Integrity Model
+  - Protected call and return instructions
+  publication: Implementation documentation naming the MAC construction, input serialization, tag mapping, and processor revisions to which they apply

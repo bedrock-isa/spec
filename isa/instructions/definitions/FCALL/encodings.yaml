@@ -1,0 +1,32 @@
+encodings:
+  imm16s:
+    pattern: '100000100100010000'
+    syntax: FCALL <imm16s>
+    payloads:
+    - role: target
+      type: base.payload_types.DISP16S
+  imm32s:
+    pattern: '100000100100010001'
+    syntax: FCALL <imm32s>
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+  ea_e:
+    pattern: 10000010001eeeeeee
+    syntax: FCALL <ea>(e)
+    fields:
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: target
+      exclude:
+      - immediate
+      reason: canonical_form_reclaim
+  rn_r:
+    pattern: 10000010010000rrrr
+    syntax: FCALL Rn(r)
+    fields:
+      r:
+        role: target
+        type: base.field_types.Rn

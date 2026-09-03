@@ -1,5 +1,5 @@
 \subsection{CFI Extension Discovery}\label{section:cfi-extension-discovery}
-Software establishes the (:ref:CFI.cpuid.EXTENSIONS.DIRECTORY.FEATURES.CFI:) extension predicate before using CFILAND or the CFI control registers. The extension
-has no implementation-varying architectural parameters.
+Software establishes the (:ref:CFI.cpuid.EXTENSIONS.DIRECTORY.FEATURES.CFI:) extension predicate before using CFILAND or another CFI instruction.
+(:ref:CFI.cpuid.EXTENSIONS.CFI_DISCOVERY.STATE_RECORDS.SUPERVISOR_RECORD_REVISION:) reports the 8-bit CFI supervisor-state-record revision. When CFI is available, this field returns 1. Revision 1 identifies the fixed 16-byte key record. Revision values are opaque identifiers and software must reject an unrecognized revision before using the record format.
 
 (:cpuid-leaf:CFI.cpuid.EXTENSIONS.CFI_DISCOVERY:)

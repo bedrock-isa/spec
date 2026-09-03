@@ -26,6 +26,7 @@ instructions:
 - CLMUL
 - CLMULH
 - CLR
+- CLRLINK
 - CLS
 - CLZ
 - CMP
@@ -46,6 +47,7 @@ instructions:
 - DJcc
 - ERET
 - EXTRACT
+- FCALL
 - EXTSL
 - EXTSQ
 - EXTSW

@@ -1,0 +1,1 @@
+PCALL requires a configured CFI key, reserves 16 bytes on SS:SP, and writes the continuation PC at offset zero followed by its nonzero 63-bit PA at offset eight. The PA binds the continuation to the post-allocation SS:SP and the near-return domain. A live resident continuation faults before target or stack access.

@@ -1118,6 +1118,7 @@ fn remote_register_type(info: &CpuRegisterInfo) -> &'static str {
 fn register_set_name(set: CpuRegisterSet) -> &'static str {
     match set {
         CpuRegisterSet::General => "General Purpose Registers",
+        CpuRegisterSet::Link => "Resident Link State",
         CpuRegisterSet::Segment => "Segment Registers",
         CpuRegisterSet::Control => "Control Registers",
         CpuRegisterSet::FloatingPoint => "Floating Point Registers",

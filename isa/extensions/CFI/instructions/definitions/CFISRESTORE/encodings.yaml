@@ -1,0 +1,6 @@
+encodings:
+  rn_r:
+    pattern: 0111000010rrrr
+    syntax: CFISRESTORE [Rn(r)]
+    fields:
+      r: {role: memory, type: base.field_types.Rn, access: read}

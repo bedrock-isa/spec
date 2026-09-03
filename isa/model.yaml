@@ -151,6 +151,8 @@ documents:
     source: registers/documents/topics/register_model/003_segment_registers.tex
   - id: registers.register-model.segment-register-operand-class
     source: registers/documents/topics/register_model/004_segment_register_operand_class.tex
+  - id: state.resident-link-state
+    source: state/documents/topics/link_state/001_resident_link_state.tex
   - id: control_registers.control-registers
     source: control_registers/documents/topics/001_control_registers.tex
   - id: encoding.data.data-formats.data-formats

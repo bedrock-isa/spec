@@ -1,8 +1,8 @@
-Pushes the following instruction\textquotesingle{}s (:term:base.terms.continuation:) PC as one 64-bit stack value and transfers control to the target. An EA memory operand reads a 64-bit target; an EA register operand supplies its 64-bit value directly. The stack update and control transfer use the (:term:base.terms.ordinary:) SS:SP and target-validation rules.
+Pushes the following instruction\textquotesingle{}s (:term:base.terms.continuation:) PC as one 64-bit stack value and transfers control to the target. An EA memory operand reads a 64-bit target; an EA register operand supplies its 64-bit value directly. The stack update and control transfer use the (:term:base.terms.ordinary:) SS:SP and target-validation rules. An active resident link raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_TRANSITION:) before target or stack access.
 
 
 \begin{enumerate}
-\item Evaluate the target operand in the old architectural context and validate the target under the current CS.
+\item Require LPA.A to be zero, then evaluate the target operand in the old architectural context and validate the target under the current CS.
 \item Probe the 8-byte return-address store through the old SS:SP context.
 \item Commit the return-address store, decremented SP, and new PC as one successful control-transfer operation.
 \end{enumerate}

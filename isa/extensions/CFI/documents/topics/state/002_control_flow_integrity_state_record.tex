@@ -1,0 +1,5 @@
+\subsection{Control-Flow Integrity Supervisor-State Record}
+
+(:memory-record:CFI.records.SUPERVISOR_STATE:)
+
+CFISSAVE writes this complete record without changing key state. CFISRESTORE validates the complete memory access and then replaces LKL and LKH together. Both instructions are supervisor-only, use the ordinary DS addressing context, and leave LPC and LPA unchanged. The all-zero image is valid and selects the unconfigured CFI state.

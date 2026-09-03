@@ -63,9 +63,6 @@ typedef struct bedrock_core_control_state {
   uint64_t base_bootpc;
   uint64_t base_bootcfg;
   uint64_t base_pmc;
-  uint64_t cfi_cfictl;
-  uint64_t cfi_cfiss;
-  uint64_t cfi_cfisp;
 } bedrock_core_control_state;
 
 typedef struct bedrock_core_state {
@@ -77,6 +74,10 @@ typedef struct bedrock_core_state {
                              [BEDROCK_CORE_PREDICATE_LENGTH_BYTES];
   uint64_t sp;
   uint64_t pc;
+  uint64_t lpc;
+  uint64_t lpa;
+  uint64_t lkl;
+  uint64_t lkh;
   uint64_t flags;
   uint64_t status;
   uint64_t segments[BEDROCK_CORE_SEGMENT_COUNT];

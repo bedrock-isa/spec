@@ -17,6 +17,7 @@ pub(crate) struct FeatureConfiguration {
     pub fp16_convert: bool,
     pub fptransa: bool,
     pub vector: bool,
+    pub cfi: bool,
 }
 
 pub(crate) const FEATURES: FeatureConfiguration = FeatureConfiguration {
@@ -24,6 +25,7 @@ pub(crate) const FEATURES: FeatureConfiguration = FeatureConfiguration {
     fp16_convert: true,
     fptransa: true,
     vector: true,
+    cfi: true,
 };
 
 impl FeatureConfiguration {
@@ -32,6 +34,7 @@ impl FeatureConfiguration {
             | ((self.fptransa as u64) << 1)
             | ((self.vector as u64) << 2)
             | (((self.fp && self.vector) as u64) << 3)
+            | ((self.cfi as u64) << 5)
     }
 }
 
@@ -58,7 +61,7 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         (BASE_CLASS, 0, 11..=18) => name_word(PROCESSOR_NAME, usize::from(index - 11)),
         (BASE_CLASS, 2, 0) => 1,
         (BASE_CLASS, 2, 1) => 0x0101,
-        (EXTENSION_CLASS, 0, 0) => header_with_leaf(3, 1),
+        (EXTENSION_CLASS, 0, 0) => header_with_leaf(6, 1),
         (EXTENSION_CLASS, 0, 1) => FEATURES.extension_directory(),
         (EXTENSION_CLASS, 1, 0) if FEATURES.fp => 1,
         (EXTENSION_CLASS, 1, 1) if FEATURES.fp => (1_u64 << 8) | u64::from(FEATURES.fp16_convert),
@@ -68,6 +71,8 @@ pub(crate) fn cpuid_query(selector: u64) -> u64 {
         }
         (EXTENSION_CLASS, 3, 0) if FEATURES.vector => 1,
         (EXTENSION_CLASS, 3, 1) if FEATURES.vector => 0x0107,
+        (EXTENSION_CLASS, 6, 0) if FEATURES.cfi => 1,
+        (EXTENSION_CLASS, 6, 1) if FEATURES.cfi => 1,
         (IMPLEMENTATION_CLASS, 0, 0) => header_with_leaf(6, 0),
         (IMPLEMENTATION_CLASS, 1, 0) => 1,
         (IMPLEMENTATION_CLASS, 1, 1) => 64,
@@ -117,6 +122,8 @@ mod tests {
         assert_eq!(cpuid_query(selector(0, 2, 1)), 0x0101);
         assert_eq!(cpuid_query(selector(1, 1, 1)), 0x0101);
         assert_eq!(cpuid_query(selector(1, 3, 1)), 0x0107);
+        assert_eq!(cpuid_query(selector(1, 6, 0)), 1);
+        assert_eq!(cpuid_query(selector(1, 6, 1)), 1);
         assert_eq!(cpuid_query(selector(2, 4, 0)), 0);
         assert_eq!(cpuid_query(selector(1, 2, 0)), 0x44);
         assert_ne!(cpuid_query(selector(1, 2, 0x44)), 0);

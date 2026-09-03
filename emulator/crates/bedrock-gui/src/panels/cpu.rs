@@ -7,6 +7,8 @@ pub fn show(ui: &mut egui::Ui, machine: &Machine, debugger: &mut Debugger, contr
 
     show_register_group(ui, "CPU", state, CpuRegisterSet::General);
     ui.separator();
+    show_register_group(ui, "Resident Link", state, CpuRegisterSet::Link);
+    ui.separator();
     show_register_group(ui, "Segments", state, CpuRegisterSet::Segment);
     ui.separator();
     show_register_group(ui, "Control", state, CpuRegisterSet::Control);

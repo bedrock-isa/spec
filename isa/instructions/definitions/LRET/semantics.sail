@@ -3,6 +3,7 @@ function clause register_result_extension(Op_LRET) = RegisterZeroExtend
 function clause repeat_semantics(Op_LRET) = RepeatObserveDestination
 
 function lower_LRET_uops(_ : Decoded_instruction) -> list(Uop) = [|
+  uop_make(UopLinkInactiveGuard(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_target, 0, CommitControl),
   uop_make(UopStackRange(false), uop_location_make_sp(), uop_location_make_none(), uop_location_make_none(), Operand_target, 16, CommitMemory),
   uop_make(UopStackLoad(0), uop_location_make_sp(), uop_location_make_none(), uop_location_make_temporary(0), Operand_target, 8, CommitMemory),
   uop_make(UopStackLoad(8), uop_location_make_sp(), uop_location_make_none(), uop_location_make_temporary(1), Operand_new_cs, 8, CommitMemory),

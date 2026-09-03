@@ -1,0 +1,1 @@
+PRET requires a configured CFI key. With an active resident link it authenticates LPC:LPA against the current SS:SP, restores 16 bytes of stack footprint, clears LPC:LPA, and returns. Otherwise it loads and authenticates the 16-byte PCALL record at SS:SP. Authentication precedes target validation and any architectural change.

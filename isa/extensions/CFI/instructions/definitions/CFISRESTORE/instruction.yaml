@@ -1,0 +1,7 @@
+mnemonic: CFISRESTORE
+name: Restore Control-Flow Integrity Supervisor State
+summary: Atomically restores the complete CFI supervisor-state record.
+route: data_movement
+privileged: true
+operands:
+  memory: {role: address, access: address, value_type: integer}

@@ -1,0 +1,4 @@
+encodings:
+  plain:
+    pattern: '01110000000001'
+    syntax: PRET

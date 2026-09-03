@@ -1,0 +1,10 @@
+mnemonic: FCALL
+name: Fast Call
+summary: Installs a resident continuation and transfers without return-record memory traffic.
+route: control_flow
+privileged: false
+operands:
+  target:
+    role: control_target
+    access: read
+    value_type: integer

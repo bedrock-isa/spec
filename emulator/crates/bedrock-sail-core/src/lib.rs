@@ -111,9 +111,6 @@ pub struct SailControlState {
     pub base_bootpc: u64,
     pub base_bootcfg: u64,
     pub base_pmc: u64,
-    pub cfi_cfictl: u64,
-    pub cfi_cfiss: u64,
-    pub cfi_cfisp: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -125,6 +122,10 @@ pub struct SailCoreState {
     pub predicate_registers: [[u8; PREDICATE_LENGTH_BYTES]; PREDICATE_REGISTER_COUNT],
     pub sp: u64,
     pub pc: u64,
+    pub lpc: u64,
+    pub lpa: u64,
+    pub lkl: u64,
+    pub lkh: u64,
     pub flags: u64,
     pub status: u64,
     pub segments: [u64; SEGMENT_COUNT],
@@ -1254,6 +1255,10 @@ mod tests {
         state.predicate_registers[9][1] = 0x5a;
         state.sp = 0x1000;
         state.pc = 0x2000;
+        state.lpc = 0x3000;
+        state.lpa = 0x8000_0000_0000_0042;
+        state.lkl = 0x0123_4567_89ab_cdef;
+        state.lkh = 0xfedc_ba98_7654_3210;
         state.flags = 0x0d;
         state.status = 0x101;
         state.segments[2] = 0x1234_5000;
@@ -1288,17 +1293,21 @@ mod tests {
         state.registers[0] = 0x1000;
         state.registers[1] = 0x1122_3344_5566_7788;
         state.flags = 0x0d;
+        state.lpc = 0x1234_5678_9abc_def0;
+        state.lpa = 0x8000_0000_0000_0042;
         state.floating_registers[0] = 0xfeed_face_cafe_beef;
         assert_eq!(base.set_state(state), SailCoreStatus::Ok);
         assert_eq!(base.execute(&SAVE_R0), SailCoreStatus::NeedsEnvironment);
         let request = base.last_request().unwrap();
         assert_eq!(request.kind, request_kind::WRITE);
-        assert_eq!(request.width, 184);
-        assert_eq!(request.range_length, 184);
-        assert_eq!(request.payload.len(), 184);
+        assert_eq!(request.width, 200);
+        assert_eq!(request.range_length, 200);
+        assert_eq!(request.payload.len(), 200);
         assert_eq!(word(&request.payload, 0), 0x1000);
         assert_eq!(word(&request.payload, 8), 0x1122_3344_5566_7788);
         assert_eq!(word(&request.payload, 176), 0x0d);
+        assert_eq!(word(&request.payload, 184), 0x1234_5678_9abc_def0);
+        assert_eq!(word(&request.payload, 192), 0x8000_0000_0000_0042);
 
         let mut supervisor = SailCore::new().unwrap();
         let mut state = supervisor.state().unwrap();
@@ -1306,7 +1315,10 @@ mod tests {
         state.status = 0x10;
         state.supervisor = 1;
         assert_eq!(supervisor.set_state(state), SailCoreStatus::Ok);
-        assert_eq!(supervisor.execute(&SSAVE_R0), SailCoreStatus::NeedsEnvironment);
+        assert_eq!(
+            supervisor.execute(&SSAVE_R0),
+            SailCoreStatus::NeedsEnvironment
+        );
         let request = supervisor.last_request().unwrap();
         assert_eq!(request.kind, request_kind::WRITE);
         assert_eq!(request.width, 8);
@@ -1357,9 +1369,11 @@ mod tests {
         before.vector_registers[3][4] = 0x5a;
         before.fp_state_modified = 1;
         before.vector_state_modified = 1;
+        before.lkl = 0x1111_2222_3333_4444;
+        before.lkh = 0x5555_6666_7777_8888;
         assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
 
-        let mut record = vec![0_u8; 184];
+        let mut record = vec![0_u8; 200];
         for index in 0..16 {
             record[index * 8..index * 8 + 8]
                 .copy_from_slice(&(0x100_u64 + index as u64).to_le_bytes());
@@ -1369,9 +1383,11 @@ mod tests {
                 .copy_from_slice(&before.segments[3 + index].to_le_bytes());
         }
         record[176..184].copy_from_slice(&0x0b_u64.to_le_bytes());
+        record[184..192].copy_from_slice(&0x1234_5678_9abc_def0_u64.to_le_bytes());
+        record[192..200].copy_from_slice(&0x8000_0000_0000_002a_u64.to_le_bytes());
 
         assert_eq!(core.execute(&RESTORE_R0), SailCoreStatus::NeedsEnvironment);
-        assert_eq!(core.last_request().unwrap().range_length, 184);
+        assert_eq!(core.last_request().unwrap().range_length, 200);
         assert_eq!(
             core.resume(SailCoreResponse {
                 kind: response_kind::READ,
@@ -1387,6 +1403,10 @@ mod tests {
         assert_eq!(after.registers[0], 0x100);
         assert_eq!(after.registers[15], 0x10f);
         assert_eq!(after.flags, 0x0b);
+        assert_eq!(after.lpc, 0x1234_5678_9abc_def0);
+        assert_eq!(after.lpa, 0x8000_0000_0000_002a);
+        assert_eq!(after.lkl, before.lkl);
+        assert_eq!(after.lkh, before.lkh);
         assert_eq!(after.status, before.status);
         assert_eq!(after.current_dfa, before.current_dfa);
         assert_eq!(after.floating_registers, before.floating_registers);
@@ -1428,8 +1448,12 @@ mod tests {
         assert_eq!(body_request.range_length, 192);
         assert_eq!(body_request.body_length, 192);
         assert_eq!(body_request.memory_ranges.len(), 2);
-        assert!(body_request.memory_ranges.iter().all(|range|
-            range.effective_address >= 0x1090));
+        assert!(
+            body_request
+                .memory_ranges
+                .iter()
+                .all(|range| range.effective_address >= 0x1090)
+        );
         assert_eq!(
             core.resume(SailCoreResponse {
                 kind: response_kind::READ,
@@ -1493,7 +1517,7 @@ mod tests {
         before.registers[0] = 0x1000;
         before.registers[1] = 0x1234;
         assert_eq!(core.set_state(before.clone()), SailCoreStatus::Ok);
-        let mut record = vec![0_u8; 184];
+        let mut record = vec![0_u8; 200];
         record[128..136].copy_from_slice(&u64::MAX.to_le_bytes());
 
         assert_eq!(core.execute(&RESTORE_R0), SailCoreStatus::NeedsEnvironment);

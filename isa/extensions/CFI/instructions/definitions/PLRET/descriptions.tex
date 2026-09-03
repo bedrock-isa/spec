@@ -1,0 +1,1 @@
+PLRET requires a configured CFI key and no active resident continuation. It loads the 24-byte PLCALL record, authenticates the continuation PC and CS in the long-return domain, validates the target, advances SP by 24 bytes, and commits CS:PC. Failure leaves the pre-instruction state intact.

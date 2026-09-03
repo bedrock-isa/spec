@@ -3,9 +3,9 @@ use crate::exception::InvalidControlCause;
 use crate::loader::{ElfLoadError, ElfLoadOptions, ElfLoadResult, load_elf};
 use crate::trap::{DivideErrorCause, IllegalInstructionCause};
 use crate::{
-    AccessDomain, AccessFaultContext, AccessFaultReason, AccessKind, CpuRegister, CpuState, Flags,
-    PageFaultContext, PageFaultReason, SegmentRegister, SegmentSelector, Status, StepResult, Trap,
-    VectorRangeErrorCause,
+    AccessDomain, AccessFaultContext, AccessFaultReason, AccessKind, ControlFlowIntegrityCause,
+    CpuRegister, CpuState, Flags, PageFaultContext, PageFaultReason, SegmentRegister,
+    SegmentSelector, Status, StepResult, Trap, VectorRangeErrorCause,
 };
 use bedrock_bus::BusResult;
 use bedrock_sail_core::{
@@ -218,6 +218,8 @@ fn snapshot_state(raw: &SailCoreState) -> CpuState {
         p: raw.predicate_registers,
         sp: raw.sp,
         pc: raw.pc,
+        lpc: raw.lpc,
+        lpa: raw.lpa,
         flags: Flags::from_bits_truncate(raw.flags as u16),
         status: Status::from_bits_truncate(raw.status as u16),
         segments,
@@ -258,6 +260,8 @@ fn write_state(raw: &mut SailCoreState, state: &CpuState) {
     raw.predicate_registers = state.p;
     raw.sp = state.sp;
     raw.pc = state.pc;
+    raw.lpc = state.lpc;
+    raw.lpa = state.lpa;
     raw.flags = u64::from(state.flags.bits());
     raw.status = u64::from(state.status.bits());
     for selector in SEGMENT_SELECTORS {
@@ -375,6 +379,17 @@ fn fault_trap(
             pc,
             cause: VectorRangeErrorCause::LaneIndex,
         }),
+        18 => match error_code {
+            1 => StepResult::Trap(Trap::ControlFlowIntegrityViolation {
+                pc,
+                cause: ControlFlowIntegrityCause::IndirectLanding,
+            }),
+            2 => StepResult::Trap(Trap::ControlFlowIntegrityViolation {
+                pc,
+                cause: ControlFlowIntegrityCause::ReturnAuthentication,
+            }),
+            _ => illegal_trap(pc, IllegalInstructionCause::ExplicitIllegal),
+        },
         _ => illegal_trap(pc, IllegalInstructionCause::ExplicitIllegal),
     }
 }

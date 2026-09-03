@@ -118,8 +118,9 @@ function clause execute_uop(UopStateRecordAddress(), uop, values, instruction,
 function base_user_record_bytes(state : Cpu_state) -> list(bits(8)) =
   append_bytes(
     serialize_register_file(state.registers, 0),
-    append_bytes(serialize_saved_gs(state.segments, 0),
-                 le64_bytes(sail_zero_extend(state.flags, 64)))
+    append_bytes(serialize_saved_gs(state.segments, 0), append_bytes(
+      le64_bytes(sail_zero_extend(state.flags, 64)),
+      append_bytes(le64_bytes(state.lpc), le64_bytes(state.lpa))))
   )
 
 function restore_base_registers(bytes : list(bits(8)), index : int,
@@ -213,10 +214,12 @@ function clause execute_uop(UopBaseUserRestoreCommit(), uop, values, instruction
     Some(record) => match (
       restore_base_registers(record.body_bytes, 0, speculative.registers),
       restore_base_gs(record.body_bytes, 0, speculative.segments),
-      read_le_bits(record.body_bytes, 176, 64)
+      read_le_bits(record.body_bytes, 176, 64),
+      read_le_bits(record.body_bytes, 184, 64),
+      read_le_bits(record.body_bytes, 192, 64)
     ) {
-      (Some(registers), Some(segments), Some(flags)) =>
-        if byte_count(record.body_bytes) != 184
+      (Some(registers), Some(segments), Some(flags), Some(lpc), Some(lpa)) =>
+        if byte_count(record.body_bytes) != 200
            | (flags & 0xFFFFFFFFFFFFFFF0) != 0x0000000000000000 then
           uop_step_fault(faulted(before, instruction.form.operation,
             InvalidControlState, "invalid base user-state record"))
@@ -225,6 +228,8 @@ function clause execute_uop(UopBaseUserRestoreCommit(), uop, values, instruction
           updated.registers = registers;
           updated.segments = segments;
           updated.flags = flags[3 .. 0];
+          updated.lpc = lpc;
+          updated.lpa = lpa;
           uop_step_continue(updated, values)
         },
       _ => uop_step_fault(faulted(before, instruction.form.operation,
@@ -266,7 +271,7 @@ function lower_base_state_record_uops(instruction : Decoded_instruction,
   match operand_named(instruction, Operand_memory) {
     None() => None(),
     Some(memory) => {
-      let size = if supervisor_record then 8 else 184;
+      let size = if supervisor_record then 8 else 200;
       let captured = uop_location_make_temporary(0);
       let response = uop_location_make_temporary(1);
       let capture = uop_make(

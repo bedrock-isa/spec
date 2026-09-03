@@ -21,3 +21,9 @@ components:
       label: FLAGS
       lsb: 0
       bits: 16
+- id: LPC
+  label: LPC
+  element_bytes: 8
+- id: LPA
+  label: LPA
+  element_bytes: 8

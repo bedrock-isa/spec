@@ -1,0 +1,6 @@
+mnemonic: CLRLINK
+name: Clear Resident Link
+summary: Atomically discards the resident continuation without changing the CFI key.
+route: control_flow
+privileged: false
+operands: {}
