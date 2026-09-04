@@ -1,4 +1,3 @@
-id: default_segment_base
 name: Default-segment base with autoupdate
 kind: memory
 syntax: "[update(Rn(b)) + displacement]"

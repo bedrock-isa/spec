@@ -1,4 +1,3 @@
-mnemonic: PPACKLO
 name: Predicate Pack to Lower Half
 summary: Packs source predicate positions into the lower half of narrower destination positions.
 route: vector

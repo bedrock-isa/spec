@@ -1,4 +1,3 @@
-mnemonic: INVASID
 name: Invalidate TLB By ASID
 summary: Invalidate TLB entries for ASID.
 route: tlb_and_context

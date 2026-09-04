@@ -1,4 +1,3 @@
-mnemonic: TCANCEL
 name: Cancel Deadline Timer
 summary: Atomically disarm the current deadline timer.
 route: core_control

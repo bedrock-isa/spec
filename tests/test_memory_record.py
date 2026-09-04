@@ -5,7 +5,6 @@ from fractions import Fraction
 from pathlib import Path
 
 from engine.memory_record import MemoryRecordCatalog, MemoryRecordError
-from engine.reference import Reference
 from engine.render.memory_record import MemoryRecordProjection
 
 
@@ -88,7 +87,6 @@ class MemoryRecordCatalogTest(unittest.TestCase):
     @property
     def record_source(self) -> str:
         return (
-            "id: SAMPLE\n"
             "name: Sample Record\n"
             "alignment_bytes: 16\n"
             "parameter:\n"

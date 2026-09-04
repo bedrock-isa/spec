@@ -1,4 +1,3 @@
-id: write_control_register
 owner: base
 description: >-
   Supervisor; defined constant selector required; writes the register and clobbers memory.

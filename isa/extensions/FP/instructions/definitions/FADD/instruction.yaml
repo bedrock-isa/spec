@@ -1,4 +1,3 @@
-mnemonic: FADD
 name: Floating-Point Add
 summary: Adds the source operand to the destination operand.
 route: fpu

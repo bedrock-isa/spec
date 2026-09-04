@@ -153,7 +153,8 @@ class EventCatalog:
             if current.reference in active:
                 cycle = (*active[active.index(current.reference) :], current.reference)
                 raise ValueError(
-                    "circular event class overlay"
+                    "circular event class overlay: "
+                    + " -> ".join(str(reference) for reference in cycle)
                 )
             active.append(current.reference)
             current = self.references.classes.resolve(current.extends)
@@ -235,11 +236,7 @@ def _load_class(
 ) -> EventClass:
     source = root / "class.yaml"
     raw = _load_validated(source, isa_root / "schemas/event-class.yaml")
-    if raw["id"] != root.name:
-        raise ValueError(
-            f"{source}: event class ID {raw['id']!r} does not match directory {root.name!r}"
-        )
-    class_id = cast(str, raw["id"])
+    class_id = root.name
     reference: Reference[EventClass] = Reference(
         owner, ("events",), class_id
     )
@@ -281,11 +278,7 @@ def _load_event(
 ) -> ArchitecturalEvent:
     source = root / "event.yaml"
     raw = _load_validated(source, isa_root / "schemas/event.yaml")
-    if raw["id"] != root.name:
-        raise ValueError(
-            f"{source}: event ID {raw['id']!r} does not match directory {root.name!r}"
-        )
-    event_id = cast(str, raw["id"])
+    event_id = root.name
     return ArchitecturalEvent(
         reference=Reference(owner, ("events", class_id), event_id),
         source=source,
@@ -308,6 +301,7 @@ def _load_inventory(owner: str, root: Path, key: str) -> EventInventory:
         root=root,
         key=key,
         allow_missing=True,
+        name_pattern=r"[A-Z][A-Z0-9_]*",
     )
 
 

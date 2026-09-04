@@ -1,4 +1,3 @@
-mnemonic: INVTLB
 name: Invalidate TLB
 summary: Invalidate all TLB entries.
 route: tlb_and_context

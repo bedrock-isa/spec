@@ -1,4 +1,3 @@
-mnemonic: VREVBYTE
 name: Vector Byte-Order Reverse
 summary: Reverses the byte order within each active element.
 route: vector

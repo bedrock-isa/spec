@@ -1,4 +1,3 @@
-id: BOOTPC
 selector: 0x1000
 summary: Warm-reset target supplied by the platform at cold reset.
 reset: {cold: platform, warm: preserve}

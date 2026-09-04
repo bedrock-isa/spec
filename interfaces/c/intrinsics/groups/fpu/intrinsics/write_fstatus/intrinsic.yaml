@@ -1,4 +1,3 @@
-id: write_fstatus
 owner: FP
 description: >-
   Unprivileged; reserved bits follow the ISA; changes the floating-point environment.

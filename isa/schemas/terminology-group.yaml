@@ -3,11 +3,8 @@ $id: bedrock://schemas/terminology-group
 title: Bedrock terminology group
 type: object
 additionalProperties: false
-required: [id, title]
+required: [title]
 properties:
-  id:
-    type: string
-    pattern: ^[a-z][a-z0-9_]*$
   title:
     type: string
     minLength: 1

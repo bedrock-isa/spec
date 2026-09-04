@@ -1,4 +1,3 @@
-id: EXECUTION_BREAKPOINT_ERROR_CODE
 bits: 64
 fields:
 - {id: TRIGGER_SLOT, lsb: 0, bits: 16}

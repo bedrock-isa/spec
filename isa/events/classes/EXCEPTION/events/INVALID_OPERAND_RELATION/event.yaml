@@ -1,4 +1,3 @@
-id: INVALID_OPERAND_RELATION
 name: Invalid Operand Relation
 summary: Writable operands use an overlap relation prohibited by the selected instruction form.
 code: 0x16

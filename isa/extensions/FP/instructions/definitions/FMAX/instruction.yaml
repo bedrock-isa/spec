@@ -1,4 +1,3 @@
-mnemonic: FMAX
 name: Floating-Point Maximum
 summary: Selects the greater numeric source or destination value using IEEE NaN and zero rules.
 route: fpu

@@ -1,4 +1,3 @@
-id: INT
 spelling: "int"
 call_kind: i32
 size_bits: 32

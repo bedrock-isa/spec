@@ -1,4 +1,3 @@
-id: "even-pairs"
 caption: "PTRNLO.W even predicate-lane transpose"
 alt_text: "New Pd interleaves even-position typed predicate lanes from Pa and Pb. Each local pair follows the same mapping for any VLEN."
 kind: predicate-lane-transfer

@@ -1,4 +1,3 @@
-mnemonic: TESTJcc
 name: Test And Jump Conditional
 summary: Tests two Rn registers and branches on the selected condition without writing FLAGS.
 route: control_flow

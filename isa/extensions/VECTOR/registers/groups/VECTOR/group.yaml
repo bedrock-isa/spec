@@ -1,4 +1,3 @@
-id: VECTOR
 width:
   VLEN: [128, 256, 512, 1024, 2048]
 summary: Scalable vector data registers.

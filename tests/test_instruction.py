@@ -6,7 +6,6 @@ import yaml
 
 from engine.instruction import (
     Instruction,
-    MnemonicDirectoryMismatchError,
     UnknownRepeatObservedValueError,
 )
 
@@ -19,7 +18,6 @@ class InstructionTest(unittest.TestCase):
     @staticmethod
     def document() -> dict:
         return {
-            "mnemonic": "ADD",
             "name": "Add",
             "summary": "Adds the source operand to the destination operand.",
             "route": "integer_alu",
@@ -47,11 +45,6 @@ class InstructionTest(unittest.TestCase):
         operands = instruction["operands"]
         operands["src"]["access"] = "write"
         self.assertEqual(instruction["operands"]["src"]["access"], "read")
-
-    def test_rejects_mnemonic_directory_mismatch(self) -> None:
-        source = self.isa_root / "instructions/definitions/SUB/instruction.yaml"
-        with self.assertRaises(MnemonicDirectoryMismatchError):
-            Instruction(self.document(), source, self.isa_root)
 
     def test_rejects_unknown_repeat_observed_value(self) -> None:
         document = self.document()

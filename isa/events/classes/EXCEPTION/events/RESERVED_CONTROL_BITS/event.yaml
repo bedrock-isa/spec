@@ -1,4 +1,3 @@
-id: RESERVED_CONTROL_BITS
 name: Reserved Control Bits
 summary: Reserved state bits are nonzero or are changed in a prohibited manner.
 code: 0x41

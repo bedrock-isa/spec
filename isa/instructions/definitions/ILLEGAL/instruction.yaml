@@ -1,4 +1,3 @@
-mnemonic: ILLEGAL
 name: Illegal Instruction
 summary: Raise illegal-instruction exception.
 route: core_control

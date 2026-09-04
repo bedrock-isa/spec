@@ -1,4 +1,3 @@
-id: "even-lanes"
 caption: "PUZIPLO.W even predicate-lane extraction"
 alt_text: "In this fixed 16-byte example, even Pa lanes form the low result half and even Pb lanes form the high result half. Larger VLEN applies the same rule over all architectural typed lanes."
 kind: predicate-lane-transfer

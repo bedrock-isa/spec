@@ -1,4 +1,3 @@
-mnemonic: FMOVcc
 name: Floating-Point Conditional Move
 summary: Copies a floating-point source only when the encoded integer condition is true.
 route: fpu

@@ -1,4 +1,3 @@
-mnemonic: FFLOOR
 name: Floating-Point Floor
 summary: Rounds a floating-point source toward negative infinity in the selected format.
 route: fpu

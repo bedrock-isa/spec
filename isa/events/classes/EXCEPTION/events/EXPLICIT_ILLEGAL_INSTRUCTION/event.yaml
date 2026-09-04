@@ -1,4 +1,3 @@
-id: EXPLICIT_ILLEGAL_INSTRUCTION
 name: Explicit Illegal Instruction
 summary: Execution of the architected illegal-instruction operation deliberately raises this event.
 code: 0x14

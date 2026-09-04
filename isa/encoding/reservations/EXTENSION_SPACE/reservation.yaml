@@ -1,4 +1,3 @@
-id: EXTENSION_SPACE
 summary: Reserved for extension-defined encodings.
 regions:
 - encoding_class: xxlong

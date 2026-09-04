@@ -1,4 +1,3 @@
-id: c-target-headers
 generator: generator.py
 inputs:
 - isa

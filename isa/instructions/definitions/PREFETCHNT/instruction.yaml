@@ -1,4 +1,3 @@
-mnemonic: PREFETCHNT
 name: Prefetch Non-Temporal
 summary: Hint that EA will be read with non-temporal locality.
 route: cache

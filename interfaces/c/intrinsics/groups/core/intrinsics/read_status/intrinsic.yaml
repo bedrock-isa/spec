@@ -1,4 +1,3 @@
-id: read_status
 owner: base
 description: >-
   Unprivileged; reads \texttt{STATUS} and not C memory.

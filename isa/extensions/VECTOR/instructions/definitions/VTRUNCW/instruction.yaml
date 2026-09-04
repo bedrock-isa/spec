@@ -1,4 +1,3 @@
-mnemonic: VTRUNCW
 name: Vector Truncation to Word
 summary: Copies the low W field from each L or Q source container.
 route: vector

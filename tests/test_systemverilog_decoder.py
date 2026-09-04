@@ -10,7 +10,7 @@ from engine.ea_mode import EAMode, EAModeCatalog
 from engine.encoding_metasyntax import EncodingMetasyntax
 from engine.project import IsaProject
 from engine.systemverilog import decoder_ir, lowering
-from engine.systemverilog.generate_decoder import render_outputs
+from engine.systemverilog.renderer import render_outputs
 from engine.workspace import SpecWorkspace
 
 
@@ -24,7 +24,7 @@ class SystemVerilogDecoderTest(unittest.TestCase):
             raise TypeError("workspace isa provider must be an IsaProject")
         cls.project = project
         cls.ir = decoder_ir.load_decode_ir()
-        cls.outputs = render_outputs(Path("."))
+        cls.outputs = render_outputs()
 
     @staticmethod
     def _set_field(opcode: int, positions: tuple[int, ...], value: int) -> int:
@@ -240,7 +240,7 @@ class SystemVerilogDecoderTest(unittest.TestCase):
             self.assertEqual(actual, expected, profile_name)
 
     def test_generation_is_deterministic(self) -> None:
-        self.assertEqual(self.outputs, render_outputs(Path(".")))
+        self.assertEqual(self.outputs, render_outputs())
 
     def test_decoder_projection_owns_public_ports_and_derived_limits(self) -> None:
         generator = ArtifactGeneratorRegistry.discover(self.workspace).generator(

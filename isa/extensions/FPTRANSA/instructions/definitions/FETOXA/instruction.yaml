@@ -1,4 +1,3 @@
-mnemonic: FETOXA
 name: Approximate Floating-Point e To x
 summary: Approximates e raised to the source for finite values and signed infinity.
 route: fpu_transcendental_approx

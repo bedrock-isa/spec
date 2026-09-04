@@ -3,9 +3,8 @@ $id: bedrock://schemas/elf-register-group
 title: Bedrock ELF ABI register-group overlay
 type: object
 additionalProperties: false
-required: [id, register_group]
+required: [register_group]
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   register_group:
     type: string
     pattern: '^isa:(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*$'

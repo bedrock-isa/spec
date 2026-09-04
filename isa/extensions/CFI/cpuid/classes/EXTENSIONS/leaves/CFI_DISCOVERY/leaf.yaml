@@ -1,4 +1,3 @@
-id: CFI_DISCOVERY
 name: Control-Flow Integrity Discovery
 queries:
 - id: HEADER

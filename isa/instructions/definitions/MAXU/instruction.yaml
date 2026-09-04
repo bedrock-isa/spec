@@ -1,4 +1,3 @@
-mnemonic: MAXU
 name: Unsigned Maximum
 summary: Writes the unsigned greater of source and destination to the destination.
 route: integer_alu

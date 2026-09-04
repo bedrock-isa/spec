@@ -92,7 +92,7 @@ byte1[3:2] completes an eight-bit class prefix: \texttt{1111110x} selects extral
 \texttt{short} & bytes 0--1 & \texttt{10xxxxxx} & 2 & exactly 2 bytes\\
 \texttt{medium} & bytes 0--2 & extended selector 0--59 & 3 & encoded length at least 3 bytes\\
 \texttt{long} & bytes 0--3 & extended selector 60--62 & 4 & encoded length at least 4 bytes\\
-\texttt{extralong} & bytes 0--4 & extended selector 63, non-xxlong prefix & 5 & encoded length at least 5 bytes\\
+\texttt{extralong} & bytes 0--4 & extended selector 63, prefix \texttt{1111110x} & 5 & encoded length at least 5 bytes\\
 \texttt{xxlong} & bytes 0--5 & all-one eight-bit prefix & 6 & encoded length at least 6 bytes\\
 \bottomrule
 \end{BedrockTabular}

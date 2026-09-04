@@ -1,4 +1,3 @@
-mnemonic: WRFLAGS
 name: Write Flags
 summary: Write the integer condition-code flags from an Rn register.
 route: system_registers

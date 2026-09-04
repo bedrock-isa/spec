@@ -1,4 +1,3 @@
-id: "slice-by-three"
 caption: "VSLICE.W slice by three lanes"
 alt_text: "At W width and count 3, active result lanes select from old Vd followed by source Vn; inactive lanes preserve their old destination values."
 kind: vector-lane-transfer

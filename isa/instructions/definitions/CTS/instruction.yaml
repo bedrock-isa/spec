@@ -1,4 +1,3 @@
-mnemonic: CTS
 name: Count Trailing Set Bits
 summary: Counts trailing one bits in the selected-width source and writes the count.
 route: integer_bitfield

@@ -1,4 +1,3 @@
-id: segment_register_operand
 display:
   canonical: segment register operand
   plural: segment register operands

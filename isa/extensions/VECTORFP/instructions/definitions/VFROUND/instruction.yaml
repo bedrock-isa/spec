@@ -1,4 +1,3 @@
-mnemonic: VFROUND
 name: Vector Floating-Point Round to Integral
 summary: Rounds each active floating-point element to an integral value in the same format using the current
   rounding mode.

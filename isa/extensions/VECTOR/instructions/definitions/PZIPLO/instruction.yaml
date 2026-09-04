@@ -1,4 +1,3 @@
-mnemonic: PZIPLO
 name: Predicate Lower-Half Interleave
 summary: Interleave the lower halves of two predicate-lane sequences.
 route: vector

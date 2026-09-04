@@ -1,4 +1,3 @@
-id: PAGE_PERMISSION_VIOLATION
 name: Page Permission Violation
 summary: Accumulated page-table permissions exclude the requested access.
 code: 0x21

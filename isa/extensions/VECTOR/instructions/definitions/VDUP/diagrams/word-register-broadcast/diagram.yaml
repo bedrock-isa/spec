@@ -1,4 +1,3 @@
-id: "word-register-broadcast"
 caption: "VDUP.W scalar broadcast"
 alt_text: "The scalar value x from Rn is copied to every word lane of the scalable destination vector."
 kind: scalar-vector-transfer

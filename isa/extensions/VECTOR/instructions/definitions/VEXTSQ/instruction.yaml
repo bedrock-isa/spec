@@ -1,4 +1,3 @@
-mnemonic: VEXTSQ
 name: Vector Signed Extension to Quad
 summary: Sign-extends B, W, or L source elements to Q destination elements.
 route: vector

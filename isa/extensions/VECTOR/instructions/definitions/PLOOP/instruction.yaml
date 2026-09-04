@@ -1,4 +1,3 @@
-mnemonic: PLOOP
 name: Predicate Loop Chunk
 summary: Builds the next predicate chunk from a remaining count and lane offset.
 route: vector

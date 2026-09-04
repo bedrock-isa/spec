@@ -1,4 +1,3 @@
-mnemonic: VREDAND
 name: Vector Bitwise AND Reduction
 summary: Reduces selected integer lanes with bitwise AND and writes the scalar result to Rn.
 route: vector

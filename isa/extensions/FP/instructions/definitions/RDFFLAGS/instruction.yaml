@@ -1,4 +1,3 @@
-mnemonic: RDFFLAGS
 name: Read Floating-Point Flags
 summary: Read the accrued floating-point exception flags into an Rn register.
 route: system_registers

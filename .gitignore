@@ -1,6 +1,5 @@
-# Local build products
+# Generated products
 /output/
-/samples/**/build/
 /a.out
 *.o
 *.a
@@ -21,7 +20,7 @@ __pycache__/
 # Sail cache
 sail_smt_cache
 
-# LaTeX scratch files, in case a local build writes outside build/
+# LaTeX scratch files, in case a tool writes outside its temporary directory
 *.aux
 *.bbl
 *.bcf

@@ -1,4 +1,3 @@
-id: BUS_DATA_ERROR
 name: Bus Data Error
 summary: The bus reports corrupted or otherwise invalid transfer data.
 code: 0x73

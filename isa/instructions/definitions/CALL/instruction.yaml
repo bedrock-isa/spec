@@ -1,4 +1,3 @@
-mnemonic: CALL
 name: Call
 summary: Pushes the continuation PC and atomically transfers control to the validated target.
 route: control_flow

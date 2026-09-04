@@ -1,4 +1,3 @@
-id: segment_register
 owner: base
 kind: enum
 summary: Source-selectable architectural segment registers.

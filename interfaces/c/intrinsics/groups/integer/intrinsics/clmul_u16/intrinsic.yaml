@@ -1,4 +1,3 @@
-id: clmul_u16
 owner: base
 description: >-
   Pure; low 16 bits of the carryless product.

@@ -1,4 +1,3 @@
-mnemonic: STP
 name: Store Pair
 summary: Stores one canonical register pair as a 128-bit memory value.
 route: data_movement

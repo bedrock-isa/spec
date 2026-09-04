@@ -1,3 +1,2 @@
-id: ACQ_REL
 instruction_order: acqrel
 thread_fence: [isa:base.instructions.AFENCE]

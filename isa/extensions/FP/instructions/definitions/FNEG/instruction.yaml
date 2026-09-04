@@ -1,4 +1,3 @@
-mnemonic: FNEG
 name: Floating-Point Negate
 summary: Complements the selected floating-point source sign bit.
 route: fpu

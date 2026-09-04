@@ -1,4 +1,3 @@
-mnemonic: VADD
 name: Vector Add
 summary: Adds corresponding active integer vector elements.
 route: vector

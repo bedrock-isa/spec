@@ -3,11 +3,8 @@ $id: bedrock://schemas/register-group
 title: Bedrock architectural register group
 type: object
 additionalProperties: false
-required: [id, width]
+required: [width]
 properties:
-  id:
-    type: string
-    pattern: ^[A-Z][A-Z0-9_]*$
   width:
     oneOf:
     - type: integer

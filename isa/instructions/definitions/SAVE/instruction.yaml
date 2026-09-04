@@ -1,4 +1,3 @@
-mnemonic: SAVE
 name: Save Base User State
 summary: Saves the base user-state record.
 route: data_movement

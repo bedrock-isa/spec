@@ -1,4 +1,3 @@
-mnemonic: VCMPcc
 name: Vector Conditional Compare
 summary: Compares active integer lanes and writes a complete predicate image.
 route: vector

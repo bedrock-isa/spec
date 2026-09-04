@@ -1,4 +1,3 @@
-id: register
 name: Register memory
 kind: memory
 syntax: "[Rn(r) [+ displacement]]"

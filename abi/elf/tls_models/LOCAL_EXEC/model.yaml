@@ -1,4 +1,3 @@
-id: LOCAL_EXEC
 selection: TLS symbol binding and placement provide a link-time constant byte offset from GS0.
 base_register: isa:base.registers.SEGMENT.GS0
 relocations:

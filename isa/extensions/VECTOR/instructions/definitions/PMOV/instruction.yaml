@@ -1,4 +1,3 @@
-mnemonic: PMOV
 name: Predicate Memory Move
 summary: Transfers a complete packed predicate image between a predicate register and memory.
 route: vector

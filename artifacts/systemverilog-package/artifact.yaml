@@ -1,4 +1,3 @@
-id: systemverilog-package
 generator: generator.py
 inputs:
 - isa

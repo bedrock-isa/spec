@@ -1,4 +1,3 @@
-mnemonic: VMOVZ
 name: Vector Zeroing Move
 summary: Loads active memory elements and clears inactive destination lanes.
 route: vector

@@ -1,4 +1,3 @@
-mnemonic: INVDCACHE
 name: Invalidate Data Cache
 summary: Invalidate one data-cache maintenance block.
 route: cache

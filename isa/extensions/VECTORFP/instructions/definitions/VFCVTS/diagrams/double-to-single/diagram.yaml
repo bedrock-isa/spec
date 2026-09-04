@@ -1,4 +1,3 @@
-id: "double-to-single"
 caption: "VFCVTS.D double-to-single conversion containers"
 alt_text: "Each 64-bit operation container reads one double-precision source. The active container writes a single-precision result into its low field and retains the upper destination field; the inactive container remains unchanged."
 kind: floating-point-width-conversion

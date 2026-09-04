@@ -1,4 +1,3 @@
-id: WAIT_DISCOVERY
 name: Address Wait Discovery
 queries:
 - id: HEADER

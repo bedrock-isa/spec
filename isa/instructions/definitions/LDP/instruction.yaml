@@ -1,4 +1,3 @@
-mnemonic: LDP
 name: Load Pair
 summary: Loads one 128-bit memory value into a canonical register pair.
 route: data_movement

@@ -1,4 +1,3 @@
-mnemonic: SRESTORE
 name: Restore Base Supervisor State
 summary: Restores the base supervisor-state record.
 route: data_movement

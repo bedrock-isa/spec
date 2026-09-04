@@ -1,4 +1,3 @@
-id: "single-precision-reduction"
 caption: "VFREDADD.S ordered floating-point reduction"
 alt_text: "The active single-precision values f0, f2, and f3 are added after positive zero in increasing logical-lane order, and the fold result is written to Fn."
 kind: predicated-vector-reduction

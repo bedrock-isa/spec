@@ -1,4 +1,3 @@
-id: INVALID_CONTROL_IMAGE
 name: Invalid Control Image
 summary: A supplied segment, control-register, or state-record image is invalid.
 code: 0x42

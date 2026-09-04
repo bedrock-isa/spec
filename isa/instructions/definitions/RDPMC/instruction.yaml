@@ -1,4 +1,3 @@
-mnemonic: RDPMC
 name: Read Performance Counter
 summary: Read the 64-bit performance counter selected by a constant counter ID.
 route: system_registers

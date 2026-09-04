@@ -1,4 +1,3 @@
-mnemonic: FINTRZ
 name: Floating-Point Integral Toward Zero
 summary: Rounds a floating-point source toward zero to an integral value.
 route: fpu

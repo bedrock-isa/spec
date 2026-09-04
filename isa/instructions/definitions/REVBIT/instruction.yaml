@@ -1,4 +1,3 @@
-mnemonic: REVBIT
 name: Reverse Bits
 summary: Reverses bit order within the selected operand width.
 route: integer_alu

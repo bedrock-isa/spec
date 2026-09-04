@@ -1,4 +1,3 @@
-mnemonic: WAIT
 name: Wait On Address
 summary: Waits while a memory value equals the expected register value.
 route: core_control

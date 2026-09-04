@@ -1,4 +1,3 @@
-mnemonic: WAKE
 name: Wake Address Waiters
 summary: Wakes all waiters armed on the addressed location.
 route: core_control

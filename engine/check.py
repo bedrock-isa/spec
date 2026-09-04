@@ -1589,7 +1589,7 @@ class CheckService:
 
 
 class WorkspaceCheckService:
-    """Validate the complete non-building workspace contract."""
+    """Validate the complete workspace contract without generating artifacts."""
 
     def __init__(self, project: CheckService | None = None) -> None:
         self.project = project or CheckService()

@@ -1,4 +1,3 @@
-mnemonic: SAR
 name: Shift Arithmetic Right
 summary: Arithmetic-right-shifts the destination by the count modulo its selected width without changing FLAGS.
 route: integer_bitfield

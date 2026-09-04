@@ -1,4 +1,3 @@
-mnemonic: MOVREL
 name: Move Release
 summary: Stores to memory with release ordering.
 route: data_movement

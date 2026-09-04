@@ -3,7 +3,7 @@ $id: bedrock://schemas/elf-tls-model
 title: Bedrock ELF TLS model
 type: object
 additionalProperties: true
-required: [id, selection]
+required: [selection]
+not: {required: [id]}
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   selection: {type: string, minLength: 1}

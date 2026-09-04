@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from pathlib import Path
 import re
+import shutil
 import tempfile
 
 from ..observability import log_phase
@@ -48,9 +48,8 @@ class ArtifactWriter:
         if _ARTIFACT_ID.fullmatch(artifact_id) is None:
             raise ValueError(f"invalid generated artifact id: {artifact_id!r}")
 
-        root.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(
-            prefix=f".{root.name or 'artifacts'}-stage-", dir=root.parent
+            prefix=f"bedrock-{artifact_id}-stage-"
         ) as directory:
             stage = Path(directory)
             for artifact in artifacts.artifacts:
@@ -75,7 +74,7 @@ class ArtifactWriter:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 staged = stage / relative_path
                 if not self._same_content(staged, destination):
-                    os.replace(staged, destination)
+                    shutil.copyfile(staged, destination)
                 written.append(destination)
 
             for stale in sorted(previous - frozenset(paths), reverse=True):
@@ -89,8 +88,7 @@ class ArtifactWriter:
                     self._remove_empty_parents(destination.parent, root)
 
             manifest.parent.mkdir(parents=True, exist_ok=True)
-            staged_manifest = stage / "ownership.json"
-            staged_manifest.write_text(
+            manifest.write_text(
                 json.dumps(
                     {
                         "artifact_id": artifact_id,
@@ -102,7 +100,6 @@ class ArtifactWriter:
                 + "\n",
                 encoding="utf-8",
             )
-            os.replace(staged_manifest, manifest)
 
         return tuple(written)
 

@@ -87,10 +87,11 @@ class LatexCompiler:
         if result.returncode != 0:
             detail = "\n".join(part for part in (result.stdout, result.stderr) if part)
             raise RuntimeError(
-                "ISA reference LaTeX compilation failed:\n" + detail[-12000:]
+                f"{source.stem} LaTeX compilation failed:\n" + detail[-12000:]
             )
         compiled = CompiledPdf(
-            pdf_root / "isa-reference.pdf", pdf_root / "isa-reference.log"
+            pdf_root / source.with_suffix(".pdf").name,
+            pdf_root / source.with_suffix(".log").name,
         )
         if not compiled.pdf.is_file() or not compiled.log.is_file():
             raise RuntimeError("latexmk did not produce the expected PDF and log")

@@ -1,4 +1,3 @@
-mnemonic: VTRNHI
 name: Vector Odd-Lane Transpose
 summary: Interleave odd lanes from the old destination and source by adjacent result pairs.
 route: vector

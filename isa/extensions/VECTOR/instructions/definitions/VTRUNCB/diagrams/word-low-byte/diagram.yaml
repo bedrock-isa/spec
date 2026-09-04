@@ -1,4 +1,3 @@
-id: "word-low-byte"
 caption: "VTRUNCB.W low-byte truncation"
 alt_text: "An illustrative W-container VTRUNCB view: each active container copies the low source byte into the low destination byte and preserves the old destination high byte; inactive containers preserve the complete old destination value."
 kind: integer-width-conversion

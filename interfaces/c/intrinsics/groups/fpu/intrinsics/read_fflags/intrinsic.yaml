@@ -1,4 +1,3 @@
-id: read_fflags
 owner: FP
 description: >-
   Unprivileged; reads accrued floating-point exception flags.

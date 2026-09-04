@@ -3,11 +3,8 @@ $id: bedrock://schemas/encoding-reservation
 title: Bedrock opcode-space reservation
 type: object
 additionalProperties: false
-required: [id, summary, regions]
+required: [summary, regions]
 properties:
-  id:
-    type: string
-    pattern: ^[A-Z][A-Z0-9_]*$
   summary:
     type: string
     minLength: 1

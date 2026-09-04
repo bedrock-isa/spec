@@ -2,8 +2,8 @@ Let $E$ be the selected element width in bytes, $N=VLEN/(8E)$, and $G$ be
 the typed governing-predicate image whose significant bits are
 \texttt{Pg[iE]} for $0\leq i<N$.  \texttt{Pg} and \texttt{Ps} shall name
 different (:term:VECTOR.terms.predicate_register|plural:).  Before attempting a lane, VSCATTER replaces
-\texttt{Ps} by its typed image \texttt{Ps AND G}; all nonsignificant bits are
-cleared.
+\texttt{Ps} by its typed image \texttt{Ps AND G}; all bits outside the typed
+predicate image are cleared.
 
 If \texttt{G AND NOT Ps} is empty, the instruction completes normally with
 \texttt{Ps == G}.  Otherwise it selects one pending lane $i$, calculates that
@@ -20,9 +20,8 @@ lanes overlap in physical memory, the final value of each overlapping byte is
 therefore unspecified; every successful lane nevertheless performs exactly
 one $E$-byte store and sets its completion bit.  A failure reported before the
 store's point of no return leaves that bit clear and is retry-safe.  A failure
-reported after the store became irrevocable sets the bit and is reported later
-as an imprecise, non-retry-safe machine check rather than as a restartable
-synchronous fault.  Software emulation shall perform or explicitly waive the
+reported after the store becomes irrevocable sets the bit and defers an
+imprecise machine check to a subsequent boundary.  Software emulation shall perform or explicitly waive the
 store before setting the completion bit.  The address and source vector may
 name the same (:term:VECTOR.terms.vector_register:).  VSCATTER preserves FLAGS and is not permitted for
 MMIO.

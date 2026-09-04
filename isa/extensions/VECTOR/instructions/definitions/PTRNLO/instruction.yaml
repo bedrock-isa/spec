@@ -1,4 +1,3 @@
-mnemonic: PTRNLO
 name: Predicate Even-Lane Transpose
 summary: Interleave even-position predicate lanes from two sources.
 route: vector

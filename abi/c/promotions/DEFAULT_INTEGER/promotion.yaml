@@ -1,3 +1,2 @@
-id: DEFAULT_INTEGER
 source_kinds: [bool, i8, u8, i16, u16]
 target_kind: i32

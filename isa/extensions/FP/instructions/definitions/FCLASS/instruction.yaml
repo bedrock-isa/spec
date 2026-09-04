@@ -1,4 +1,3 @@
-mnemonic: FCLASS
 name: Floating-Point Classify
 summary: Classifies an S- or D-format source into a one-hot integer bitmap without changing FFLAGS.
 route: fpu

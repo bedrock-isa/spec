@@ -1,4 +1,3 @@
-mnemonic: EXTZW
 name: Zero Extend To Word
 summary: Zero-extends a byte source to a word EA destination.
 route: integer_unary

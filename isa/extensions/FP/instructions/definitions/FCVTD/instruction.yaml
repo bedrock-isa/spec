@@ -1,4 +1,3 @@
-mnemonic: FCVTD
 name: Convert to Double Precision
 summary: Converts between D and signed B/W/L/Q integer or H/S floating-point representations.
 route: fpu

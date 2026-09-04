@@ -1,4 +1,3 @@
-id: TLSDESC_CALL
 steps:
 - instruction: isa:base.instructions.LEA
   form: qword_pc_relative

@@ -1,4 +1,3 @@
-mnemonic: VMOV
 name: Vector Move
 summary: Copies or merges vector elements between registers and contiguous memory.
 route: vector

@@ -1,6 +1,5 @@
-mnemonic: PTQUERY
 name: Page Table Query
-summary: Non-destructively reads the selected raw page-table descriptor.
+summary: Reads the selected raw page-table descriptor without changing translation state.
 route: tlb_and_context
 privileged: true
 operands:

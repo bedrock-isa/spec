@@ -1,4 +1,3 @@
-mnemonic: FCVTUS
 name: Convert Unsigned and Single Precision
 summary: Converts between S and unsigned B/W/L/Q integers.
 route: fpu

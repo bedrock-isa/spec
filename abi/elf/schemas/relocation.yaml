@@ -3,11 +3,8 @@ $id: bedrock://schemas/elf-relocation
 title: Bedrock ELF relocation
 type: object
 additionalProperties: false
-required: [id, value, result, calculation]
+required: [value, result, calculation]
 properties:
-  id:
-    type: string
-    pattern: ^R_BEDROCK_[A-Z0-9_]+$
   value:
     type: integer
     minimum: 0

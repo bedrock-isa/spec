@@ -1,4 +1,3 @@
-id: FETCH_OR
 c_operations: [atomic_fetch_or]
 strategy: instruction
 instructions: [isa:base.instructions.FETCHOR]

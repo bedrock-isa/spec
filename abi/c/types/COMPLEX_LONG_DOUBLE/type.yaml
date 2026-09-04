@@ -1,4 +1,3 @@
-id: COMPLEX_LONG_DOUBLE
 spelling: "long double _Complex"
 call_kind: complex_long_double
 size_bits: 128

@@ -1,4 +1,3 @@
-id: isa-reference
 generator: generator.py
 inputs:
 - isa

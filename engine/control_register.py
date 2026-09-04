@@ -179,6 +179,7 @@ def _load_inventory(owner: str, root: Path) -> ControlRegisterInventory:
         root=root,
         key="control_registers",
         allow_missing=True,
+        name_pattern=r"[A-Z][A-Z0-9_]*",
     )
     if not source.is_file():
         return ControlRegisterInventory(
@@ -244,12 +245,7 @@ def _load_register(
     raw = SchemaValidatedYamlLoader().load(
         source, isa_root / "schemas/control-register.yaml"
     )
-    register_id = raw["id"]
-    if register_id != root.name:
-        raise ValueError(
-            f"{source}: control-register ID {register_id!r} does not match "
-            f"directory {root.name!r}"
-        )
+    register_id = root.name
     reference: Reference[ControlRegister] = Reference(
         owner, ("control_registers",), register_id
     )

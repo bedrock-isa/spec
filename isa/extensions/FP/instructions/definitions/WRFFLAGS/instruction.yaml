@@ -1,4 +1,3 @@
-mnemonic: WRFFLAGS
 name: Write Floating-Point Flags
 summary: Write the accrued floating-point exception flags from an Rn register.
 route: system_registers

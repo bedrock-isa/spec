@@ -1,4 +1,3 @@
-id: BUS_ACCESS_DENIED
 name: Bus Access Denied
 summary: The responding bus target rejects the requested access.
 code: 0x71

@@ -1,4 +1,3 @@
-mnemonic: RET
 name: Return
 summary: Pops and validates a return PC, then atomically advances SP and transfers control.
 route: control_flow

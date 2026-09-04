@@ -1,4 +1,3 @@
-id: STORE
 c_operations: [atomic_store]
 strategy: aligned_access
 instructions: [isa:base.instructions.MOV]

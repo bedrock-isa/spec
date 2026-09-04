@@ -1,4 +1,3 @@
-mnemonic: VUZIPHI
 name: Vector Odd-Lane Deinterleave
 summary: Gather odd lanes from the old destination and source into separate result halves.
 route: vector

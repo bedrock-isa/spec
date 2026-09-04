@@ -1,4 +1,3 @@
-mnemonic: VPERM
 name: Vector Permute
 summary: Select source lanes with vector indices; out-of-range indices produce zero.
 route: vector

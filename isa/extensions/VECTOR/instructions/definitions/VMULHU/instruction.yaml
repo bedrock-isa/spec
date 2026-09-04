@@ -1,4 +1,3 @@
-mnemonic: VMULHU
 name: Vector Unsigned Multiply High
 summary: Writes the high half of each active unsigned destination/source product.
 route: vector

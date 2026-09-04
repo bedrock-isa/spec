@@ -1,4 +1,3 @@
-mnemonic: RELAX
 name: Relax
 summary: Permits a finite implementation-selected delay, including zero.
 route: core_control

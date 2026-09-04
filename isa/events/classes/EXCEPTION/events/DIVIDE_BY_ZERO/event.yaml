@@ -1,4 +1,3 @@
-id: DIVIDE_BY_ZERO
 name: Divide by Zero
 summary: An integer division operation has a zero divisor.
 code: 0x04

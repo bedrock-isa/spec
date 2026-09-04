@@ -1,4 +1,3 @@
-mnemonic: VXOR
 name: Vector Bitwise XOR
 summary: Applies bitwise XOR to corresponding active vector elements.
 route: vector

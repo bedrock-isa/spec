@@ -97,21 +97,23 @@ class Generator(ArtifactGenerator):
 
     def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
         outputs = self.definition.outputs
-        # Sail project files do not quote paths. Keeping the temporary model
-        # next to the ISA tree prevents repository names containing '-' from
-        # appearing in generated relative paths without touching Cargo's
-        # watched ISA directory.
-        temporary_parent = context.workspace.root
-        with tempfile.TemporaryDirectory(
-            prefix="bedrock-emulator-core-", dir=temporary_parent
-        ) as directory:
+        with tempfile.TemporaryDirectory(prefix="bedrock-emulator-core-") as directory:
             root = Path(directory).resolve()
             model_root = root / "model"
+            source_alias = root / "source"
+            source_alias.symlink_to(context.workspace.root, target_is_directory=True)
             model = self._sail_model_generator(context)
             model_context = ArtifactGenerationContext.create(
                 context.workspace, model_root
             )
             model_artifacts = model.generate(model_context)
+            model_artifacts = _use_source_alias(
+                model_artifacts,
+                model.definition.outputs["project"],
+                model_root,
+                context.workspace.root,
+                source_alias,
+            )
             model.definition.validate_generated(model_artifacts)
             ArtifactWriter().write(model_artifacts, model_root)
             compiler_cache_key = getattr(self.compiler, "cache_key", None)
@@ -119,7 +121,8 @@ class Generator(ArtifactGenerator):
             fingerprint = _generation_fingerprint(
                 model_artifacts,
                 compiler_cache_key() if cacheable else type(self.compiler).__qualname__,
-                context.workspace.root / "isa",
+                model.declared_sources(model_context),
+                context.workspace.root,
             )
 
             cached_c = context.output_root / outputs["implementation"]
@@ -205,7 +208,10 @@ class Generator(ArtifactGenerator):
 
 
 def _generation_fingerprint(
-    model: GeneratedArtifactSet, compiler_cache_key: str, sail_source_root: Path
+    model: GeneratedArtifactSet,
+    compiler_cache_key: str,
+    sail_sources: tuple[Path, ...],
+    repository: Path,
 ) -> str:
     digest = hashlib.sha256()
     digest.update(b"bedrock-emulator-core-generation\0")
@@ -217,9 +223,9 @@ def _generation_fingerprint(
         digest.update(artifact.relative_path.as_posix().encode())
         digest.update(b"\0content\0")
         digest.update(artifact.content.encode())
-    for source in sorted(sail_source_root.rglob("*.sail")):
+    for source in sorted(sail_sources):
         digest.update(b"\0sail-source\0")
-        digest.update(source.relative_to(sail_source_root).as_posix().encode())
+        digest.update(source.relative_to(repository).as_posix().encode())
         digest.update(b"\0")
         digest.update(source.read_bytes())
     for template in sorted(_TEMPLATE_ROOT.iterdir()):
@@ -229,6 +235,28 @@ def _generation_fingerprint(
             digest.update(b"\0")
             digest.update(template.read_bytes())
     return digest.hexdigest() + "\n"
+
+
+def _use_source_alias(
+    artifacts: GeneratedArtifactSet,
+    project_path: Path,
+    model_root: Path,
+    repository: Path,
+    source_alias: Path,
+) -> GeneratedArtifactSet:
+    """Route authored source paths through one safe external-temporary alias."""
+
+    repository_prefix = Path(os.path.relpath(repository, model_root)).as_posix() + "/"
+    alias_prefix = Path(os.path.relpath(source_alias, model_root)).as_posix() + "/"
+    projected = []
+    for artifact in artifacts.artifacts:
+        content = artifact.content
+        if artifact.relative_path == project_path:
+            if not isinstance(content, str):
+                raise TypeError("Sail project artifact must be text")
+            content = content.replace(repository_prefix, alias_prefix)
+        projected.append(GeneratedArtifact(artifact.relative_path, content))
+    return GeneratedArtifactSet(tuple(projected), artifacts.artifact_id)
 
 
 def _supply_library_main(generated_c: str, library_main: str) -> str:

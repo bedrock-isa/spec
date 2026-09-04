@@ -1,4 +1,3 @@
-mnemonic: NOP
 name: No Operation
 summary: No architectural state change.
 route: core_control

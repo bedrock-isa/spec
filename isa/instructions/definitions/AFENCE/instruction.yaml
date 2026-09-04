@@ -1,4 +1,3 @@
-mnemonic: AFENCE
 name: Address Fence
 summary: Order prior memory operations before later memory operations.
 route: core_control

@@ -1,4 +1,3 @@
-id: systemverilog-assertions
 generator: generator.py
 inputs:
 - isa

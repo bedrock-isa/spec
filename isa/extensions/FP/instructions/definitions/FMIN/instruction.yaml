@@ -1,4 +1,3 @@
-mnemonic: FMIN
 name: Floating-Point Minimum
 summary: Selects the lesser numeric source or destination value using IEEE NaN and zero rules.
 route: fpu

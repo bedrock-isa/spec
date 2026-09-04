@@ -60,6 +60,9 @@ class _Generator(ArtifactGenerator):
 
 
 class _SailModelGenerator(ArtifactGenerator):
+    def declared_sources(self, context):
+        return (context.workspace.root / "isa/model.sail",)
+
     def generate(self, context):
         return GeneratedArtifactSet(
             (GeneratedArtifact(Path("bedrock-model.sail_project"), "project\n"),),
@@ -90,15 +93,9 @@ class GenerationTest(unittest.TestCase):
         repository = Path(__file__).parents[1]
         schema = YamlDocumentLoader().mapping(repository / "artifacts/schema.yaml")
         invalid_definitions = {
-            "missing_outputs": "id: example\ngenerator: generator.py\n",
-            "non_mapping_outputs": (
-                "id: example\ngenerator: generator.py\n"
-                "outputs: [example.tex]\n"
-            ),
-            "absolute_output": (
-                "id: example\ngenerator: generator.py\n"
-                "outputs: {document: /example.tex}\n"
-            ),
+            "missing_outputs": "generator: generator.py\n",
+            "non_mapping_outputs": "generator: generator.py\noutputs: [example.tex]\n",
+            "absolute_output": "generator: generator.py\noutputs: {document: /example.tex}\n",
         }
         with tempfile.TemporaryDirectory() as directory:
             for name, content in invalid_definitions.items():
@@ -118,8 +115,7 @@ class GenerationTest(unittest.TestCase):
                 (Path(__file__).parents[1] / "artifacts/schema.yaml").read_text()
             )
             (source / "artifact.yaml").write_text(
-                """id: combined-reference
-generator: generator.py
+                """generator: generator.py
 inputs: [isa, abi]
 outputs: {combined: combined.txt}
 """
@@ -196,7 +192,6 @@ class Generator(ArtifactGenerator):
             "sail-model",
             Path("artifact.yaml"),
             {
-                "id": "sail-model",
                 "extensions": [],
                 "outputs": {
                     "registry": "generated/registry.sail",
@@ -249,7 +244,6 @@ class Generator(ArtifactGenerator):
             "emulator-core",
             Path("artifact.yaml"),
             {
-                "id": "emulator-core",
                 "depends-on": ["sail-model"],
                 "outputs": {
                     "implementation": outputs[0],

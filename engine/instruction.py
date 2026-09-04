@@ -11,10 +11,6 @@ import yaml
 from jsonschema import Draft202012Validator
 
 
-class MnemonicDirectoryMismatchError(ValueError):
-    """The instruction mnemonic disagrees with its owning directory."""
-
-
 class UnknownRepeatObservedValueError(ValueError):
     """A repeat contract names neither an operand nor the computed result."""
 
@@ -61,13 +57,6 @@ class Instruction(MutableMapping[str, Any]):
             where = f" at {location}" if location else ""
             raise ValueError(f"{self.source}{where}: {error.message}")
 
-        mnemonic = self._data["mnemonic"]
-        if self.source.parent.name != mnemonic:
-            raise MnemonicDirectoryMismatchError(
-                f"{self.source}: mnemonic {mnemonic!r} does not match "
-                f"instruction directory {self.source.parent.name!r}"
-            )
-
         repeat = self._data.get("repeat")
         if repeat and repeat["type"] == "repcc":
             observed = repeat["observed_value"]
@@ -99,6 +88,12 @@ class Instruction(MutableMapping[str, Any]):
 
     def to_dict(self) -> dict[str, Any]:
         return deepcopy(self._data)
+
+    @property
+    def mnemonic(self) -> str:
+        """Return the instruction identity owned by its member directory."""
+
+        return self.source.parent.name
 
     def __getattr__(self, name: str) -> Any:
         data = self.__dict__.get("_data", {})

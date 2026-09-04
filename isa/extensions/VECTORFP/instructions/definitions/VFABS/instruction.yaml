@@ -1,4 +1,3 @@
-mnemonic: VFABS
 name: Vector Floating-Point Absolute Value
 summary: Clears the sign of active floating-point elements.
 route: vector

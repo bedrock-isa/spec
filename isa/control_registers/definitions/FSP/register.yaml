@@ -1,3 +1,2 @@
-id: FSP
 selector: 0x0221
 summary: Fault and exception stack top.

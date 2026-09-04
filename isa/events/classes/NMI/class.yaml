@@ -1,4 +1,3 @@
-id: NMI
 name: Non-Maskable Interrupt
 value: 0x02
 selector: {kind: source, bits: 24}

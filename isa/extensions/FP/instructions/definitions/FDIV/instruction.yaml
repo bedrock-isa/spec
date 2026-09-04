@@ -1,4 +1,3 @@
-mnemonic: FDIV
 name: Floating-Point Divide
 summary: Divides the destination value by the source under the floating-point environment.
 route: fpu

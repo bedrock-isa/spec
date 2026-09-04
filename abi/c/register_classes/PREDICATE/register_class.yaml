@@ -1,4 +1,3 @@
-id: PREDICATE
 arguments:
 - isa:VECTOR.registers.PREDICATE.P0
 - isa:VECTOR.registers.PREDICATE.P1

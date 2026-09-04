@@ -65,6 +65,7 @@ def _load_inventory(root: Path) -> EncodingReservationInventory:
         key="reservations",
         allow_missing=True,
         exact_keys=True,
+        name_pattern=r"[A-Z][A-Z0-9_]*",
     )
 
 
@@ -73,12 +74,7 @@ def _load_reservation(root: Path, isa_root: Path) -> EncodingReservation:
     raw = SchemaValidatedYamlLoader().load(
         source, isa_root / "schemas/encoding-reservation.yaml"
     )
-    reservation_id = raw["id"]
-    if reservation_id != root.name:
-        raise ValueError(
-            f"{source}: encoding-reservation ID {reservation_id!r} does not match "
-            f"directory {root.name!r}"
-        )
+    reservation_id = root.name
     return EncodingReservation(
         source=source,
         root=root,

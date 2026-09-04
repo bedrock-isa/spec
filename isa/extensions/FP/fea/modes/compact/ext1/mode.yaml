@@ -1,4 +1,3 @@
-id: ext1
 name: EXT1
 kind: extension
 extension: {id: EXT1, bytes: 1}

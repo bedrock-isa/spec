@@ -250,13 +250,13 @@ _VIEW_HTML = r"""<!doctype html>
 <body>
 <canvas id="graph"></canvas>
 <div class="toolbar">
-  <input id="search" type="search" placeholder="Search nodes…" autocomplete="off">
+  <input id="search" type="search" placeholder="Search nodes..." autocomplete="off">
   <select id="domain"><option value="">All domains</option></select>
   <select id="kind"><option value="">All kinds</option></select>
   <span class="stats" id="stats"></span>
 </div>
 <aside class="details empty" id="details"></aside>
-<div class="hint">Drag to pan · Scroll to zoom · Hover a node for details</div>
+<div class="hint">Drag to pan | Scroll to zoom | Hover a node for details</div>
 <script type="application/json" id="graph-data">__GRAPH_DATA__</script>
 <script>
 const data=JSON.parse(document.getElementById('graph-data').textContent);
@@ -275,7 +275,7 @@ for(const value of [...new Set(nodes.map(n=>n.domain))].sort())domain.add(new Op
 for(const value of [...new Set(nodes.map(n=>n.kind))].sort())kind.add(new Option(value,value));
 function resize(){dpr=Math.min(devicePixelRatio||1,2);width=innerWidth;height=innerHeight;canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px'}
 addEventListener('resize',resize);resize();
-function applyFilter(){const q=search.value.trim().toLowerCase();let count=0;for(const n of nodes){n.visible=(!q||n.id.toLowerCase().includes(q)||n.label.toLowerCase().includes(q))&&(!domain.value||n.domain===domain.value)&&(!kind.value||n.kind===kind.value);n.vx=0;n.vy=0;if(n.visible)count++}let linkCount=0;for(const l of links){l.enabled=l.a.visible&&l.b.visible;if(l.enabled)linkCount++}stable=false;quietFrames=0;stats.textContent=`${count.toLocaleString()} nodes · ${linkCount.toLocaleString()} links`}
+function applyFilter(){const q=search.value.trim().toLowerCase();let count=0;for(const n of nodes){n.visible=(!q||n.id.toLowerCase().includes(q)||n.label.toLowerCase().includes(q))&&(!domain.value||n.domain===domain.value)&&(!kind.value||n.kind===kind.value);n.vx=0;n.vy=0;if(n.visible)count++}let linkCount=0;for(const l of links){l.enabled=l.a.visible&&l.b.visible;if(l.enabled)linkCount++}stable=false;quietFrames=0;stats.textContent=`${count.toLocaleString()} nodes | ${linkCount.toLocaleString()} links`}
 search.addEventListener('input',applyFilter);domain.addEventListener('change',applyFilter);kind.addEventListener('change',applyFilter);applyFilter();
 function simulate(){if(stable)return;const active=nodes.filter(n=>n.visible);for(const l of links){if(!l.enabled)continue;const dx=l.b.x-l.a.x,dy=l.b.y-l.a.y,d=Math.hypot(dx,dy)||1,strength=Math.min(l.weight,4),f=(d-70)*.0009*strength;l.a.vx+=dx/d*f;l.a.vy+=dy/d*f;l.b.vx-=dx/d*f;l.b.vy-=dy/d*f}let energy=0;for(const n of active){n.vx-=n.x*.00008;n.vy-=n.y*.00008;for(let k=1;k<=6;k++){const other=nodes[(n.i+k*173)%nodes.length];if(!other.visible||other===n)continue;const dx=n.x-other.x,dy=n.y-other.y,d2=dx*dx+dy*dy+20,f=15/d2;n.vx+=dx*f;n.vy+=dy*f}n.vx*=.91;n.vy*=.91;n.x+=n.vx;n.y+=n.vy;energy+=n.vx*n.vx+n.vy*n.vy}if(energy/Math.max(1,active.length)<.0008)quietFrames++;else quietFrames=0;if(quietFrames>=45){stable=true;for(const n of active){n.vx=0;n.vy=0}}}
 function screen(n){return{x:width/2+panX+n.x*zoom,y:height/2+panY+n.y*zoom}}

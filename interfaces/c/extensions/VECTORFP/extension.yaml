@@ -1,4 +1,3 @@
-id: VECTORFP
 requires:
 - FP
 - VECTOR

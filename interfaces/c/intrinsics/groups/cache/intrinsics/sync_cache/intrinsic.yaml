@@ -1,4 +1,3 @@
-id: sync_cache
 owner: base
 description: >-
   Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.

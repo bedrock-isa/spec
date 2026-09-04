@@ -1,4 +1,3 @@
-id: FLOATTISF
 symbol: __floattisf
 result: base.types.FLOAT
 parameters:

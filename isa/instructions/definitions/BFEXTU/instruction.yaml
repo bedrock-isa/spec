@@ -1,4 +1,3 @@
-mnemonic: BFEXTU
 name: Bitfield Extract Unsigned
 summary: Extracts a contiguous bitfield and zero-extends it.
 route: integer_bitfield

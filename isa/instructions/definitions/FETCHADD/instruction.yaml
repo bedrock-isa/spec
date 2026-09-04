@@ -1,4 +1,3 @@
-mnemonic: FETCHADD
 name: Atomic Fetch Add
 summary: Atomically adds source to memory and returns the old memory value in the source register.
 route: atomics

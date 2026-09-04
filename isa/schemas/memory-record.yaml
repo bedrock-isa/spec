@@ -3,10 +3,8 @@ $id: https://bedrock-isa.org/schemas/memory-record.yaml
 title: Bedrock byte-addressed memory record
 type: object
 additionalProperties: false
-required: [id, name, alignment_bytes, components]
+required: [name, alignment_bytes, components]
 properties:
-  id:
-    $ref: '#/$defs/identifier'
   name:
     $ref: '#/$defs/nonempty-string'
   alignment_bytes:

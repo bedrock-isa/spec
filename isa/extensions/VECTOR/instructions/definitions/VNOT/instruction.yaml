@@ -1,4 +1,3 @@
-mnemonic: VNOT
 name: Vector Bitwise NOT
 summary: Complements every bit of each active element.
 route: vector

@@ -1,4 +1,3 @@
-id: COMPLEX_FLOAT
 spelling: "float _Complex"
 call_kind: complex_f32
 size_bits: 64

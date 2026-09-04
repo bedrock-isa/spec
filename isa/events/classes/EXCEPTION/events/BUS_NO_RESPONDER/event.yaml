@@ -1,4 +1,3 @@
-id: BUS_NO_RESPONDER
 name: Bus No Responder
 summary: No bus target responds to the requested access.
 code: 0x70

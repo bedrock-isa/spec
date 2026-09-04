@@ -1,4 +1,3 @@
-id: sysreg
 title: System-Register Intrinsics
 exposure: architectural system-register access
 includes:

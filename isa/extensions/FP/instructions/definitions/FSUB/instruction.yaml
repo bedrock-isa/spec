@@ -1,4 +1,3 @@
-mnemonic: FSUB
 name: Floating-Point Subtract
 summary: Subtracts the source operand from the destination operand.
 route: fpu

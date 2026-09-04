@@ -53,6 +53,7 @@ class DirectoryInventory:
         allow_missing: bool = False,
         exact_keys: bool = False,
         validate_names: bool = False,
+        name_pattern: str | None = None,
     ) -> Self:
         """Inspect membership without rejecting declared-versus-actual drift."""
 
@@ -70,14 +71,24 @@ class DirectoryInventory:
                 )
             values = document.get(key)
             if not isinstance(values, list) or any(
-                not isinstance(value, str)
-                or (
-                    validate_names
-                    and re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", value) is None
-                )
-                for value in values
+                not isinstance(value, str) for value in values
             ):
                 raise ValueError(f"{source_path}: expected a {key} list of names")
+            pattern = (
+                name_pattern
+                if name_pattern is not None
+                else r"[A-Za-z][A-Za-z0-9_-]*" if validate_names else None
+            )
+            invalid = tuple(
+                value
+                for value in values
+                if pattern is not None and re.fullmatch(pattern, value) is None
+            )
+            if invalid:
+                raise ValueError(
+                    f"{source_path}: invalid {key} names {invalid}; "
+                    f"expected pattern {pattern!r}"
+                )
             declared = tuple(values)
         actual = (
             tuple(
@@ -117,6 +128,7 @@ class DirectoryInventory:
         source: str | Path,
         root: str | Path,
         key: str,
+        name_pattern: str = r"[A-Za-z][A-Za-z0-9_-]*",
     ) -> Self:
         return cls.inspect(
             owner=owner,
@@ -125,5 +137,5 @@ class DirectoryInventory:
             root=root,
             key=key,
             exact_keys=True,
-            validate_names=True,
+            name_pattern=name_pattern,
         ).require_exact(key)

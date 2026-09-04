@@ -1,4 +1,3 @@
-id: "word-body"
 caption: "PLOOP.W body iteration"
 alt_text: "With offset zero and at least N W lanes remaining, PLOOP activates the complete predicate image, subtracts N from the remaining count, and keeps the offset at zero."
 kind: predicate-range-generation

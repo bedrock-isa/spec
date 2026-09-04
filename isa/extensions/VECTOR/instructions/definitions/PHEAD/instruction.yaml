@@ -1,4 +1,3 @@
-mnemonic: PHEAD
 name: Predicate Head
 summary: Sets predicate positions from the count remainder through the final lane.
 route: vector

@@ -1,4 +1,3 @@
-id: explicit_segment_base
 name: Explicit segment with base
 kind: memory
 syntax: "[SEG(s):Rn(b) + displacement]"

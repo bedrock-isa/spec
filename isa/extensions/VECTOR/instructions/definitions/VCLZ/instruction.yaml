@@ -1,4 +1,3 @@
-mnemonic: VCLZ
 name: Vector Count Leading Zeros
 summary: Counts consecutive zero bits from the high end of each active element.
 route: vector

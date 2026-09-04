@@ -1,3 +1,2 @@
-id: DEFAULT_FLOAT
 source_kinds: [f32]
 target_kind: f64

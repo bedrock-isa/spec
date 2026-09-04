@@ -1,4 +1,3 @@
-id: EVENT_FRAME_ADDRESS_FAILURE
 name: Event Frame Address Failure
 summary: Delivery fails while forming or translating the complete event-frame address range.
 code: 0x7a

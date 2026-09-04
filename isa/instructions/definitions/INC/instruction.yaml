@@ -1,4 +1,3 @@
-mnemonic: INC
 name: Increment
 summary: Increments the selected-width destination modulo its width without changing FLAGS.
 route: integer_unary

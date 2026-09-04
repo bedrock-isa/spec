@@ -1,4 +1,3 @@
-id: "indexed-lanes"
 caption: "VPERM.W indexed lane selection"
 alt_text: "At W width, each active result lane selects the old Vd lane named by its index; inactive lanes preserve their old destination values."
 kind: vector-lane-transfer

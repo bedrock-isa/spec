@@ -1,4 +1,3 @@
-mnemonic: VSLICE
 name: Vector Slice
 summary: Extract a lane window from the old destination followed by a source vector.
 route: vector

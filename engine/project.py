@@ -135,6 +135,21 @@ class InstructionBundle(Entity):
 class InstructionSetCatalog(DirectoryInventory):
     """One declared base or extension instruction catalog."""
 
+    @classmethod
+    def load(cls, *, owner: str, root: str | Path) -> "InstructionSetCatalog":
+        """Load an instruction inventory whose directory names are mnemonics."""
+
+        definitions = Path(root)
+        catalog = cls.inspect(
+            owner=owner,
+            kind="instruction",
+            source=definitions / "instructions.yaml",
+            root=definitions,
+            key="instructions",
+            name_pattern=r"[A-Za-z][A-Za-z0-9]*",
+        )
+        return catalog
+
 
 @dataclass(frozen=True, slots=True)
 class InstructionSet:
@@ -541,13 +556,7 @@ class SourceCatalog:
         required_cpuid_flags: tuple[CpuidField, ...],
         cpuid: CpuidCatalog,
     ) -> InstructionSet:
-        catalog = InstructionSetCatalog.inspect(
-            owner=owner,
-            kind="instruction",
-            source=instruction_root / "instructions.yaml",
-            root=instruction_root,
-            key="instructions",
-        )
+        catalog = InstructionSetCatalog.load(owner=owner, root=instruction_root)
         bundles: list[InstructionBundle] = []
         for mnemonic in catalog.declared:
             directory = instruction_root / mnemonic

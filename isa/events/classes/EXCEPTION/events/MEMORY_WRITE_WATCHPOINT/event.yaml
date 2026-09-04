@@ -1,4 +1,3 @@
-id: MEMORY_WRITE_WATCHPOINT
 name: Memory Write Watchpoint
 summary: An enabled debug trigger matches a validated data-write range before the write becomes visible.
 code: 0x08

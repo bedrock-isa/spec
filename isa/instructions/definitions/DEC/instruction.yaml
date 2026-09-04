@@ -1,4 +1,3 @@
-mnemonic: DEC
 name: Decrement
 summary: Decrements the selected-width destination modulo its width without changing FLAGS.
 route: integer_unary

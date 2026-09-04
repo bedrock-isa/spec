@@ -1,4 +1,3 @@
-mnemonic: RDSEG
 name: Read Segment Register
 summary: Read an SREG or the current CS image into an Rn register.
 route: system_registers

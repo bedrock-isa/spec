@@ -1,4 +1,3 @@
-mnemonic: VFMUL
 name: Vector Floating-Point Multiply
 summary: Multiplies corresponding active floating-point elements.
 route: vector

@@ -1,4 +1,3 @@
-id: DIVTI3
 symbol: __divti3
 result: base.types.INT128
 parameters:

@@ -1,4 +1,3 @@
-id: COMPLEX_DOUBLE
 spelling: "double _Complex"
 call_kind: complex_f64
 size_bits: 128

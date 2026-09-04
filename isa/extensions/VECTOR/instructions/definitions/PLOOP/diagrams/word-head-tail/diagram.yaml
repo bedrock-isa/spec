@@ -1,4 +1,3 @@
-id: "word-head-tail"
 caption: "PLOOP.W head-tail iteration"
 alt_text: "With four W lanes remaining and offset two, PLOOP activates lanes two through five and writes zero to both scalar state registers."
 kind: predicate-range-generation

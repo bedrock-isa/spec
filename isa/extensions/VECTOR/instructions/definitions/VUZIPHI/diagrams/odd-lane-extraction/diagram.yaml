@@ -1,4 +1,3 @@
-id: "odd-lane-extraction"
 caption: "VUZIPHI.W odd-lane extraction"
 alt_text: "A right-to-left 128-bit W-lane example: odd old-Vd lanes fill the lower result half, odd source-Vn lanes fill the upper half, and inactive result lanes preserve old Vd."
 kind: vector-lane-transfer

@@ -1,4 +1,3 @@
-mnemonic: DIVMODU
 name: Unsigned Divide With Remainder
 summary: Divides an unsigned quotient-register dividend by source and writes quotient and remainder registers.
 route: integer_mul_div

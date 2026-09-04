@@ -1,4 +1,3 @@
-mnemonic: RESET
 name: Reset
 summary: Perform warm reset; preserve BOOTPC and BOOTCFG.
 route: core_control

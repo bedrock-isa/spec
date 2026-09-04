@@ -119,7 +119,9 @@ def _ea_operands(form: decode_ir.FormIR) -> tuple[decode_ir.OperandIR, ...]:
 def _ea_candidate_slot(form: decode_ir.FormIR, operand: decode_ir.OperandIR) -> int:
     source = operand.source
     if not isinstance(source, decode_ir.EffectiveAddressSourceIR):
-        raise ValueError(f"non-EA operand {form.key}/{operand.name}")
+        raise ValueError(
+            f"operand {form.key}/{operand.name} does not use an effective-address source"
+        )
     if source.positions == EA_LOW_POSITIONS:
         return 0
     if form.opcode_class == "medium" and source.positions == EA_MEDIUM_ALT_POSITIONS:

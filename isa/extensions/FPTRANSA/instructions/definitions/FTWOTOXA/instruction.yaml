@@ -1,4 +1,3 @@
-mnemonic: FTWOTOXA
 name: Approximate Floating-Point 2 To x
 summary: Approximates two raised to the source for finite values and signed infinity.
 route: fpu_transcendental_approx

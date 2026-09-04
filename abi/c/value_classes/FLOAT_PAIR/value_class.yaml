@@ -1,4 +1,3 @@
-id: FLOAT_PAIR
 kinds:
 - complex_f32
 - complex_f64

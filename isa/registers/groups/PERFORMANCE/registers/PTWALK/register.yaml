@@ -1,3 +1,2 @@
-id: PTWALK
 encoding: 3
 summary: Hardware page walks started after paging-enabled TLB misses.

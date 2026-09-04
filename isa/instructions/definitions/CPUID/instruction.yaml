@@ -1,4 +1,3 @@
-mnemonic: CPUID
 name: CPU Identification
 summary: Queries architectural discovery information through a selected Rn register.
 route: system_registers

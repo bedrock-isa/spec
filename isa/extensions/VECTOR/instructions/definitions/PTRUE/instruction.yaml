@@ -1,4 +1,3 @@
-mnemonic: PTRUE
 name: Predicate Set All
 summary: Set every significant position for the selected size.
 route: vector

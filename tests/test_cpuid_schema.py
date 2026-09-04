@@ -17,9 +17,8 @@ class CpuidSchemaTest(unittest.TestCase):
         )
 
     def test_class_requires_exactly_one_definition_source(self) -> None:
-        definition = {"id": "BASE", "name": "Base", "value": 0}
+        definition = {"name": "Base", "value": 0}
         overlay = {
-            "id": "EXTENSIONS",
             "name": "Extensions",
             "extends": "base.cpuid.EXTENSIONS",
         }
@@ -32,7 +31,6 @@ class CpuidSchemaTest(unittest.TestCase):
 
     def test_leaf_accepts_fixed_and_strided_query_indexes(self) -> None:
         document = {
-            "id": "STATE_RECORDS",
             "name": "State Records",
             "value": 4,
             "queries": [
@@ -53,7 +51,6 @@ class CpuidSchemaTest(unittest.TestCase):
     @staticmethod
     def leaf_document() -> dict:
         return {
-            "id": "LEAF",
             "name": "Bad Leaf",
             "value": 1,
             "queries": [
@@ -69,11 +66,6 @@ class CpuidSchemaTest(unittest.TestCase):
         errors = list(self.leaf_validator.iter_errors(document))
         self.assertTrue(errors)
         self.assertIn(path, {tuple(error.absolute_path) for error in errors})
-
-    def test_leaf_rejects_path_shaped_id(self) -> None:
-        document = self.leaf_document()
-        document["id"] = "BAD/LEAF"
-        self.assert_leaf_rejected_at(document, ("id",))
 
     def test_leaf_rejects_out_of_range_leaf_value(self) -> None:
         document = self.leaf_document()

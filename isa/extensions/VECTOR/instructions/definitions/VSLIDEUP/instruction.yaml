@@ -1,4 +1,3 @@
-mnemonic: VSLIDEUP
 name: Vector Slide Up
 summary: Move old destination lanes toward higher indices and zero vacated lanes.
 route: vector

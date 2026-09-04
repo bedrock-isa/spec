@@ -1,4 +1,3 @@
-id: nontemporal_store_u32
 owner: base
 description: >-
   One writable 32-bit object; one hinted store, neither volatile nor a fence.

@@ -1,4 +1,3 @@
-mnemonic: VTRUNCL
 name: Vector Truncation to Long
 summary: Copies the low L field from each Q source container.
 route: vector

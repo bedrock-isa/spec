@@ -1,4 +1,3 @@
-id: yield
 owner: base
 description: >-
   Any privilege; scheduling hint, not a compiler or memory barrier.

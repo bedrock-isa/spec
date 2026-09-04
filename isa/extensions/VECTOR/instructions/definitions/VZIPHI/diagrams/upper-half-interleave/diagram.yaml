@@ -1,4 +1,3 @@
-id: "upper-half-interleave"
 caption: "VZIPHI.W upper-half interleave"
 alt_text: "A right-to-left 128-bit W-lane example: result pairs alternate matching lanes from the upper halves of old Vd and source Vn, while inactive result lanes preserve old Vd."
 kind: vector-lane-transfer

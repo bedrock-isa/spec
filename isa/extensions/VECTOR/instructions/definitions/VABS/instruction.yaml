@@ -1,4 +1,3 @@
-mnemonic: VABS
 name: Vector Absolute Value
 summary: Computes the absolute value of active integer elements.
 route: vector

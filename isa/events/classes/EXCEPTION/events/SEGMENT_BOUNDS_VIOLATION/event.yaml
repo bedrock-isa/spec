@@ -1,4 +1,3 @@
-id: SEGMENT_BOUNDS_VIOLATION
 name: Segment Bounds Violation
 summary: Segment pre-translation places the requested access outside the selected segment bounds.
 code: 0x24

@@ -1,4 +1,3 @@
-mnemonic: FLOG10A
 name: Approximate Floating-Point Log Base 10
 summary: Approximates base-10 logarithm for positive values, with zero as the divide-by-zero boundary.
 route: fpu_transcendental_approx

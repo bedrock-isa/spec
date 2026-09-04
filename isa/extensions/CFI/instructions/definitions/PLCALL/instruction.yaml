@@ -1,4 +1,3 @@
-mnemonic: PLCALL
 name: Protected Long Call
 summary: Materializes an authenticated long-return record and transfers to a new CS:PC.
 route: control_flow

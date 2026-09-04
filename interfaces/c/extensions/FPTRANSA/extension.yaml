@@ -1,4 +1,3 @@
-id: FPTRANSA
 requires:
 - FP
 requires-isa:

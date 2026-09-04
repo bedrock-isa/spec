@@ -1,4 +1,3 @@
-mnemonic: FCALL
 name: Fast Call
 summary: Installs a resident continuation and transfers without return-record memory traffic.
 route: control_flow

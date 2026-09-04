@@ -1,4 +1,3 @@
-mnemonic: VOR
 name: Vector Bitwise OR
 summary: Applies bitwise OR to corresponding active vector elements.
 route: vector

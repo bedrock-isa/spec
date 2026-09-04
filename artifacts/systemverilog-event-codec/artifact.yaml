@@ -1,4 +1,3 @@
-id: systemverilog-event-codec
 generator: generator.py
 inputs:
 - isa

@@ -1,4 +1,3 @@
-mnemonic: MOV
 name: Move
 summary: Copies the source operand to the destination operand.
 route: data_movement

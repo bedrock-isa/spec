@@ -1,4 +1,3 @@
-mnemonic: FLOG2A
 name: Approximate Floating-Point Log Base 2
 summary: Approximates base-2 logarithm for positive values, with zero as the divide-by-zero boundary.
 route: fpu_transcendental_approx

@@ -1,4 +1,3 @@
-id: "zero-byte-to-word"
 caption: "VEXTZW.B unsigned byte-to-word extension"
 alt_text: "An illustrative B-to-W VEXTZW view: each active word container zero-extends its low source byte, while inactive containers preserve the old destination value."
 kind: integer-width-conversion

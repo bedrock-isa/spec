@@ -1,4 +1,3 @@
-mnemonic: VFCVTL
 name: Vector Floating-Point Convert to Signed Longword
 summary: Converts active floating-point elements to signed longwords.
 route: vector

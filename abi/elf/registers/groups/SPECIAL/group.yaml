@@ -1,4 +1,3 @@
-id: SPECIAL
 register_group: isa:base.registers.SPECIAL
 dwarf:
 - first: 16

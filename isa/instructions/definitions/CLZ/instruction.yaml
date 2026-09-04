@@ -1,4 +1,3 @@
-mnemonic: CLZ
 name: Count Leading Zeros
 summary: Counts leading zero bits in the selected-width source and writes the count.
 route: integer_bitfield

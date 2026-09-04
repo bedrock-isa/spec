@@ -1,4 +1,3 @@
-mnemonic: FSAVE
 name: Save Floating-Point State
 summary: Saves the floating-point user-state record.
 route: data_movement

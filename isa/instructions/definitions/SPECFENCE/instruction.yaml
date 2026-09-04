@@ -1,4 +1,3 @@
-mnemonic: SPECFENCE
 name: Speculation Fence
 summary: Prevents younger instructions from executing speculatively across the fence.
 route: core_control

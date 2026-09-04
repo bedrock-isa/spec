@@ -1,4 +1,3 @@
-mnemonic: MODS
 name: Signed Modulo
 summary: Writes the signed remainder of destination-by-source truncation-toward-zero division.
 route: integer_mul_div

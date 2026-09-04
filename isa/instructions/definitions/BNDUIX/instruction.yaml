@@ -1,4 +1,3 @@
-mnemonic: BNDUIX
 name: Unsigned Bounds Check Inclusive-Exclusive
 summary: Checks unsigned value membership in the inclusive-exclusive interval [lo, hi).
 route: bounds

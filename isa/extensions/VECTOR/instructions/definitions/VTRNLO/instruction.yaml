@@ -1,4 +1,3 @@
-mnemonic: VTRNLO
 name: Vector Even-Lane Transpose
 summary: Interleave even lanes from the old destination and source by adjacent result pairs.
 route: vector

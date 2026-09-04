@@ -1,4 +1,3 @@
-mnemonic: VSUB
 name: Vector Subtract
 summary: Subtracts corresponding active integer vector elements.
 route: vector

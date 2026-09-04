@@ -56,9 +56,9 @@ class DocumentComposition:
     ) -> "DocumentComposition":
         source = Path(path).resolve()
         document = YamlDocumentLoader().mapping(source)
-        artifact = document.get("id")
-        if not isinstance(artifact, str) or not artifact:
-            raise ValueError(f"{source}: artifact must be a non-empty string")
+        if source.name != "artifact.yaml":
+            raise ValueError(f"{source}: expected a file named artifact.yaml")
+        artifact = source.parent.name
 
         root = project.root.parent
 

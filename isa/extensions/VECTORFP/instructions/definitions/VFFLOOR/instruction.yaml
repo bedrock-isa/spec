@@ -1,4 +1,3 @@
-mnemonic: VFFLOOR
 name: Vector Floating-Point Floor
 summary: Rounds each active floating-point element downward to an integral value in the same format.
 route: vector

@@ -1,4 +1,3 @@
-id: "longword-memory-load"
 caption: "VMOV.L memory load with merge"
 alt_text: "The base register forms contiguous longword addresses. Active predicate lanes read memory and replace the corresponding Vd lanes; the inactive lane issues no access and retains its old value."
 kind: predicated-vector-load

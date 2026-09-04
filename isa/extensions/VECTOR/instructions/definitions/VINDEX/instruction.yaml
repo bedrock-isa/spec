@@ -1,4 +1,3 @@
-mnemonic: VINDEX
 name: Vector Lane Indices
 summary: Writes each logical lane number to its destination element.
 route: vector

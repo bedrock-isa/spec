@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+import re
 from types import MappingProxyType
 from typing import TYPE_CHECKING, TypeVar, cast
 
@@ -482,6 +483,16 @@ def _load_namespace(
         root=root / "registers/groups",
         key="groups",
     )
+    invalid_register_groups = tuple(
+        entity_id
+        for entity_id in register_group_inventory.actual
+        if re.fullmatch(r"[A-Z][A-Z0-9_]*", entity_id) is None
+    )
+    if invalid_register_groups:
+        raise ValueError(
+            f"{register_group_inventory.source}: invalid register-group "
+            f"directory names {invalid_register_groups}"
+        )
 
     relocations: dict[str, Relocation] = {}
     for entity_id in relocation_inventory.declared:
@@ -490,7 +501,6 @@ def _load_namespace(
         raw = SchemaValidatedYamlLoader().load(
             source, schemas / "relocation.yaml"
         )
-        _matching_id(source, entity_id, raw)
         relocation_reference: Reference[Relocation] = Reference(
             owner, ("relocations",), entity_id
         )
@@ -526,7 +536,6 @@ def _load_namespace(
         raw = SchemaValidatedYamlLoader().load(
             source, schemas / "linkage-protocol.yaml"
         )
-        _matching_id(source, entity_id, raw)
         protocol_reference: Reference[LinkageProtocol] = Reference(
             owner, ("linkage_protocols",), entity_id
         )
@@ -565,7 +574,6 @@ def _load_namespace(
         entity_root = tls_inventory.root / entity_id
         source = entity_root / "model.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "tls-model.yaml")
-        _matching_id(source, entity_id, raw)
         tls_reference: Reference[TlsModel] = Reference(
             owner, ("tls_models",), entity_id
         )
@@ -589,7 +597,6 @@ def _load_namespace(
         entity_root = code_inventory.root / entity_id
         source = entity_root / "model.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "code-model.yaml")
-        _matching_id(source, entity_id, raw)
         code_reference: Reference[CodeModel] = Reference(
             owner, ("code_models",), entity_id
         )
@@ -616,7 +623,6 @@ def _load_namespace(
         entity_root = register_group_inventory.root / entity_id
         source = entity_root / "group.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "register-group.yaml")
-        _matching_id(source, entity_id, raw)
         register_group: QualifiedReference[RegisterGroup] = QualifiedReference.parse(
             raw["register_group"]
         )
@@ -785,25 +791,28 @@ def _validate_debug_register_ranges(
 def _inventory(
     owner: str, root: Path, kind: str, plural: str
 ) -> DirectoryInventory:
-    return DirectoryInventory.load_strict(
+    inventory = DirectoryInventory.load_strict(
         owner=owner,
         kind=kind,
         source=root / plural / f"{plural}.yaml",
         root=root / plural,
         key=plural,
     )
+    pattern = r"R_BEDROCK_[A-Z0-9_]+" if kind == "relocation" else r"[A-Z][A-Z0-9_]*"
+    invalid = tuple(
+        entity_id
+        for entity_id in inventory.actual
+        if re.fullmatch(pattern, entity_id) is None
+    )
+    if invalid:
+        raise ValueError(
+            f"{inventory.source}: invalid {kind} directory names {invalid}"
+        )
+    return inventory
 
 
 def _register_reference(domain: str, register: Register) -> QualifiedReference[Register]:
     return QualifiedReference(domain, register.reference)
-
-
-def _matching_id(source: Path, expected: str, raw: Mapping[str, object]) -> None:
-    if raw.get("id") != expected:
-        raise ValueError(
-            f"{source}: entity ID {raw.get('id')!r} does not match "
-            f"directory {expected!r}"
-        )
 
 
 def _build_entities(

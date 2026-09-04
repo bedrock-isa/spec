@@ -1,4 +1,3 @@
-id: invalidate_page
 owner: base
 description: >-
   Supervisor; argument supplies a linear address and invalidates any matching cached leaf mapping containing it; the operation fully clobbers memory.

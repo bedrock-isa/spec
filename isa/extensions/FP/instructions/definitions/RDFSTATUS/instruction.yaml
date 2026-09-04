@@ -1,4 +1,3 @@
-mnemonic: RDFSTATUS
 name: Read Floating-Point Status
 summary: Read the FPU status/control register into an Rn register.
 route: system_registers

@@ -1,4 +1,3 @@
-id: USER_STATE
 name: Base User-State Record
 alignment_bytes: 8
 components:

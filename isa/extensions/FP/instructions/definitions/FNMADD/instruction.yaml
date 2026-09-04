@@ -1,4 +1,3 @@
-mnemonic: FNMADD
 name: Floating-Point Fused Negative Multiply Add
 summary: Computes the negated source product minus the old destination as one fused operation and rounds once.
 route: fpu

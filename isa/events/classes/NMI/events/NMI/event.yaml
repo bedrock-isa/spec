@@ -1,4 +1,3 @@
-id: NMI
 name: Non-Maskable Interrupt
 summary: An architected or platform-defined non-maskable source is admitted for delivery.
 frame: basic

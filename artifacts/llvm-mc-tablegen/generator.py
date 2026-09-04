@@ -279,7 +279,7 @@ class Generator(ArtifactGenerator):
                         scalar_forms.append(scalar_form)
 
             instruction = dict(bundle.instruction)
-            mnemonic = str(instruction["mnemonic"])
+            mnemonic = bundle.instruction.mnemonic
             has_condition = mnemonic.endswith("cc")
             repeat = instruction.get("repeat", {})
             repeat_type = repeat.get("type")

@@ -7,6 +7,7 @@ import tempfile
 import yaml
 
 from engine.project import (
+    InstructionSetCatalog,
     IsaProject,
     ProjectLookupError,
     ProjectLookupReason,
@@ -111,6 +112,21 @@ class IsaProjectTest(unittest.TestCase):
                 tuple(required.id for required in extension.requires),
                 extension.metadata.requires,
             )
+
+    def test_instruction_catalog_rejects_invalid_directory_names(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "definitions"
+            (root / "ADD-INVALID").mkdir(parents=True)
+            (root / "instructions.yaml").write_text(
+                "instructions:\n- ADD-INVALID\n", encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(
+                ValueError, "invalid instructions names"
+            ):
+                InstructionSetCatalog.load(owner="base", root=root)
 
     def test_resolves_mnemonic_reference_and_source_path(self) -> None:
         expected = self.project.select()[0]

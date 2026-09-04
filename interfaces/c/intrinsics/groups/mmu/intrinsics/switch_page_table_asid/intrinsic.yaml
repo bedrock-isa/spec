@@ -1,4 +1,3 @@
-id: switch_page_table_asid
 owner: base
 description: >-
   Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.

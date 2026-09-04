@@ -1,4 +1,3 @@
-mnemonic: PTAIL
 name: Predicate Tail
 summary: Set significant positions before unsigned(Rcount) mod lane_count.
 route: vector

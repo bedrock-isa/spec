@@ -1,4 +1,3 @@
-id: systemverilog-condition-evaluator
 generator: generator.py
 inputs:
 - isa

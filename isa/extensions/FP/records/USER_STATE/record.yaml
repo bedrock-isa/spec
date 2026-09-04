@@ -1,4 +1,3 @@
-id: USER_STATE
 name: Floating-Point User-State Record
 alignment_bytes: 64
 components:

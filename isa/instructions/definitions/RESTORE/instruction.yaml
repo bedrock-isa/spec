@@ -1,4 +1,3 @@
-mnemonic: RESTORE
 name: Restore Base User State
 summary: Restores the base user-state record.
 route: data_movement

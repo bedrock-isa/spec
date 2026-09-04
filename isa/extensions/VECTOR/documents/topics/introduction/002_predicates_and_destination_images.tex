@@ -1,14 +1,15 @@
 \subsection{Predicates and Destination Images}
 
 For an element size of $E$ bytes, logical lane $i$ is governed by predicate
-bit $iE$.  All other predicate bits are nonsignificant for that operation.
+bit $iE$.  All other predicate bits are outside the typed predicate image for
+that operation.
 Unless an instruction explicitly produces a complete predicate image or uses
 zeroing movement, a false governing bit annuls that lane: it performs no
 (:term:base.terms.memory_access:), produces no exception, and preserves the old destination lane.
 
 An instruction that writes a predicate result writes a complete packed
-predicate image.  It sets or clears each significant result bit and clears
-all nonsignificant bits.  Integer comparisons support \texttt{EQ},
+predicate image.  It sets or clears each significant result bit and clears all
+bits outside the typed predicate image.  Integer comparisons support \texttt{EQ},
 \texttt{NE}, \texttt{ULT}, \texttt{UGE}, \texttt{ULE}, \texttt{UGT},
 \texttt{LT}, \texttt{GE}, \texttt{LE}, and \texttt{GT}. VECTORFP defines its
 own floating-point comparison forms.

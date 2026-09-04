@@ -1,4 +1,3 @@
-mnemonic: VSCATTER
 name: Resumable Vector Scatter
 summary: Scatter governed vector lanes while journaling completed lanes in a predicate.
 route: vector

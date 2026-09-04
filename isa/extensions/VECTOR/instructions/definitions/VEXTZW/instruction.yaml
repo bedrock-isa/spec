@@ -1,4 +1,3 @@
-mnemonic: VEXTZW
 name: Vector Zero Extension to Word
 summary: Zero-extends B source elements to W destination elements.
 route: vector

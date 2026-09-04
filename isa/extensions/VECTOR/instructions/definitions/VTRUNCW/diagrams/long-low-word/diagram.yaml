@@ -1,4 +1,3 @@
-id: "long-low-word"
 caption: "VTRUNCW.L low-word truncation"
 alt_text: "An illustrative L-container VTRUNCW view: each active container copies the low source word into the low destination word and preserves the old destination high word; inactive containers preserve the complete old destination value."
 kind: integer-width-conversion

@@ -1,4 +1,3 @@
-id: fclass_f32
 owner: FP
 description: >-
   FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.

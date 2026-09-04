@@ -28,7 +28,7 @@ This grammar is an envelope, not a second declaration of the instruction set. Th
 the sole definition of the accepted mnemonic forms, suffixes, modifiers, operand counts, operand ordering, and
 operand classes. A parenthesized instruction is accepted only where an instruction form declares an instruction
 operand. The effective-address mode catalog is the sole definition of the accepted \texttt{ea-expression} forms.
-The brackets are part of every address expression and never form a non-address operand. Whether a consuming
+The brackets delimit address expressions only and never enclose another operand class. Whether a consuming
 instruction reads memory, writes memory, computes the address only, or applies another address-directed operation is
 defined by that instruction\textquotesingle{}s operand role.
 

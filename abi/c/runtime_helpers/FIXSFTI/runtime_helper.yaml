@@ -1,4 +1,3 @@
-id: FIXSFTI
 symbol: __fixsfti
 result: base.types.INT128
 parameters:

@@ -1,4 +1,3 @@
-id: BUS_TIMEOUT
 name: Bus Timeout
 summary: The requested bus access does not complete within the architecturally admitted response interval.
 code: 0x72

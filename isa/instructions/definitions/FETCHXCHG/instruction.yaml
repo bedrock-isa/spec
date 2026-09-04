@@ -1,4 +1,3 @@
-mnemonic: FETCHXCHG
 name: Atomic Fetch Exchange
 summary: Atomically exchanges a register with memory and returns the old memory value.
 route: atomics

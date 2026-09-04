@@ -1,4 +1,3 @@
-id: SMALL
 placement: Referenced code, data, GOT, and PLT occupy one signed 32-bit relative window.
 strategy: PC-relative access with GOT and PLT paths for interposable symbols.
 default_relocations:

@@ -1,4 +1,3 @@
-mnemonic: VREDMINU
 name: Vector Unsigned Minimum Reduction
 summary: Finds the unsigned minimum of selected integer lanes and writes the scalar result to Rn.
 route: vector

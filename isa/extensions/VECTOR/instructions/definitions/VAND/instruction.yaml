@@ -1,4 +1,3 @@
-mnemonic: VAND
 name: Vector Bitwise AND
 summary: Applies bitwise AND to corresponding active vector elements.
 route: vector

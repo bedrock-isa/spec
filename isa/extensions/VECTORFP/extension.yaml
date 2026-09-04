@@ -1,4 +1,3 @@
-id: VECTORFP
 name: Vector Floating-Point Extension
 requires:
 - FP

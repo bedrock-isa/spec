@@ -1,4 +1,3 @@
-id: UINT128
 spelling: "unsigned __int128"
 call_kind: u128
 size_bits: 128

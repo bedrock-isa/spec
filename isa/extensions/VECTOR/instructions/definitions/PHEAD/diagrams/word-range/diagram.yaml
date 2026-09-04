@@ -1,4 +1,3 @@
-id: "word-range"
 caption: "PHEAD.W upper-range predicate fill"
 alt_text: "With count 3, PHEAD.W sets the significant predicate positions for logical lanes 3 through the scalable lane-count endpoint and clears all other bits."
 kind: predicate-range-generation

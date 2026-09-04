@@ -1,4 +1,3 @@
-id: clmul_u32
 owner: base
 description: >-
   Pure; low 32 bits of the carryless product.

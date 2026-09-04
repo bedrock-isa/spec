@@ -2,7 +2,7 @@ PPERM reads an unsigned index from each selected B, W, L, or Q vector lane.
 Each index selects the old destination\textquotesingle{}s significant predicate position whose
 typed-lane index has that value.
 An index outside the architectural typed-lane range produces zero.
-The complete destination predicate image is written, and every nonsignificant bit is cleared.
+The complete destination predicate image is written, and every bit outside its significant positions is cleared.
 The operation leaves FLAGS unchanged.
 
 (:diagram:VECTOR.instructions.PPERM.diagrams.indexed-selection:)

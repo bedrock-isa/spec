@@ -1,4 +1,3 @@
-mnemonic: RDFLAGS
 name: Read Flags
 summary: Read the integer condition-code flags into an Rn register.
 route: system_registers

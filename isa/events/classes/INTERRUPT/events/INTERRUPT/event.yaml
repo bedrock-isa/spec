@@ -1,4 +1,3 @@
-id: INTERRUPT
 name: Maskable Interrupt
 summary: An eligible architectural interrupt identity is admitted for delivery.
 frame: basic

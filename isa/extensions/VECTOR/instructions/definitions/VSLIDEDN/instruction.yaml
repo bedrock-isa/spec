@@ -1,4 +1,3 @@
-mnemonic: VSLIDEDN
 name: Vector Slide Down
 summary: Move old destination lanes toward lower indices and zero vacated lanes.
 route: vector

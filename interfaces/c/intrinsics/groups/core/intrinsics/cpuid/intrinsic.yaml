@@ -1,4 +1,3 @@
-id: cpuid
 owner: base
 description: >-
   User allowed; reads discovery state and not C memory.

@@ -1,4 +1,3 @@
-mnemonic: CTZ
 name: Count Trailing Zeros
 summary: Counts trailing zero bits in the selected-width source and writes the count.
 route: integer_bitfield

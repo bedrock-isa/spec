@@ -1,4 +1,3 @@
-mnemonic: TARM
 name: Arm Deadline Timer
 summary: Atomically install an absolute deadline and interrupt identity.
 route: system_registers

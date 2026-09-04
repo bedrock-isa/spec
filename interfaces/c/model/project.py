@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from types import MappingProxyType
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, TypeAlias, TypeVar, cast
@@ -277,26 +278,18 @@ def _load_groups(
     extensions: Mapping[str, InterfaceExtension],
 ) -> tuple[ReferenceIndex[InterfaceGroup], ReferenceIndex[object]]:
     groups_root = root / kind / "groups"
-    group_inventory = _load_inventory(groups_root / "groups.yaml", "groups")
-    declared = group_inventory.declared
-    if declared != group_inventory.actual:
-        raise ValueError(
-            f"{groups_root}: declared {kind} groups {declared} do not match "
-            f"actual groups {group_inventory.actual}"
-        )
+    group_inventory = _load_inventory(
+        groups_root / "groups.yaml", "groups", r"[a-z][a-z0-9_]*"
+    )
     group_schema = root / "schemas/group.yaml"
     entity_schema = root / f"schemas/{singular}.yaml"
     groups = ReferenceIndex[InterfaceGroup]()
     entities = ReferenceIndex[object]()
-    for group_id in declared:
+    for group_id in group_inventory.actual:
         group_root = groups_root / group_id
         group_data = SchemaValidatedYamlLoader().load(
             group_root / "group.yaml", group_schema
         )
-        if group_data["id"] != group_id:
-            raise ValueError(
-                f"{group_root}/group.yaml: group ID must match directory {group_id!r}"
-            )
         group_reference: Reference[InterfaceGroup] = Reference(
             "base", (kind,), group_id
         )
@@ -311,18 +304,12 @@ def _load_groups(
             ),
         )
         entities_root = group_root / kind
-        entity_inventory = _load_inventory(entities_root / f"{kind}.yaml", kind)
-        entity_ids = entity_inventory.declared
-        if entity_ids != entity_inventory.actual:
-            raise ValueError(
-                f"{entities_root}: declared {kind} {entity_ids} do not match "
-                f"actual entries {entity_inventory.actual}"
-            )
-        for entity_id in entity_ids:
+        entity_inventory = _load_inventory(
+            entities_root / f"{kind}.yaml", kind, r"[a-z][a-z0-9_]*"
+        )
+        for entity_id in entity_inventory.actual:
             source = entities_root / entity_id / f"{singular}.yaml"
             data = SchemaValidatedYamlLoader().load(source, entity_schema)
-            if data["id"] != entity_id:
-                raise ValueError(f"{source}: ID must match directory {entity_id!r}")
             owner = str(data["owner"])
             if owner != "base" and owner not in extensions:
                 raise ValueError(f"{source}: unknown interface owner {owner!r}")
@@ -376,35 +363,34 @@ def _load_groups(
     return groups, entities
 
 
-def _load_inventory(path: Path, key: str) -> DirectoryInventory:
+def _load_inventory(path: Path, key: str, name_pattern: str) -> DirectoryInventory:
     inventory = DirectoryInventory.inspect(
         owner="interfaces.c",
         kind=key,
         source=path,
         root=path.parent,
         key=key,
+        exact_keys=True,
+        validate_names=True,
+    ).require_exact(key)
+    invalid = tuple(
+        name for name in inventory.actual if re.fullmatch(name_pattern, name) is None
     )
-    if inventory.duplicates:
-        raise ValueError(f"{path}: duplicate {key} entries")
+    if invalid:
+        raise ValueError(f"{path}: invalid {key} directory names {invalid}")
     return inventory
 
 
 def _load_extensions(root: Path) -> Mapping[str, InterfaceExtension]:
     extensions_root = root / "extensions"
-    inventory = _load_inventory(extensions_root / "extensions.yaml", "extensions")
-    declared = inventory.declared
-    if declared != inventory.actual:
-        raise ValueError(
-            f"{extensions_root}: declared extensions {declared} do not match "
-            f"actual extensions {inventory.actual}"
-        )
+    inventory = _load_inventory(
+        extensions_root / "extensions.yaml", "extensions", r"[A-Z][A-Z0-9_]*"
+    )
     schema = root / "schemas/extension.yaml"
     loaded: dict[str, InterfaceExtension] = {}
-    for extension_id in declared:
+    for extension_id in inventory.actual:
         source = extensions_root / extension_id / "extension.yaml"
         data = SchemaValidatedYamlLoader().load(source, schema)
-        if data["id"] != extension_id:
-            raise ValueError(f"{source}: ID must match directory {extension_id!r}")
         loaded[extension_id] = InterfaceExtension(
             extension_id,
             tuple(data.get("requires", ())),

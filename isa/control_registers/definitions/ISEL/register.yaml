@@ -1,3 +1,2 @@
-id: ISEL
 selector: 0x0303
 summary: Indirect interrupt-file bank and word selector.

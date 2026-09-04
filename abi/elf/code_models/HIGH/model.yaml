@@ -1,4 +1,3 @@
-id: HIGH
 placement: A static high image keeps internal references within a signed 32-bit displacement window.
 strategy: Image-base or PC-relative access with full-width fallback.
 default_relocations:

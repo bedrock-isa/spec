@@ -1,4 +1,3 @@
-mnemonic: CMPXCHGP
 name: Compare And Exchange Pair
 summary: Atomically compares and conditionally exchanges a 128-bit memory value using two register pairs.
 route: atomics

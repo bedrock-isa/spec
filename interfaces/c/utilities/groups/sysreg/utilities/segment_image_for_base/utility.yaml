@@ -1,4 +1,3 @@
-id: segment_image_for_base
 owner: base
 parameters: [base, exponent, mantissa, bounds_only]
 body: '__BEDROCK_SEGMENT_IMAGE((uint64_t)(base) >> 12, exponent, mantissa, bounds_only)'

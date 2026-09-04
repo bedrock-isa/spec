@@ -1,4 +1,3 @@
-mnemonic: HALT
 name: Halt
 summary: Halt the executing logical processor until an asynchronous architectural event is admitted.
 route: core_control

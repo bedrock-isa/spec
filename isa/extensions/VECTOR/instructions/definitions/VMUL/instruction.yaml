@@ -1,4 +1,3 @@
-mnemonic: VMUL
 name: Vector Multiply
 summary: Multiplies corresponding active integer elements.
 route: vector

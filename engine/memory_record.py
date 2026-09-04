@@ -243,6 +243,7 @@ def _load_namespace(
         source=records_root / "records.yaml",
         root=records_root,
         key="records",
+        name_pattern=r"[A-Z][A-Z0-9_]*",
     )
     if inventory.declared != tuple(sorted(inventory.declared)):
         raise MemoryRecordError(
@@ -281,11 +282,6 @@ def _decode_record(
     source: Path,
     raw: Mapping[str, Any],
 ) -> MemoryRecord:
-    if raw["id"] != directory_id:
-        raise MemoryRecordError(
-            f"{source}: record ID {raw['id']!r} does not match directory "
-            f"{directory_id!r}"
-        )
     alignment = raw["alignment_bytes"]
     if alignment & (alignment - 1):
         raise MemoryRecordError(

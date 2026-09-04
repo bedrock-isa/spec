@@ -28,5 +28,6 @@ BOOTPC as its exact resumed PC and preserves both images.
 
 ECR, entry and stack registers, (:ref:base.registers.STATE.STATUS.EDEPTH:)/(:ref:base.registers.STATE.STATUS.UO:), hidden current DFA, the interrupt file, the debug-trigger array, and
 the user context bank are per-logical-processor state. Event entry preserves the debug-trigger array. System software
-includes the applicable non-debug state when switching supervisor contexts; debug-trigger state is managed separately.
+includes the applicable processor state listed above when switching supervisor contexts and manages the debug-trigger
+array separately.
 Payloads and full event frames reside in byte-addressed (:term:base.terms.normal_memory:) owned by the interrupted context.

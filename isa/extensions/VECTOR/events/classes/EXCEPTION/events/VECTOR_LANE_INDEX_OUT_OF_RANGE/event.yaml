@@ -1,4 +1,3 @@
-id: VECTOR_LANE_INDEX_OUT_OF_RANGE
 name: Vector Lane Index Out of Range
 summary: A scalar lane index lies outside the selected vector element count.
 code: 0x51

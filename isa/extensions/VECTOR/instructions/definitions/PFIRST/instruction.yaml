@@ -1,4 +1,3 @@
-mnemonic: PFIRST
 name: First Set Predicate Lane
 summary: Return the first selected element index at a significant position.
 route: vector

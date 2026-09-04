@@ -1,4 +1,3 @@
-id: absolute
 name: Absolute memory
 kind: memory
 syntax: "[absolute]"

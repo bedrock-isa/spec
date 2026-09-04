@@ -1,4 +1,3 @@
-mnemonic: CFISSAVE
 name: Save Control-Flow Integrity Supervisor State
 summary: Saves the complete CFI supervisor-state record.
 route: data_movement

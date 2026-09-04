@@ -1,4 +1,3 @@
-mnemonic: SSAVE
 name: Save Base Supervisor State
 summary: Saves the base supervisor-state record.
 route: data_movement

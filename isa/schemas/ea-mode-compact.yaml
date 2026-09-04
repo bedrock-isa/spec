@@ -3,11 +3,8 @@ $id: bedrock://schemas/ea-mode-compact
 title: Bedrock compact effective-address mode
 type: object
 additionalProperties: false
-required: [id, name, kind, encodings]
+required: [name, kind, encodings]
 properties:
-  id:
-    type: string
-    pattern: ^[a-z][a-z0-9_]*$
   name:
     type: string
     minLength: 1

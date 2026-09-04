@@ -1,4 +1,3 @@
-mnemonic: FLOGNP1A
 name: Approximate Floating-Point Natural Log Plus One
 summary: Approximates natural log of one plus the source, with minus one as the divide-by-zero boundary.
 route: fpu_transcendental_approx

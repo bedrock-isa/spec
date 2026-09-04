@@ -1,4 +1,3 @@
-mnemonic: SWPTA
 name: Switch Page Table With Context
 summary: Switches the page table and enables address-space context matching.
 route: tlb_and_context

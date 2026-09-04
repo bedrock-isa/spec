@@ -1,4 +1,3 @@
-id: clmul_u64
 owner: base
 description: >-
   Pure; low 64 bits of the carryless product.

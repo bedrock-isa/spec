@@ -40,9 +40,8 @@ $defs:
 
   common:
     type: object
-    required: [id, caption, alt_text, kind, view]
+    required: [caption, alt_text, kind, view]
     properties:
-      id: {$ref: '#/$defs/identifier'}
       caption: {$ref: '#/$defs/nonempty-string'}
       alt_text: {$ref: '#/$defs/nonempty-string'}
       kind: {$ref: '#/$defs/nonempty-string'}

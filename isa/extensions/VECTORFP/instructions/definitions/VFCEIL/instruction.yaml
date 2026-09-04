@@ -1,4 +1,3 @@
-mnemonic: VFCEIL
 name: Vector Floating-Point Ceiling
 summary: Rounds each active floating-point element upward to an integral value in the same format.
 route: vector

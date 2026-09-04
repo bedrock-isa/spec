@@ -1,4 +1,3 @@
-id: program_counter_displaced
 name: Program-counter displaced memory
 kind: memory
 syntax: "[PC + displacement]"

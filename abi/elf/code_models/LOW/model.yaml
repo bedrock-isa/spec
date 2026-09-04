@@ -1,4 +1,3 @@
-id: LOW
 placement: Static code and data addresses occupy 0x00000000 through 0x7fffffff.
 strategy: Signed 32-bit absolute data references and direct transfers.
 default_relocations:

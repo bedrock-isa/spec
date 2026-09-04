@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import importlib.util
 import logging
 from pathlib import Path
+import re
 from types import MappingProxyType
 from ..observability import log_phase
 from ..yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
@@ -15,6 +16,7 @@ from ..workspace import SpecWorkspace, SpecificationProvider
 
 
 _LOGGER = logging.getLogger(__name__)
+_ARTIFACT_ID = re.compile(r"[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*")
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,7 +31,9 @@ class GeneratedArtifact:
             or self.relative_path.is_absolute()
             or ".." in self.relative_path.parts
         ):
-            raise ValueError(f"generated artifact path escapes output root: {self.relative_path}")
+            raise ValueError(
+                f"generated artifact path escapes output root: {self.relative_path}"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,7 +53,9 @@ class GeneratedArtifactSet:
         wanted = Path(relative_path)
         matches = [item for item in self.artifacts if item.relative_path == wanted]
         if len(matches) != 1:
-            raise ValueError(f"expected one generated artifact {wanted}, found {len(matches)}")
+            raise ValueError(
+                f"expected one generated artifact {wanted}, found {len(matches)}"
+            )
         return matches[0]
 
 
@@ -80,9 +86,7 @@ class ArtifactDefinition:
     def derived_outputs(self) -> Mapping[str, Path]:
         return self._output_mapping("derived-outputs", required=False)
 
-    def _output_mapping(
-        self, key: str, *, required: bool = True
-    ) -> Mapping[str, Path]:
+    def _output_mapping(self, key: str, *, required: bool = True) -> Mapping[str, Path]:
         raw = self.data[key] if required else self.data.get(key, {})
         if not isinstance(raw, Mapping):
             raise ValueError(f"{self.source}: {key} must be a mapping")
@@ -156,11 +160,18 @@ class ArtifactDefinition:
                 )
 
     @classmethod
-    def load(cls, path: str | Path, schema: Mapping[str, object]) -> "ArtifactDefinition":
+    def load(
+        cls, path: str | Path, schema: Mapping[str, object]
+    ) -> "ArtifactDefinition":
         source = Path(path).resolve()
         raw = SchemaValidatedYamlLoader().load(source, schema)
+        artifact_id = source.parent.name
+        if source.name != "artifact.yaml":
+            raise ValueError(f"{source}: expected a file named artifact.yaml")
+        if _ARTIFACT_ID.fullmatch(artifact_id) is None:
+            raise ValueError(f"{source}: invalid artifact directory {artifact_id!r}")
         return cls(
-            raw["id"],
+            artifact_id,
             source,
             MappingProxyType(raw),
             str(raw["summary"]) if "summary" in raw else None,
@@ -182,6 +193,7 @@ class ArtifactGenerationContext:
 
     def require_provider(self, name: str) -> SpecificationProvider:
         return self.workspace.require_provider(name)
+
 
 class ArtifactGenerator(ABC):
     """Pure projection from a specification workspace to an artifact file set."""
@@ -250,7 +262,9 @@ class ArtifactGeneratorRegistry:
     def _load_generator(definition: ArtifactDefinition) -> ArtifactGenerator:
         raw = definition.data.get("generator")
         if not isinstance(raw, str) or not raw:
-            raise ValueError(f"{definition.source}: implemented artifact requires generator")
+            raise ValueError(
+                f"{definition.source}: implemented artifact requires generator"
+            )
         source = (definition.source.parent / raw).resolve()
         if not source.is_relative_to(definition.source.parent) or not source.is_file():
             raise ValueError(f"{definition.source}: invalid generator path {raw!r}")
@@ -285,9 +299,7 @@ class ArtifactGeneratorRegistry:
         workspace: SpecWorkspace,
         output_root: str | Path,
     ) -> GeneratedArtifactSet:
-        with log_phase(
-            _LOGGER, "artifact.generate", artifact=artifact_id
-        ) as phase:
+        with log_phase(_LOGGER, "artifact.generate", artifact=artifact_id) as phase:
             context = ArtifactGenerationContext.create(workspace, output_root)
             generator = self.generator(artifact_id)
             artifacts = generator.generate(context)
@@ -301,9 +313,7 @@ class ArtifactGeneratorRegistry:
         workspace: SpecWorkspace,
         output_root: str | Path,
     ) -> None:
-        with log_phase(
-            _LOGGER, "artifact.validate", artifact=artifact_id
-        ):
+        with log_phase(_LOGGER, "artifact.validate", artifact=artifact_id):
             context = ArtifactGenerationContext.create(workspace, output_root)
             self.generator(artifact_id).validate(context)
 
@@ -317,9 +327,7 @@ class ArtifactGeneratorRegistry:
             if artifact_id in active:
                 start = active.index(artifact_id)
                 cycle = (*active[start:], artifact_id)
-                raise ValueError(
-                    "circular artifact dependency: " + " -> ".join(cycle)
-                )
+                raise ValueError("circular artifact dependency: " + " -> ".join(cycle))
             active.append(artifact_id)
             generator = self._generators[artifact_id]
             for dependency in generator.definition.dependencies:

@@ -1,4 +1,3 @@
-id: stack_pointer_index
 name: Stack-pointer indexed
 kind: memory
 syntax: "[SP + update(Rn(i)) * scale + displacement]"

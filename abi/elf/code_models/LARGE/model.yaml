@@ -1,4 +1,3 @@
-id: LARGE
 placement: Code and data span the 64-bit address space.
 strategy: Full-width address materialization and indirect transfer.
 default_relocations:

@@ -1,3 +1,2 @@
-id: PTCR
 selector: 0x0000
 summary: Page-table root and translation control.

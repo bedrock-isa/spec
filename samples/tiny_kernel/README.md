@@ -6,26 +6,16 @@ separate ELF user applications with thin assembly entry stubs in `boot.s`.
 Build it from the ISA repository root with the Bedrock LLVM toolchain:
 
 ```sh
-make -C samples/tiny_kernel
+BEDROCK_LLVM_BIN=/path/to/llvm/bin make tiny-kernel
 ```
 
-The default output is `samples/tiny_kernel/build/tiny_kernel.elf`. To also
-write an objdump listing:
-
-```sh
-make -C samples/tiny_kernel disasm
-```
-
-The Makefile selects the LLVM tool binary directory in this order: `LLVM_BIN`,
-`BEDROCK_LLVM_BIN`, then `BEDROCK_LLVM_ROOT/bin`. With none set it uses the
-sibling checkout at `../llvm-project/build/bin`. Set `PYTHON` when artifact
-generation needs a Python environment other than `python3`.
+The output is `output/samples/tiny_kernel/tiny_kernel.elf`.
 
 - `kernel.c` configures the common `EPC` event entry, including SYSTEM_CALL,
   bounds-checks supervisor code and event stacks through their segment
   images, and enables paging before entering the shell. `EDS` stays flat
-  because kernel C address arithmetic can materialize non-address intermediate
-  values through `LEA`.
+  because kernel C can use `LEA` to materialize intermediate arithmetic values
+  without dereferencing them.
 - `memory.c` owns a 16 KiB frame allocator, a four-slot 4 KiB L1-table allocator,
   an LA45 three-level page-table builder, the
   shared user-image frame arena, and PTCR/ASID switching. Kernel code is RX,
@@ -82,8 +72,8 @@ display and type one of these commands followed by Enter:
   halt the emulator.
 - `HELP`, `CLEAR`, `STATS`: small shell utility commands.
 
-The framebuffer shows only the shell transcript. A separate RAM marker array is
-used by the LLVM integration test as an acceptance check:
+The framebuffer shows only the shell transcript. A separate RAM marker array
+records execution state:
 
 - `0x00..0x0f`: syscall handler writes the user payload stream.
 - `0x30..0x32`: boot, syscall count, and user arithmetic markers.

@@ -1,4 +1,3 @@
-id: FLOATUNTIDF
 symbol: __floatuntidf
 result: base.types.DOUBLE
 parameters:

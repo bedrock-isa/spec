@@ -1,5 +1,4 @@
-id: integer
 title: Integer Intrinsics
-exposure: nonportable integer operations
+exposure: Bedrock-specific integer operations
 includes:
 - stdint.h

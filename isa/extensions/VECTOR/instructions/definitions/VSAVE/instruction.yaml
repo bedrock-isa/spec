@@ -1,4 +1,3 @@
-mnemonic: VSAVE
 name: Save Vector State
 summary: Saves the vector user-state record.
 route: data_movement

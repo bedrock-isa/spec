@@ -1,4 +1,3 @@
-id: systemverilog-register-contracts
 generator: generator.py
 inputs:
 - isa

@@ -1,4 +1,3 @@
-mnemonic: CRC32
 name: CRC-32 Update
 summary: Updates a 32-bit CRC accumulator with selected source bytes.
 route: integer_alu

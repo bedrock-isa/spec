@@ -1,4 +1,3 @@
-mnemonic: VINSERT
 name: Vector Lane Insert
 summary: Replaces one indexed vector lane with an integer scalar value.
 route: vector

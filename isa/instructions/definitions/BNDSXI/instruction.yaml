@@ -1,4 +1,3 @@
-mnemonic: BNDSXI
 name: Signed Bounds Check Exclusive-Inclusive
 summary: Checks signed value membership in the exclusive-inclusive interval (lo, hi].
 route: bounds

@@ -1,4 +1,3 @@
-mnemonic: FGETEXP
 name: Floating-Point Get Exponent
 summary: Converts the source encoding's signed exponent to the selected floating-point format.
 route: fpu

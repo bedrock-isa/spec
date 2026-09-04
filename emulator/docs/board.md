@@ -64,6 +64,6 @@ The loader follows `bedrock-elf-abi.pdf` for the language-neutral Bedrock ELF AB
 - `PT_LOAD` segments are loaded at `p_vaddr` for `ET_EXEC`.
 - `PT_LOAD` segments are loaded at `load_base + p_vaddr` for `ET_DYN`.
 - `PT_LOAD` flags must use ABI-defined `PF_R`, `PF_W`, and `PF_X` bits, and loadable mappings must be readable.
-- Standard non-load metadata headers emitted by LLD, including `PT_PHDR` and `PT_GNU_STACK`, are accepted without mapping memory.
+- Metadata program headers emitted by LLD, including `PT_PHDR` and `PT_GNU_STACK`, are accepted without mapping memory.
 - The CPU is reset to `e_entry` for `ET_EXEC`, or `load_base + e_entry` for `ET_DYN`, in privileged `STATUS.PM` boot state.
 - `p_filesz..p_memsz` is zero-filled for BSS.

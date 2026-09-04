@@ -1,4 +1,3 @@
-id: "signed-byte-to-word"
 caption: "VEXTSW.B signed byte-to-word extension"
 alt_text: "An illustrative B-to-W VEXTSW view: each active word container sign-extends its low source byte, while inactive containers preserve the old destination value."
 kind: integer-width-conversion

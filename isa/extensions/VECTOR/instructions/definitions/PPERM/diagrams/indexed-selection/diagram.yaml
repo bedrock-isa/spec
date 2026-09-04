@@ -1,4 +1,3 @@
-id: "indexed-selection"
 caption: "PPERM.W indexed predicate selection"
 alt_text: "Each new Pd word-significant position selects one old Pd position using the unsigned index in the corresponding Vn word lane. The concrete indices are in range; an out-of-range index instead produces zero."
 kind: predicate-lane-transfer

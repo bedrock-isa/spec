@@ -1,4 +1,3 @@
-id: systemverilog-ea-decoder
 generator: generator.py
 inputs:
 - isa

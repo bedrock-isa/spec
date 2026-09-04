@@ -41,6 +41,6 @@ class SailProgram:
 
     @property
     def bundles(self) -> tuple[InstructionBundle, ...]:
-        """Instruction projection shared by non-semantic Sail renderers."""
+        """Instruction projection shared by Sail catalog and registry renderers."""
 
         return tuple(semantics.bundle for semantics in self.instruction_semantics)

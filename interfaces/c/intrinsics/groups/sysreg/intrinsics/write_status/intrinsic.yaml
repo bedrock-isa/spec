@@ -1,4 +1,3 @@
-id: write_status
 owner: base
 description: >-
   Supervisor; reserved and privilege-controlled bits follow the ISA; compiler-visible side effect.

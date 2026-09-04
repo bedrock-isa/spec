@@ -1,4 +1,3 @@
-id: VECTOR
 name: Vector Extension
 required_cpuid_flags:
 - VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR

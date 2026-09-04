@@ -1,3 +1,2 @@
-id: UCTL
 selector: 0x010d
 summary: User-return FLAGS, STATUS, and validity state.

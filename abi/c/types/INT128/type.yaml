@@ -1,4 +1,3 @@
-id: INT128
 spelling: "__int128"
 call_kind: i128
 size_bits: 128

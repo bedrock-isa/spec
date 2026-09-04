@@ -1,4 +1,3 @@
-mnemonic: VTESTNZ
 name: Vector Bitwise Test Nonzero
 summary: Sets significant result bits where the governed element-wise AND is nonzero and clears all other
   bits.

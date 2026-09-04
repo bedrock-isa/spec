@@ -1,4 +1,3 @@
-mnemonic: BKPT
 name: Breakpoint
 summary: Raise the breakpoint exception.
 route: core_control

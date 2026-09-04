@@ -1,4 +1,3 @@
-mnemonic: MUL
 name: Multiply Low
 summary: Multiplies the destination by the source and keeps the low half.
 route: integer_mul_div

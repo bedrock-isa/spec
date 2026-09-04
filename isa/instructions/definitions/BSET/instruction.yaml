@@ -1,4 +1,3 @@
-mnemonic: BSET
 name: Bit Set
 summary: Sets the indexed destination bit, sets Z when it was clear, and clears NCV.
 route: integer_bitfield

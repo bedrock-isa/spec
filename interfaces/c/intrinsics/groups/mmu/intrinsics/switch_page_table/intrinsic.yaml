@@ -1,4 +1,3 @@
-id: switch_page_table
 owner: base
 description: >-
   Supervisor; valid page-table image required; changes address space and fully clobbers memory.

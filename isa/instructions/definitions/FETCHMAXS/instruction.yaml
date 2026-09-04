@@ -1,4 +1,3 @@
-mnemonic: FETCHMAXS
 name: Atomic Fetch Signed Maximum
 summary: Atomically stores the signed maximum of memory and source and returns the old value.
 route: atomics

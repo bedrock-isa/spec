@@ -1,4 +1,3 @@
-mnemonic: VFADD
 name: Vector Floating-Point Add
 summary: Adds corresponding active floating-point vector elements.
 route: vector

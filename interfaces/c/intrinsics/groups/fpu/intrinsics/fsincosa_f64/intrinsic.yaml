@@ -1,4 +1,3 @@
-id: fsincosa_f64
 owner: FPTRANSA
 description: >-
   FP and FPTRANSA required; writes sine through the first result pointer and cosine through the second; ISA accuracy, special-value, and floating-point event contracts apply to both results.

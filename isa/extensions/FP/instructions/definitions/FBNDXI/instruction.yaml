@@ -1,4 +1,3 @@
-mnemonic: FBNDXI
 name: Floating-Point Bounds Check Exclusive-Inclusive
 summary: Checks floating-point value membership in the exclusive-inclusive interval (lo, hi].
 route: fpu

@@ -1,4 +1,3 @@
-id: "word-head"
 caption: "PLOOP.W head iteration"
 alt_text: "With offset 2 and enough work for the rest of the scalable W-lane image, PLOOP activates lanes 2 through N minus 1, subtracts N minus 2 from the remaining count, and clears the offset."
 kind: predicate-range-generation

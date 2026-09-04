@@ -2,11 +2,9 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: bedrock://schemas/artifact
 title: Bedrock generated artifact definition
 type: object
-required: [id, generator, outputs]
+required: [generator, outputs]
 additionalProperties: true
 properties:
-  id:
-    $ref: '#/$defs/id'
   summary:
     type: string
     minLength: 1
@@ -41,6 +39,7 @@ properties:
 allOf:
 - not:
     anyOf:
+    - required: [id]
     - required: [output]
     - required: [dependency-graph]
     - required: [status]
@@ -56,7 +55,8 @@ $defs:
     - $ref: '#/$defs/relative-path'
     - pattern: \.py$
 x-interpretation-rules:
-- Every artifact directory owns one artifact.yaml and may own its generator implementation.
+- The artifact directory name is the artifact ID and owns one artifact.yaml.
+- An artifact directory may own its generator implementation.
 - Every declared artifact names a local generator.py entrypoint and is directly generatable.
 - Outputs are the role-to-root mapping populated by the artifact's pure generator.
 - Derived outputs are artifact-owned validation or compilation results produced from the primary outputs. They share the artifact's owner and are visible to global output-collision validation.

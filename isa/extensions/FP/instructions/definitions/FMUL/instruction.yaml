@@ -1,4 +1,3 @@
-mnemonic: FMUL
 name: Floating-Point Multiply
 summary: Multiplies the source and destination values under the floating-point environment.
 route: fpu

@@ -1,4 +1,3 @@
-id: SUPERVISOR_STATE
 name: Control-Flow Integrity Supervisor-State Record
 alignment_bytes: 8
 components:

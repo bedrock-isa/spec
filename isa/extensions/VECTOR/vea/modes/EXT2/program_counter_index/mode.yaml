@@ -1,4 +1,3 @@
-id: program_counter_index
 name: Program-counter indexed
 kind: memory
 syntax: "[PC + update(Rn(i)) * scale + displacement]"

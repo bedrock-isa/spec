@@ -1,4 +1,3 @@
-id: read_fstatus
 owner: FP
 description: >-
   Unprivileged; access to the floating-point environment.

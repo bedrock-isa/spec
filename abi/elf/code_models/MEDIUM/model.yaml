@@ -1,4 +1,3 @@
-id: MEDIUM
 placement: Code, GOT, and PLT occupy one signed 32-bit relative window; data spans the 64-bit address space.
 strategy: Direct code transfers and GOT-resolved 64-bit data addresses.
 default_relocations:

@@ -1,4 +1,3 @@
-id: stack_pointer_displaced
 name: Stack-pointer displaced memory
 kind: memory
 syntax: "[SP + displacement]"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -166,9 +167,18 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_calling_convention_is_accepted_by_llvm_tablegen(self) -> None:
-        tablegen = ROOT.parent / "llvm-project/build/bin/llvm-tblgen"
-        if not tablegen.is_file():
-            self.skipTest("workspace llvm-tblgen is unavailable")
+        binary_root = os.environ.get("BEDROCK_LLVM_BIN")
+        if binary_root is None:
+            self.skipTest("BEDROCK_LLVM_BIN is not configured")
+        tablegen = Path(binary_root) / "llvm-tblgen"
+        self.assertTrue(tablegen.is_file(), f"llvm-tblgen is missing: {tablegen}")
+        project_root = os.environ.get("LLVM_PROJECT_ROOT")
+        self.assertIsNotNone(project_root, "LLVM_PROJECT_ROOT is not configured")
+        assert project_root is not None
+        include_root = Path(project_root) / "llvm/include"
+        self.assertTrue(
+            include_root.is_dir(), f"LLVM include directory is missing: {include_root}"
+        )
         registers = {
             register
             for rule in self.calling_convention_projection.return_rules
@@ -190,7 +200,7 @@ class LlvmCAbiArtifactTests(unittest.TestCase):
                 [
                     str(tablegen),
                     "-I",
-                    str(ROOT.parent / "llvm-project/llvm/include"),
+                    str(include_root),
                     "-print-records",
                     str(source),
                 ],

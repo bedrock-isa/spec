@@ -1,4 +1,3 @@
-mnemonic: VFMSUB
 name: Vector Floating-Point Fused Multiply-Subtract
 summary: Performs fused multiply-subtract on corresponding active floating-point elements.
 route: vector

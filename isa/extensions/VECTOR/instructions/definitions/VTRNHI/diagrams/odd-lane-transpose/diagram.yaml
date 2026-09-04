@@ -1,4 +1,3 @@
-id: "odd-lane-transpose"
 caption: "VTRNHI.W odd-lane transpose"
 alt_text: "At W width, each active even result lane receives the selected odd old-Vd lane and each active odd result lane receives the matching odd source-Vn lane; inactive result lanes preserve old Vd."
 kind: vector-lane-transfer

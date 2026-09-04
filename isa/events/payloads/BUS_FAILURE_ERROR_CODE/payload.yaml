@@ -1,4 +1,3 @@
-id: BUS_FAILURE_ERROR_CODE
 bits: 64
 fields:
 - {id: ACCESS, lsb: 8, bits: 2}

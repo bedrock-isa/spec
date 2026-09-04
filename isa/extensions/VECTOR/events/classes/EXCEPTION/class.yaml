@@ -1,3 +1,2 @@
-id: EXCEPTION
 extends: base.events.EXCEPTION
 

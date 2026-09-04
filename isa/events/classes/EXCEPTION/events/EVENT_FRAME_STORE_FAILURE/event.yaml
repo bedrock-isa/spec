@@ -1,4 +1,3 @@
-id: EVENT_FRAME_STORE_FAILURE
 name: Event Frame Store Failure
 summary: Delivery fails while storing the complete architectural event frame.
 code: 0x7b

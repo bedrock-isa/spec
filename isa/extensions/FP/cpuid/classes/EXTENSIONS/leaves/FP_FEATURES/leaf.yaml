@@ -1,4 +1,3 @@
-id: FP_FEATURES
 name: Floating-Point Features
 queries:
 - id: HEADER

@@ -1,4 +1,3 @@
-id: "slide-up-by-two"
 caption: "VSLIDEUP.W slide up by two lanes"
 alt_text: "At W width and count 2, each active result lane copies old Vd at an index two lower or becomes zero when its index is below the count; inactive lanes preserve their old destination values."
 kind: vector-lane-transfer

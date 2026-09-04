@@ -3,14 +3,10 @@ $id: bedrock://schemas/event-class
 title: Bedrock architectural event class
 type: object
 additionalProperties: false
-required: [id]
 oneOf:
 - required: [name, value, selector]
 - required: [extends]
 properties:
-  id:
-    type: string
-    pattern: ^[A-Z][A-Z0-9_]*$
   name:
     type: string
     minLength: 1

@@ -1,3 +1,2 @@
-id: ISS
 selector: 0x0210
 summary: Maskable-interrupt stack-segment image.

@@ -1,4 +1,3 @@
-mnemonic: PCALL
 name: Protected Call
 summary: Materializes an authenticated near-return record and transfers control.
 route: control_flow

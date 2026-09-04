@@ -3,9 +3,8 @@ $id: bedrock://schemas/c-promotion
 title: Bedrock C default argument promotion
 type: object
 additionalProperties: false
-required: [id, source_kinds, target_kind]
+required: [source_kinds, target_kind]
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   source_kinds:
     type: array
     minItems: 1

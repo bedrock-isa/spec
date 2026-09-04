@@ -1,4 +1,3 @@
-mnemonic: PRET
 name: Protected Return
 summary: Authenticates and consumes a near continuation.
 route: control_flow

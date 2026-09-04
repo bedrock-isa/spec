@@ -1,4 +1,3 @@
-id: SEQ_CST
 instruction_order: seqcst
 load: [isa:base.instructions.AFENCE, access, isa:base.instructions.AFENCE]
 store: [isa:base.instructions.AFENCE, access, isa:base.instructions.AFENCE]

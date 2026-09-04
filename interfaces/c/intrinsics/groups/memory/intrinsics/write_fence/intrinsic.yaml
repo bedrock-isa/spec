@@ -1,4 +1,3 @@
-id: write_fence
 owner: base
 description: >-
   Compiler and hardware write-ordering barrier.

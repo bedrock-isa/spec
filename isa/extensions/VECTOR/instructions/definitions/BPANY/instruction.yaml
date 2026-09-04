@@ -1,4 +1,3 @@
-mnemonic: BPANY
 name: Branch on Any Predicate Bit
 summary: Branch if any bit is set.
 route: vector

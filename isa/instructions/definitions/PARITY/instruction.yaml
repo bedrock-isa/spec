@@ -1,4 +1,3 @@
-mnemonic: PARITY
 name: Parity Test
 summary: Computes operand parity and writes the predicate to an Rn register.
 route: integer_bitfield

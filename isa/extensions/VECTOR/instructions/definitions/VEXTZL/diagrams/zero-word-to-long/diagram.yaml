@@ -1,4 +1,3 @@
-id: "zero-word-to-long"
 caption: "VEXTZL.W unsigned word-to-long extension"
 alt_text: "An illustrative W-to-L VEXTZL view: each active longword container zero-extends its low source word, while inactive containers preserve the old destination value."
 kind: integer-width-conversion

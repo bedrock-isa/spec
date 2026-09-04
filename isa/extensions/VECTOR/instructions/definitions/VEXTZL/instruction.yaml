@@ -1,4 +1,3 @@
-mnemonic: VEXTZL
 name: Vector Zero Extension to Long
 summary: Zero-extends B or W source elements to L destination elements.
 route: vector

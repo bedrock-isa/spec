@@ -1,4 +1,3 @@
-mnemonic: VZIPHI
 name: Vector Upper-Half Interleave
 summary: Interleave the upper halves of the old destination and source.
 route: vector

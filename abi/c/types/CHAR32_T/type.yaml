@@ -1,4 +1,3 @@
-id: CHAR32_T
 spelling: "char32_t"
 call_kind: u32
 size_bits: 32

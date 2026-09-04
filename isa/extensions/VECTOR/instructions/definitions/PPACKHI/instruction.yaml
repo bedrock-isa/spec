@@ -1,4 +1,3 @@
-mnemonic: PPACKHI
 name: Predicate Pack to Upper Half
 summary: Packs source predicate positions into the upper half of narrower destination positions.
 route: vector

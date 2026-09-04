@@ -1,4 +1,3 @@
-mnemonic: CALLcc
 name: Call Conditional
 summary: Performs a call when the condition is true.
 route: control_flow

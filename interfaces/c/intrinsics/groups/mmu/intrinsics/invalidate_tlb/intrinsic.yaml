@@ -1,4 +1,3 @@
-id: invalidate_tlb
 owner: base
 description: >-
   Supervisor; translation-state side effect and full memory clobber.

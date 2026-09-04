@@ -1,4 +1,3 @@
-id: STATE
 width: 16
 summary: Floating-point status registers with dedicated access instructions.
 reset: 0

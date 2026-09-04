@@ -1,4 +1,3 @@
-id: UNSIGNED_LONG_LONG
 spelling: "unsigned long long"
 call_kind: u64
 size_bits: 64

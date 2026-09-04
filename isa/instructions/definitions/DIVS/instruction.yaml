@@ -1,4 +1,3 @@
-mnemonic: DIVS
 name: Signed Divide
 summary: Divides the signed destination by source with truncation toward zero and writes the quotient.
 route: integer_mul_div

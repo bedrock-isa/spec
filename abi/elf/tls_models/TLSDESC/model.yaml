@@ -1,4 +1,3 @@
-id: TLSDESC
 selection: TLS symbol binding crosses dynamic object boundaries or supports interposition.
 base_register: isa:base.registers.SEGMENT.GS0
 protocol: base.linkage_protocols.TLSDESC_CALL

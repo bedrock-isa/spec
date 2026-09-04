@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from types import MappingProxyType
 from typing import TYPE_CHECKING, TypeVar, cast
 
@@ -483,7 +484,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         entity_root = type_inventory.root / entity_id
         source = entity_root / "type.yaml"
         raw = SchemaValidatedYamlLoader().load(source, schemas / "type.yaml")
-        _matching_id(source, entity_id, raw)
         c_type_reference: Reference[CType] = Reference(owner, ("types",), entity_id)
         c_type = CType(
             c_type_reference,
@@ -505,7 +505,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         child = SchemaValidatedYamlLoader().load(
             child_source, schemas / "register-class.yaml"
         )
-        _matching_id(child_source, child_id, child)
         register_class_reference: Reference[RegisterClass] = Reference(
             owner, ("register_classes",), child_id
         )
@@ -525,7 +524,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         child = SchemaValidatedYamlLoader().load(
             child_source, schemas / "value-class.yaml"
         )
-        _matching_id(child_source, child_id, child)
         value_class_reference: Reference[ValueClass] = Reference(
             owner, ("value_classes",), child_id
         )
@@ -543,7 +541,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         child = SchemaValidatedYamlLoader().load(
             child_source, schemas / "promotion.yaml"
         )
-        _matching_id(child_source, child_id, child)
         promotion_reference: Reference[Promotion] = Reference(
             owner, ("promotions",), child_id
         )
@@ -606,7 +603,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         raw = SchemaValidatedYamlLoader().load(
             source, schemas / "runtime-helper.yaml"
         )
-        _matching_id(source, entity_id, raw)
         helper_reference: Reference[RuntimeHelper] = Reference(
             owner, ("runtime_helpers",), entity_id
         )
@@ -632,7 +628,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         raw = SchemaValidatedYamlLoader().load(
             source, schemas / "memory-order.yaml"
         )
-        _matching_id(source, entity_id, raw)
         memory_order_reference: Reference[MemoryOrderMapping] = Reference(
             owner, ("memory_orders",), entity_id
         )
@@ -656,7 +651,6 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
         raw = SchemaValidatedYamlLoader().load(
             source, schemas / "atomic-lowering.yaml"
         )
-        _matching_id(source, entity_id, raw)
         atomic_lowering_reference: Reference[AtomicLowering] = Reference(
             owner, ("atomic_lowerings",), entity_id
         )
@@ -694,13 +688,23 @@ def _load_namespace(owner: str, root: Path, indexes: _Indexes) -> CAbiNamespace:
 
 
 def _inventory(owner: str, root: Path, kind: str, plural: str) -> DirectoryInventory:
-    return DirectoryInventory.load_strict(
+    inventory = DirectoryInventory.load_strict(
         owner=owner,
         kind=kind,
         source=root / plural / f"{plural}.yaml",
         root=root / plural,
         key=plural,
     )
+    invalid = tuple(
+        entity_id
+        for entity_id in inventory.actual
+        if re.fullmatch(r"[A-Z][A-Z0-9_]*", entity_id) is None
+    )
+    if invalid:
+        raise ValueError(
+            f"{inventory.source}: invalid {kind} directory names {invalid}"
+        )
+    return inventory
 
 
 def _location_policy(raw: Mapping[str, object]) -> LocationPolicy:
@@ -726,14 +730,6 @@ def _memory_order_sequence(
         item if item == "access" else QualifiedReference.parse(item)
         for item in cast(list[str], raw)
     )
-
-
-def _matching_id(source: Path, expected: str, raw: Mapping[str, object]) -> None:
-    if raw.get("id") != expected:
-        raise ValueError(
-            f"{source}: entity ID {raw.get('id')!r} does not match "
-            f"directory {expected!r}"
-        )
 
 
 def _build_entities(indexes: _Indexes) -> EntityCatalog:

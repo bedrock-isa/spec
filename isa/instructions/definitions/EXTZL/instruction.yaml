@@ -1,4 +1,3 @@
-mnemonic: EXTZL
 name: Zero Extend To Long
 summary: Zero-extends the selected source width to a longword EA destination.
 route: integer_unary

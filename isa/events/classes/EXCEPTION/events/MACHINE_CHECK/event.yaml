@@ -1,4 +1,3 @@
-id: MACHINE_CHECK
 name: Machine Check
 summary: The implementation reports a corrected, recoverable, or fatal machine-check condition.
 code: 0x7c

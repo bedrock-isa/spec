@@ -1,4 +1,3 @@
-id: SPECIAL
 width: 64
 summary: Special instruction-address and stack registers.
 reset: 0

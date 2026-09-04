@@ -1,4 +1,3 @@
-mnemonic: PSLICE
 name: Predicate Slice
 summary: Extract a predicate-lane window from the old destination followed by a source predicate.
 route: vector

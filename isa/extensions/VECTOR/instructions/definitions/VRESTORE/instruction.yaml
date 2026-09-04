@@ -1,4 +1,3 @@
-mnemonic: VRESTORE
 name: Restore Vector State
 summary: Restores the vector user-state record.
 route: data_movement

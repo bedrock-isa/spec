@@ -70,4 +70,3 @@ field_types:
       - {value: 1, code: W}
       - {value: 2, code: L}
       - {value: 3, code: Q}
-  

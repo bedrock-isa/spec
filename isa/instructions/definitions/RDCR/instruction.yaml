@@ -1,4 +1,3 @@
-mnemonic: RDCR
 name: Read Control Register
 summary: Read a privileged control register.
 route: system_registers

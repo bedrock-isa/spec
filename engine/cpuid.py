@@ -502,11 +502,7 @@ def _load_class(
 ) -> CpuidClass:
     source = root / "class.yaml"
     document = _load_validated(source, isa_root / "schemas/cpuid-class.yaml")
-    class_id = document["id"]
-    if class_id != root.name:
-        raise ValueError(
-            f"{source}: class ID {class_id!r} does not match directory {root.name!r}"
-        )
+    class_id = root.name
     reference: Reference[CpuidClass] = Reference(owner, ("cpuid",), class_id)
     leaves_root = root / "leaves"
     inventory = _load_inventory(owner, leaves_root, "leaves")
@@ -543,11 +539,7 @@ def _load_leaf(
 ) -> CpuidLeaf:
     source = root / "leaf.yaml"
     document = _load_validated(source, isa_root / "schemas/cpuid-leaf.yaml")
-    leaf_id = document["id"]
-    if leaf_id != root.name:
-        raise ValueError(
-            f"{source}: leaf ID {leaf_id!r} does not match directory {root.name!r}"
-        )
+    leaf_id = root.name
     reference: Reference[CpuidLeaf] = Reference(
         owner, ("cpuid", class_id), leaf_id
     )
@@ -649,6 +641,7 @@ def _load_inventory(owner: str, root: Path, key: str) -> CpuidInventory:
         root=root,
         key=key,
         allow_missing=True,
+        name_pattern=r"[A-Z][A-Z0-9_]*",
     )
 
 

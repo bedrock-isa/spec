@@ -1,4 +1,3 @@
-mnemonic: RDTIME
 name: Read Time
 summary: Read one atomic snapshot of the invariant architectural timebase.
 route: system_registers

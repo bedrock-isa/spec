@@ -246,11 +246,7 @@ def _load_group(
 ) -> RegisterGroup:
     source = root / "group.yaml"
     raw = _load_validated(source, schemas["group"])
-    group_id = raw["id"]
-    if group_id != root.name:
-        raise ValueError(
-            f"{source}: register group ID {group_id!r} does not match directory {root.name!r}"
-        )
+    group_id = root.name
     reference: Reference[RegisterGroup] = Reference(
         owner, ("registers",), group_id
     )
@@ -343,11 +339,7 @@ def _load_register(
 ) -> Register:
     source = root / "register.yaml"
     raw = _load_validated(source, schemas["register"])
-    register_id = raw["id"]
-    if register_id != root.name:
-        raise ValueError(
-            f"{source}: register ID {register_id!r} does not match directory {root.name!r}"
-        )
+    register_id = root.name
     reference: Reference[Register] = Reference(
         owner, ("registers", group_id), register_id
     )
@@ -426,6 +418,7 @@ def _load_inventory(owner: str, kind: str, root: Path, key: str) -> RegisterInve
         root=root,
         key=key,
         allow_missing=True,
+        name_pattern=r"[A-Z][A-Z0-9_]*",
     )
 
 

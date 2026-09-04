@@ -2,11 +2,8 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: bedrock://interfaces/c/schemas/type
 type: object
 additionalProperties: false
-required: [id, owner, kind]
+required: [owner, kind]
 properties:
-  id:
-    type: string
-    pattern: ^[a-z][a-z0-9_]*$
   owner:
     type: string
     pattern: ^(?:base|[A-Z][A-Z0-9_]*)$

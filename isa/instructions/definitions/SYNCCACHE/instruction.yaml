@@ -1,4 +1,3 @@
-mnemonic: SYNCCACHE
 name: Synchronize Caches
 summary: Synchronize one cache-maintenance block for local instruction fetch.
 route: cache

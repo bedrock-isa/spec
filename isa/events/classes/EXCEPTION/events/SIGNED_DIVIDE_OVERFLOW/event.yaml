@@ -1,4 +1,3 @@
-id: SIGNED_DIVIDE_OVERFLOW
 name: Signed Divide Overflow
 summary: A signed integer division result cannot be represented in the selected destination width.
 code: 0x05

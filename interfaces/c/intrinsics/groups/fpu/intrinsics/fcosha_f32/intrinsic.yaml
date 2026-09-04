@@ -1,4 +1,3 @@
-id: fcosha_f32
 owner: FPTRANSA
 description: >-
   FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.

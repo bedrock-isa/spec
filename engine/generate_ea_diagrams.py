@@ -3,22 +3,19 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
 import re
 import sys
-from typing import Any
 
 from .ea_mode import (
-    CompactExtensionEAMode,
     EABaseSource,
     EAEncoding,
     EAMode,
     EAModeCatalog,
     ExtendedExtensionEAMode,
-    FieldEASegment,
     FixedEASegment,
     ImmediateEAMode,
     MemoryEAMode,

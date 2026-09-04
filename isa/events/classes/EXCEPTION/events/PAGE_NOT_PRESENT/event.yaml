@@ -1,4 +1,3 @@
-id: PAGE_NOT_PRESENT
 name: Page Not Present
 summary: A required page-table entry is not present.
 code: 0x20

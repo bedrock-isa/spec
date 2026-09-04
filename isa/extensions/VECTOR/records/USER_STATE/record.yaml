@@ -1,4 +1,3 @@
-id: USER_STATE
 name: Vector User-State Record
 alignment_bytes: 64
 parameter:

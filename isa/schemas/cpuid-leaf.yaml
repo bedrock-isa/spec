@@ -3,11 +3,8 @@ $id: bedrock://schemas/cpuid-leaf
 title: Bedrock CPUID leaf fragment
 type: object
 additionalProperties: false
-required: [id, name, queries]
+required: [name, queries]
 properties:
-  id:
-    type: string
-    pattern: ^[A-Z][A-Z0-9_]*$
   name:
     type: string
     minLength: 1

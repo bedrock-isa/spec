@@ -56,7 +56,7 @@ def _render_header_families(project: CInterfaceProject) -> str:
         for group in collection.groups
     }
     rows = []
-    for group in project.intrinsic_groups.values():
+    for group in sorted(project.intrinsic_groups.values(), key=lambda item: item.id):
         family = group.title.removesuffix(" Intrinsics")
         rows.append(
             f"{family} & \\texttt{{\\textless{{}}"
@@ -78,7 +78,7 @@ def _render_intrinsic_group(
         item for item in project.intrinsic_groups.values() if item.id == group_id
     )
     rows = []
-    for intrinsic in project.intrinsics.values():
+    for intrinsic in sorted(project.intrinsics.values(), key=lambda item: item.id):
         if intrinsic.group != group_id:
             continue
         result = _document_type(intrinsic.result_type, project)
@@ -108,7 +108,7 @@ def _render_intrinsic_group(
 
 def _render_types(project: CInterfaceProject) -> str:
     rows = []
-    for interface_type in project.types.values():
+    for interface_type in sorted(project.types.values(), key=lambda item: item.id):
         spelling = f"__bedrock_{interface_type.id}_t"
         rows.append(
             f"\\texttt{{{_tex(spelling)}}} & "

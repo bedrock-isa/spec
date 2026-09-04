@@ -1,4 +1,3 @@
-mnemonic: VREDMINS
 name: Vector Signed Minimum Reduction
 summary: Finds the signed minimum of selected integer lanes and writes the scalar result to Rn.
 route: vector

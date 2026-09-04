@@ -1,4 +1,3 @@
-id: EXPLICIT_BREAKPOINT
 name: Explicit Breakpoint
 summary: A BKPT instruction completes and requests an architected debug stop at the following instruction.
 code: 0x01

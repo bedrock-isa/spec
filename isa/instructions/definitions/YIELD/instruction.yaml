@@ -1,4 +1,3 @@
-mnemonic: YIELD
 name: Yield
 summary: Hints that the current logical processor may be deprioritized.
 route: core_control

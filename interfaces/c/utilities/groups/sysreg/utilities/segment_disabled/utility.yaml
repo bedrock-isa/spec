@@ -1,3 +1,2 @@
-id: segment_disabled
 owner: base
 body: UINT64_C(0)

@@ -1,4 +1,3 @@
-mnemonic: PSLIDEUP
 name: Predicate Slide Up
 summary: Move predicate lanes toward higher indices and insert zero at the low end.
 route: vector

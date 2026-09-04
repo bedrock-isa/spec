@@ -1,4 +1,3 @@
-id: rdpmc
 owner: base
 description: >-
   Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with \texttt{INVALID\_SELECTOR}.

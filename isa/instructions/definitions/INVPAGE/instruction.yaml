@@ -1,4 +1,3 @@
-mnemonic: INVPAGE
 name: Invalidate TLB Page
 summary: Invalidate TLB mapping containing a linear address.
 route: tlb_and_context

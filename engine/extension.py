@@ -27,13 +27,9 @@ class ExtensionMetadata:
         document = SchemaValidatedYamlLoader().load(
             source, root / "schemas/extension.yaml"
         )
-        if document["id"] != source.parent.name:
-            raise ValueError(
-                f"{source}: extension ID {document['id']!r} does not match "
-                f"directory {source.parent.name!r}"
-            )
+        extension_id = source.parent.name
         return cls(
-            id=document["id"],
+            id=extension_id,
             name=document["name"],
             requires=tuple(document.get("requires", ())),
             required_cpuid_flags=tuple(document.get("required_cpuid_flags", ())),
@@ -66,4 +62,5 @@ class ExtensionSetCatalog(DirectoryInventory):
             root=root,
             key="extensions",
             allow_missing=True,
+            name_pattern=r"[A-Z][A-Z0-9_]*",
         )

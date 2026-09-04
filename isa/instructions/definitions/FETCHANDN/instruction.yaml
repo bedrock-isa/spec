@@ -1,4 +1,3 @@
-mnemonic: FETCHANDN
 name: Atomic Fetch And Not
 summary: Atomically clears memory bits selected by a source and returns the old value.
 route: atomics

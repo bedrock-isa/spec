@@ -1,4 +1,3 @@
-mnemonic: VFCVTUD
 name: Vector Floating-Point Convert Unsigned to Double Precision
 summary: Converts active unsigned integer elements to double-precision floating point.
 route: vector

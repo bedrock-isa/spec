@@ -1,3 +1,2 @@
-id: PC
 summary: Architectural program counter.
 reset: {from: base.control_registers.BOOTPC}

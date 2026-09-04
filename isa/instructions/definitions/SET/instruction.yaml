@@ -1,4 +1,3 @@
-mnemonic: SET
 name: Set True
 summary: Writes integer one to the destination operand.
 route: control_flow

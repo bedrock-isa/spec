@@ -1,4 +1,3 @@
-mnemonic: FETCHMINS
 name: Atomic Fetch Signed Minimum
 summary: Atomically stores the signed minimum of memory and source and returns the old value.
 route: atomics

@@ -1,4 +1,3 @@
-id: read_code_segment
 owner: base
 description: >-
   Unprivileged; reads the current CS image through the dedicated source-only encoding.

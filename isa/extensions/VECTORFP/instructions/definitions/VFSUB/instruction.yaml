@@ -1,4 +1,3 @@
-mnemonic: VFSUB
 name: Vector Floating-Point Subtract
 summary: Subtracts corresponding active floating-point vector elements.
 route: vector

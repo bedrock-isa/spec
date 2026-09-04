@@ -1,4 +1,3 @@
-mnemonic: ADD
 name: Add
 summary: Adds the source operand to the destination operand.
 route: integer_alu

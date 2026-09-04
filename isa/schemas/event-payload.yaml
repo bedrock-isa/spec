@@ -3,11 +3,8 @@ $id: bedrock://schemas/event-payload
 title: Bedrock event-specific payload format
 type: object
 additionalProperties: false
-required: [id, bits, fields]
+required: [bits, fields]
 properties:
-  id:
-    type: string
-    pattern: ^[A-Z][A-Z0-9_]*$
   bits:
     const: 64
   fields:

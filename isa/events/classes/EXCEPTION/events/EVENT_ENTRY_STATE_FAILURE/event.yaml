@@ -1,4 +1,3 @@
-id: EVENT_ENTRY_STATE_FAILURE
 name: Event Entry State Failure
 summary: Delivery fails while validating the entry code or entry segment state.
 code: 0x78

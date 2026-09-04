@@ -1,4 +1,3 @@
-mnemonic: FROUND
 name: Floating-Point Round
 summary: Rounds a floating-point source to a nearest-even integral value independently of FSTATUS.RM.
 route: fpu

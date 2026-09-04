@@ -1,4 +1,3 @@
-mnemonic: INVICACHE
 name: Invalidate Instruction Cache
 summary: Invalidate one local instruction-cache maintenance block.
 route: cache

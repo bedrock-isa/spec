@@ -3,8 +3,8 @@ $id: bedrock://schemas/elf-code-model
 title: Bedrock ELF code model
 type: object
 additionalProperties: true
-required: [id, placement, strategy]
+required: [placement, strategy]
+not: {required: [id]}
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   placement: {type: string, minLength: 1}
   strategy: {type: string, minLength: 1}

@@ -1,4 +1,3 @@
-id: WAIT
 name: Address Wait Extension
 required_cpuid_flags:
 - WAIT.cpuid.EXTENSIONS.DIRECTORY.FEATURES.WAIT

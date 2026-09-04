@@ -1,4 +1,3 @@
-id: VECTOR
 arguments:
 - isa:VECTOR.registers.VECTOR.V0
 - isa:VECTOR.registers.VECTOR.V1

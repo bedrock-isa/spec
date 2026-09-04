@@ -1,4 +1,3 @@
-mnemonic: PSEL
 name: Predicate Select
 summary: Replace bits of Pd selected by Pc with bits from Ps.
 route: vector

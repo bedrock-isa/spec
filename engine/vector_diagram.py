@@ -186,6 +186,7 @@ class VectorDiagramCatalog:
             source=collection_root / "diagrams.yaml",
             root=collection_root,
             key="diagrams",
+            name_pattern=r"[a-z][a-z0-9-]*",
         )
         if inventory.declared != tuple(sorted(inventory.declared)):
             raise ValueError(
@@ -211,11 +212,6 @@ class VectorDiagramCatalog:
                 )
             source = member_root / "diagram.yaml"
             raw = validated_documents.load(source, schema_document)
-            if raw["id"] != diagram_id:
-                raise ValueError(
-                    f"{source}: diagram ID {raw['id']!r}; directory is "
-                    f"{diagram_id!r}"
-                )
             reference: Reference[VectorDiagram] = Reference(
                 owner,
                 ("instructions", mnemonic, "diagrams"),
@@ -224,7 +220,7 @@ class VectorDiagramCatalog:
             payload = {
                 key: value
                 for key, value in raw.items()
-                if key not in {"id", "caption", "alt_text"}
+                if key not in {"caption", "alt_text"}
             }
             diagrams.register(
                 reference,
@@ -1031,7 +1027,11 @@ def _decode_predicate_lane_map(
                 or group[1].get("appearance") != "dont-care"
                 for group in groups
             ):
-                _fail(path, f"{where} must explicitly classify significant and nonsignificant source bits")
+                _fail(
+                    path,
+                    f"{where} must explicitly classify source bits that contribute "
+                    "and source bits that do not contribute",
+                )
         rows.append(
             {
                 "id": row_id,
@@ -1165,7 +1165,7 @@ def _validate_finite_predicate_cells(
             classification = f"inactive lane {lane}"
         else:
             expected = ("x", "ignored", "dont-care")
-            classification = f"nonsignificant byte of lane {lane}"
+            classification = f"byte of lane {lane} that does not contribute"
         actual = (cell["value"], cell["effect"], cell.get("appearance"))
         if actual != expected:
             _fail(path, f"{where}.cells[{byte_index}] does not match {classification}")

@@ -1,4 +1,3 @@
-mnemonic: VFEXTRACT
 name: Vector Floating-Point Lane Extract
 summary: Copies one indexed floating-point vector lane to a floating-point scalar register.
 route: vector

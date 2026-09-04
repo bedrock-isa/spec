@@ -1,4 +1,3 @@
-id: CONTROL_FLOW_INTEGRITY_VIOLATION
 name: Control-Flow Integrity Violation
 summary: An enforced indirect landing or protected return fails validation.
 code: 0x44

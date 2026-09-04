@@ -1,4 +1,3 @@
-id: "quad-low-long"
 caption: "VTRUNCL.Q low-longword truncation"
 alt_text: "An illustrative Q-container VTRUNCL view: each active container copies the low source longword into the low destination longword and preserves the old destination high longword; inactive containers preserve the complete old destination value."
 kind: integer-width-conversion

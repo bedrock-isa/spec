@@ -1,4 +1,3 @@
-mnemonic: CMPJcc
 name: Compare And Jump Conditional
 summary: Compares two Rn registers and branches on the selected condition without writing FLAGS.
 route: control_flow

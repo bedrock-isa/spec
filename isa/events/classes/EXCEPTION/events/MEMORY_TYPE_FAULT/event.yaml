@@ -1,4 +1,3 @@
-id: MEMORY_TYPE_FAULT
 name: Memory Type Fault
 summary: A Normal-memory page-table leaf selects physical Device memory.
 code: 0x26

@@ -1,4 +1,3 @@
-id: "word-integer-extract"
 caption: "VEXTRACT.W indexed scalar result"
 alt_text: "The lane selected by scalar index i is copied from Vn and zero-extended into Rn."
 kind: scalar-vector-transfer

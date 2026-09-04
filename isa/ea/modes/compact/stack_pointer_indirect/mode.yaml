@@ -1,4 +1,3 @@
-id: stack_pointer_indirect
 name: Stack pointer indirect
 kind: memory
 syntax: "[SP]"

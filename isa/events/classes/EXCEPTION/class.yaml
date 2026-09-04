@@ -1,4 +1,3 @@
-id: EXCEPTION
 name: Synchronous Exception
 value: 0x00
 selector: {kind: fixed, bits: 24}

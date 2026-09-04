@@ -1,4 +1,3 @@
-id: "lower-half"
 caption: "PZIPLO.W lower-half predicate interleave"
 alt_text: "New Pd alternates typed predicate lanes from the lower halves of Pa and Pb. The illustrated low-end mapping is independent of architectural VLEN."
 kind: predicate-lane-transfer

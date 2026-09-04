@@ -1,4 +1,3 @@
-mnemonic: CMPXCHG
 name: Compare And Exchange
 summary: Atomically compares memory with the expected register, conditionally stores, and returns the observed value.
 route: atomics

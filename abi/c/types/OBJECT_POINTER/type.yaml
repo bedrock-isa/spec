@@ -1,4 +1,3 @@
-id: OBJECT_POINTER
 spelling: "ordinary object pointer"
 call_kind: pointer
 size_bits: 64

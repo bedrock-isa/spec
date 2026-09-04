@@ -233,7 +233,7 @@ def _environment_visual(
     if label is not None and label not in labels:
         labels.insert(0, label)
     if environment == "BedrockVectorExample":
-        # The PDF caption and the image's nonvisual equivalent are separately
+        # The PDF caption and the image's text alternative are separately
         # authored.  Existing generic consumers continue to receive title=alt.
         return end, arguments[4], snippet, tuple(labels), arguments[3]
     title = arguments[3] if environment.endswith("TikzDiagram") else arguments[0]

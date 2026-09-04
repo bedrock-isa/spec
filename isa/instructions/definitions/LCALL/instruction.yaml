@@ -1,4 +1,3 @@
-mnemonic: LCALL
 name: Long Call
 summary: Pushes a long return frame and atomically transfers control to a new CS:PC pair.
 route: control_flow

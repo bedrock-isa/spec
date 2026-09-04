@@ -1,4 +1,3 @@
-mnemonic: MOVACQ
 name: Move Acquire
 summary: Loads from memory with acquire ordering.
 route: data_movement

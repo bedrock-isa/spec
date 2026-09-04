@@ -1,4 +1,3 @@
-id: RELEASE
 instruction_order: release
 store: [isa:base.instructions.AFENCE, access]
 thread_fence: [isa:base.instructions.AFENCE]

@@ -7,13 +7,7 @@ enables page translation, then echoes printable ASCII input to the display.
 Build from the ISA repository root:
 
 ```sh
-export BEDROCK_LLVM_BIN=/path/to/llvm-project/build/bin
-"$BEDROCK_LLVM_BIN/clang" \
-  -target bedrock-unknown-unknown \
-  -ffreestanding -nostdlib -O2 \
-  -Wl,-Ttext=0x1000 -Wl,--image-base=0 \
-  samples/echo/main.c \
-  -o /private/tmp/bedrock-echo.elf
+BEDROCK_LLVM_BIN=/path/to/llvm/bin make samples
 ```
 
 Run it in the GUI from `emulator/`:
@@ -22,5 +16,5 @@ Run it in the GUI from `emulator/`:
 cargo run -p bedrock-gui
 ```
 
-Load `/private/tmp/bedrock-echo.elf`, press `Run`, then send text from the
+Load `output/samples/echo.elf`, press `Run`, then send text from the
 keyboard panel.

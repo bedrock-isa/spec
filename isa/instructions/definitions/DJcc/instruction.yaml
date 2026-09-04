@@ -1,4 +1,3 @@
-mnemonic: DJcc
 name: Decrement And Jump Conditional
 summary: Decrements the counter and branches only when its new value is nonzero and the condition is true.
 route: control_flow

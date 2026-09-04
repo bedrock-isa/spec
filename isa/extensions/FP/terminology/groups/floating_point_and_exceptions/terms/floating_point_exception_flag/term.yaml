@@ -1,4 +1,3 @@
-id: floating_point_exception_flag
 display:
   canonical: floating-point exception flag
   plural: floating-point exception flags

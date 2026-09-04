@@ -1,4 +1,3 @@
-mnemonic: PNOT
 name: Predicate Bitwise NOT
 summary: Complements every bit of the complete Pd image.
 route: vector

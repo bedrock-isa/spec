@@ -1,4 +1,3 @@
-id: ACQUIRE
 instruction_order: acquire
 load: [access, isa:base.instructions.AFENCE]
 thread_fence: [isa:base.instructions.AFENCE]

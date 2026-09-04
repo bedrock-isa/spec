@@ -1,4 +1,3 @@
-mnemonic: SYSCALL
 name: System Call
 summary: Raise the SYSTEM_CALL architectural event.
 route: core_control

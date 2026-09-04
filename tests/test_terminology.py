@@ -50,7 +50,6 @@ class TermCatalogTest(unittest.TestCase):
         self.write_yaml(
             terms_root / "address/term.yaml",
             {
-                "id": "address",
                 "display": {"canonical": "sample address"},
                 "abbreviation": {"canonical": "SA"},
                 "definition": "A sample address.",
@@ -65,7 +64,6 @@ class TermCatalogTest(unittest.TestCase):
             self.write_yaml(
                 terms_root / "known/term.yaml",
                 {
-                    "id": "known",
                     "display": {"canonical": "known term"},
                     "definition": "A known term.",
                 },
@@ -84,7 +82,6 @@ class TermCatalogTest(unittest.TestCase):
             self.write_yaml(
                 terms_root / "known/term.yaml",
                 {
-                    "id": "known",
                     "display": {"canonical": "known term"},
                     "definition": "See (:term:base.terms.unknown:).",
                 },
@@ -104,7 +101,6 @@ class TermCatalogTest(unittest.TestCase):
                 self.write_yaml(
                     terms_root / term_id / "term.yaml",
                     {
-                        "id": term_id,
                         "display": {
                             "canonical": (
                                 "same-term" if term_id == "first" else "same term"
@@ -128,7 +124,6 @@ class TermCatalogTest(unittest.TestCase):
                 self.write_yaml(
                     terms_root / term_id / "term.yaml",
                     {
-                        "id": term_id,
                         "display": {"canonical": f"{term_id} term"},
                         "definition": f"The {term_id} term.",
                         "relations": {"broader": [f"base.terms.{broader}"]},
@@ -151,7 +146,7 @@ class TermCatalogTest(unittest.TestCase):
         self.write_yaml(root / "terminology/groups/groups.yaml", {"groups": ["sample"]})
         self.write_yaml(
             root / "terminology/groups/sample/group.yaml",
-            {"id": "sample", "title": "Sample"},
+            {"title": "Sample"},
         )
         return temporary
 

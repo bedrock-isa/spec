@@ -1,4 +1,3 @@
-id: "word-upper-half"
 caption: "PPACKHI.W upper-half predicate packing"
 alt_text: "In the illustrated 16-byte instance, the significant word-predicate positions of source Pn are copied in lane order to the upper half of the byte-predicate positions of new Pq. Every other bit is cleared, and the same upper-half rule scales with VLEN."
 kind: predicate-width-conversion

@@ -1,4 +1,3 @@
-id: VECTOR
 spelling: "scalable vector"
 call_kind: vector
 size_bits: "VLEN * 8"

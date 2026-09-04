@@ -1,4 +1,3 @@
-id: explicit_segment_zero_base_index
 name: Explicit-segment zero-base indexed
 kind: memory
 syntax: "[SEG(s):0 + update(Rn(i)) * scale + displacement]"

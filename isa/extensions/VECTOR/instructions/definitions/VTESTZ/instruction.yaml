@@ -1,4 +1,3 @@
-mnemonic: VTESTZ
 name: Vector Bitwise Test Zero
 summary: Sets significant result bits where the governed element-wise AND is zero and clears all other
   bits.

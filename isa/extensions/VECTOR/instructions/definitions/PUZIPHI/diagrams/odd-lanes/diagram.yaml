@@ -1,4 +1,3 @@
-id: "odd-lanes"
 caption: "PUZIPHI.W odd predicate-lane extraction"
 alt_text: "In this fixed 16-byte example, odd Pa lanes form the low result half and odd Pb lanes form the high result half. Larger VLEN applies the same rule over all architectural typed lanes."
 kind: predicate-lane-transfer

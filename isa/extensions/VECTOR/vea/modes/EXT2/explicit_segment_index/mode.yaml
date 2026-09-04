@@ -1,4 +1,3 @@
-id: explicit_segment_index
 name: Explicit-segment indexed
 kind: memory
 syntax: "[SEG(s):Rn(b) + update(Rn(i)) * scale + displacement]"

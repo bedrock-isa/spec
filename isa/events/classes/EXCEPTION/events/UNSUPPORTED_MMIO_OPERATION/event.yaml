@@ -1,4 +1,3 @@
-id: UNSUPPORTED_MMIO_OPERATION
 name: Unsupported MMIO Operation
 summary: The requested operation class is prohibited for Device memory.
 code: 0x32

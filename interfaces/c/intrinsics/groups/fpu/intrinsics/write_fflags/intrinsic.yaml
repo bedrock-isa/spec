@@ -1,4 +1,3 @@
-id: write_fflags
 owner: FP
 description: >-
   Unprivileged; reserved bits follow the ISA; writes accrued flags.

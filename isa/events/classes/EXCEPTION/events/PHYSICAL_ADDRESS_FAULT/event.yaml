@@ -1,4 +1,3 @@
-id: PHYSICAL_ADDRESS_FAULT
 name: Physical Address Fault
 summary: With paging disabled, the selected physical address exceeds the implementation PABITS limit.
 code: 0x30

@@ -9,6 +9,7 @@ import json
 import logging
 from pathlib import Path
 import re
+import tempfile
 
 from .document_pipeline import (
     LatexCompiler,
@@ -23,7 +24,6 @@ from .generation import (
     GeneratedArtifactSet,
 )
 from .observability import log_phase
-from .project import IsaProject
 from .workspace import SpecWorkspace
 
 
@@ -147,7 +147,7 @@ class DocumentBuildResult:
 
 
 class DocumentBuilder:
-    """Generate, validate, and conditionally compile the ISA reference."""
+    """Generate, validate, and conditionally compile one document artifact."""
 
     def __init__(
         self,
@@ -192,9 +192,6 @@ class DocumentBuilder:
         compile_pdf: bool,
         latexmk: str,
     ) -> DocumentBuildResult:
-        provider = workspace.require_provider("isa")
-        if not isinstance(provider, IsaProject):
-            raise TypeError("workspace isa provider must be an IsaProject")
         output = Path(output_root).resolve()
         repository = workspace.root
         if output in {Path("/").resolve(), Path.home().resolve(), repository}:
@@ -215,11 +212,23 @@ class DocumentBuilder:
         document_output = generator.definition.outputs["document"]
         tex = generated.artifact(document_output).content
         if not isinstance(tex, str):
-            raise TypeError("ISA reference TeX artifact must be text")
+            raise TypeError(f"{generator.artifact_id}: TeX artifact must be text")
+        derived = generator.definition.derived_outputs
+        required_derived = {
+            "tex-validation",
+            "compiled-document",
+            "compile-log",
+            "pdf-validation",
+        }
+        missing_derived = sorted(required_derived - set(derived))
+        if missing_derived:
+            raise ValueError(
+                f"{generator.artifact_id}: document artifact is missing derived "
+                f"outputs {missing_derived}"
+            )
         with log_phase(_LOGGER, "document.tex.validate") as phase:
             report = self.validator.validate(tex)
             phase["issues"] = len(report.issues)
-        derived = generator.definition.derived_outputs
         validated = GeneratedArtifactSet(
             (
                 *generated.artifacts,
@@ -234,35 +243,37 @@ class DocumentBuilder:
         result = DocumentBuildResult(report, tex_path, report_path)
         if not compile_pdf or not report.passed:
             return result
-        build_root = output / "build" / generator.artifact_id
-        with log_phase(
-            _LOGGER,
-            "document.latex.compile",
-            executable=latexmk,
-            build_root=build_root,
-        ):
-            compiled = self.compiler.compile(
-                tex_path, build_root, repository, latexmk
+        with tempfile.TemporaryDirectory(
+            prefix=f"bedrock-{generator.artifact_id}-"
+        ) as directory:
+            scratch_root = Path(directory)
+            with log_phase(
+                _LOGGER,
+                "document.latex.compile",
+                executable=latexmk,
+            ):
+                compiled = self.compiler.compile(
+                    tex_path, scratch_root, repository, latexmk
+                )
+            with log_phase(_LOGGER, "document.pdf.validate") as phase:
+                pdf_metrics = self.pdf_validator.validate(compiled)
+                phase["pages"] = pdf_metrics["pages"]
+            published = GeneratedArtifactSet(
+                (
+                    *validated.artifacts,
+                    GeneratedArtifact(
+                        derived["compiled-document"], compiled.pdf.read_bytes()
+                    ),
+                    GeneratedArtifact(
+                        derived["compile-log"], compiled.log.read_bytes()
+                    ),
+                    GeneratedArtifact(
+                        derived["pdf-validation"],
+                        json.dumps(pdf_metrics, indent=2, sort_keys=True) + "\n",
+                    ),
+                ),
+                artifact_id=generator.artifact_id,
             )
-        with log_phase(_LOGGER, "document.pdf.validate") as phase:
-            pdf_metrics = self.pdf_validator.validate(compiled)
-            phase["pages"] = pdf_metrics["pages"]
-        published = GeneratedArtifactSet(
-            (
-                *validated.artifacts,
-                GeneratedArtifact(
-                    derived["compiled-document"], compiled.pdf.read_bytes()
-                ),
-                GeneratedArtifact(
-                    derived["compile-log"], compiled.log.read_bytes()
-                ),
-                GeneratedArtifact(
-                    derived["pdf-validation"],
-                    json.dumps(pdf_metrics, indent=2, sort_keys=True) + "\n",
-                ),
-            ),
-            artifact_id=generator.artifact_id,
-        )
         generator.definition.validate_owned(published)
         self.writer.write(published, output)
         pdf = output / derived["compiled-document"]

@@ -1,4 +1,3 @@
-mnemonic: VEXTSL
 name: Vector Signed Extension to Long
 summary: Sign-extends B or W source elements to L destination elements.
 route: vector

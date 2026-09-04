@@ -1,4 +1,3 @@
-mnemonic: POP
 name: Pop
 summary: Pops one 64-bit stack value into an Rn or SREG destination.
 route: data_movement

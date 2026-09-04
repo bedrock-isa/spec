@@ -1,4 +1,3 @@
-mnemonic: FPUSHP
 name: Floating-Point Push Register Pair
 summary: Pushes one canonical floating-point register pair selected by an inline pair index.
 route: fpu

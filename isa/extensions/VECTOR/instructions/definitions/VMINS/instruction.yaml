@@ -1,4 +1,3 @@
-mnemonic: VMINS
 name: Vector Signed Minimum
 summary: Selects the lesser signed value from each active destination/source element pair.
 route: vector

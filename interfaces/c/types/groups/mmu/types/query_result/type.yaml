@@ -1,4 +1,3 @@
-id: query_result
 owner: base
 kind: struct
 summary: Value and architectural flags returned by MMU queries.

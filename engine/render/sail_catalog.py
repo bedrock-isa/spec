@@ -20,7 +20,6 @@ from ..ea_mode import (
 from ..encoding import (
     AllowedOperandConstraint,
     EncodingForm,
-    ExcludedOperandConstraint,
     FieldBinding,
     PayloadBinding,
 )

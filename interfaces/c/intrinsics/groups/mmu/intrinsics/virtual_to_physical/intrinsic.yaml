@@ -1,4 +1,3 @@
-id: virtual_to_physical
 owner: base
 description: >-
   Supervisor; wrapper returns value and operation-defined \texttt{FLAGS} captured atomically; page walk without access to the translated C object.

@@ -1,4 +1,3 @@
-id: MACHINE_CHECK_ERROR_CODE
 bits: 64
 fields:
 - {id: SOURCE, lsb: 0, bits: 8}

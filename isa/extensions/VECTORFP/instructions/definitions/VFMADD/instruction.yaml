@@ -1,4 +1,3 @@
-mnemonic: VFMADD
 name: Vector Floating-Point Fused Multiply-Add
 summary: Performs fused multiply-add on corresponding active floating-point elements.
 route: vector

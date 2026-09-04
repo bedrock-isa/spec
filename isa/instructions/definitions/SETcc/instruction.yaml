@@ -1,4 +1,3 @@
-mnemonic: SETcc
 name: Set Conditional
 summary: Writes one or zero to the destination according to the encoded condition.
 route: control_flow

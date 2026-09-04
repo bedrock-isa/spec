@@ -1,4 +1,3 @@
-mnemonic: FCVTH
 name: Convert to Half Precision
 summary: Converts between H and signed B/W/L/Q integer or S/D floating-point representations.
 route: fpu

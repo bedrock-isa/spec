@@ -1,4 +1,3 @@
-mnemonic: WRCR
 name: Write Control Register
 summary: Write a privileged control register from an Rn register.
 route: system_registers

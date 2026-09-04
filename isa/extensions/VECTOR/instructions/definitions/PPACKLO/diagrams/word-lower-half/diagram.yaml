@@ -1,4 +1,3 @@
-id: "word-lower-half"
 caption: "PPACKLO.W lower-half predicate packing"
 alt_text: "In the illustrated 16-byte instance, the significant word-predicate positions of source Pn are copied in lane order to the lower half of the byte-predicate positions of new Pq. Every other bit is cleared, and the same lower-half rule scales with VLEN."
 kind: predicate-width-conversion

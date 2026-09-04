@@ -3,11 +3,8 @@ $id: bedrock://schemas/control-register
 title: Bedrock architectural control register
 type: object
 additionalProperties: false
-required: [id, selector, summary]
+required: [selector, summary]
 properties:
-  id:
-    type: string
-    pattern: ^[A-Z][A-Z0-9_]*$
   selector:
     type: integer
     minimum: 0

@@ -1,4 +1,3 @@
-id: MMIO_ALIGNMENT_FAULT
 name: MMIO Alignment Fault
 summary: A permitted scalar MMIO operand is not naturally aligned.
 code: 0x31

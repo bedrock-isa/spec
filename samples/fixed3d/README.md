@@ -8,13 +8,7 @@ using Q8 sine/reciprocal tables and Bresenham line drawing.
 Build from the ISA repository root:
 
 ```sh
-export BEDROCK_LLVM_BIN=/path/to/llvm-project/build/bin
-"$BEDROCK_LLVM_BIN/clang" \
-  -target bedrock-unknown-unknown \
-  -ffreestanding -nostdlib -O2 \
-  -Wl,-Ttext=0x1000 -Wl,--image-base=0 \
-  samples/fixed3d/main.c \
-  -o /private/tmp/bedrock-fixed3d.elf
+BEDROCK_LLVM_BIN=/path/to/llvm/bin make samples
 ```
 
 Run it in the GUI from `emulator/`:
@@ -23,5 +17,5 @@ Run it in the GUI from `emulator/`:
 cargo run -p bedrock-gui
 ```
 
-Load `/private/tmp/bedrock-fixed3d.elf`, set `steps/frame` high enough for
+Load `output/samples/fixed3d.elf`, set `steps/frame` high enough for
 animation, then press `Run`.

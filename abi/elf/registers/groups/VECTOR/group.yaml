@@ -1,4 +1,3 @@
-id: VECTOR
 register_group: isa:VECTOR.registers.VECTOR
 dwarf:
 - first: 64

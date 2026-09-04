@@ -1,4 +1,3 @@
-id: explicit_segment_zero_base
 name: Explicit segment with zero base
 kind: memory
 syntax: "[SEG(s):0 + displacement]"

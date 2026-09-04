@@ -1,4 +1,3 @@
-mnemonic: FRESTORE
 name: Restore Floating-Point State
 summary: Restores the floating-point user-state record.
 route: data_movement

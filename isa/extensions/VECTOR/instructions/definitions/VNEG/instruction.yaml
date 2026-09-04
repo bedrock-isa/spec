@@ -1,4 +1,3 @@
-mnemonic: VNEG
 name: Vector Negate
 summary: Negates active integer elements.
 route: vector

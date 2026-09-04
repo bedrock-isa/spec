@@ -1,4 +1,3 @@
-mnemonic: JMP
 name: Jump
 summary: Transfers control to the target address.
 route: control_flow

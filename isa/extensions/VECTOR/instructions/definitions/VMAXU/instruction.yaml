@@ -1,4 +1,3 @@
-mnemonic: VMAXU
 name: Vector Unsigned Maximum
 summary: Selects the greater unsigned value from each active destination/source element pair.
 route: vector

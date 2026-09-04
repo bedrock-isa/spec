@@ -1,4 +1,3 @@
-mnemonic: FETCHMINU
 name: Atomic Fetch Unsigned Minimum
 summary: Atomically stores the unsigned minimum of memory and source and returns the old value.
 route: atomics

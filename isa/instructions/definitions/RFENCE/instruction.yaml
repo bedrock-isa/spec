@@ -1,4 +1,3 @@
-mnemonic: RFENCE
 name: Read Fence
 summary: Order prior reads before later reads.
 route: core_control

@@ -1,3 +1,2 @@
-id: EPC
 selector: 0x0110
 summary: Common architectural event-entry program counter.

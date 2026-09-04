@@ -1,4 +1,4 @@
-"""SystemVerilog projections for non-decoder architectural contracts."""
+"""SystemVerilog projections for architectural contracts other than decoding."""
 
 from __future__ import annotations
 

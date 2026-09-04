@@ -43,7 +43,7 @@ def _parser() -> argparse.ArgumentParser:
         help="report detailed phases and caught exception tracebacks on stderr",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-    check = subparsers.add_parser("check", help="validate ISA authoring sources")
+    check = subparsers.add_parser("check", help="validate authored specification sources")
     check.add_argument(
         "targets", nargs="*", help="instruction names, references, or paths"
     )
@@ -221,23 +221,36 @@ def _emit_diagnostics(args: argparse.Namespace, diagnostics: DiagnosticBag) -> N
 
 def _run_docs(args: argparse.Namespace, workspace: SpecWorkspace) -> int:
     try:
-        result = DocumentBuilder().build(
-            workspace,
-            args.output_root,
-            compile_pdf=args.action == "build",
-            latexmk=args.latexmk,
+        registry = ArtifactGeneratorRegistry.discover(workspace)
+        generators = tuple(
+            registry.generator(artifact_id)
+            for artifact_id in registry.artifact_ids
+            if "document" in registry.generator(artifact_id).definition.outputs
+        )
+        results = tuple(
+            DocumentBuilder(generator=generator).build(
+                workspace,
+                args.output_root,
+                compile_pdf=args.action == "build",
+                latexmk=args.latexmk,
+            )
+            for generator in generators
         )
     except (OSError, RuntimeError, ValueError) as error:
         log_caught_exception(_LOGGER, "document.build", error)
-        print(f"document build failed: {error}", file=sys.stderr)
+        print(f"document command failed: {error}", file=sys.stderr)
         return 1
-    print(f"TeX validation: {'passed' if result.report.passed else 'failed'}")
-    print(f"TeX: {result.tex}")
-    print(f"validation report: {result.report_path}")
-    if result.pdf is not None:
-        print(f"PDF: {result.pdf}")
-        print(f"PDF validation: {result.pdf_report}")
-    return 0 if result.report.passed else 1
+    for generator, result in zip(generators, results, strict=True):
+        print(
+            f"{generator.artifact_id} TeX validation: "
+            f"{'passed' if result.report.passed else 'failed'}"
+        )
+        print(f"TeX: {result.tex}")
+        print(f"validation report: {result.report_path}")
+        if result.pdf is not None:
+            print(f"PDF: {result.pdf}")
+            print(f"PDF validation: {result.pdf_report}")
+    return 0 if all(result.report.passed for result in results) else 1
 
 
 def _run_artifacts(args: argparse.Namespace, workspace: SpecWorkspace) -> int:

@@ -13,7 +13,12 @@ from engine.generation import (
     GeneratedArtifactSet,
 )
 from engine.reference import QualifiedReference
-from interfaces.c.model import CInterfaceProject, InterfaceIntrinsic, InterfaceType
+from interfaces.c.model import (
+    CInterfaceProject,
+    InterfaceIntrinsic,
+    InterfaceType,
+    InterfaceUtility,
+)
 from interfaces.c.model.naming import (
     clang_builtin_spelling,
     intrinsic_collection_header,
@@ -74,11 +79,15 @@ class Generator(ArtifactGenerator):
                             intrinsic_spelling(intrinsic.id),
                             clang_builtin_spelling(intrinsic.id),
                         )
-                        for intrinsic in project.intrinsics.values()
+                        for intrinsic in sorted(
+                            project.intrinsics.values(), key=lambda item: item.id
+                        )
                         if intrinsic.group == group.id
                     ),
                 )
-                for group in project.intrinsic_groups.values()
+                for group in sorted(
+                    project.intrinsic_groups.values(), key=lambda item: item.id
+                )
             )
         )
 
@@ -132,10 +141,16 @@ def _render_group(
     sections.extend(f"#include <{include}>" for include in includes)
     if includes:
         sections.append("")
-    utilities = [item for item in project.utilities.values() if item.group == group_id]
-    types = [item for item in project.types.values() if item.group == group_id]
+    utilities = sorted(
+        (item for item in project.utilities.values() if item.group == group_id),
+        key=lambda item: item.id,
+    )
+    types = sorted(
+        (item for item in project.types.values() if item.group == group_id),
+        key=lambda item: item.id,
+    )
     for utility in utilities:
-        sections.extend((_render_utility(utility.data), ""))
+        sections.extend((_render_utility(utility), ""))
     for interface_type in types:
         sections.extend((_render_type(interface_type, context, project), ""))
     for intrinsic in projection.intrinsics:
@@ -153,8 +168,9 @@ def _render_collection(collection_id: str, groups: tuple[str, ...]) -> str:
     return "\n".join(lines)
 
 
-def _render_utility(data: Mapping[str, object]) -> str:
-    name = "__BEDROCK_" + str(data["id"]).upper()
+def _render_utility(utility: InterfaceUtility) -> str:
+    data = utility.data
+    name = "__BEDROCK_" + utility.id.upper()
     parameters = data.get("parameters", ())
     suffix = f"({', '.join(str(item) for item in parameters)})" if parameters else ""
     return f"#define {name}{suffix} {data['body']}"
@@ -166,7 +182,7 @@ def _render_type(
     project: CInterfaceProject,
 ) -> str:
     data = interface_type.data
-    type_id = str(data["id"])
+    type_id = interface_type.id
     spelling = f"__bedrock_{type_id}_t"
     tag = f"__bedrock_{type_id}"
     if data["kind"] == "enum":
@@ -214,7 +230,7 @@ def _render_intrinsic(
     intrinsic: InterfaceIntrinsic, project: CInterfaceProject
 ) -> str:
     data = intrinsic.data
-    intrinsic_id = str(data["id"])
+    intrinsic_id = intrinsic.id
     public = intrinsic_spelling(intrinsic_id)
     builtin = clang_builtin_spelling(intrinsic_id)
     signature = data["signature"]
@@ -293,7 +309,7 @@ def _c_type(type_id: CType, project: CInterfaceProject) -> str:
     if isinstance(type_id, QualifiedReference):
         interface_type = project.resolve(type_id.local)
         if not isinstance(interface_type, InterfaceType):
-            raise ValueError("C interface type reference has a non-type target")
+            raise ValueError("C interface type reference must resolve to an interface type")
         return f"__bedrock_{interface_type.id}_t"
     try:
         return _C_TYPES[type_id]

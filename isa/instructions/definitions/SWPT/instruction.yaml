@@ -1,4 +1,3 @@
-mnemonic: SWPT
 name: Switch Page Table
 summary: Atomically installs PTCR and clears ASCR as a page-table switch.
 route: tlb_and_context

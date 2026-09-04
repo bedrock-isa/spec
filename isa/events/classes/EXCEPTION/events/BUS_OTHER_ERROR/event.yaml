@@ -1,4 +1,3 @@
-id: BUS_OTHER_ERROR
 name: Other Bus Error
 summary: The bus reports a precise synchronous failure outside the other architected bus-failure families.
 code: 0x74

@@ -1,4 +1,3 @@
-id: FETCH_SUB
 c_operations: [atomic_fetch_sub]
 strategy: instruction
 instructions: [isa:base.instructions.FETCHSUB]

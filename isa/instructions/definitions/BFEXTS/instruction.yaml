@@ -1,4 +1,3 @@
-mnemonic: BFEXTS
 name: Bitfield Extract Signed
 summary: Extracts a contiguous bitfield and sign-extends it.
 route: integer_bitfield

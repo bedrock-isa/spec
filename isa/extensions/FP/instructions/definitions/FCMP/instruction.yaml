@@ -1,4 +1,3 @@
-mnemonic: FCMP
 name: Floating-Point Compare
 summary: Compares two floating-point operands and writes their relation to integer condition flags.
 route: fpu

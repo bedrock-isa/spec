@@ -1,4 +1,3 @@
-mnemonic: LRET
 name: Long Return
 summary: Pops a long return frame and atomically restores CS:PC.
 route: control_flow

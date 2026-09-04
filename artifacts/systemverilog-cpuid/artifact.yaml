@@ -1,4 +1,3 @@
-id: systemverilog-cpuid
 generator: generator.py
 inputs:
 - isa

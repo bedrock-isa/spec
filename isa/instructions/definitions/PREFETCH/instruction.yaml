@@ -1,4 +1,3 @@
-mnemonic: PREFETCH
 name: Prefetch
 summary: Hints that EA will be read soon; faults only under the configured prefetch-fault policy.
 route: cache

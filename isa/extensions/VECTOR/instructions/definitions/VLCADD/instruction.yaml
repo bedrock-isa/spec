@@ -1,4 +1,3 @@
-mnemonic: VLCADD
 name: Vector Lane-Count Add
 summary: Add a signed immediate multiple of the selected lane count to Rn.
 route: vector

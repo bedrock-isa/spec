@@ -1,4 +1,3 @@
-id: writeback_dcache
 owner: base
 description: >-
   Supervisor; applies WRBKDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.

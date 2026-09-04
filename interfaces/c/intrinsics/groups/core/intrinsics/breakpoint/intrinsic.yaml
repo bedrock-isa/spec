@@ -1,4 +1,3 @@
-id: breakpoint
 owner: base
 description: >-
   Any privilege; always raises the architectural breakpoint/debug exception.

@@ -1,4 +1,3 @@
-id: explicit_segment_base
 name: Explicit-segment base with autoupdate
 kind: memory
 syntax: "[SEG(s):update(Rn(b)) + displacement]"

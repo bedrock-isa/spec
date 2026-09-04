@@ -154,6 +154,7 @@ class EventPayloadCatalog:
             source=payload_root / "payloads.yaml",
             root=payload_root,
             key="payloads",
+            name_pattern=r"[A-Z][A-Z0-9_]*",
         )
         format_index = ReferenceIndex[EventPayloadFormat]()
         field_index = ReferenceIndex[EventPayloadField]()
@@ -163,11 +164,6 @@ class EventPayloadCatalog:
             raw = SchemaValidatedYamlLoader().load(
                 source, root / "schemas/event-payload.yaml"
             )
-            if raw["id"] != format_id:
-                raise ValueError(
-                    f"{source}: payload ID {raw['id']!r} does not match "
-                    f"directory {format_id!r}"
-                )
             format_reference: Reference[EventPayloadFormat] = Reference(
                 "base", ("events", "payloads"), format_id
             )

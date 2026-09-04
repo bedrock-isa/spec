@@ -1,4 +1,3 @@
-mnemonic: VCLS
 name: Vector Count Leading Ones
 summary: Counts consecutive one bits from the high end of each active element.
 route: vector

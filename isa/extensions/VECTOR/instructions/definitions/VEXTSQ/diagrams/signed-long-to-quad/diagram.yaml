@@ -1,4 +1,3 @@
-id: "signed-long-to-quad"
 caption: "VEXTSQ.L signed long-to-quad extension"
 alt_text: "An illustrative L-to-Q VEXTSQ view: each active quadword container sign-extends its low source longword, while inactive containers preserve the old destination value."
 kind: integer-width-conversion

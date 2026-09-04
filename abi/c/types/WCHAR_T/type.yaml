@@ -1,4 +1,3 @@
-id: WCHAR_T
 spelling: "wchar_t"
 call_kind: i32
 size_bits: 32

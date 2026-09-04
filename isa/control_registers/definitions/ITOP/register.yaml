@@ -1,3 +1,2 @@
-id: ITOP
 selector: 0x0302
 summary: Highest-priority eligible interrupt identity.

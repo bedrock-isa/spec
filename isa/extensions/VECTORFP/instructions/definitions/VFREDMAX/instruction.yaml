@@ -1,4 +1,3 @@
-mnemonic: VFREDMAX
 name: Vector Floating-Point Maximum Reduction
 summary: Reduces active floating-point elements to one maximum value.
 route: vector

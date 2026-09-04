@@ -1,4 +1,3 @@
-id: immediate
 name: Floating-point immediate
 kind: immediate
 syntax: immediate

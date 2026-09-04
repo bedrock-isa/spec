@@ -1,4 +1,3 @@
-id: VECTORFP_DISCOVERY
 name: Vector Floating-Point Discovery
 queries:
 - id: HEADER

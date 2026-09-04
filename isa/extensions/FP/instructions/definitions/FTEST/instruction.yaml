@@ -1,4 +1,3 @@
-mnemonic: FTEST
 name: Floating-Point Test
 summary: Compares a floating-point source with positive zero and writes integer condition flags.
 route: fpu

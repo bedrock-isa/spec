@@ -1,4 +1,3 @@
-id: systemverilog-vector-geometry
 generator: generator.py
 inputs:
 - isa

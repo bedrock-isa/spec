@@ -1,4 +1,3 @@
-id: performance_counter
 owner: base
 kind: enum
 summary: Architectural performance-counter selectors.

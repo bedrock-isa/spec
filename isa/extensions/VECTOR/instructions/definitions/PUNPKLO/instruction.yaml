@@ -1,4 +1,3 @@
-mnemonic: PUNPKLO
 name: Predicate Unpack from Lower Half
 summary: Unpacks the lower half of source predicate positions into wider destination positions.
 route: vector

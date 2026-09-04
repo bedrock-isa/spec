@@ -1,4 +1,3 @@
-mnemonic: PLAST
 name: Last Set Predicate Lane
 summary: Return the last selected element index at a significant position.
 route: vector

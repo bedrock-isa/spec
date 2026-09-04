@@ -1,4 +1,3 @@
-id: c-target-intrinsics
 generator: generator.py
 inputs:
 - isa
@@ -7,3 +6,8 @@ inputs:
 source: interfaces/c/documents/target-intrinsics.tex
 outputs:
   document: tex/bedrock-target-intrinsics.tex
+derived-outputs:
+  tex-validation: tex/bedrock-target-intrinsics-validate.json
+  compiled-document: pdf/bedrock-target-intrinsics.pdf
+  compile-log: pdf/bedrock-target-intrinsics.log
+  pdf-validation: pdf/bedrock-target-intrinsics-validate.json

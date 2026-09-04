@@ -1,4 +1,3 @@
-mnemonic: BIC
 name: Bit Clear
 summary: Clears destination bits selected by the source operand.
 route: integer_alu

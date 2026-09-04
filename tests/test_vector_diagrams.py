@@ -56,7 +56,6 @@ class VectorDiagramTest(unittest.TestCase):
             ],
         }
         common = {
-            "id": "example",
             "caption": "Example",
             "alt_text": "Example predicate range",
             "kind": "predicate-range-generation",

@@ -1,4 +1,3 @@
-id: core
 title: Core Interface Types
 includes:
 - stdint.h

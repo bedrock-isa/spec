@@ -1,4 +1,3 @@
-id: INTERRUPT
 name: Maskable Interrupt
 value: 0x01
 selector: {kind: identity, bits: 24}

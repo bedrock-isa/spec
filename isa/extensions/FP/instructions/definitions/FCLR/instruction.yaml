@@ -1,4 +1,3 @@
-mnemonic: FCLR
 name: Floating-Point Clear
 summary: Writes positive zero to the complete 64-bit floating-point destination.
 route: fpu

@@ -37,7 +37,6 @@ class RegisterCatalogTest(unittest.TestCase):
         with self.fixture() as directory:
             root = Path(directory)
             (root / "registers/groups/GPR/group.yaml").write_text(
-                "id: GPR\n"
                 "width: {VLEN: [128, 512, 256]}\n"
                 "series: {prefix: R, count: 2}\n",
                 encoding="utf-8",
@@ -81,7 +80,7 @@ class RegisterCatalogTest(unittest.TestCase):
             "groups: [GPR]\n"
         )
         (root / "registers/groups/GPR/group.yaml").write_text(
-            "id: GPR\nwidth: 64\nseries: {prefix: R, count: 2}\n"
+            "width: 64\nseries: {prefix: R, count: 2}\n"
         )
         return temporary
 

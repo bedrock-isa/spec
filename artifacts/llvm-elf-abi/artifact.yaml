@@ -1,4 +1,3 @@
-id: llvm-elf-abi
 summary: Canonical Bedrock ELF ABI catalog for LLVM and LLD.
 generator: generator.py
 inputs:

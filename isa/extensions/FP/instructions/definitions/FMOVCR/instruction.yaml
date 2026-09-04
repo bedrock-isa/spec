@@ -1,4 +1,3 @@
-mnemonic: FMOVCR
 name: Floating-Point Move Constant
 summary: Loads a named architectural binary64 constant selected by an unsigned 16-bit ID.
 route: fpu

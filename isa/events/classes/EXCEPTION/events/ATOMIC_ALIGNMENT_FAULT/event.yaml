@@ -1,4 +1,3 @@
-id: ATOMIC_ALIGNMENT_FAULT
 name: Atomic Alignment Fault
 summary: An atomic read-modify-write operand does not satisfy its architectural alignment requirement.
 code: 0x25

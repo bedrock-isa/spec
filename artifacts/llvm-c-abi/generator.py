@@ -216,8 +216,8 @@ def _render_calling_convention(projection: CallingConventionProjection) -> str:
     lines.append("")
     lines.extend(
         (
-            "// Non-allocatable architectural state is excluded from PEI spills but",
-            "// remains present in the complete C ABI call-preserved mask.",
+            "// Architectural state excluded from register allocation is also excluded",
+            "// from PEI spills, but remains in the complete C ABI call-preserved mask.",
         )
     )
     lines.extend(_callee_saved_record("CSR_Bedrock", projection.all_callee_saved))

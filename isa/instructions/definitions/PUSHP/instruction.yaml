@@ -1,4 +1,3 @@
-mnemonic: PUSHP
 name: Push Register Pair
 summary: Pushes one canonical Rn register pair selected by an inline pair index.
 route: data_movement

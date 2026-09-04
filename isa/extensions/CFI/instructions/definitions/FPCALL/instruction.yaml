@@ -1,4 +1,3 @@
-mnemonic: FPCALL
 name: Fast Protected Call
 summary: Installs an authenticated resident continuation without return-record memory traffic.
 route: control_flow

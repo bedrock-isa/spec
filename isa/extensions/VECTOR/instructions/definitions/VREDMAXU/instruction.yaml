@@ -1,4 +1,3 @@
-mnemonic: VREDMAXU
 name: Vector Unsigned Maximum Reduction
 summary: Finds the unsigned maximum of selected integer lanes and writes the scalar result to Rn.
 route: vector

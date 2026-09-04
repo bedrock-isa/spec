@@ -3,11 +3,8 @@ $id: bedrock://schemas/ea-mode-extended
 title: Bedrock extended effective-address mode
 type: object
 additionalProperties: false
-required: [id, name, kind, encodings, syntax]
+required: [name, kind, encodings, syntax]
 properties:
-  id:
-    type: string
-    pattern: ^[a-z][a-z0-9_]*$
   name:
     type: string
     minLength: 1

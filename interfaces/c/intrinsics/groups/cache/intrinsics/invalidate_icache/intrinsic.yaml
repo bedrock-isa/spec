@@ -1,4 +1,3 @@
-id: invalidate_icache
 owner: base
 description: >-
   Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.

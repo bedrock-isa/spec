@@ -1,4 +1,3 @@
-id: GENERAL
 arguments:
 - isa:base.registers.GPR.R0
 - isa:base.registers.GPR.R1

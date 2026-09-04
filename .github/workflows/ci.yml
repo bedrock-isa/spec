@@ -46,9 +46,7 @@ jobs:
             texlive-extra-utils
 
       - name: Compile and validate the complete document set
-        run: |
-          make docs
-          make docs-site
+        run: make docs-site
 
       - name: Upload Programmer's Reference Manual
         uses: actions/upload-artifact@v7
@@ -60,21 +58,21 @@ jobs:
       - name: Upload Bedrock ELF ABI
         uses: actions/upload-artifact@v7
         with:
-          path: output/site/downloads/bedrock-elf-abi.pdf
+          path: output/pdf/bedrock-elf-abi.pdf
           archive: false
           if-no-files-found: error
 
       - name: Upload Bedrock C ABI
         uses: actions/upload-artifact@v7
         with:
-          path: output/site/downloads/bedrock-c-abi.pdf
+          path: output/pdf/bedrock-c-abi.pdf
           archive: false
           if-no-files-found: error
 
       - name: Upload target intrinsics
         uses: actions/upload-artifact@v7
         with:
-          path: output/site/downloads/bedrock-target-intrinsics.pdf
+          path: output/pdf/bedrock-target-intrinsics.pdf
           archive: false
           if-no-files-found: error
 
@@ -170,7 +168,7 @@ jobs:
             -DLLVM_INCLUDE_TESTS=OFF \
             -DLLVM_TARGETS_TO_BUILD=""
           cmake --build "${RUNNER_TEMP}/bedrock-llvm" \
-            --target clang lld llvm-mc llvm-objdump
+            --target clang lld llvm-mc llvm-objcopy llvm-objdump llvm-readelf
           ccache --show-stats
 
       - name: Save Bedrock LLVM compiler cache
@@ -183,7 +181,8 @@ jobs:
       - name: Run canonical PR test gate
         env:
           BEDROCK_LLVM_BIN: ${{ runner.temp }}/bedrock-llvm/bin
-          BUILD_DIR: ${{ runner.temp }}/bedrock-build
+          LLVM_PROJECT_ROOT: ${{ github.workspace }}/llvm-project
+          OUTPUT_ROOT: ${{ runner.temp }}/bedrock-output
           EMULATOR_TARGET_DIR: ${{ runner.temp }}/bedrock-emulator-target
           TMPDIR: ${{ runner.temp }}
         run: make test-pr
@@ -208,7 +207,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: reference-site
-          path: build/site
+          path: output/site
 
       - name: Publish to gh-pages
         env:
@@ -216,8 +215,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          test -f build/site/index.html
-          test -f build/site/.nojekyll
+          test -f output/site/index.html
+          test -f output/site/.nojekyll
 
           test -n "${RUNNER_TEMP:-}"
           publish_dir="$(mktemp -d "${RUNNER_TEMP}/bedrock-pages.XXXXXX")"
@@ -244,7 +243,7 @@ jobs:
             git -C "${publish_dir}" rm -rf --ignore-unmatch .
           fi
 
-          rsync -a --delete --exclude=.git build/site/ "${publish_dir}/"
+          rsync -a --delete --exclude=.git output/site/ "${publish_dir}/"
           git -C "${publish_dir}" config user.name "github-actions[bot]"
           git -C "${publish_dir}" config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
@@ -275,7 +274,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: reference-site
-          path: build/site
+          path: output/site
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
@@ -283,7 +282,7 @@ jobs:
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: build/site
+          path: output/site
           include-hidden-files: true
 
       - name: Deploy to GitHub Pages

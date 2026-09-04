@@ -1,4 +1,3 @@
-mnemonic: VPOPCNT
 name: Vector Population Count
 summary: Counts the set bits in each active element.
 route: vector

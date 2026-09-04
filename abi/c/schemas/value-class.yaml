@@ -3,9 +3,8 @@ $id: bedrock://schemas/c-value-class
 title: Bedrock C calling-convention value class
 type: object
 additionalProperties: false
-required: [id, kinds, argument, result]
+required: [kinds, argument, result]
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   kinds:
     type: array
     minItems: 1

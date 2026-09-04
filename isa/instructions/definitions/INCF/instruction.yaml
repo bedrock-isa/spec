@@ -1,4 +1,3 @@
-mnemonic: INCF
 name: Increment And Set Flags
 summary: Increments the destination operand and updates integer FLAGS.
 route: integer_unary

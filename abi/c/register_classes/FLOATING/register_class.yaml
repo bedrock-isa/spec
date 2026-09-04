@@ -1,4 +1,3 @@
-id: FLOATING
 arguments:
 - isa:FP.registers.FPR.F0
 - isa:FP.registers.FPR.F1

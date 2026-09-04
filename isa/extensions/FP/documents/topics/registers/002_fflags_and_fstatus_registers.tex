@@ -1,6 +1,6 @@
 \subsection{FFLAGS and FSTATUS Registers}
 FFLAGS holds accrued IEEE-754 (:term:FP.terms.floating_point_exception_flag|plural:). FSTATUS holds the matching exception-condition enables, rounding mode, and optional
-non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.
+NaN and subnormal handling modes. Both registers are present only with the floating-point extension and reset to zero.
 
 \begin{BedrockListedFormatDiagram}{FFLAGS Register Format}
 \BedrockFormatRow{FFLAGS[15:0]}{%

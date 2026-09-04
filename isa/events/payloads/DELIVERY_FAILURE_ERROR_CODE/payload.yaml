@@ -1,4 +1,3 @@
-id: DELIVERY_FAILURE_ERROR_CODE
 bits: 64
 fields:
 - {id: FAULT_EA_VALID, lsb: 24, bits: 1}

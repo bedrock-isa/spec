@@ -1,4 +1,3 @@
-mnemonic: FXCHG
 name: Floating-Point Exchange
 summary: Exchanges the complete 64-bit images of two floating-point registers.
 route: fpu

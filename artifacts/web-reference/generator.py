@@ -67,9 +67,7 @@ class Generator(ArtifactGenerator):
         with tempfile.TemporaryDirectory(prefix="bedrock-reference-site-") as raw:
             stage = Path(raw)
             sources = stage / "documents"
-            pdfs = stage / "pdfs"
             sources.mkdir()
-            pdfs.mkdir()
             documents = []
             for artifact_id, site_id, title, pdf_name in _DOCUMENTS:
                 document_generator = registry.generator(artifact_id)
@@ -81,13 +79,24 @@ class Generator(ArtifactGenerator):
                     raise TypeError(f"{artifact_id}: TeX artifact must be text")
                 source = sources / Path(output).name
                 source.write_text(artifact.content, encoding="utf-8")
-                pdf = self._compile_pdf(
-                    artifact_id,
-                    source,
-                    pdfs / artifact_id,
-                    context.workspace.root,
-                    environment,
-                )
+                derived = document_generator.definition.derived_outputs
+                pdf = context.output_root / derived["compiled-document"]
+                validation = context.output_root / derived["pdf-validation"]
+                if not pdf.is_file() or not validation.is_file():
+                    raise SiteOutputError(
+                        f"{artifact_id}: build and validate the document before "
+                        "generating the reference site"
+                    )
+                try:
+                    metrics = json.loads(validation.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as error:
+                    raise SiteOutputError(
+                        f"{artifact_id}: invalid PDF validation report: {validation}"
+                    ) from error
+                if not isinstance(metrics, dict) or not metrics.get("pages"):
+                    raise SiteOutputError(
+                        f"{artifact_id}: PDF validation report has no page result"
+                    )
                 documents.append(
                     SiteDocument(artifact_id, site_id, title, source, pdf, pdf_name)
                 )
@@ -181,41 +190,6 @@ class Generator(ArtifactGenerator):
                 artifact_id=self.artifact_id,
             )
         )
-
-    @staticmethod
-    def _compile_pdf(
-        artifact_id: str,
-        source: Path,
-        output: Path,
-        repository: Path,
-        environment: dict[str, str],
-    ) -> Path:
-        output.mkdir(parents=True)
-        result = subprocess.run(
-            [
-                os.environ.get("LATEXMK", "latexmk"),
-                "-pdf",
-                "-interaction=nonstopmode",
-                "-halt-on-error",
-                "-file-line-error",
-                f"-outdir={output}",
-                str(source),
-            ],
-            cwd=repository,
-            env=environment,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        pdf = output / source.with_suffix(".pdf").name
-        if (
-            result.returncode
-            or not pdf.is_file()
-            or not pdf.read_bytes().startswith(b"%PDF-")
-        ):
-            detail = "\n".join(part for part in (result.stdout, result.stderr) if part)
-            raise ValueError(f"{artifact_id} PDF compilation failed:\n{detail[-12000:]}")
-        return pdf
 
     @staticmethod
     def _revision(repository: Path) -> str:

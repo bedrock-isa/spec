@@ -182,12 +182,7 @@ def _load_group(
 ) -> TermGroup:
     source = root / "group.yaml"
     raw = SchemaValidatedYamlLoader().load(source, schemas["group"])
-    group_id = raw["id"]
-    if group_id != root.name:
-        raise ValueError(
-            f"{source}: terminology group ID {group_id!r} does not match "
-            f"directory {root.name!r}"
-        )
+    group_id = root.name
     group_reference: Reference[TermGroup] = Reference(
         owner, ("term_groups",), group_id
     )
@@ -218,11 +213,7 @@ def _load_term(
 ) -> Term:
     source = root / "term.yaml"
     raw = SchemaValidatedYamlLoader().load(source, schema)
-    term_id = raw["id"]
-    if term_id != root.name:
-        raise ValueError(
-            f"{source}: term ID {term_id!r} does not match directory {root.name!r}"
-        )
+    term_id = root.name
     display = raw["display"]
     abbreviation = raw.get("abbreviation")
     relations = raw.get("relations", {})
@@ -263,6 +254,7 @@ def _load_inventory(
         root=root,
         key=key,
         allow_missing=True,
+        name_pattern=r"[a-z][a-z0-9_]*",
     )
 
 

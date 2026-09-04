@@ -3,9 +3,8 @@ $id: bedrock://schemas/c-register-class
 title: Bedrock C calling-convention register class
 type: object
 additionalProperties: false
-required: [id, arguments, results, assignment_order, exhaustion]
+required: [arguments, results, assignment_order, exhaustion]
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   arguments:
     type: array
     minItems: 1

@@ -1,4 +1,3 @@
-mnemonic: FPOPP
 name: Floating-Point Pop Register Pair
 summary: Pops one canonical floating-point register pair selected by an inline pair index.
 route: fpu

@@ -1,3 +1,2 @@
-id: ITHRESH
 selector: 0x0301
 summary: Interrupt-identity priority threshold.

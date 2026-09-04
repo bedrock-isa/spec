@@ -1,4 +1,3 @@
-id: DIRECTORY
 name: Extension Directory
 extends: base.cpuid.EXTENSIONS.DIRECTORY
 queries:

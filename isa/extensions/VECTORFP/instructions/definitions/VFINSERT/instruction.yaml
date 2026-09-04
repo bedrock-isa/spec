@@ -1,4 +1,3 @@
-mnemonic: VFINSERT
 name: Vector Floating-Point Lane Insert
 summary: Replaces one indexed vector lane with a floating-point scalar value.
 route: vector

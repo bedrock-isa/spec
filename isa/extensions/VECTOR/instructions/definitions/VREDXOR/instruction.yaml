@@ -1,4 +1,3 @@
-mnemonic: VREDXOR
 name: Vector Bitwise XOR Reduction
 summary: Reduces selected integer lanes with bitwise XOR and writes the scalar result to Rn.
 route: vector

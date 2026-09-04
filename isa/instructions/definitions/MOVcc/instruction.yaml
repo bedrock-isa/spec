@@ -1,4 +1,3 @@
-mnemonic: MOVcc
 name: Move Conditional
 summary: Copies source to destination only when the encoded condition is true.
 route: control_flow

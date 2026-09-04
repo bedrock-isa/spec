@@ -1,4 +1,3 @@
-id: emulator-core
 generator: generator.py
 depends-on:
 - sail-model

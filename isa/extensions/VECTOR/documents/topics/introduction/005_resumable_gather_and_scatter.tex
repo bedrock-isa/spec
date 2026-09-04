@@ -23,8 +23,9 @@ architectural normalization
 
 \texttt{Pg} and \texttt{Ps} shall be distinct.  The normalization is committed
 before a lane memory transaction is issued and remains visible if that
-transaction faults.  Consequently inactive completion bits and all
-nonsignificant bits are zero.  If \texttt{pending} is empty, the instruction
+transaction faults.  Consequently inactive completion bits and all bits
+outside the typed predicate image are zero.  If \texttt{pending} is empty, the
+instruction
 retires without a memory transaction and its normal postcondition is
 \texttt{Ps == G}.
 
@@ -92,7 +93,7 @@ leaves the selected lane pending and raises the (:term:base.terms.ordinary:) pre
 fault.  An (:term:base.terms.ordinary:) memory bus failure in this state is retry-safe.  If a
 scatter store has become irrevocable, the implementation sets the lane's
 completion bit and shall not report a restartable synchronous failure for that
-lane.  Any later report is an imprecise, non-retry-safe
-(:ref:base.events.EXCEPTION.MACHINE_CHECK:) at a subsequent lane or retirement
-boundary.  These instructions are not permitted for MMIO, including when only
+lane.  Any later report is an imprecise
+(:ref:base.events.EXCEPTION.MACHINE_CHECK:) delivered at a subsequent lane or
+retirement boundary after the store becomes irrevocable.  These instructions are not permitted for MMIO, including when only
 one lane is active.  Both preserve FLAGS.

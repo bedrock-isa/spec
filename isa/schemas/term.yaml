@@ -3,10 +3,8 @@ $id: bedrock://schemas/term
 title: Bedrock terminology entry
 type: object
 additionalProperties: false
-required: [id, display, definition]
+required: [display, definition]
 properties:
-  id:
-    $ref: '#/$defs/id'
   display:
     type: object
     additionalProperties: false

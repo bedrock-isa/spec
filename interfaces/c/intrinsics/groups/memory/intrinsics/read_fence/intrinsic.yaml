@@ -1,4 +1,3 @@
-id: read_fence
 owner: base
 description: >-
   Compiler and hardware read-ordering barrier.

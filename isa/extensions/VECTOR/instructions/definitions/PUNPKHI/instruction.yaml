@@ -1,4 +1,3 @@
-mnemonic: PUNPKHI
 name: Predicate Unpack from Upper Half
 summary: Unpacks the upper half of source predicate positions into wider destination positions.
 route: vector

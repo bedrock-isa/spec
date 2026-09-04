@@ -1,4 +1,3 @@
-mnemonic: PFALSE
 name: Predicate Clear
 summary: Clear the complete predicate image.
 route: vector

@@ -1,4 +1,3 @@
-id: write_segment_register
 owner: base
 description: >-
   Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.

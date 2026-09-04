@@ -1,4 +1,3 @@
-mnemonic: VFDUP
 name: Vector Floating-Point Duplicate
 summary: Broadcasts a floating-point scalar register to every vector lane.
 route: vector

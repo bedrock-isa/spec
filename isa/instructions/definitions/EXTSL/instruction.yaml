@@ -1,4 +1,3 @@
-mnemonic: EXTSL
 name: Sign Extend To Long
 summary: Sign-extends the selected source width to a longword EA destination.
 route: integer_unary

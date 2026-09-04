@@ -1,4 +1,3 @@
-id: MEMORY_READ_WATCHPOINT
 name: Memory Read Watchpoint
 summary: An enabled debug trigger matches a validated data-read range before the read or its architectural result occurs.
 code: 0x07

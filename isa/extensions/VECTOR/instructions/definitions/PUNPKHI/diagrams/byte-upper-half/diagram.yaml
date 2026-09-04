@@ -1,6 +1,5 @@
-id: "byte-upper-half"
 caption: "PUNPKHI.B upper-half predicate unpacking"
-alt_text: "In the illustrated 16-byte instance, the upper half of the significant byte-predicate positions of source Pn is copied in lane order to the significant word-predicate positions of new Pq. Every nonsignificant result bit is cleared, and the same upper-half rule scales with VLEN."
+alt_text: "In the illustrated 16-byte instance, the upper half of the significant byte-predicate positions of source Pn is copied in lane order to the significant word-predicate positions of new Pq. Every other result bit is cleared, and the same upper-half rule scales with VLEN."
 kind: predicate-width-conversion
 view: {lane_order: right-to-left, scalable: false, visible_bytes: 16}
 source_element_bits: 8

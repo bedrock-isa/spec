@@ -1,4 +1,3 @@
-mnemonic: BFINS
 name: Bitfield Insert
 summary: Inserts low source bits into a contiguous destination bitfield.
 route: integer_bitfield

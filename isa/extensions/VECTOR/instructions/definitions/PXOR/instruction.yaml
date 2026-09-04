@@ -1,4 +1,3 @@
-mnemonic: PXOR
 name: Predicate Bitwise XOR
 summary: XOR corresponding bits of Ps and the old Pd into the complete Pd image.
 route: vector

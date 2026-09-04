@@ -3,9 +3,8 @@ $id: bedrock://schemas/c-atomic-lowering
 title: Bedrock C atomic-operation lowering
 type: object
 additionalProperties: false
-required: [id, c_operations, strategy, instructions]
+required: [c_operations, strategy, instructions]
 properties:
-  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
   c_operations:
     type: array
     minItems: 1

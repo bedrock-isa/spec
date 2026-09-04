@@ -74,7 +74,11 @@ class EAModeCatalog:
         modes = raw["modes"]
         if not isinstance(name, str) or not name.strip():
             raise ValueError(f"{path}: name must be a non-empty string")
-        if not isinstance(modes, list) or any(not isinstance(item, str) for item in modes):
+        if not isinstance(modes, list) or any(
+            not isinstance(item, str)
+            or re.fullmatch(r"[a-z][a-z0-9_]*", item) is None
+            for item in modes
+        ):
             raise ValueError(f"{path}: modes must be a list of names")
         if len(set(modes)) != len(modes):
             raise ValueError(f"{path}: modes must not contain duplicates")
@@ -313,9 +317,8 @@ class _EAModeSource:
         self.catalog = catalog or EAModeCatalog.containing(
             self.source, self.isa_root, self.type_system
         )
-        self.reference: Reference[EAMode] = self.catalog.reference(
-            str(self._data.get("id", ""))
-        )
+        self.mode_id = self.source.parent.name
+        self.reference: Reference[EAMode] = self.catalog.reference(self.mode_id)
         self._field_type_references: dict[str, Reference[FieldType]] = {}
         self._payload_type_references: dict[tuple[int, int], Reference[PayloadType]] = {}
         self.validate()
@@ -516,7 +519,7 @@ class _EAModeSource:
             self.isa_root,
             self.type_system,
             self.catalog,
-            self._data["id"],
+            self.mode_id,
             self._data["name"],
             encodings,
             fields,
