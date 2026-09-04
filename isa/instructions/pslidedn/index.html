@@ -14647,7 +14647,7 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>VECTOR</code></p>
-<p>PSLIDEDN moves the significant predicate positions for the selected B, W, L, or Q width toward lower typed-lane indices by the unsigned immediate count. Vacated positions at the high end become zero. A count at least as large as the architectural typed-lane count clears every significant position. The complete destination predicate image is written, and every nonsignificant bit is cleared. The operation leaves FLAGS unchanged.</p>
+<p>PSLIDEDN moves the significant predicate positions for the selected B, W, L, or Q width toward lower typed-lane indices by the unsigned immediate count. Vacated positions at the high end become zero. A count at least as large as the architectural typed-lane count clears every significant position. The complete destination predicate image is written, and every bit outside its significant positions is cleared. The operation leaves FLAGS unchanged.</p>
 <p><img alt="In this fixed 16-byte example, typed predicate lanes move two positions toward lower indices and the two highest result positions become zero. A larger VLEN applies the same rule at its architectural high end." src="../../../assets/visuals/isa/pslidedn-01.svg" /></p>
 <p><strong>PSLIDEDN.W slide down by two predicate lanes</strong></p>
 <p>2.75in</p>

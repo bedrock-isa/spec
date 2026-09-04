@@ -14647,7 +14647,7 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>FP</code></p>
-<p>RDFSTATUS reads the architectural 16-bit FSTATUS register, zero-extends it to 64 bits, and writes the result to the destination <a href="../../terminology/#term-rn-register">Rn register</a>. FSTATUS contains floating-point exception-condition enables, rounding mode, and non-default mode bits. FFLAGS holds accrued <a href="../../terminology/#term-floating-point-exception-flag">floating-point exception flags</a>. RDFSTATUS requires the floating-point extension.</p>
+<p>RDFSTATUS reads the architectural 16-bit FSTATUS register, zero-extends it to 64 bits, and writes the result to the destination <a href="../../terminology/#term-rn-register">Rn register</a>. FSTATUS contains floating-point exception-condition enables, rounding mode, and NaN and subnormal handling bits. FFLAGS holds accrued <a href="../../terminology/#term-floating-point-exception-flag">floating-point exception flags</a>. RDFSTATUS requires the floating-point extension.</p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>RDFSTATUS Rn(d)</code></strong></p>

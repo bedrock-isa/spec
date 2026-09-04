@@ -14647,7 +14647,7 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>VECTOR</code></p>
-<p>PTRNHI selects the odd-position significant predicate lanes for the chosen B, W, L, or Q width from each source. For each selected source position in increasing order, the corresponding even result lane receives the left source value and the following odd result lane receives the right source value. The complete destination predicate image is written, and every nonsignificant bit is cleared. The operation leaves FLAGS unchanged.</p>
+<p>PTRNHI selects the odd-position significant predicate lanes for the chosen B, W, L, or Q width from each source. For each selected source position in increasing order, the corresponding even result lane receives the left source value and the following odd result lane receives the right source value. The complete destination predicate image is written, and every bit outside its significant positions is cleared. The operation leaves FLAGS unchanged.</p>
 <p><img alt="New Pd interleaves odd-position typed predicate lanes from Pa and Pb. Each local pair follows the same mapping for any VLEN." src="../../../assets/visuals/isa/ptrnhi-01.svg" /></p>
 <p><strong>PTRNHI.W odd predicate-lane transpose</strong></p>
 <p>2.75in</p>

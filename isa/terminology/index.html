@@ -14769,7 +14769,7 @@
 <h1 id="terminology">Terminology</h1>
 <p><a href="#section-terminology" id="section-terminology"></a></p>
 <h2 id="address-values">Address Values</h2>
-<p><a href="#term-effective-address" id="term-effective-address"></a> An <em>effective address (EA)</em> is the address value or operand designator produced by an addressing mode before segment pre-translation. A memory EA produces an address, while register and immediate EAs name non-memory operands.</p>
+<p><a href="#term-effective-address" id="term-effective-address"></a> An <em>effective address (EA)</em> is the address value or operand designator produced by an addressing mode before segment pre-translation. A memory EA produces an address, while register and immediate EAs name register and immediate operands.</p>
 <p>A <em>pre-segment virtual address</em> is a virtual-address value before segment pre-translation. Segment pre-translation either converts it to a linear address or reports the architecturally defined fault.</p>
 <p><a href="#term-linear-address" id="term-linear-address"></a> A <em>linear address</em> is the result of segment pre-translation. The page-table walker consumes it when paging is enabled; otherwise the memory system uses it directly.</p>
 <p><a href="#term-physical-address" id="term-physical-address"></a> A <em>physical address</em> is the byte address produced by page-table translation. With paging disabled, the linear address is used directly after the implementation PABITS check.</p>

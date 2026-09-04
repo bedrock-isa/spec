@@ -14647,7 +14647,7 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>VECTOR</code></p>
-<p>PPACKHI reads the significant predicate positions for the selected W, L, or Q source element width. It copies those positions in lane order to the upper half of the significant destination positions for elements half that width. The complete destination predicate image is written: the lower half of its significant positions and every nonsignificant bit are cleared. The operation leaves FLAGS unchanged.</p>
+<p>PPACKHI reads the significant predicate positions for the selected W, L, or Q source element width. It copies those positions in lane order to the upper half of the significant destination positions for elements half that width. The complete destination predicate image is written: the lower half of its significant positions and every bit outside its significant positions are cleared. The operation leaves FLAGS unchanged.</p>
 <p><img alt="In the illustrated 16-byte instance, the significant word-predicate positions of source Pn are copied in lane order to the upper half of the byte-predicate positions of new Pq. Every other bit is cleared, and the same upper-half rule scales with VLEN." src="../../../assets/visuals/isa/ppackhi-01.svg" /></p>
 <p><strong>PPACKHI.W upper-half predicate packing</strong></p>
 <p>2.75in</p>

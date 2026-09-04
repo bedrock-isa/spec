@@ -14647,8 +14647,8 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>VECTOR</code></p>
-<p>PUNPKHI reads the significant predicate positions for the selected B, W, or L source element width. It selects the upper half of those positions and copies them in lane order to the significant destination positions for elements twice that width. The complete destination predicate image is written, and every nonsignificant destination bit is cleared. The operation leaves FLAGS unchanged.</p>
-<p><img alt="In the illustrated 16-byte instance, the upper half of the significant byte-predicate positions of source Pn is copied in lane order to the significant word-predicate positions of new Pq. Every nonsignificant result bit is cleared, and the same upper-half rule scales with VLEN." src="../../../assets/visuals/isa/punpkhi-01.svg" /></p>
+<p>PUNPKHI reads the significant predicate positions for the selected B, W, or L source element width. It selects the upper half of those positions and copies them in lane order to the significant destination positions for elements twice that width. The complete destination predicate image is written, and every bit outside the significant destination positions is cleared. The operation leaves FLAGS unchanged.</p>
+<p><img alt="In the illustrated 16-byte instance, the upper half of the significant byte-predicate positions of source Pn is copied in lane order to the significant word-predicate positions of new Pq. Every other result bit is cleared, and the same upper-half rule scales with VLEN." src="../../../assets/visuals/isa/punpkhi-01.svg" /></p>
 <p><strong>PUNPKHI.B upper-half predicate unpacking</strong></p>
 <p>2.75in</p>
 <h2 id="encodings">Encodings</h2>

@@ -14647,7 +14647,7 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>VECTOR</code></p>
-<p>PZIPLO selects the lower half of the significant predicate lanes for the chosen B, W, L, or Q width from each source. In increasing order through those halves, each even result lane receives a left-source value and the following odd result lane receives the corresponding right-source value. The complete destination predicate image is written, and every nonsignificant bit is cleared. The operation leaves FLAGS unchanged.</p>
+<p>PZIPLO selects the lower half of the significant predicate lanes for the chosen B, W, L, or Q width from each source. In increasing order through those halves, each even result lane receives a left-source value and the following odd result lane receives the corresponding right-source value. The complete destination predicate image is written, and every bit outside its significant positions is cleared. The operation leaves FLAGS unchanged.</p>
 <p><img alt="New Pd alternates typed predicate lanes from the lower halves of Pa and Pb. The illustrated low-end mapping is independent of architectural VLEN." src="../../../assets/visuals/isa/pziplo-01.svg" /></p>
 <p><strong>PZIPLO.W lower-half predicate interleave</strong></p>
 <p>2.75in</p>

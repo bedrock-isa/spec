@@ -14647,7 +14647,7 @@
 <p>Unprivileged</p>
 <h2 id="required-cpuid-flags">Required CPUID flags</h2>
 <p><code>VECTOR</code></p>
-<p>PUZIPHI selects the odd-position significant predicate lanes for the chosen B, W, L, or Q width. The selected lanes from the left source form the lower half of the result, and those from the right source form the upper half, with each half retaining source order. The complete destination predicate image is written, and every nonsignificant bit is cleared. The operation leaves FLAGS unchanged.</p>
+<p>PUZIPHI selects the odd-position significant predicate lanes for the chosen B, W, L, or Q width. The selected lanes from the left source form the lower half of the result, and those from the right source form the upper half, with each half retaining source order. The complete destination predicate image is written, and every bit outside its significant positions is cleared. The operation leaves FLAGS unchanged.</p>
 <p><img alt="In this fixed 16-byte example, odd Pa lanes form the low result half and odd Pb lanes form the high result half. Larger VLEN applies the same rule over all architectural typed lanes." src="../../../assets/visuals/isa/puziphi-01.svg" /></p>
 <p><strong>PUZIPHI.W odd predicate-lane extraction</strong></p>
 <p>2.75in</p>
