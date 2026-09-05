@@ -1,3 +1,4 @@
-Pn is read as a complete packed predicate image, with every stored bit included
-in the branch decision.  An all-zero image selects the target operand; any set
-bit selects the next (:term:base.terms.instruction_address:).
+Pn is read as a complete current predicate execution image. Every predicate
+bit below VLEN/8 participates in the branch decision; higher storage bits do
+not. An all-zero current image selects the target operand; any set bit in that
+image selects the next (:term:base.terms.instruction_address:).

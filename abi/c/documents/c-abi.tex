@@ -33,7 +33,7 @@ These terms are specific to the C binding. ELF and address-space terms keep the 
 \item[sret buffer] Caller-allocated storage used to receive a return value that is too large or unsuitable for the normal return registers.
 \item[addressable by-value argument] A by-value aggregate argument that is passed through caller-owned stack storage because the callee may need an address for the object.
 \item[scalable value] A target vector or predicate value whose complete object
-size is determined by the implementation-selected VLEN. Source-language
+size is determined by the implementation-selected MAX\_VLEN. Source-language
 spellings belong to the applicable compiler extension; this calling convention
 defines their binary interface.
 \end{description}
@@ -139,14 +139,16 @@ second, each using the corresponding real type's representation. Therefore
 alignment 8.
 
 \paragraph{Scalable vector and predicate types.}
-When the scalable-vector extension is present, let $B$ be VLEN in bytes. A
+When the scalable-vector extension is present, let $B$ be MAX\_VLEN/8 bytes. A
 vector object contains exactly $B$ bytes and has 16-byte alignment. A
 predicate object contains exactly $B/8$ packed-image bytes. A private vector
 spill slot has $B$ bytes, 16-byte alignment, and $B$-byte stride. A private
 predicate spill slot has 16-byte alignment and
 $\operatorname{align\_up}(B/8,16)$-byte stride. Predicate spill tail padding
-has unspecified contents. VLEN is stable until reset, so every object and frame in one
-execution context uses one size.
+has unspecified contents. MAX\_VLEN is stable until reset, so every object and
+frame in one execution context uses one size. VLEN may change while those
+objects and frames exist; it controls active execution width without changing
+their complete representations.
 
 \subsection{Aggregate Layout}
 Aggregate layout applies the scalar and pointer sizes and alignments defined
@@ -209,6 +211,7 @@ General registers & \texttt{R0}--\texttt{R7} & \texttt{R8}--\texttt{R15}\\
 Floating-point registers & \texttt{F0}--\texttt{F7} & \texttt{F8}--\texttt{F15}\\
 Vector registers & \texttt{V0}--\texttt{V15} & \texttt{V16}--\texttt{V31}\\
 Predicate registers & \texttt{P0}--\texttt{P7} & \texttt{P8}--\texttt{P15}\\
+Vector status & none & \texttt{VSTATUS}\\
 Condition state & \texttt{FLAGS} & none\\
 Segment state & \texttt{GS1}--\texttt{GS5} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
 \bottomrule
@@ -228,6 +231,9 @@ restore that register's complete scalable image before returning. Saving only
 the currently active lanes, only significant predicate bits for one element
 size, or a fixed-width prefix represents a partial save; preservation requires
 the complete scalable image.
+
+A callee shall restore the exact incoming \texttt{VSTATUS} image before
+returning. This preserves the caller's selected active vector length.
 
 \subsection{Stack and Control State}
 \texttt{SP} is the dedicated architectural stack pointer. A

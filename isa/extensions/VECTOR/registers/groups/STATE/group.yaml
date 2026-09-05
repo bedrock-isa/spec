@@ -1,0 +1,3 @@
+width: 16
+summary: Vector status registers with dedicated access instructions.
+reset: 0

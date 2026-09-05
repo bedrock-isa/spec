@@ -1,9 +1,11 @@
 \subsection{Vector-Parameter Discovery}
-After establishing (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:) availability, software uses this leaf to obtain the architectural VLEN reported by (:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.VLEN_LOG2_BITS:). VLEN is
-$2^{\text{(:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.VLEN_LOG2_BITS:)}}$ bits and is an implementation-selected power of two from 128 through 2048 bits.
-It determines vector-register width, predicate storage, the number of lanes for a selected element width, and the
-size of each (:term:VECTOR.terms.vector_register:) and (:term:VECTOR.terms.predicate_register:) image.
-(:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.USER_RECORD_REVISION:) reports the 8-bit vector user-state-record revision. When VECTOR is available, this field returns 1. Revision 1 identifies the VLEN-dependent record defined by this specification. Revision values are opaque identifiers: software must not infer ordering or compatibility from their numeric values and must reject an unrecognized revision before using the record format. This leaf does not
+After establishing (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:) availability, software uses this leaf to obtain the architectural MAX\_VLEN reported by (:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.MAX_VLEN_LOG2_BITS:). MAX\_VLEN is
+$2^{\text{(:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.MAX_VLEN_LOG2_BITS:)}}$ bits and is an implementation-selected power of two from 128 through 2048 bits.
+It determines vector-register width, predicate storage, and the size of each
+(:term:VECTOR.terms.vector_register:) and
+(:term:VECTOR.terms.predicate_register:) image. \texttt{VSTATUS} separately
+selects the current VLEN and therefore the current lane count.
+(:ref:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS.PARAMETERS.USER_RECORD_REVISION:) reports the 8-bit vector user-state-record revision. When VECTOR is available, this field returns 1. Revision 1 identifies the MAX\_VLEN-dependent record defined by this specification. Revision values are opaque identifiers: software must not infer ordering or compatibility from their numeric values and must reject an unrecognized revision before using the record format. This leaf does not
 establish availability of (:ref:VECTORFP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTORFP:) or any other extension that consumes vector state.
 
 (:cpuid-leaf:VECTOR.cpuid.EXTENSIONS.VECTOR_PARAMETERS:)

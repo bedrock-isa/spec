@@ -7,8 +7,8 @@ For a nonzero remaining count, an offset at or above the selected element count
 raises VECTOR\_LOOP\_OFFSET\_OUT\_OF\_RANGE and commits no state. A
 valid iteration sets the next
 $\min(\operatorname{remaining},\,N-\operatorname{offset})$ significant
-predicate positions,
-clears every other predicate bit, subtracts the number of set positions from
+predicate positions, clears every other bit in the current predicate execution
+image, subtracts the number of set positions from
 the remaining count, clears the offset register, and falls through.
 
 (:diagram:VECTOR.instructions.PLOOP.diagrams.word-head:)

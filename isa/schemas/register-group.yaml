@@ -13,7 +13,7 @@ properties:
       minProperties: 1
       maxProperties: 1
       propertyNames:
-        enum: [VLEN, VLEN / 8]
+        enum: [MAX_VLEN, MAX_VLEN / 8]
       additionalProperties:
         type: array
         minItems: 1

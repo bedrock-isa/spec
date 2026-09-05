@@ -1,4 +1,6 @@
 instructions:
+- RDVSTATUS
+- WRVSTATUS
 - VRESTORE
 - VSAVE
 - VDUP

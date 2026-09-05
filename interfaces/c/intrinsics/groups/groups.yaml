@@ -6,3 +6,4 @@ groups:
 - memory
 - mmu
 - sysreg
+- vector

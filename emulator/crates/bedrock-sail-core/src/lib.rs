@@ -22,8 +22,8 @@ pub const FLOATING_REGISTER_COUNT: usize = 16;
 pub const SEGMENT_COUNT: usize = 9;
 pub const VECTOR_REGISTER_COUNT: usize = 32;
 pub const PREDICATE_REGISTER_COUNT: usize = 16;
-pub const VECTOR_LENGTH_BYTES: usize = 16;
-pub const PREDICATE_LENGTH_BYTES: usize = 2;
+pub const MAX_VECTOR_LENGTH_BYTES: usize = 16;
+pub const MAX_PREDICATE_LENGTH_BYTES: usize = 2;
 
 static SAIL_RUNTIME: Mutex<()> = Mutex::new(());
 
@@ -122,8 +122,8 @@ pub struct SailControlState {
 pub struct SailCoreState {
     pub registers: [u64; REGISTER_COUNT],
     pub floating_registers: [u64; FLOATING_REGISTER_COUNT],
-    pub vector_registers: [[u8; VECTOR_LENGTH_BYTES]; VECTOR_REGISTER_COUNT],
-    pub predicate_registers: [[u8; PREDICATE_LENGTH_BYTES]; PREDICATE_REGISTER_COUNT],
+    pub vector_registers: [[u8; MAX_VECTOR_LENGTH_BYTES]; VECTOR_REGISTER_COUNT],
+    pub predicate_registers: [[u8; MAX_PREDICATE_LENGTH_BYTES]; PREDICATE_REGISTER_COUNT],
     pub sp: u64,
     pub pc: u64,
     pub lpc: u64,
@@ -144,6 +144,7 @@ pub struct SailCoreState {
     pub timer_armed: u8,
     pub fstatus: u64,
     pub fflags: u64,
+    pub vstatus: u64,
     pub current_dfa: u8,
     pub supervisor: u8,
     pub halted: u8,
@@ -155,7 +156,7 @@ pub struct SailCoreState {
     pub cache_maintenance_granule: i64,
     pub fp_state_modified: u8,
     pub vector_state_modified: u8,
-    pub vector_length_bytes: i64,
+    pub max_vector_length_bytes: i64,
     pub machine_check_error_code: u64,
     pub machine_check_event_aux: u64,
     pub machine_check_fault_ea: u64,
@@ -1715,6 +1716,7 @@ mod tests {
         state.controls.base_bootcfg = 0xfeed_face_cafe_beef;
         state.fstatus = 0x123;
         state.fflags = 0x1f;
+        state.vstatus = 3;
         let expected = state.clone();
 
         assert_eq!(core.set_state(state), SailCoreStatus::Ok);
@@ -1786,16 +1788,16 @@ mod tests {
         let request = fp.last_request().unwrap();
         assert_eq!(request.kind, request_kind::WRITE);
         assert_eq!(request.width, 192);
-        assert_eq!(word(&request.payload, 0), 0x8877_6655_4433_2211);
-        assert_eq!(word(&request.payload, 128), 0x1f);
-        assert_eq!(word(&request.payload, 136), 0x123);
-        assert_eq!(word(&request.payload, 144), 0x0003_ffff);
+        assert_eq!(word(&request.payload, 0), 0x0003_ffff);
+        assert_eq!(word(&request.payload, 8), 0x0000_0000_0123_001f);
+        assert_eq!(word(&request.payload, 16), 0x8877_6655_4433_2211);
         assert_eq!(fp.state().unwrap().fp_state_modified, 1);
 
         let mut vector = SailCore::new().unwrap();
         let mut state = vector.state().unwrap();
         state.registers[0] = 0x1000;
         state.vector_state_modified = 1;
+        state.vstatus = 3;
         state.vector_registers[0][0] = 0xa5;
         state.predicate_registers[0][0] = 0x5a;
         assert_eq!(vector.set_state(state), SailCoreStatus::Ok);
@@ -1804,7 +1806,8 @@ mod tests {
         assert_eq!(request.kind, request_kind::WRITE);
         assert_eq!(request.width, 640);
         assert_eq!(request.payload.len(), 640);
-        assert_eq!(word(&request.payload, 0), 0x0000_ffff_ffff_ffff);
+        assert_eq!(word(&request.payload, 0), 0x0001_ffff_ffff_ffff);
+        assert_eq!(word(&request.payload, 8), 3_u64 << 16);
         assert_eq!(request.payload[64], 0xa5);
         assert_eq!(request.payload[576], 0x5a);
         assert_eq!(vector.state().unwrap().vector_state_modified, 1);
@@ -1881,7 +1884,7 @@ mod tests {
         let bitmap_request = core.last_request().unwrap();
         assert_eq!(bitmap_request.range_length, 192);
         assert_eq!(bitmap_request.memory_ranges.len(), 1);
-        assert_eq!(bitmap_request.memory_ranges[0].effective_address, 0x1090);
+        assert_eq!(bitmap_request.memory_ranges[0].effective_address, 0x1000);
         assert_eq!(bitmap_request.memory_ranges[0].buffer_offset, 0);
         assert_eq!(
             core.resume(SailCoreResponse {
@@ -1897,13 +1900,13 @@ mod tests {
         let body_request = core.last_request().unwrap();
         assert_eq!(body_request.range_length, 192);
         assert_eq!(body_request.body_length, 192);
-        assert_eq!(body_request.memory_ranges.len(), 2);
-        assert!(
-            body_request
-                .memory_ranges
-                .iter()
-                .all(|range| range.effective_address >= 0x1090)
-        );
+        assert_eq!(body_request.memory_ranges.len(), 3);
+        assert_eq!(body_request.memory_ranges[0].effective_address, 0x1000);
+        assert_eq!(body_request.memory_ranges[0].width, 8);
+        assert_eq!(body_request.memory_ranges[1].effective_address, 0x100c);
+        assert_eq!(body_request.memory_ranges[1].width, 4);
+        assert_eq!(body_request.memory_ranges[2].effective_address, 0x1090);
+        assert_eq!(body_request.memory_ranges[2].width, 48);
         assert_eq!(
             core.resume(SailCoreResponse {
                 kind: response_kind::READ,

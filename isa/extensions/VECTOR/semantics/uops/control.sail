@@ -15,10 +15,13 @@ function clause execute_uop(UopVectorBranchGuard(operation), _, values, instruct
                                     "vector branch predicate is unavailable")),
         Some(source) => {
             let element_bytes = operation_width(instruction);
-            let lanes = tdiv_int(speculative.vector_length_bytes, element_bytes);
+            let active_bytes = vector_current_length_bytes(speculative);
+            let lanes = tdiv_int(active_bytes, element_bytes);
             let predicate = speculative.predicate_registers[unsigned(source)];
-            let take = if operation == VectorBranchAny then predicate_any(predicate)
-                       else if operation == VectorBranchNone then not_bool(predicate_any(predicate))
+            let take = if operation == VectorBranchAny
+                       then predicate_any(predicate, tdiv_int(active_bytes, 8))
+                       else if operation == VectorBranchNone
+                       then not_bool(predicate_any(predicate, tdiv_int(active_bytes, 8)))
                        else predicate_all_typed(predicate, 0, lanes, element_bytes);
             if take then uop_step_continue(speculative, values) else uop_step_complete(speculative, CommitControl)
         },
@@ -33,7 +36,9 @@ function clause execute_uop(UopVectorLoopGuard(), _, values, instruction, before
             let remaining = unsigned(speculative.registers[remaining_index]);
             let offset = unsigned(speculative.registers[offset_index]);
             let element_bytes = operation_width(instruction);
-            let lanes = tdiv_int(speculative.vector_length_bytes, element_bytes);
+            let active_bytes = vector_current_length_bytes(speculative);
+            let active_predicate_bytes = tdiv_int(active_bytes, 8);
+            let lanes = tdiv_int(active_bytes, element_bytes);
             if remaining == 0 then uop_step_continue(speculative, values)
             else if offset >= lanes then uop_step_fault(faulted_with_error_code(
                 before, instruction.form.operation, VectorRangeFault,
@@ -41,9 +46,11 @@ function clause execute_uop(UopVectorLoopGuard(), _, values, instruction, before
             else {
                 let active = if remaining < lanes - offset then remaining else lanes - offset;
                 var updated = speculative;
-                updated.predicate_registers[unsigned(predicate)] = predicate_fill_typed(
-                    zero_vector_bytes(tdiv_int(speculative.vector_length_bytes, 8)),
-                    0, lanes, element_bytes, offset, offset + active);
+                updated.predicate_registers[unsigned(predicate)] = vector_replace_low_bytes(
+                    speculative.predicate_registers[unsigned(predicate)],
+                    predicate_fill_typed(zero_vector_bytes(active_predicate_bytes),
+                        0, lanes, element_bytes, offset, offset + active),
+                    active_predicate_bytes);
                 updated.registers[remaining_index] = get_slice_int(64, remaining - active, 0);
                 updated.registers[offset_index] = 0x0000000000000000;
                 updated.vector_state_modified = true;

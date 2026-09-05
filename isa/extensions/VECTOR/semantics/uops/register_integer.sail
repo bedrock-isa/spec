@@ -3,9 +3,10 @@
 function vector_integer_binary_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -39,9 +40,10 @@ function vector_integer_binary_compute(instruction : Decoded_instruction, state 
 function vector_integer_unary_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -70,7 +72,7 @@ function vector_integer_unary_compute(instruction : Decoded_instruction, state :
 function vector_integer_reduction_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
+    let lanes = tdiv_int(vector_current_length_bytes(state), element_bytes);
     match (
         vector_register_index(instruction, Operand_src),
         predicate_register_index(instruction, Operand_govern),
@@ -100,9 +102,10 @@ function vector_integer_reduction_compute(instruction : Decoded_instruction, sta
 function vector_shift_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -143,9 +146,11 @@ function vector_shift_compute(instruction : Decoded_instruction, state : Cpu_sta
 function vector_integer_compare_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -169,7 +174,10 @@ function vector_integer_compare_compute(instruction : Decoded_instruction, state
                     state.vector_registers[unsigned(left)],
                     state.vector_registers[unsigned(right)],
                     state.predicate_registers[unsigned(govern)],
-                    empty,
+                    vector_zero_low_bytes(
+                        state.predicate_registers[unsigned(destination)],
+                        active_predicate_bytes,
+                    ),
                     0,
                     lanes,
                     element_bytes,
@@ -186,9 +194,10 @@ function vector_integer_compare_compute(instruction : Decoded_instruction, state
 function vector_width_change_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -213,7 +222,7 @@ function vector_width_change_compute(instruction : Decoded_instruction, state : 
                     state.vector_registers[unsigned(source)],
                     state.predicate_registers[unsigned(predicate)],
                     0,
-                    tdiv_int(state.vector_length_bytes, container_bytes),
+                    tdiv_int(active_bytes, container_bytes),
                     element_bytes,
                     destination_bytes,
                 );
@@ -229,9 +238,10 @@ function vector_width_change_compute(instruction : Decoded_instruction, state : 
 function vector_permute_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,

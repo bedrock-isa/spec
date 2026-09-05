@@ -1,9 +1,12 @@
 \subsection{Execution and Saved State}
 
-The vector user-state record contains the complete scalable vector and packed
-predicate images selected by its presence bitmap. A committed \texttt{Vn} or
-\texttt{Pn} write marks vector state modified. Architectural event entry does
-not otherwise change vector state.
+The vector user-state record contains each selected vector register's complete
+MAX\_VLEN-bit storage image, each selected predicate register's complete
+MAX\_VLEN/8-bit storage image, and the selected \texttt{VSTATUS} image.
+Narrowing the current VLEN does not truncate saved state. A
+committed \texttt{Vn}, \texttt{Pn}, or changed \texttt{VSTATUS} write marks
+vector state modified. Architectural event entry does not otherwise change
+vector state.
 
 An implementation may internally coalesce eligible scalar \texttt{REP} or
 (:ref:base.instructions.REPcc:) iterations into vector-sized work.  This permission creates no

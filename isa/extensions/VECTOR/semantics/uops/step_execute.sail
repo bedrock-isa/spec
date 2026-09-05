@@ -15,7 +15,7 @@ function vector_step_finish_lane(
     ) {
         (Some(govern), Some(completion)) => {
             let element_bytes = operation_width(instruction);
-            let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
+            let lanes = tdiv_int(vector_current_length_bytes(state), element_bytes);
             var updated = state;
             updated.predicate_registers[unsigned(completion)] = predicate_set_bit(
                 state.predicate_registers[unsigned(completion)],
@@ -64,12 +64,16 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
         ) {
             (Some(govern), Some(completion)) => {
                 let element_bytes = operation_width(instruction);
-                let lanes = tdiv_int(speculative.vector_length_bytes, element_bytes);
+                let active_bytes = vector_current_length_bytes(speculative);
+                let active_predicate_bytes = tdiv_int(active_bytes, 8);
+                let lanes = tdiv_int(active_bytes, element_bytes);
                 let govern_image = speculative.predicate_registers[unsigned(govern)];
                 let normalized = vector_step_normalize_completion(
                     govern_image,
                     speculative.predicate_registers[unsigned(completion)],
-                    zero_vector_bytes(tdiv_int(speculative.vector_length_bytes, 8)),
+                    vector_zero_low_bytes(
+                        speculative.predicate_registers[unsigned(completion)],
+                        active_predicate_bytes),
                     0,
                     lanes,
                     element_bytes,

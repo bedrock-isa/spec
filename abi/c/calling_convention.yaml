@@ -103,6 +103,7 @@ preservation:
   - isa:base.registers.SEGMENT.SS
   - isa:base.registers.SEGMENT.GS0
   - isa:FP.registers.STATE.FSTATUS
+  - isa:VECTOR.registers.STATE.VSTATUS
 - disposition: special
   registers:
   - isa:base.registers.SPECIAL.SP

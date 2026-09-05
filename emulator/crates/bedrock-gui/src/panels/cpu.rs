@@ -14,6 +14,8 @@ pub fn show(ui: &mut egui::Ui, machine: &Machine, debugger: &mut Debugger, contr
     show_register_group(ui, "Control", state, CpuRegisterSet::Control);
     ui.separator();
     show_register_group(ui, "FPU", state, CpuRegisterSet::FloatingPoint);
+    ui.separator();
+    show_register_group(ui, "Vector", state, CpuRegisterSet::Vector);
 
     ui.separator();
     ui.heading("Breakpoints");

@@ -1,5 +1,5 @@
 spelling: "scalable predicate"
 call_kind: predicate
-size_bits: "VLEN"
+size_bits: "MAX_VLEN / 8"
 alignment_bytes: 16
 representation: packed_predicate

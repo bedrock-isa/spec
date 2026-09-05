@@ -1,9 +1,10 @@
 function vector_special_vclr_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -12,7 +13,8 @@ function vector_special_vclr_compute(instruction : Decoded_instruction, state : 
         match vector_register_index(instruction, Operand_dst) {
             Some(destination) => {
                 var updated = state;
-                updated.vector_registers[unsigned(destination)] = zero_vector;
+                updated.vector_registers[unsigned(destination)] = vector_zero_low_bytes(
+                    state.vector_registers[unsigned(destination)], active_bytes);
                 Some(VectorComputeState(updated))
             },
             None() => None(),
@@ -25,9 +27,10 @@ function vector_special_vclr_compute(instruction : Decoded_instruction, state : 
 function vector_special_vdup_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -39,13 +42,17 @@ function vector_special_vdup_compute(instruction : Decoded_instruction, state : 
             vector_register_index(instruction, Operand_dst),
         ) {
             (Some(source), _, Some(destination)) => {
-                let image = vector_duplicate_image(zero_vector, 0, lanes, element_bytes, unsigned(source));
+                let image = vector_duplicate_image(
+                    vector_zero_low_bytes(state.vector_registers[unsigned(destination)], active_bytes),
+                    0, lanes, element_bytes, unsigned(source));
                 var updated = state;
                 updated.vector_registers[unsigned(destination)] = image;
                 Some(VectorComputeState(updated))
             },
             (_, Some(source), Some(destination)) => {
-                let image = vector_duplicate_image(zero_vector, 0, lanes, element_bytes, unsigned(source));
+                let image = vector_duplicate_image(
+                    vector_zero_low_bytes(state.vector_registers[unsigned(destination)], active_bytes),
+                    0, lanes, element_bytes, unsigned(source));
                 var updated = state;
                 updated.vector_registers[unsigned(destination)] = image;
                 Some(VectorComputeState(updated))
@@ -60,9 +67,10 @@ function vector_special_vdup_compute(instruction : Decoded_instruction, state : 
 function vector_special_vextract_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -105,9 +113,10 @@ function vector_special_vextract_compute(instruction : Decoded_instruction, stat
 function vector_special_vindex_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -117,7 +126,7 @@ function vector_special_vindex_compute(instruction : Decoded_instruction, state 
             Some(destination) => {
                 var updated = state;
                 updated.vector_registers[unsigned(destination)] = vector_index_image(
-                    zero_vector,
+                    vector_zero_low_bytes(state.vector_registers[unsigned(destination)], active_bytes),
                     0,
                     lanes,
                     element_bytes,
@@ -134,9 +143,10 @@ function vector_special_vindex_compute(instruction : Decoded_instruction, state 
 function vector_special_vinsert_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -180,9 +190,10 @@ function vector_special_vinsert_compute(instruction : Decoded_instruction, state
 function vector_special_vlcadd_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -208,9 +219,10 @@ function vector_special_vlcadd_compute(instruction : Decoded_instruction, state 
 function vector_special_vlcnt_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -232,9 +244,10 @@ function vector_special_vlcnt_compute(instruction : Decoded_instruction, state :
 function vector_special_vmov_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -255,7 +268,10 @@ function vector_special_vmov_compute(instruction : Decoded_instruction, state : 
                         lanes,
                         element_bytes,
                     ),
-                    None() => state.vector_registers[unsigned(source)],
+                    None() => vector_replace_low_bytes(
+                        state.vector_registers[unsigned(destination)],
+                        state.vector_registers[unsigned(source)],
+                        active_bytes),
                 };
                 Some(VectorComputeState(updated))
             },

@@ -1,34 +1,6 @@
 name: Floating-Point User-State Record
 alignment_bytes: 64
 components:
-- id: REGISTERS
-  label: F
-  count: 16
-  element_bytes: 8
-- id: FFLAGS
-  label: FFLAGS
-  element_bytes: 8
-  bit_format:
-    bits: 64
-    unassigned: zero
-    fields:
-    - id: FFLAGS
-      label: FFLAGS
-      diagram_label: F
-      lsb: 0
-      bits: 5
-- id: FSTATUS
-  label: FSTATUS
-  element_bytes: 8
-  bit_format:
-    bits: 64
-    unassigned: zero
-    fields:
-    - id: FSTATUS
-      label: FSTATUS
-      diagram_label: S
-      lsb: 0
-      bits: 10
 - id: PRESENCE
   label: Presence bitmap
   element_bytes: 8
@@ -50,3 +22,24 @@ components:
       diagram_label: s
       lsb: 17
       bits: 1
+- id: STATE_IMAGES
+  label: State images
+  element_bytes: 8
+  bit_format:
+    bits: 64
+    unassigned: zero
+    fields:
+    - id: FFLAGS
+      label: FFLAGS image
+      diagram_label: FFLAGS
+      lsb: 0
+      bits: 16
+    - id: FSTATUS
+      label: FSTATUS image
+      diagram_label: FSTATUS
+      lsb: 16
+      bits: 16
+- id: REGISTERS
+  label: F
+  count: 16
+  element_bytes: 8

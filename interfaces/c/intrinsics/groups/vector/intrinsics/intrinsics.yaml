@@ -1,0 +1,3 @@
+intrinsics:
+- read_vstatus
+- write_vstatus

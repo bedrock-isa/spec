@@ -1,5 +1,5 @@
 collections:
 - id: public
-  groups: [core, memory, integer, fpu]
+  groups: [core, memory, integer, fpu, vector]
 - id: system
   groups: [sysreg, cache, mmu]

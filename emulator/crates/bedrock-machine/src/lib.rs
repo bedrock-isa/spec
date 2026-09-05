@@ -20,9 +20,9 @@ pub use flags::{Flags, Status};
 pub use loader::{ElfLoadError, ElfLoadOptions, ElfLoadResult, LoadedSegment, SegmentPermissions};
 pub use machine::Machine;
 pub use state::{
-    CPU_REGISTER_INFOS, CpuRegister, CpuRegisterInfo, CpuRegisterSet, CpuState, PREDICATE_BYTES,
-    PREDICATE_REGISTER_COUNT, PredicateRegister, VECTOR_REGISTER_COUNT, VLEN_BITS, VLEN_BYTES,
-    VectorRegister,
+    CPU_REGISTER_INFOS, CpuRegister, CpuRegisterInfo, CpuRegisterSet, CpuState,
+    MAX_PREDICATE_BYTES, MAX_VLEN_BITS, MAX_VLEN_BYTES, PREDICATE_REGISTER_COUNT,
+    PredicateRegister, VECTOR_REGISTER_COUNT, VectorRegister,
 };
 pub use step::StepResult;
 pub use translation::{

@@ -1,4 +1,4 @@
 reserved_ranges:
 - {first: 20, last: 31}
-- {first: 59, last: 63}
+- {first: 60, last: 63}
 - {first: 112, last: unbounded}

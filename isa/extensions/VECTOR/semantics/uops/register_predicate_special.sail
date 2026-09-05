@@ -1,9 +1,10 @@
 function vector_special_pcount_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -30,14 +31,19 @@ function vector_special_pcount_compute(instruction : Decoded_instruction, state 
 
 function vector_special_pfalse_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
     match predicate_register_index(instruction, Operand_dst) {
         None() => None(),
         Some(destination) => {
             var updated = state;
             updated.predicate_registers[unsigned(destination)] = predicate_fill_typed(
-                empty,
+                vector_zero_low_bytes(
+                    state.predicate_registers[unsigned(destination)],
+                    active_predicate_bytes,
+                ),
                 0,
                 lanes,
                 element_bytes,
@@ -52,9 +58,10 @@ function vector_special_pfalse_compute(instruction : Decoded_instruction, state 
 function vector_special_pfirst_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -81,8 +88,10 @@ function vector_special_pfirst_compute(instruction : Decoded_instruction, state 
 
 function vector_special_phead_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
     match predicate_register_index(instruction, Operand_dst) {
         None() => None(),
         Some(destination) => {
@@ -92,7 +101,10 @@ function vector_special_phead_compute(instruction : Decoded_instruction, state :
             };
             var updated = state;
             updated.predicate_registers[unsigned(destination)] = predicate_fill_typed(
-                empty,
+                vector_zero_low_bytes(
+                    state.predicate_registers[unsigned(destination)],
+                    active_predicate_bytes,
+                ),
                 0,
                 lanes,
                 element_bytes,
@@ -107,9 +119,10 @@ function vector_special_phead_compute(instruction : Decoded_instruction, state :
 function vector_special_plast_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(tdiv_int(active_bytes, 8));
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -137,9 +150,11 @@ function vector_special_plast_compute(instruction : Decoded_instruction, state :
 function vector_special_pnot_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -148,9 +163,13 @@ function vector_special_pnot_compute(instruction : Decoded_instruction, state : 
         match predicate_register_index(instruction, Operand_dst) {
             Some(destination) => {
                 var updated = state;
-                updated.predicate_registers[unsigned(destination)] = predicate_raw_not(
+                updated.predicate_registers[unsigned(destination)] = vector_replace_low_bytes(
                     state.predicate_registers[unsigned(destination)],
-                );
+                    predicate_raw_not(
+                        state.predicate_registers[unsigned(destination)],
+                        active_predicate_bytes,
+                    ),
+                    active_predicate_bytes);
                 Some(VectorComputeState(updated))
             },
             None() => None(),
@@ -163,9 +182,11 @@ function vector_special_pnot_compute(instruction : Decoded_instruction, state : 
 function vector_special_ppackhi_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -174,7 +195,10 @@ function vector_special_ppackhi_compute(instruction : Decoded_instruction, state
         match (predicate_register_index(instruction, Operand_src), predicate_register_index(instruction, Operand_dst)) {
             (Some(source), Some(destination)) => {
                 let source_image = state.predicate_registers[unsigned(source)];
-                let image = predicate_pack_image(source_image, empty, 0, lanes, element_bytes, true);
+                let image = predicate_pack_image(source_image,
+                    vector_zero_low_bytes(state.predicate_registers[unsigned(destination)],
+                                          active_predicate_bytes),
+                    0, lanes, element_bytes, true);
                 var updated = state;
                 updated.predicate_registers[unsigned(destination)] = image;
                 Some(VectorComputeState(updated))
@@ -189,9 +213,11 @@ function vector_special_ppackhi_compute(instruction : Decoded_instruction, state
 function vector_special_ppacklo_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -200,7 +226,10 @@ function vector_special_ppacklo_compute(instruction : Decoded_instruction, state
         match (predicate_register_index(instruction, Operand_src), predicate_register_index(instruction, Operand_dst)) {
             (Some(source), Some(destination)) => {
                 let source_image = state.predicate_registers[unsigned(source)];
-                let image = predicate_pack_image(source_image, empty, 0, lanes, element_bytes, false);
+                let image = predicate_pack_image(source_image,
+                    vector_zero_low_bytes(state.predicate_registers[unsigned(destination)],
+                                          active_predicate_bytes),
+                    0, lanes, element_bytes, false);
                 var updated = state;
                 updated.predicate_registers[unsigned(destination)] = image;
                 Some(VectorComputeState(updated))
@@ -215,9 +244,11 @@ function vector_special_ppacklo_compute(instruction : Decoded_instruction, state
 function vector_special_pperm_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -229,7 +260,10 @@ function vector_special_pperm_compute(instruction : Decoded_instruction, state :
                 updated.predicate_registers[unsigned(destination)] = predicate_permute_image(
                     state.predicate_registers[unsigned(destination)],
                     state.vector_registers[unsigned(indices)],
-                    empty,
+                    vector_zero_low_bytes(
+                        state.predicate_registers[unsigned(destination)],
+                        active_predicate_bytes,
+                    ),
                     0,
                     lanes,
                     element_bytes,
@@ -246,9 +280,11 @@ function vector_special_pperm_compute(instruction : Decoded_instruction, state :
 function vector_special_psel_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -261,11 +297,15 @@ function vector_special_psel_compute(instruction : Decoded_instruction, state : 
         ) {
             (Some(select), Some(source), Some(destination)) => {
                 var updated = state;
-                updated.predicate_registers[unsigned(destination)] = predicate_raw_select(
-                    state.predicate_registers[unsigned(select)],
-                    state.predicate_registers[unsigned(source)],
+                updated.predicate_registers[unsigned(destination)] = vector_replace_low_bytes(
                     state.predicate_registers[unsigned(destination)],
-                );
+                    predicate_raw_select(
+                        state.predicate_registers[unsigned(select)],
+                        state.predicate_registers[unsigned(source)],
+                        state.predicate_registers[unsigned(destination)],
+                        active_predicate_bytes,
+                    ),
+                    active_predicate_bytes);
                 Some(VectorComputeState(updated))
             },
             _ => None(),
@@ -277,8 +317,10 @@ function vector_special_psel_compute(instruction : Decoded_instruction, state : 
 
 function vector_special_ptail_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
     match predicate_register_index(instruction, Operand_dst) {
         None() => None(),
         Some(destination) => {
@@ -288,7 +330,10 @@ function vector_special_ptail_compute(instruction : Decoded_instruction, state :
             };
             var updated = state;
             updated.predicate_registers[unsigned(destination)] = predicate_fill_typed(
-                empty,
+                vector_zero_low_bytes(
+                    state.predicate_registers[unsigned(destination)],
+                    active_predicate_bytes,
+                ),
                 0,
                 lanes,
                 element_bytes,
@@ -302,14 +347,19 @@ function vector_special_ptail_compute(instruction : Decoded_instruction, state :
 
 function vector_special_ptrue_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
     match predicate_register_index(instruction, Operand_dst) {
         None() => None(),
         Some(destination) => {
             var updated = state;
             updated.predicate_registers[unsigned(destination)] = predicate_fill_typed(
-                empty,
+                vector_zero_low_bytes(
+                    state.predicate_registers[unsigned(destination)],
+                    active_predicate_bytes,
+                ),
                 0,
                 lanes,
                 element_bytes,
@@ -324,9 +374,11 @@ function vector_special_ptrue_compute(instruction : Decoded_instruction, state :
 function vector_special_punpkhi_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -335,7 +387,10 @@ function vector_special_punpkhi_compute(instruction : Decoded_instruction, state
         match (predicate_register_index(instruction, Operand_src), predicate_register_index(instruction, Operand_dst)) {
             (Some(source), Some(destination)) => {
                 let source_image = state.predicate_registers[unsigned(source)];
-                let image = predicate_unpack_image(source_image, empty, 0, lanes, element_bytes, true);
+                let image = predicate_unpack_image(source_image,
+                    vector_zero_low_bytes(state.predicate_registers[unsigned(destination)],
+                                          active_predicate_bytes),
+                    0, lanes, element_bytes, true);
                 var updated = state;
                 updated.predicate_registers[unsigned(destination)] = image;
                 Some(VectorComputeState(updated))
@@ -350,9 +405,11 @@ function vector_special_punpkhi_compute(instruction : Decoded_instruction, state
 function vector_special_punpklo_compute(instruction : Decoded_instruction, state : Cpu_state) -> option(Vector_compute_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let active_predicate_bytes = tdiv_int(active_bytes, 8);
+    let lanes = tdiv_int(active_bytes, element_bytes);
+    let empty = zero_vector_bytes(active_predicate_bytes);
+    let zero_vector = zero_vector_bytes(active_bytes);
     let fp_form : bool = match condition_size_field(instruction.fields) {
         Some(selector) => selector >= 5,
         None() => false,
@@ -361,7 +418,10 @@ function vector_special_punpklo_compute(instruction : Decoded_instruction, state
         match (predicate_register_index(instruction, Operand_src), predicate_register_index(instruction, Operand_dst)) {
             (Some(source), Some(destination)) => {
                 let source_image = state.predicate_registers[unsigned(source)];
-                let image = predicate_unpack_image(source_image, empty, 0, lanes, element_bytes, false);
+                let image = predicate_unpack_image(source_image,
+                    vector_zero_low_bytes(state.predicate_registers[unsigned(destination)],
+                                          active_predicate_bytes),
+                    0, lanes, element_bytes, false);
                 var updated = state;
                 updated.predicate_registers[unsigned(destination)] = image;
                 Some(VectorComputeState(updated))

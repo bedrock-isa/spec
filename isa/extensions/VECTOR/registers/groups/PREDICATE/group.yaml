@@ -1,5 +1,5 @@
 width:
-  VLEN / 8: [16, 32, 64, 128, 256]
+  MAX_VLEN / 8: [16, 32, 64, 128, 256]
 summary: Packed vector predicate registers.
 reset: 0
 series: {prefix: P, count: 16}

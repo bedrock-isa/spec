@@ -3,15 +3,15 @@ use crate::{
     SegmentSelector, Status,
 };
 
-/// The emulator selects the architectural minimum VLEN of 128 bits.
-pub const VLEN_BITS: usize = 128;
-pub const VLEN_BYTES: usize = VLEN_BITS / 8;
-pub const PREDICATE_BYTES: usize = VLEN_BYTES / 8;
+/// The emulator selects the architectural minimum MAX_VLEN of 128 bits.
+pub const MAX_VLEN_BITS: usize = 128;
+pub const MAX_VLEN_BYTES: usize = MAX_VLEN_BITS / 8;
+pub const MAX_PREDICATE_BYTES: usize = MAX_VLEN_BYTES / 8;
 pub const VECTOR_REGISTER_COUNT: usize = 32;
 pub const PREDICATE_REGISTER_COUNT: usize = 16;
 
-pub type VectorRegister = [u8; VLEN_BYTES];
-pub type PredicateRegister = [u8; PREDICATE_BYTES];
+pub type VectorRegister = [u8; MAX_VLEN_BYTES];
+pub type PredicateRegister = [u8; MAX_PREDICATE_BYTES];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CpuRegisterSet {
@@ -20,6 +20,7 @@ pub enum CpuRegisterSet {
     Segment,
     Control,
     FloatingPoint,
+    Vector,
 }
 
 impl CpuRegisterSet {
@@ -30,6 +31,7 @@ impl CpuRegisterSet {
             Self::Segment => "Segment",
             Self::Control => "Control",
             Self::FloatingPoint => "FPU",
+            Self::Vector => "Vector",
         }
     }
 }
@@ -71,6 +73,7 @@ pub enum CpuRegister {
     Pmc,
     FStatus,
     FFlags,
+    VStatus,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -186,6 +189,12 @@ pub const CPU_REGISTER_INFOS: &[CpuRegisterInfo] = &[
         set: CpuRegisterSet::FloatingPoint,
         register: CpuRegister::FFlags,
     },
+    CpuRegisterInfo {
+        name: "VSTATUS",
+        bits: 16,
+        set: CpuRegisterSet::Vector,
+        register: CpuRegister::VStatus,
+    },
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -227,6 +236,7 @@ pub struct CpuState {
     pub pmc: u64,
     pub fstatus: u16,
     pub fflags: u16,
+    pub vstatus: u16,
     pub hidden_current_dfa: bool,
 }
 
@@ -235,8 +245,8 @@ impl Default for CpuState {
         Self {
             r: [0; 16],
             f: [0; 16],
-            v: [[0; VLEN_BYTES]; VECTOR_REGISTER_COUNT],
-            p: [[0; PREDICATE_BYTES]; PREDICATE_REGISTER_COUNT],
+            v: [[0; MAX_VLEN_BYTES]; VECTOR_REGISTER_COUNT],
+            p: [[0; MAX_PREDICATE_BYTES]; PREDICATE_REGISTER_COUNT],
             sp: 0,
             pc: 0,
             lpc: 0,
@@ -270,6 +280,7 @@ impl Default for CpuState {
             pmc: 0,
             fstatus: 0,
             fflags: 0,
+            vstatus: 0,
             hidden_current_dfa: false,
         }
     }
@@ -320,6 +331,7 @@ impl CpuState {
             CpuRegister::Pmc => self.pmc,
             CpuRegister::FStatus => u64::from(self.fstatus),
             CpuRegister::FFlags => u64::from(self.fflags),
+            CpuRegister::VStatus => u64::from(self.vstatus),
         }
     }
     pub fn write_register(&mut self, register: CpuRegister, value: u64) {
@@ -359,6 +371,7 @@ impl CpuState {
             CpuRegister::Pmc => self.pmc = value,
             CpuRegister::FStatus => self.fstatus = value as u16,
             CpuRegister::FFlags => self.fflags = value as u16,
+            CpuRegister::VStatus => self.vstatus = value as u16,
         }
     }
 }
@@ -368,18 +381,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn reset_clears_all_vector_and_predicate_bits_at_fixed_vlen() {
+    fn reset_clears_all_vector_and_predicate_bits_at_max_vlen() {
         let mut state = CpuState::default();
-        state.v[0] = [0xa5; VLEN_BYTES];
-        state.v[VECTOR_REGISTER_COUNT - 1] = [0x5a; VLEN_BYTES];
-        state.p[0] = [0xff; PREDICATE_BYTES];
-        state.p[PREDICATE_REGISTER_COUNT - 1] = [0x81; PREDICATE_BYTES];
+        state.v[0] = [0xa5; MAX_VLEN_BYTES];
+        state.v[VECTOR_REGISTER_COUNT - 1] = [0x5a; MAX_VLEN_BYTES];
+        state.p[0] = [0xff; MAX_PREDICATE_BYTES];
+        state.p[PREDICATE_REGISTER_COUNT - 1] = [0x81; MAX_PREDICATE_BYTES];
 
         state.reset(0x1234);
 
         assert_eq!(state.pc, 0x1234);
-        assert_eq!(state.v, [[0; VLEN_BYTES]; VECTOR_REGISTER_COUNT]);
-        assert_eq!(state.p, [[0; PREDICATE_BYTES]; PREDICATE_REGISTER_COUNT]);
-        assert_eq!(VLEN_BITS, 128);
+        assert_eq!(state.v, [[0; MAX_VLEN_BYTES]; VECTOR_REGISTER_COUNT]);
+        assert_eq!(
+            state.p,
+            [[0; MAX_PREDICATE_BYTES]; PREDICATE_REGISTER_COUNT]
+        );
+        assert_eq!(MAX_VLEN_BITS, 128);
     }
 }

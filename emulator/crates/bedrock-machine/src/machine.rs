@@ -249,6 +249,7 @@ fn snapshot_state(raw: &SailCoreState) -> CpuState {
         pmc: raw.controls.base_pmc,
         fstatus: raw.fstatus as u16,
         fflags: raw.fflags as u16,
+        vstatus: raw.vstatus as u16,
         hidden_current_dfa: raw.current_dfa != 0,
     }
 }
@@ -293,6 +294,7 @@ fn write_state(raw: &mut SailCoreState, state: &CpuState) {
     raw.controls.base_pmc = state.pmc;
     raw.fstatus = u64::from(state.fstatus);
     raw.fflags = u64::from(state.fflags);
+    raw.vstatus = u64::from(state.vstatus);
     raw.current_dfa = u8::from(state.hidden_current_dfa);
     raw.supervisor = u8::from(state.status.contains(Status::PM));
 }

@@ -21,10 +21,68 @@ function vector_operand_writes(name : Operand_id, operands : list(Decoded_operan
         },
     }
 
+function vector_vstatus_valid(image : bits(64)) -> bool = {
+    let selector = unsigned(image[2 .. 0]);
+    (image & 0xFFFFFFFFFFFF0000) == 0x0000000000000000
+    & (image & 0x000000000000FFF8) == 0x0000000000000000
+    & selector != 1 & selector != 2
+}
+
+function vector_current_length_bytes(state : Cpu_state) -> int = {
+    let selector = unsigned(state.vstatus[2 .. 0]);
+    let selected = if selector == 0 then state.max_vector_length_bytes
+                   else vector_power_of_two(selector + 1);
+    if selected < state.max_vector_length_bytes then selected
+    else state.max_vector_length_bytes
+}
+
+union clause Uop_kind = UopVectorStateRead : unit
+union clause Uop_kind = UopVectorStateWrite : unit
+
+function clause execute_uop(UopVectorStateRead(), _, values, instruction,
+                            before, speculative) =
+    match operand_named(instruction, Operand_dst) {
+        None() => uop_step_fault(
+            faulted(before, instruction.form.operation, IllegalInstruction,
+                    "vector state read has no destination"),
+        ),
+        Some(destination) => {
+            var updated = speculative;
+            updated.registers[unsigned(destination.value[3 .. 0])] =
+                0x000000000000 @ speculative.vstatus[15 .. 0];
+            uop_step_continue(updated, values)
+        },
+    }
+
+function clause execute_uop(UopVectorStateWrite(), _, values, instruction,
+                            before, speculative) =
+    match value_named(instruction, speculative, Operand_src) {
+        None() => uop_step_fault(
+            faulted(before, instruction.form.operation, IllegalInstruction,
+                    "vector state write has no source"),
+        ),
+        Some(source) => {
+            let image = 0x000000000000 @ source[15 .. 0];
+            if not_bool(vector_vstatus_valid(image)) then {
+                uop_step_fault(
+                    faulted(before, instruction.form.operation, InvalidControlState,
+                            "invalid VSTATUS image"),
+                )
+            } else {
+                var updated = speculative;
+                updated.vstatus = image;
+                updated.vector_state_modified =
+                    if image != speculative.vstatus then true
+                    else speculative.vector_state_modified;
+                uop_step_continue(updated, values)
+            }
+        },
+    }
+
 function vector_memory_predicate(instruction : Decoded_instruction, state : Cpu_state) -> list(bits(8)) =
     match predicate_register_index(instruction, Operand_govern) {
         Some(index) => state.predicate_registers[unsigned(index)],
-    None() => zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8)),
+    None() => zero_vector_bytes(tdiv_int(vector_current_length_bytes(state), 8)),
     }
 
 function vector_ea_operand_ordinal(
@@ -103,7 +161,7 @@ function vector_writable_operand(operands : list(Decoded_operand)) -> option(Dec
 function vector_fp_allowed_causes(operation : Semantic_operation) -> bits(5) =
     vector_semantics(operation).fp_allowed_causes
 function clause ea_update_amount(EaUpdateDifference_vlen_bytes, state, _) =
-    state.vector_length_bytes
+    vector_current_length_bytes(state)
 
 function clause ea_update_amount(EaUpdateDifference_element_count, state, width) =
-    tdiv_int(state.vector_length_bytes, width)
+    tdiv_int(vector_current_length_bytes(state), width)

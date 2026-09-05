@@ -1,18 +1,21 @@
-Let $E$ be the selected element width in bytes, $N=VLEN/(8E)$, and $G$ be
+Let $E$ be the selected element width in bytes, $N=VLEN/(8E)$ using the
+current VLEN, and $G$ be
 the typed governing-predicate image whose significant bits are
 \texttt{Pg[iE]} for $0\leq i<N$.  \texttt{Pg} and \texttt{Ps} shall name
 different (:term:VECTOR.terms.predicate_register|plural:).  Before attempting a lane, VSCATTER replaces
 \texttt{Ps} by its typed image \texttt{Ps AND G}; all bits outside the typed
-predicate image are cleared.
+predicate image below VLEN/8 are cleared, while bits at or above VLEN/8 are
+preserved.
 
 If \texttt{G AND NOT Ps} is empty, the instruction completes normally with
-\texttt{Ps == G}.  Otherwise it selects one pending lane $i$, calculates that
+the low VLEN/8-bit portion of \texttt{Ps} equal to \texttt{G}. Otherwise it selects one pending lane $i$, calculates that
 lane's (:term:base.terms.effective_address:) from the selected address form, and issues exactly one $E$-byte
 normal-memory store of source lane $i$ through the default data segment.  On
 success it sets \texttt{Ps[iE]} and commits the store and completion bit at a
 lane-completion boundary.  If more lanes remain pending, the PC continues to
 identify this VSCATTER and execution may admit an asynchronous event before
-another lane is attempted.  A lane-completion boundary is not an instruction
+another lane is attempted. Each entry or re-entry re-evaluates the current
+VLEN. A lane-completion boundary is not an instruction
 retirement or a debug-trace boundary.
 
 Lane selection order is not architecturally specified.  When stores from two

@@ -37,7 +37,7 @@ class RegisterCatalogTest(unittest.TestCase):
         with self.fixture() as directory:
             root = Path(directory)
             (root / "registers/groups/GPR/group.yaml").write_text(
-                "width: {VLEN: [128, 512, 256]}\n"
+                "width: {MAX_VLEN: [128, 512, 256]}\n"
                 "series: {prefix: R, count: 2}\n",
                 encoding="utf-8",
             )

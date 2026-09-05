@@ -1,0 +1,8 @@
+register_group: isa:VECTOR.registers.STATE
+dwarf:
+- first: 59
+  registers: [VSTATUS]
+  status: extension
+  condition: VECTOR extension present
+entry:
+  VSTATUS: {role: cleared}

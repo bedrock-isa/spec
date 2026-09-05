@@ -7,6 +7,7 @@ import re
 
 from ..register import Register, RegisterGroup, RegisterNamespace, SeriesRegisterGroup
 from .document_fragment import DocumentFragmentContext, DocumentFragmentProvider
+from .latex_document import tex_escape
 
 
 ROW_HEIGHT = 0.18
@@ -245,7 +246,7 @@ def _bit_labels(group: RegisterGroup, x: float, row_top: float) -> list[str]:
             )
         return lines
 
-    expression = width.expression.replace(" ", "")
+    expression = tex_escape(width.expression.replace(" ", ""))
     solid_left = x + 0.65
     return [
         rf"\node[anchor=south] at ({_fmt(x)},{_y(label_y)}) {{{expression}-1}};",

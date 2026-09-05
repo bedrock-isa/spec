@@ -114,7 +114,7 @@ function vector_fp_reduction_commit(
 ) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(before.vector_length_bytes, element_bytes);
+    let lanes = tdiv_int(vector_current_length_bytes(before), element_bytes);
     let predicate = vector_memory_predicate(instruction, before);
     let control = fp_primitive_control(
         fp_fstatus_rounding_mode(before.fstatus),

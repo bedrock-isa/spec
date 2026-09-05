@@ -1,5 +1,5 @@
 function vector_record_size(state : Cpu_state) -> int =
-  64 + 64 * tdiv_int(34 * state.vector_length_bytes + 63, 64)
+  64 + 64 * tdiv_int(34 * state.max_vector_length_bytes + 63, 64)
 
 function vector_record_register_bytes(registers : Vector_registers, index : int)
   -> list(bits(8)) =
@@ -14,24 +14,29 @@ function vector_record_predicate_bytes(registers : Predicate_registers, index : 
                     vector_record_predicate_bytes(registers, index + 1))
 
 function vector_record_bytes(state : Cpu_state) -> list(bits(8)) = {
-  let bitmap = if state.vector_state_modified then 0x0000FFFFFFFFFFFF
+  let bitmap = if state.vector_state_modified then 0x0001FFFFFFFFFFFF
                else 0x0000000000000000;
+  let state_images = 0x00000000 @ state.vstatus[15 .. 0] @ 0x0000;
   let payload = append_bytes(vector_record_register_bytes(state.vector_registers, 0),
                   vector_record_predicate_bytes(state.predicate_registers, 0));
-  append_bytes(le64_bytes(bitmap), append_bytes(zero_byte_count(56),
-    append_bytes(payload, zero_byte_count(vector_record_size(state)
-                                          - 64 - 34 * state.vector_length_bytes))))
+  append_bytes(le64_bytes(bitmap), append_bytes(le64_bytes(state_images),
+    append_bytes(zero_byte_count(48), append_bytes(payload,
+      zero_byte_count(vector_record_size(state)
+                      - 64 - 34 * state.max_vector_length_bytes)))))
 }
 
 function vector_record_slot_ranges(address : Uop_value, bitmap : bits(64),
                                    bytes_per_vector : int, index : int)
   -> list(Memory_access_range) =
-  if index >= 48 then [||]
+  if index >= 49 then [||]
   else {
     let width = if index < 32 then bytes_per_vector
-                else tdiv_int(bytes_per_vector, 8);
+                else if index < 48 then tdiv_int(bytes_per_vector, 8)
+                else 2;
     let offset = if index < 32 then 64 + index * bytes_per_vector
-      else 64 + 32 * bytes_per_vector + (index - 32) * width;
+      else if index < 48
+      then 64 + 32 * bytes_per_vector + (index - 32) * width
+      else 10;
     let tail = vector_record_slot_ranges(address, bitmap, bytes_per_vector,
                                          index + 1);
     if bitmap[unsigned(get_slice_int(6, index, 0))] == bitone
@@ -88,7 +93,7 @@ function vector_record_restore_predicates(bytes : list(bits(8)), bitmap : bits(6
 
 union clause Uop_kind = UopVectorRecordAddress : unit
 union clause Uop_kind = UopVectorRecordSave : unit
-union clause Uop_kind = UopVectorRecordHeaderRead : unit
+union clause Uop_kind = UopVectorRecordBitmapRead : unit
 union clause Uop_kind = UopVectorRecordBodyRead : unit
 union clause Uop_kind = UopVectorRecordRestoreCommit : unit
 
@@ -134,12 +139,12 @@ function clause execute_uop(UopVectorRecordSave(), uop, values, instruction,
       InvalidControlState, "vector state-record address was not captured")),
   }
 
-function clause execute_uop(UopVectorRecordHeaderRead(), uop, values, instruction,
+function clause execute_uop(UopVectorRecordBitmapRead(), uop, values, instruction,
                             before, _) =
   match uop_value_get(values, uop.source0.index) {
     Some(address) => uop_step_wait(uop.destination.index,
       state_record_request(address, Read, vector_record_size(before), AccessLoad,
-        [|state_record_range(address, 0, 64)|], 64, [||], false),
+        [|state_record_buffer_range(address, 0, 8, 0)|], 8, [||], false),
       0x0000000000000000),
     None() => uop_step_fault(faulted(before, instruction.form.operation,
       InvalidControlState, "vector state-record address was not captured")),
@@ -149,21 +154,21 @@ function clause execute_uop(UopVectorRecordBodyRead(), uop, values, instruction,
                             before, _) =
   match (uop_value_get(values, uop.source0.index),
          uop_value_get(values, uop.source1.index)) {
-    (Some(address), Some(header)) => {
-      let bitmap = header.value;
+    (Some(address), Some(bitmap_value)) => {
+      let bitmap = bitmap_value.value;
       let size = vector_record_size(before);
-      if byte_count(header.body_bytes) != 64
-         | (bitmap & 0xFFFF000000000000) != 0x0000000000000000
-         | not_bool(byte_range_zero(header.body_bytes, 8, 56)) then
+      if (bitmap & 0xFFFE000000000000) != 0x0000000000000000 then
         uop_step_fault(faulted(before, instruction.form.operation,
-          InvalidControlState, "invalid vector state-record header"))
+          InvalidControlState, "vector state-record bitmap has reserved bits set"))
       else uop_step_wait(uop.destination.index,
         state_record_request(address, Read, size, AccessLoad,
-          state_record_range(address, 0, 64)
-          :: state_record_range(address, 64 + 34 * before.vector_length_bytes,
-                                size - 64 - 34 * before.vector_length_bytes)
+          state_record_range(address, 0, 8)
+          :: state_record_range(address, 8, 2)
+          :: state_record_range(address, 12, 52)
+          :: state_record_range(address, 64 + 34 * before.max_vector_length_bytes,
+                                size - 64 - 34 * before.max_vector_length_bytes)
           :: vector_record_slot_ranges(address, bitmap,
-                                       before.vector_length_bytes, 0),
+                                       before.max_vector_length_bytes, 0),
           size, [||], false), bitmap)
     },
     _ => uop_step_fault(faulted(before, instruction.form.operation,
@@ -174,29 +179,38 @@ function clause execute_uop(UopVectorRecordRestoreCommit(), uop, values,
                             instruction, before, speculative) =
   match (uop_value_get(values, uop.source0.index),
          uop_value_get(values, uop.source1.index)) {
-    (Some(record), Some(header)) => match read_le_bits(record.body_bytes, 0, 64) {
-      Some(bitmap) =>
+    (Some(record), Some(bitmap_value)) => match (
+      read_le_bits(record.body_bytes, 0, 64),
+      read_le_bits(record.body_bytes, 8, 64)
+    ) {
+      (Some(bitmap), Some(state_images)) => {
+        let vstatus_image = 0x000000000000 @ state_images[31 .. 16];
         if byte_count(record.body_bytes) != vector_record_size(before)
-           | bitmap != header.value
-           | (bitmap & 0xFFFF000000000000) != 0x0000000000000000
-           | not_bool(byte_range_zero(record.body_bytes, 8, 56))
+           | bitmap != bitmap_value.value
+           | (bitmap & 0xFFFE000000000000) != 0x0000000000000000
+           | not_bool(byte_range_zero(record.body_bytes, 8, 2))
+           | not_bool(byte_range_zero(record.body_bytes, 12, 52))
+           | (bitmap[48] == bitone & not_bool(vector_vstatus_valid(vstatus_image)))
            | not_bool(byte_range_zero(
-               record.body_bytes, 64 + 34 * before.vector_length_bytes,
-               vector_record_size(before) - 64 - 34 * before.vector_length_bytes)) then
+               record.body_bytes, 64 + 34 * before.max_vector_length_bytes,
+               vector_record_size(before) - 64 - 34 * before.max_vector_length_bytes)) then
           uop_step_fault(faulted(before, instruction.form.operation,
             InvalidControlState, "invalid vector state record"))
         else {
           var updated = speculative;
           updated.vector_registers = vector_record_restore_vectors(
-            record.body_bytes, bitmap, before.vector_length_bytes, 0,
-            zero_vector_registers(before.vector_length_bytes));
+            record.body_bytes, bitmap, before.max_vector_length_bytes, 0,
+            zero_vector_registers(before.max_vector_length_bytes));
           updated.predicate_registers = vector_record_restore_predicates(
-            record.body_bytes, bitmap, before.vector_length_bytes, 0,
-            zero_predicate_registers(before.vector_length_bytes));
+            record.body_bytes, bitmap, before.max_vector_length_bytes, 0,
+            zero_predicate_registers(before.max_vector_length_bytes));
+          updated.vstatus = if bitmap[48] == bitone then vstatus_image
+                            else 0x0000000000000000;
           updated.vector_state_modified = bitmap != 0x0000000000000000;
           uop_step_continue(updated, values)
-        },
-      None() => uop_step_fault(faulted(before, instruction.form.operation,
+        }
+      },
+      _ => uop_step_fault(faulted(before, instruction.form.operation,
         InvalidControlState, "invalid vector state record")),
     },
     _ => uop_step_fault(faulted(before, instruction.form.operation,
@@ -209,16 +223,16 @@ function lower_vector_state_record_uops(instruction : Decoded_instruction,
     None() => None(),
     Some(memory) => {
       let address = uop_location_make_temporary(0);
-      let header = uop_location_make_temporary(1);
+      let bitmap = uop_location_make_temporary(1);
       let body = uop_location_make_temporary(2);
       let capture = uop_make(UopVectorRecordAddress(), uop_operand_location(memory),
         uop_location_make_none(), address, Operand_memory, 0, CommitNone);
       let transfer = if restore then [|
-        uop_make(UopVectorRecordHeaderRead(), address, uop_location_make_none(),
-          header, Operand_memory, 0, CommitMemory),
-        uop_make(UopVectorRecordBodyRead(), address, header, body,
+        uop_make(UopVectorRecordBitmapRead(), address, uop_location_make_none(),
+          bitmap, Operand_memory, 0, CommitMemory),
+        uop_make(UopVectorRecordBodyRead(), address, bitmap, body,
           Operand_memory, 0, CommitMemory),
-        uop_make(UopVectorRecordRestoreCommit(), body, header,
+        uop_make(UopVectorRecordRestoreCommit(), body, bitmap,
           uop_location_make_none(), Operand_memory, 0, CommitMemory)
       |] else [|uop_make(UopVectorRecordSave(), address, uop_location_make_none(),
         uop_location_make_none(), Operand_memory, 0, CommitMemory)|];

@@ -11,9 +11,10 @@ VSCATTER.T Pg, Ps, Vs, [address]
 \end{verbatim}
 
 \paragraph{Typed completion image.}
-For element width $E$ bytes, let $N=VLEN/(8E)$.  Define $G=typed_E(Pg)$ by
+For element width $E$ bytes, let $N=VLEN/(8E)$ using the current VLEN. Define $G=typed_E(Pg)$ by
 copying \texttt{Pg[iE]} to bit $iE$ for every $0\leq i<N$ and clearing every
-other predicate bit.  At each entry or re-entry, the instruction performs the
+other predicate bit below VLEN/8. At each entry or re-entry, the
+instruction re-evaluates VLEN and performs the
 architectural normalization
 
 \[
@@ -23,11 +24,12 @@ architectural normalization
 
 \texttt{Pg} and \texttt{Ps} shall be distinct.  The normalization is committed
 before a lane memory transaction is issued and remains visible if that
-transaction faults.  Consequently inactive completion bits and all bits
-outside the typed predicate image are zero.  If \texttt{pending} is empty, the
+transaction faults. Consequently inactive completion bits below the current
+VLEN/8 are zero, while bits at or above VLEN/8 retain their prior values. If
+\texttt{pending} is empty, the
 instruction
 retires without a memory transaction and its normal postcondition is
-\texttt{Ps == G}.
+low VLEN/8-bit portion of \texttt{Ps} equals \texttt{G}.
 
 Otherwise the implementation selects any pending lane $i$.  VGATHER performs
 one $E$-byte load and, on success, writes only \texttt{Vd[i]} before setting

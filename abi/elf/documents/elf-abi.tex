@@ -186,7 +186,8 @@ of \texttt{e\_entry}; \texttt{SP} names a writable entry stack with 16-byte
 alignment; and the code, data, and stack segment contexts provide the image
 described above. A TLS image uses \texttt{GS0} as its thread-pointer base.
 
-The loader clears \texttt{FLAGS}, \texttt{FSTATUS}, and \texttt{FFLAGS}.
+The loader clears \texttt{FLAGS}, \texttt{FSTATUS}, \texttt{FFLAGS}, and
+\texttt{VSTATUS}.
 General, floating-point, vector, and predicate registers outside the stated
 entry contract carry unspecified values. An external process-entry ABI defines
 the entry-stack payload and the interpretation of initial arguments. This
@@ -572,8 +573,8 @@ by every source language and unwind producer.
 \BedrockGeneratedELFDebugRegisterTable
 
 An unwind description that saves a vector or predicate register describes its
-complete VLEN-dependent image. Predicate register locations contain the
-packed image with its exact architectural byte count.
+complete MAX\_VLEN-dependent image. Predicate register locations contain the
+packed maximum-width image with its exact architectural byte count.
 
 \clearpage
 \section{Assembler Contract}\label{page:assembler-contract}

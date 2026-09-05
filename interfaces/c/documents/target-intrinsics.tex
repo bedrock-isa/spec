@@ -43,7 +43,7 @@ ABI-visible meaning.
 
 \subsection{Header Topology and Exposure}
 \texttt{<bedrockintrin.h>} is the public umbrella. It includes the core, memory,
-integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the system
+integer, floating-point, and vector families. \texttt{<bedrocksystemintrin.h>} is the system
 umbrella for system-register, cache, and MMU facilities. Any
 family header may also be included directly.
 
@@ -87,6 +87,10 @@ the ISA.
 \subsection{Floating-Point Builtins}
 \BedrockField{Header:}{\texttt{<bedrockfpuintrin.h>}}
 \BedrockGeneratedIntrinsicGroup{fpu}
+
+\subsection{Vector Builtins}
+\BedrockField{Header:}{\texttt{<bedrockvectorintrin.h>}}
+\BedrockGeneratedIntrinsicGroup{vector}
 
 \subsection{Approximate Transcendental Lowering Policy}
 A strict language-library operation shall not be lowered to an FPTRANSA

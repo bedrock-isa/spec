@@ -7,5 +7,5 @@ queries:
 - id: PARAMETERS
   index: 1
   fields:
-  - {id: VLEN_LOG2_BITS, lsb: 0, bits: 4}
+  - {id: MAX_VLEN_LOG2_BITS, lsb: 0, bits: 4}
   - {id: USER_RECORD_REVISION, lsb: 8, bits: 8}

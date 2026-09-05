@@ -236,10 +236,12 @@ function predicate_last(image : list(bits(8)), lane : int, element_bytes : int) 
         }
     }
 
-function predicate_any(image : list(bits(8))) -> bool = match image {
-    [||] => false,
-    head :: tail => head != 0x00 | predicate_any(tail),
-}
+function predicate_any(image : list(bits(8)), remaining : int) -> bool =
+    if remaining <= 0 then false
+    else match image {
+        [||] => false,
+        head :: tail => head != 0x00 | predicate_any(tail, remaining - 1),
+    }
 
 function predicate_all_typed(image : list(bits(8)), lane : int, lanes : int, element_bytes : int) -> bool =
     if lane >= lanes then {

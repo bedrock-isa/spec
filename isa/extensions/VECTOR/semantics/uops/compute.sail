@@ -72,7 +72,9 @@ function vector_memory_direct_store_image(
     let memory_kind = vector_semantics(operation).memory;
     if memory_kind == Some(VectorPredicateMove) then {
         match predicate_register_index(instruction, Operand_src) {
-            Some(index) => Some(state.predicate_registers[unsigned(index)]),
+            Some(index) => Some(vector_low_bytes(
+                state.predicate_registers[unsigned(index)],
+                tdiv_int(vector_current_length_bytes(state), 8))),
             None() => None(),
         }
     } else {
@@ -87,7 +89,7 @@ function vector_memory_direct_store_image(
                         Some(
                             vector_integer_unary_source_image(
                                 operation,
-                                zero_vector_bytes(state.vector_length_bytes),
+                                zero_vector_bytes(vector_current_length_bytes(state)),
                                 source,
                                 predicate,
                                 0,

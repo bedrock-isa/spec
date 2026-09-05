@@ -1,15 +1,27 @@
 \subsection{Vector Register Model}\label{section:vector-register-model}
 The scalable-vector extension provides 32 (:term:VECTOR.terms.vector_register|plural:), \texttt{V0}
 through \texttt{V31}, and 16 (:term:VECTOR.terms.predicate_register|plural:), \texttt{P0} through
-\texttt{P15}. A (:term:VECTOR.terms.vector_register:) contains VLEN bits. VLEN is an
-implementation-selected power of two from 128 through 2048 bits and remains
-stable until reset. A (:term:VECTOR.terms.predicate_register:) contains one bit for each byte of a
-(:term:VECTOR.terms.vector_register:); its packed image therefore occupies VLEN/64 bytes. Reset
-clears every vector and predicate bit.
+\texttt{P15}. A (:term:VECTOR.terms.vector_register:) contains MAX\_VLEN bits.
+MAX\_VLEN is an implementation-selected power of two from 128 through 2048
+bits and remains stable until reset. A (:term:VECTOR.terms.predicate_register:)
+contains one bit for each byte of a (:term:VECTOR.terms.vector_register:); its
+packed image therefore occupies MAX\_VLEN/64 bytes. Reset clears every vector
+and predicate bit.
+
+The 16-bit \texttt{VSTATUS} register selects the current VLEN. Bits 15 through
+3 are reserved and shall be zero. The \texttt{VLEN} field in bits 2 through 0
+uses zero for MAX\_VLEN, 3 for 128 bits, 4 for 256 bits, 5 for 512 bits, 6 for
+1024 bits, and 7 for 2048 bits; encodings 1 and 2 are invalid. A valid
+selection above MAX\_VLEN is retained in \texttt{VSTATUS}, while the current
+VLEN remains MAX\_VLEN. Vector and predicate operations act on the current
+VLEN. They preserve vector-register bits at or above VLEN and
+predicate-register bits at or above VLEN/8.
+Architectural reset sets the \texttt{VSTATUS} image to zero, selecting
+MAX\_VLEN as the current VLEN.
 
 The (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:) discovery predicate and the \texttt{VECTOR\_PARAMETERS}
-CPUID leaf report the extension and VLEN. Integer and raw-bit vector forms
+CPUID leaf report the extension and MAX\_VLEN. Integer and raw-bit vector forms
 require (:ref:VECTOR.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTOR:). Floating-point vector operations are provided by the
 separate (:ref:VECTORFP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.VECTORFP:) extension.
 
-(:register-figure:VECTOR:VECTOR,PREDICATE:)
+(:register-figure:VECTOR:VECTOR,PREDICATE,STATE:)

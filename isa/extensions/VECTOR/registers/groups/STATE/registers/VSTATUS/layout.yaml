@@ -1,0 +1,6 @@
+bits: 16
+fields:
+- id: VLEN
+  lsb: 0
+  bits: 3
+  summary: Current vector-length selector.

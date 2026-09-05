@@ -1,0 +1,8 @@
+owner: VECTOR
+description: >-
+  Unprivileged; reads the vector-status image.
+signature:
+  result: u16
+  parameters: []
+lowering:
+  operation: isa:VECTOR.instructions.RDVSTATUS

@@ -20,10 +20,11 @@ function vector_memory_request(
     Primitive_request
 ) = {
     let predicate_move = vector_semantics(instruction.form.operation).memory == Some(VectorPredicateMove);
+    let active_bytes = vector_current_length_bytes(state);
     let length = if predicate_move then {
-            tdiv_int(state.vector_length_bytes, 8)
+            tdiv_int(active_bytes, 8)
         } else {
-            state.vector_length_bytes
+            active_bytes
         };
     struct {
         kind = kind,
@@ -102,15 +103,16 @@ function vector_uop_memory_request_make(
     Primitive_request
 ) = {
     let predicate_move = vector_semantics(instruction.form.operation).memory == Some(VectorPredicateMove);
+    let active_bytes = vector_current_length_bytes(state);
     let element_bytes = if predicate_move then {
-            tdiv_int(state.vector_length_bytes, 8)
+            tdiv_int(active_bytes, 8)
         } else {
             operation_width(instruction)
         };
     let length = if predicate_move then {
-            tdiv_int(state.vector_length_bytes, 8)
+            tdiv_int(active_bytes, 8)
         } else {
-            state.vector_length_bytes
+            active_bytes
         };
     struct {
         kind = kind,
@@ -166,7 +168,7 @@ function clause execute_uop(UopVectorCalcEa(), uop, values, instruction, before,
                                 ea,
                                 speculative,
                                 speculative.pc,
-                                tdiv_int(speculative.vector_length_bytes, 8),
+                                tdiv_int(vector_current_length_bytes(speculative), 8),
                             ),
                         ),
                     }
@@ -266,14 +268,14 @@ function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, inst
                                     vector_memory_predicate(instruction, before)
                                 };
                             let element_bytes = if predicate_move then {
-                                    tdiv_int(before.vector_length_bytes, 8)
+                                    tdiv_int(vector_current_length_bytes(before), 8)
                                 } else {
                                     operation_width(instruction)
                                 };
                             let lanes = if predicate_move then {
                                     1
                                 } else {
-                                    tdiv_int(before.vector_length_bytes, element_bytes)
+                                    tdiv_int(vector_current_length_bytes(before), element_bytes)
                                 };
                             vector_memory_direct_store_image(instruction, before, predicate, lanes, element_bytes)
                         };

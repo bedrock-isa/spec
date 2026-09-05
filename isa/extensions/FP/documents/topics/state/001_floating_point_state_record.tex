@@ -4,4 +4,4 @@
 
 Its initial state is positive zero in F0 through F15 and zero in FFLAGS and FSTATUS.
 
-For FRESTORE, a clear presence bit installs the selected slot's initial value and its payload bytes are not read. All selected images and reserved fields are validated before any floating-point state is committed. An all-clear bitmap makes floating-point state clean; any set bit makes it modified. FSAVE does not change this tracking state and may conservatively set presence bits.
+For FRESTORE, a clear presence bit installs the selected image's initial value and its payload bytes are not read. All selected images and reserved fields are validated before any floating-point state is committed. An all-clear bitmap makes floating-point state clean; any set bit makes it modified. FSAVE does not change this tracking state and may conservatively set presence bits.

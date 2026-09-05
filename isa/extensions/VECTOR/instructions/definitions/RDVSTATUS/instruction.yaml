@@ -1,0 +1,9 @@
+name: Read Vector Status
+summary: Read the vector status register into an Rn register.
+route: system_registers
+privileged: false
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: integer

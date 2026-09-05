@@ -14,8 +14,8 @@ extern "C" {
 #define BEDROCK_CORE_SEGMENT_COUNT 9u
 #define BEDROCK_CORE_VECTOR_REGISTER_COUNT 32u
 #define BEDROCK_CORE_PREDICATE_REGISTER_COUNT 16u
-#define BEDROCK_CORE_VECTOR_LENGTH_BYTES 16u
-#define BEDROCK_CORE_PREDICATE_LENGTH_BYTES 2u
+#define BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES 16u
+#define BEDROCK_CORE_MAX_PREDICATE_LENGTH_BYTES 2u
 
 typedef struct bedrock_core bedrock_core;
 
@@ -69,9 +69,9 @@ typedef struct bedrock_core_state {
   uint64_t registers[BEDROCK_CORE_REGISTER_COUNT];
   uint64_t floating_registers[BEDROCK_CORE_FLOATING_REGISTER_COUNT];
   uint8_t vector_registers[BEDROCK_CORE_VECTOR_REGISTER_COUNT]
-                          [BEDROCK_CORE_VECTOR_LENGTH_BYTES];
+                          [BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES];
   uint8_t predicate_registers[BEDROCK_CORE_PREDICATE_REGISTER_COUNT]
-                             [BEDROCK_CORE_PREDICATE_LENGTH_BYTES];
+                             [BEDROCK_CORE_MAX_PREDICATE_LENGTH_BYTES];
   uint64_t sp;
   uint64_t pc;
   uint64_t lpc;
@@ -92,6 +92,7 @@ typedef struct bedrock_core_state {
   uint8_t timer_armed;
   uint64_t fstatus;
   uint64_t fflags;
+  uint64_t vstatus;
   uint8_t current_dfa;
   uint8_t supervisor;
   uint8_t halted;
@@ -103,7 +104,7 @@ typedef struct bedrock_core_state {
   int64_t cache_maintenance_granule;
   uint8_t fp_state_modified;
   uint8_t vector_state_modified;
-  int64_t vector_length_bytes;
+  int64_t max_vector_length_bytes;
   uint64_t machine_check_error_code;
   uint64_t machine_check_event_aux;
   uint64_t machine_check_fault_ea;

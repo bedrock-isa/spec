@@ -7,6 +7,11 @@
 \newcount\BedrockFormatDiagramMaxBits
 \newcount\BedrockFormatRowBits
 \newcount\BedrockFormatRowIndex
+\newcommand{\BedrockFormatRowPitch}{3.10}
+\newcommand{\BedrockFormatRowNeedSpace}{0.68}
+\newcommand{\BedrockMemoryRecordFormatSpacing}{%
+  \renewcommand{\BedrockFormatRowPitch}{3.55}%
+  \renewcommand{\BedrockFormatRowNeedSpace}{0.80}}
 \newcount\BedrockFormatFieldBits
 \newcount\BedrockFormatFieldX
 \newcount\BedrockFormatFieldHigh
@@ -142,7 +147,7 @@
       \BedrockFormatDiagramRightEdge=\BedrockFormatLabelRight
     \fi
   \else
-    \pgfmathsetmacro{\BedrockFormatRowY}{-3.10*\the\BedrockFormatRowIndex}
+    \pgfmathsetmacro{\BedrockFormatRowY}{-\BedrockFormatRowPitch*\the\BedrockFormatRowIndex}
     \node[anchor=north,font=\BedrockFormatPositionFont]
       at ({\the\BedrockFormatRowBits/2},{\BedrockFormatRowY - 0.16}) {#1};
     \BedrockFormatFieldX=0
@@ -173,7 +178,7 @@
     \PackageError{bedrock-reference}{Bit-field diagram `#1' has no fields}
       {Add a nonempty format row.}%
   \fi
-  \pgfmathsetmacro{\BedrockFormatDiagramNeedSpace}{0.90 + 0.68*\the\BedrockFormatDiagramRows}
+  \pgfmathsetmacro{\BedrockFormatDiagramNeedSpace}{0.90 + \BedrockFormatRowNeedSpace*\the\BedrockFormatDiagramRows}
   \BedrockFormatDiagramWidth=\BedrockFormatDiagramLeftOverhang
   \advance\BedrockFormatDiagramWidth by \BedrockFormatDiagramRightEdge
   \advance\BedrockFormatDiagramWidth by .02in
@@ -200,5 +205,4 @@
     \BedrockRenderFormatDiagram{#1}{#3}{\BedrockFigureCaption}%
   }%
 }{}
-
 \endinput

@@ -24,12 +24,18 @@ function vector_fp_uop_image_commit(
                         updated.fp_state_modified = true
                     };
                     if destination.operand_type == OperandType_Vn then {
-                        updated.vector_registers[unsigned(destination.value[4 .. 0])] = image.bytes;
+                        let index = unsigned(destination.value[4 .. 0]);
+                        updated.vector_registers[index] = vector_replace_low_bytes(
+                            speculative.vector_registers[index], image.bytes,
+                            vector_current_length_bytes(speculative));
                         updated.vector_state_modified = true;
                         uop_step_continue(updated, values)
                     } else {
                         if destination.operand_type == OperandType_Pn then {
-                            updated.predicate_registers[unsigned(destination.value[3 .. 0])] = image.bytes;
+                            let index = unsigned(destination.value[3 .. 0]);
+                            updated.predicate_registers[index] = vector_replace_low_bytes(
+                                speculative.predicate_registers[index], image.bytes,
+                                tdiv_int(vector_current_length_bytes(speculative), 8));
                             updated.vector_state_modified = true;
                             uop_step_continue(updated, values)
                         } else {
@@ -103,7 +109,8 @@ function vector_fp_uop_execute(
                 }
             },
             Some(_) => match uop_value_get(values, uop.auxiliary.index) {
-                Some(memory_value) => if byte_count(memory_value.body_bytes) != before.vector_length_bytes then {
+                Some(memory_value) => if byte_count(memory_value.body_bytes)
+                                        != vector_current_length_bytes(before) then {
                     uop_step_fault(
                         faulted(before, operation, InvalidControlState, "vector FP memory response length mismatch"),
                     )

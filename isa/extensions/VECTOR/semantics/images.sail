@@ -17,6 +17,26 @@ function vector_replace_byte(bytes : list(bits(8)), index : int, value : bits(8)
         },
     }
 
+function vector_low_bytes(bytes : list(bits(8)), count : int) -> list(bits(8)) =
+    if count <= 0 then [||]
+    else match bytes {
+        [||] => [||],
+        head :: tail => head :: vector_low_bytes(tail, count - 1),
+    }
+
+function vector_replace_low_bytes(
+    destination : list(bits(8)), source : list(bits(8)), count : int,
+) -> list(bits(8)) =
+    if count <= 0 then destination
+    else match (destination, source) {
+        (_destination_head :: destination_tail, source_head :: source_tail) =>
+            source_head :: vector_replace_low_bytes(destination_tail, source_tail, count - 1),
+        _ => destination,
+    }
+
+function vector_zero_low_bytes(image : list(bits(8)), count : int) -> list(bits(8)) =
+    vector_replace_low_bytes(image, zero_vector_bytes(count), count)
+
 function vector_power_of_two(exponent : int) -> int =
     if exponent <= 0 then {
         1
@@ -77,36 +97,42 @@ function predicate_raw_binary(
     left : list(bits(8)),
     right : list(bits(8)),
     operation : Semantic_operation,
+    remaining : int,
 ) -> (
     list(bits(8))
 ) =
-    match (left, right) {
+    if remaining <= 0 then [||]
+    else match (left, right) {
         (left_head :: left_tail, right_head :: right_tail) => (match vector_semantics(operation).predicate_binary {
             Some(PredicateBinaryAnd) => (left_head & right_head),
             Some(PredicateBinaryOr) => (left_head | right_head),
             _ => xor_vec(left_head, right_head),
         }) ::
-            predicate_raw_binary(left_tail, right_tail, operation),
+            predicate_raw_binary(left_tail, right_tail, operation, remaining - 1),
         _ => [||],
     }
 
-function predicate_raw_not(image : list(bits(8))) -> list(bits(8)) = match image {
-    [||] => [||],
-    head :: tail => xor_vec(head, 0xFF) :: predicate_raw_not(tail),
-}
+function predicate_raw_not(image : list(bits(8)), remaining : int) -> list(bits(8)) =
+    if remaining <= 0 then [||]
+    else match image {
+        [||] => [||],
+        head :: tail => xor_vec(head, 0xFF) :: predicate_raw_not(tail, remaining - 1),
+    }
 
 function predicate_raw_select(
     select : list(bits(8)),
     source : list(bits(8)),
     destination : list(bits(8)),
+    remaining : int,
 ) -> (
     list(bits(8))
 ) =
-    match (select, source, destination) {
+    if remaining <= 0 then [||]
+    else match (select, source, destination) {
         (select_head :: select_tail, source_head :: source_tail, destination_head :: destination_tail) => ((destination_head &
             xor_vec(select_head, 0xFF)) |
             (source_head & select_head)) ::
-            predicate_raw_select(select_tail, source_tail, destination_tail),
+            predicate_raw_select(select_tail, source_tail, destination_tail, remaining - 1),
         _ => [||],
     }
 

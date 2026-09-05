@@ -1,0 +1,9 @@
+name: Write Vector Status
+summary: Write the vector status register from an Rn register.
+route: system_registers
+privileged: false
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer

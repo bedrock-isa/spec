@@ -1124,6 +1124,7 @@ fn register_set_name(set: CpuRegisterSet) -> &'static str {
         CpuRegisterSet::Segment => "Segment Registers",
         CpuRegisterSet::Control => "Control Registers",
         CpuRegisterSet::FloatingPoint => "Floating Point Registers",
+        CpuRegisterSet::Vector => "Vector Registers",
     }
 }
 

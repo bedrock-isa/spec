@@ -50,22 +50,29 @@ static bool bedrock_core_byte_list_to_array(
   return index == length;
 }
 
+static bool bedrock_core_vstatus_valid(uint64_t vstatus) {
+  uint64_t selector = vstatus & UINT64_C(0x7);
+  return (vstatus & ~UINT64_C(0x7)) == 0
+         && selector != UINT64_C(1) && selector != UINT64_C(2);
+}
+
 static bool bedrock_core_state_shape_valid(const struct zCpu_state *state) {
   if (state->zregisters.len != BEDROCK_CORE_REGISTER_COUNT
       || state->zfloating_registers.len != BEDROCK_CORE_FLOATING_REGISTER_COUNT
       || state->zsegments.len != BEDROCK_CORE_SEGMENT_COUNT
       || state->zvector_registers.len != BEDROCK_CORE_VECTOR_REGISTER_COUNT
       || state->zpredicate_registers.len != BEDROCK_CORE_PREDICATE_REGISTER_COUNT
-      || mpz_get_si(state->zvector_length_bytes)
-             != BEDROCK_CORE_VECTOR_LENGTH_BYTES)
+      || mpz_get_si(state->zmax_vector_length_bytes)
+             != BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES
+      || !bedrock_core_vstatus_valid(state->zvstatus))
     return false;
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     if (bedrock_core_byte_list_length(state->zvector_registers.data[index])
-        != BEDROCK_CORE_VECTOR_LENGTH_BYTES)
+        != BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES)
       return false;
   for (size_t index = 0; index < BEDROCK_CORE_PREDICATE_REGISTER_COUNT; ++index)
     if (bedrock_core_byte_list_length(state->zpredicate_registers.data[index])
-        != BEDROCK_CORE_PREDICATE_LENGTH_BYTES)
+        != BEDROCK_CORE_MAX_PREDICATE_LENGTH_BYTES)
       return false;
   return true;
 }
@@ -394,13 +401,13 @@ bedrock_core_status bedrock_core_get_state(
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     if (!bedrock_core_byte_list_to_array(
             core->state.zvector_registers.data[index],
-            state->vector_registers[index], BEDROCK_CORE_VECTOR_LENGTH_BYTES))
+            state->vector_registers[index], BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES))
       return BEDROCK_CORE_BAD_STATE;
   for (size_t index = 0; index < BEDROCK_CORE_PREDICATE_REGISTER_COUNT; ++index)
     if (!bedrock_core_byte_list_to_array(
             core->state.zpredicate_registers.data[index],
             state->predicate_registers[index],
-            BEDROCK_CORE_PREDICATE_LENGTH_BYTES))
+            BEDROCK_CORE_MAX_PREDICATE_LENGTH_BYTES))
       return BEDROCK_CORE_BAD_STATE;
   state->sp = core->state.zsp;
   state->pc = core->state.zpc;
@@ -412,6 +419,7 @@ bedrock_core_status bedrock_core_get_state(
   state->status = core->state.zstatus;
   state->fstatus = core->state.zfstatus;
   state->fflags = core->state.zfflags;
+  state->vstatus = core->state.zvstatus;
   state->current_dfa = core->state.zcurrent_dfa ? 1 : 0;
   state->supervisor = core->state.zsupervisor ? 1 : 0;
   state->halted = core->state.zhalted ? 1 : 0;
@@ -423,7 +431,8 @@ bedrock_core_status bedrock_core_get_state(
   state->cache_maintenance_granule = core->state.zcache_maintenance_granule;
   state->fp_state_modified = core->state.zfp_state_modified ? 1 : 0;
   state->vector_state_modified = core->state.zvector_state_modified ? 1 : 0;
-  state->vector_length_bytes = mpz_get_si(core->state.zvector_length_bytes);
+  state->max_vector_length_bytes =
+      mpz_get_si(core->state.zmax_vector_length_bytes);
   state->machine_check_error_code = core->state.zmachine_check_error_code;
   state->machine_check_event_aux = core->state.zmachine_check_event_aux;
   state->machine_check_fault_ea = core->state.zmachine_check_fault_ea;
@@ -455,7 +464,8 @@ bedrock_core_status bedrock_core_set_state(
   if (core->has_pending) return BEDROCK_CORE_BAD_STATE;
   if (!bedrock_core_state_shape_valid(&core->state)
       || state->run_state < zRunning || state->run_state > zShutdown
-      || state->vector_length_bytes != BEDROCK_CORE_VECTOR_LENGTH_BYTES
+      || state->max_vector_length_bytes != BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES
+      || !bedrock_core_vstatus_valid(state->vstatus)
       || state->interrupt_max_id != core->state.zcontrols.zinterrupt_file.zmax_id
       || state->time_ticks_per_second != core->state.ztime.zticks_per_second
       || state->interrupt_threshold > UINT64_C(0xFFFFFF)
@@ -504,11 +514,11 @@ bedrock_core_status bedrock_core_set_state(
   for (size_t index = 0; index < BEDROCK_CORE_VECTOR_REGISTER_COUNT; ++index)
     bedrock_core_replace_byte_list(&core->state.zvector_registers.data[index],
                                    state->vector_registers[index],
-                                   BEDROCK_CORE_VECTOR_LENGTH_BYTES);
+                                   BEDROCK_CORE_MAX_VECTOR_LENGTH_BYTES);
   for (size_t index = 0; index < BEDROCK_CORE_PREDICATE_REGISTER_COUNT; ++index)
     bedrock_core_replace_byte_list(&core->state.zpredicate_registers.data[index],
                                    state->predicate_registers[index],
-                                   BEDROCK_CORE_PREDICATE_LENGTH_BYTES);
+                                   BEDROCK_CORE_MAX_PREDICATE_LENGTH_BYTES);
   core->state.zsp = state->sp;
   core->state.zpc = state->pc;
   core->state.zlpc = state->lpc;
@@ -519,6 +529,7 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zstatus = state->status;
   core->state.zfstatus = state->fstatus;
   core->state.zfflags = state->fflags;
+  core->state.zvstatus = state->vstatus;
   core->state.zcurrent_dfa = state->current_dfa != 0;
   core->state.zsupervisor = state->supervisor != 0;
   core->state.zhalted = state->halted != 0;
@@ -530,7 +541,8 @@ bedrock_core_status bedrock_core_set_state(
   core->state.zcache_maintenance_granule = state->cache_maintenance_granule;
   core->state.zfp_state_modified = state->fp_state_modified != 0;
   core->state.zvector_state_modified = state->vector_state_modified != 0;
-  mpz_set_si(core->state.zvector_length_bytes, state->vector_length_bytes);
+  mpz_set_si(core->state.zmax_vector_length_bytes,
+             state->max_vector_length_bytes);
   core->state.zmachine_check_error_code = state->machine_check_error_code;
   core->state.zmachine_check_event_aux = state->machine_check_event_aux;
   core->state.zmachine_check_fault_ea = state->machine_check_fault_ea;

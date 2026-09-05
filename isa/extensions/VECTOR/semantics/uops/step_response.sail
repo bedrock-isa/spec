@@ -1,12 +1,13 @@
 function vector_response_length(instruction : Decoded_instruction, state : Cpu_state) -> int = {
     let memory_kind = vector_semantics(instruction.form.operation).memory;
+    let active_bytes = vector_current_length_bytes(state);
     if memory_kind == Some(VectorPredicateMove) then {
-        tdiv_int(state.vector_length_bytes, 8)
+        tdiv_int(active_bytes, 8)
     } else {
         if memory_kind == Some(VectorGather) then {
             operation_width(instruction)
         } else {
-            state.vector_length_bytes
+            active_bytes
         }
     }
 }
@@ -26,14 +27,18 @@ function vector_memory_source_result(
             None() => None(),
             Some(destination) => {
                 var updated = after;
-                updated.predicate_registers[unsigned(destination)] = memory;
+                updated.predicate_registers[unsigned(destination)] = vector_replace_low_bytes(
+                    before.predicate_registers[unsigned(destination)], memory,
+                    tdiv_int(vector_current_length_bytes(before), 8));
                 updated.vector_state_modified = true;
                 Some(updated)
             },
         }
     } else {
         let element_bytes = operation_width(instruction);
-        let lanes = tdiv_int(before.vector_length_bytes, element_bytes);
+        let active_bytes = vector_current_length_bytes(before);
+        let active_predicate_bytes = tdiv_int(active_bytes, 8);
+        let lanes = tdiv_int(active_bytes, element_bytes);
         let predicate = vector_memory_predicate(instruction, before);
         if memory_kind == Some(VectorMoveMerge) | memory_kind == Some(VectorMoveReplace) then {
             match vector_register_index(instruction, Operand_dst) {
@@ -42,7 +47,10 @@ function vector_memory_source_result(
                     var updated = after;
                     updated.vector_registers[unsigned(destination)] =
                         if memory_kind == Some(VectorMoveReplace) then {
-                            memory
+                            vector_replace_low_bytes(
+                                before.vector_registers[unsigned(destination)],
+                                memory,
+                                active_bytes)
                         } else {
                             vector_merge_image(
                                 before.vector_registers[unsigned(destination)],
@@ -157,7 +165,9 @@ function vector_memory_source_result(
                                             before.vector_registers[unsigned(left)],
                                             memory,
                                             before.predicate_registers[unsigned(govern)],
-                                            zero_vector_bytes(tdiv_int(before.vector_length_bytes, 8)),
+                                            vector_zero_low_bytes(
+                                                before.predicate_registers[unsigned(destination)],
+                                                active_predicate_bytes),
                                             0,
                                             lanes,
                                             element_bytes,
@@ -187,7 +197,8 @@ function vector_memory_destination_result(
 ) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(before.vector_length_bytes, element_bytes);
+    let active_bytes = vector_current_length_bytes(before);
+    let lanes = tdiv_int(active_bytes, element_bytes);
     let predicate = vector_memory_predicate(instruction, before);
     if vector_integer_binary_operation(operation) then {
         match vector_register_index(instruction, Operand_src) {
@@ -208,7 +219,7 @@ function vector_memory_destination_result(
         if vector_shift_operation_p(operation) then {
             let counts : list(bits(8)) = match vector_register_index(instruction, Operand_src) {
                 Some(source) => before.vector_registers[unsigned(source)],
-                None() => zero_vector_bytes(before.vector_length_bytes),
+                None() => zero_vector_bytes(active_bytes),
             };
             let vector_counts = vector_register_index(instruction, Operand_src) != None();
             let immediate : int = match operand_named(instruction, Operand_count) {

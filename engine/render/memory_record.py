@@ -303,7 +303,8 @@ def _render_bit_formats(
 ) -> list[str]:
     lines = [
         rf"\begin{{BedrockListedFormatDiagram}}"
-        rf"{{{tex_escape(record.name)} Bit Layouts}}"
+        rf"{{{tex_escape(record.name)} Bit Layouts}}",
+        r"\BedrockMemoryRecordFormatSpacing",
     ]
     for projected in components:
         component = projected.component

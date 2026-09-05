@@ -135,9 +135,10 @@ function vector_fp_evaluate_image(
 ) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
+    let active_bytes = vector_current_length_bytes(state);
+    let lanes = tdiv_int(active_bytes, element_bytes);
     let predicate = vector_memory_predicate(instruction, state);
-    let empty_vector = zero_vector_bytes(state.vector_length_bytes);
+    let empty_vector = zero_vector_bytes(active_bytes);
     let control = fp_primitive_control(
         fp_fstatus_rounding_mode(state.fstatus),
         fp_fstatus_ftz(state.fstatus),
@@ -164,7 +165,7 @@ function vector_fp_evaluate_image(
                     element_bytes,
                     control,
                     condition,
-                    zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8)),
+                    zero_vector_bytes(tdiv_int(active_bytes, 8)),
                     fflags_none,
                 ) {
                     Some(image) => Some(image),
@@ -185,7 +186,7 @@ function vector_fp_evaluate_image(
                     destination,
                     predicate,
                     0,
-                    state.vector_length_bytes,
+                    active_bytes,
                     element_bytes,
                     vector_fp_conversion_destination_bytes(operation),
                     control,

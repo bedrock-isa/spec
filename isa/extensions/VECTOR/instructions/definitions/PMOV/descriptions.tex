@@ -1,7 +1,8 @@
-PMOV transfers the complete packed image of one (:term:VECTOR.terms.predicate_register:) between
-\texttt{Pn} and contiguous memory.  The image contains VLEN/64 bytes.  The
-memory-source form replaces every bit of the destination predicate image; the
-memory-destination form stores every bit of the source predicate image.  No
+PMOV transfers one complete current predicate execution image between
+\texttt{Pn} and contiguous memory. The transfer contains the current VLEN/64
+bytes. The memory-source form replaces the low VLEN/8 destination predicate
+bits and preserves storage bits at or above VLEN/8; the memory-destination form
+stores the low VLEN/8 source predicate bits. No
 element predicate applies to either form.
 
 The effective-address calculation, complete image transfer, and any

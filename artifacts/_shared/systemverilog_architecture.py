@@ -452,9 +452,9 @@ endmodule"""
 def _register_width_kind(width: object) -> int:
     if isinstance(width, int):
         return 0
-    if str(width).strip() == "VLEN":
+    if str(width).strip() == "MAX_VLEN":
         return 1
-    if str(width).replace(" ", "") == "VLEN/8":
+    if str(width).replace(" ", "") == "MAX_VLEN/8":
         return 2
     return 3
 

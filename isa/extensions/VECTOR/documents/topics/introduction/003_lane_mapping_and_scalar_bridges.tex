@@ -1,7 +1,7 @@
 \subsection{Lane Mapping and Scalar Bridges}
 
 Vector bytes use increasing-address little-endian order.  A same-width
-operation treats a vector as VLEN divided by the selected element width lanes.
+operation treats the current VLEN as divided by the selected element width lanes.
 For widening and narrowing, the operation container is the larger of the
 source and destination widths. Each
 active container reads the source value from its low source-width part and
@@ -11,7 +11,7 @@ active destination container and every inactive container remain unchanged.
 (:ref:VECTOR.instructions.VDUP:) broadcasts a scalar register or immediate into
 every lane. (:ref:VECTOR.instructions.VEXTRACT:) and (:ref:VECTOR.instructions.VINSERT:) use a scalar lane index. An
 index at or above the lane count raises (:ref:VECTOR.events.EXCEPTION.VECTOR_LANE_INDEX_OUT_OF_RANGE:) with
-error code one and commits no state.  (:ref:VECTOR.instructions.VLCNT:) returns VLEN in bytes
+error code one and commits no state.  (:ref:VECTOR.instructions.VLCNT:) returns the current VLEN in bytes
 divided by the selected element width in bytes.  (:ref:VECTOR.instructions.VLCADD:) adds its
 signed eight-bit immediate multiplied by that lane count to its scalar
 destination modulo $2^{64}$. These operations preserve \texttt{FLAGS} and

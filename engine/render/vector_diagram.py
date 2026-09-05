@@ -1,4 +1,4 @@
-"""Explicit placement and TeX projection for instruction-owned vector diagrams."""
+"""Explicit document placement for instruction-owned vector diagrams."""
 
 from __future__ import annotations
 
@@ -6,22 +6,8 @@ from pathlib import Path
 import re
 
 from ..reference import Reference, ReferenceError, UnknownReferenceError
-from ..vector_diagram import (
-    CountedPredicateRangeExample,
-    FloatingPointWidthConversionExample,
-    IntegerWidthConversionExample,
-    PredicateLaneTransferExample,
-    PredicateWidthConversionExample,
-    PredicatedVectorLoadExample,
-    PredicatedVectorReductionExample,
-    ScalarVectorTransferExample,
-    StatefulPredicateRangeExample,
-    VectorDiagram,
-    VectorExample,
-    VectorLaneTransferExample,
-    render_tikz,
-    tex_escape,
-)
+from ..vector_diagram import VectorDiagram
+from .vector_tikz import VectorDiagramRenderer
 
 
 _DIAGRAM_DIRECTIVE_RE = re.compile(
@@ -32,64 +18,6 @@ _DIAGRAM_OPEN = "(:diagram:"
 
 def _reference_text(reference: Reference[object]) -> str:
     return ".".join((reference.owner, *reference.path, reference.element))
-
-
-def _layout(example: VectorExample) -> tuple[str, str, str]:
-    """Return the established page reservation and TikZ unit scales."""
-
-    has_predicate_row = any(row["role"] == "predicate" for row in example.rows)
-    if isinstance(example, VectorLaneTransferExample) and has_predicate_row:
-        needspace = 2.21 + 0.48 * (len(example.rows) - 2)
-        if not example.scalable:
-            needspace += 0.22
-        return f"{needspace:.2f}in", ".76cm", ".70cm"
-    if isinstance(example, PredicateWidthConversionExample):
-        return "3.20in", ".76cm", ".70cm"
-    if isinstance(example, PredicateLaneTransferExample):
-        if len(example.rows) == 3:
-            needspace = "2.69in" if example.scalable else "2.91in"
-        else:
-            needspace = "2.60in"
-        return needspace, ".76cm", ".70cm"
-    if isinstance(example, IntegerWidthConversionExample):
-        return "3.29in", ".76cm", ".70cm"
-    if isinstance(
-        example, (StatefulPredicateRangeExample, CountedPredicateRangeExample)
-    ):
-        needspace = (
-            "3.45in"
-            if isinstance(example, StatefulPredicateRangeExample)
-            else "3.25in"
-        )
-        return needspace, ".76cm", ".70cm"
-    if isinstance(example, ScalarVectorTransferExample):
-        needspace = "3.25in" if len(example.scalars) > 1 else "2.50in"
-        return needspace, ".76cm", ".70cm"
-    if isinstance(example, PredicatedVectorLoadExample):
-        return "4.25in", ".76cm", ".70cm"
-    if isinstance(example, PredicatedVectorReductionExample):
-        return "4.05in", ".76cm", ".70cm"
-    if isinstance(example, FloatingPointWidthConversionExample):
-        return "3.29in", ".76cm", ".70cm"
-    if isinstance(example, VectorLaneTransferExample):
-        return "2.50in", "0.72cm", "0.66cm"
-    raise TypeError(f"unsupported vector example {type(example).__name__}")
-
-
-class VectorDiagramRenderer:
-    """Project one validated finite vector example into the reference TeX DSL."""
-
-    def render(self, diagram: VectorDiagram) -> str:
-        needspace, x_scale, y_scale = _layout(diagram.example)
-        return "\n".join(
-            (
-                rf"\begin{{BedrockVectorExample}}{{{needspace}}}{{{x_scale}}}"
-                rf"{{{y_scale}}}{{{tex_escape(diagram.caption)}}}"
-                rf"{{{tex_escape(diagram.alt_text)}}}",
-                render_tikz(diagram.example),
-                r"\end{BedrockVectorExample}",
-            )
-        )
 
 
 class VectorDiagramPlacementRenderer:
@@ -178,4 +106,4 @@ class VectorDiagramPlacementRenderer:
         return _DIAGRAM_DIRECTIVE_RE.sub(lambda _match: next(rendered), text)
 
 
-__all__ = ["VectorDiagramPlacementRenderer", "VectorDiagramRenderer"]
+__all__ = ["VectorDiagramPlacementRenderer"]

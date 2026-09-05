@@ -1,5 +1,5 @@
 width:
-  VLEN: [128, 256, 512, 1024, 2048]
+  MAX_VLEN: [128, 256, 512, 1024, 2048]
 summary: Scalable vector data registers.
 reset: 0
 series: {prefix: V, count: 32}

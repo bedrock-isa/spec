@@ -1,0 +1,10 @@
+owner: VECTOR
+description: >-
+  Unprivileged; reserved and invalid VLEN encodings follow the ISA.
+signature:
+  result: void
+  parameters:
+  - id: value
+    type: u16
+lowering:
+  operation: isa:VECTOR.instructions.WRVSTATUS

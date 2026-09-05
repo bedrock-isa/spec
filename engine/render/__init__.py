@@ -73,7 +73,8 @@ from .sail_registry import (
     SailRegistryProjection,
     SailRegistryRenderer,
 )
-from .vector_diagram import VectorDiagramPlacementRenderer, VectorDiagramRenderer
+from .vector_diagram import VectorDiagramPlacementRenderer
+from .vector_tikz import VectorDiagramRenderer
 
 __all__ = [
     "ControlRegisterReferenceRenderer",

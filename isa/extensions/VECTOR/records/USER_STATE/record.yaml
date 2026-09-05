@@ -2,7 +2,7 @@ name: Vector User-State Record
 alignment_bytes: 64
 parameter:
   id: B
-  description: VLEN in bytes
+  description: MAX_VLEN in bytes
   values: [16, 32, 64, 128, 256]
 components:
 - id: PRESENCE
@@ -20,9 +20,26 @@ components:
       label: P[15:0]
       lsb: 32
       bits: 16
+    - id: VSTATUS
+      label: VSTATUS
+      diagram_label: s
+      lsb: 48
+      bits: 1
+- id: STATE_IMAGES
+  label: State images
+  element_bytes: 8
+  bit_format:
+    bits: 64
+    unassigned: zero
+    fields:
+    - id: VSTATUS
+      label: VSTATUS image
+      diagram_label: VSTATUS
+      lsb: 16
+      bits: 16
 - id: RESERVED
   label: Reserved
-  element_bytes: 56
+  element_bytes: 48
   fixed_value: zero
 - id: VECTOR_REGISTERS
   label: V

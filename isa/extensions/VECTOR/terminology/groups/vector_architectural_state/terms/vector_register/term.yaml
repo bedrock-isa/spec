@@ -3,4 +3,4 @@ display:
   plural: vector registers
 article: a
 definition: >-
-  one of the 32 VLEN-bit registers V0 through V31.
+  one of the 32 MAX_VLEN-bit registers V0 through V31.

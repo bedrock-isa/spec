@@ -4,5 +4,5 @@ display:
 article: a
 definition: >-
   one selected-width element. Predicate bit iE governs lane i for an E-byte
-  element. VLEN is the reset-stable implementation-selected vector register
-  width in bits.
+  element within the current VLEN. MAX_VLEN is the reset-stable
+  implementation-selected vector-register width in bits; VSTATUS selects VLEN.

@@ -1,0 +1,4 @@
+title: Vector Intrinsics
+exposure: active vector-length state
+includes:
+- stdint.h
